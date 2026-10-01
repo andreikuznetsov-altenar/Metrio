@@ -18,6 +18,18 @@ use api::jira::{
 };
 use api::kpi_snapshot_store::{kpi_snapshot_load, kpi_snapshot_save};
 use api::pdf_export::write_user_selected_pdf;
+use api::apps_script::{
+    apps_script_connect, apps_script_disconnect, apps_script_get_status, apps_script_invoke,
+    apps_script_is_configured,
+};
+use api::google::{
+    google_disconnect, google_drive_set_responder_access, google_get_status, google_gmail_send,
+    google_forms_create, google_forms_list_responses, google_forms_publish, google_forms_update,
+    google_oauth_connect,
+};
+use api::google::credentials::GoogleAuthState;
+use api::google::oauth::GoogleTokenState;
+use api::survey_store::{survey_data_load, survey_data_save};
 use keyring::Entry;
 use logs::{log_write, logs_get_path, logs_open_folder, write_setup_log};
 use persistence::{atomic_write_json, load_json_file, PREFERENCES_SCHEMA_VERSION};
@@ -442,6 +454,9 @@ pub fn run() {
             keep_running_in_tray: Mutex::new(true),
             storage_warnings: Mutex::new(Vec::new()),
         })
+        .manage(GoogleAuthState {
+            tokens: Mutex::new(GoogleTokenState::default()),
+        })
         .invoke_handler(tauri::generate_handler![
             secure_store_set,
             secure_store_delete,
@@ -470,6 +485,22 @@ pub fn run() {
             bamboo_list_employees_all,
             bamboo_get_employee,
             bamboo_get_whos_out,
+            apps_script_connect,
+            apps_script_disconnect,
+            apps_script_get_status,
+            apps_script_is_configured,
+            apps_script_invoke,
+            google_get_status,
+            google_oauth_connect,
+            google_disconnect,
+            google_forms_create,
+            google_forms_update,
+            google_forms_publish,
+            google_forms_list_responses,
+            google_gmail_send,
+            google_drive_set_responder_access,
+            survey_data_load,
+            survey_data_save,
             kpi_snapshot_load,
             kpi_snapshot_save,
             credential_import_legacy,
@@ -484,6 +515,7 @@ pub fn run() {
             write_setup_log(app.handle(), "NATIVE 03 tray installed");
             spawn_background_emitter(app.handle().clone(), "background-bamboo-refresh", 60 * 60);
             spawn_background_emitter(app.handle().clone(), "background-jira-refresh", 30 * 60);
+            spawn_background_emitter(app.handle().clone(), "background-survey-sync", 15 * 60);
             if let Some(window) = app.get_webview_window("main") {
                 let handle = app.handle().clone();
                 window.on_window_event(move |event| {

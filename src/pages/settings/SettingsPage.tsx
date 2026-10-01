@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useState } from "react";
 import { COMPANY_CONFIG } from "../../config/company";
 import { readSavedConnection, type SavedConnection } from "../../app/connectionStorage";
+import { setFeedbackPrefsSnapshot } from "../../app/feedbackPrefsBridge";
+import { useFeedbackSurveyStore } from "../../app/feedbackSurveyStore";
 import { Button } from "../../components/Button/Button";
 import { Card } from "../../components/Card/Card";
 import { Input } from "../../components/Input/Input";
@@ -20,6 +22,7 @@ import { useTheme } from "../../theme/ThemeProvider";
 import type { ThemePreference } from "../../theme/theme";
 import { PageSubnav } from "../../shell/PageSubnav";
 import type { SettingsSection } from "./types";
+import { GoogleConnectionPanel } from "../feedback/GoogleConnectionPanel";
 import "../page-content.css";
 import "./settings.css";
 
@@ -53,6 +56,8 @@ export function SettingsPage({
   const [busy, setBusy] = useState(false);
   const [jiraTest, setJiraTest] = useState<string | null>(null);
   const [bambooTest, setBambooTest] = useState<string | null>(null);
+  const [googleMessage, setGoogleMessage] = useState<string | null>(null);
+  const { connectGoogle, disconnectGoogle, loading: googleBusy } = useFeedbackSurveyStore();
 
   useEffect(() => {
     setSection(initialSection);
@@ -61,7 +66,10 @@ export function SettingsPage({
   useEffect(() => {
     let cancelled = false;
     loadPreferences().then((loaded) => {
-      if (!cancelled) setPrefs(loaded);
+      if (!cancelled) {
+        setPrefs(loaded);
+        setFeedbackPrefsSnapshot(loaded);
+      }
     });
     readSavedConnection().then((saved) => {
       if (!cancelled) setConnection(saved);
@@ -73,6 +81,7 @@ export function SettingsPage({
 
   const persistPrefs = useCallback(async (next: AppPreferences) => {
     setPrefs(next);
+    setFeedbackPrefsSnapshot(next);
     try {
       await savePreferences(next);
       await syncGeneralPreferencesToNative(next.general);
@@ -81,6 +90,47 @@ export function SettingsPage({
       setStatusMessage("Could not save settings to disk.");
     }
   }, []);
+
+  const handleGoogleConnect = useCallback(
+    async (input: { webAppUrl: string; bridgeSecret: string }) => {
+      setGoogleMessage(null);
+      const status = await connectGoogle(input);
+      const patch: Partial<AppPreferences["google"]> = { ...status };
+      if (input.webAppUrl.trim()) {
+        patch.appsScriptWebAppUrl = input.webAppUrl.trim();
+        patch.responseAccess = "anyone_with_link";
+        patch.emailCollectionMode = "RESPONDER_INPUT";
+      }
+      await persistPrefs({
+        ...prefs,
+        google: { ...prefs.google, ...patch },
+      });
+      setGoogleMessage(`Connected as ${status.accountEmail}`);
+    },
+    [connectGoogle, persistPrefs, prefs],
+  );
+
+  const handleGoogleDisconnect = useCallback(async () => {
+    await disconnectGoogle();
+    await persistPrefs({
+      ...prefs,
+      google: {
+        ...prefs.google,
+        appsScriptWebAppUrl: "",
+        accountEmail: "",
+        formsConnected: false,
+        gmailConnected: false,
+      },
+    });
+    setGoogleMessage("Disconnected");
+  }, [disconnectGoogle, persistPrefs, prefs]);
+
+  const patchGooglePrefs = useCallback(
+    async (patch: Partial<AppPreferences["google"]>) => {
+      await persistPrefs({ ...prefs, google: { ...prefs.google, ...patch } });
+    },
+    [persistPrefs, prefs],
+  );
 
   const onExportDiagnostics = async () => {
     setBusy(true);
@@ -275,6 +325,18 @@ export function SettingsPage({
               </div>
             ) : null}
           </Card>
+
+          <GoogleConnectionPanel
+            prefs={prefs}
+            loading={googleBusy}
+            message={googleMessage}
+            mode="settings"
+            showAdvanced
+            onConnect={handleGoogleConnect}
+            onReconnect={handleGoogleConnect}
+            onDisconnect={handleGoogleDisconnect}
+            onUpdatePrefs={patchGooglePrefs}
+          />
         </div>
       ) : null}
 

@@ -1,0 +1,64 @@
+.feedback-ds__banner {
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+  background: var(--color-surface-muted, #f4f4f5);
+}
+
+.feedback-ds__banner--warning {
+  background: #fff7ed;
+}
+
+.feedback-ds__banner--danger {
+  background: #fef2f2;
+}
+
+.feedback-ds__banner--success {
+  background: #f0fdf4;
+}
+
+.feedback-ds__sticky {
+  position: sticky;
+  bottom: 0;
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  padding: 1rem 0;
+  background: var(--color-bg, #fff);
+}
+
+.feedback-ds__metric {
+  padding: 0.75rem;
+  border: 1px solid var(--color-border-subtle, #e4e4e7);
+  border-radius: 8px;
+}
+
+.feedback-ds__metric-label {
+  font-size: 12px;
+  color: var(--color-text-secondary, #71717a);
+}
+
+.feedback-ds__metric-value {
+  font-size: 20px;
+  font-weight: 600;
+}
+
+.feedback-ds__tag,
+.feedback-ds__status {
+  display: inline-block;
+  font-size: 12px;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  background: var(--color-surface-muted, #f4f4f5);
+}
+
+.feedback-ds__drawer-actions {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: flex-end;
+  margin-top: 1rem;
+}
+
+.feedback-ds__header-right {
+  margin-bottom: 0.75rem;
+}
