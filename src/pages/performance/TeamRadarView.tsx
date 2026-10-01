@@ -9,8 +9,11 @@ export function TeamRadarView({ rows }: TeamRadarViewProps) {
   if (rows.length === 0) {
     return (
       <section aria-label="Radar">
-        <div className="performance-empty performance-table-wrap">
-          No active team risks.
+        <div className="performance-empty performance-empty--compact">
+          <span className="performance-empty__icon" aria-hidden>
+            ◎
+          </span>
+          <span>No active team risks.</span>
         </div>
       </section>
     );
@@ -19,13 +22,13 @@ export function TeamRadarView({ rows }: TeamRadarViewProps) {
   return (
     <section aria-label="Radar">
       <div className="performance-table-wrap">
-        <table className="performance-table">
+        <table className="performance-table performance-table--interactive">
           <thead>
             <tr>
               <th>Person</th>
               <th>Severity</th>
               <th>Reason</th>
-              <th>Tasks affected</th>
+              <th className="performance-table__num">Tasks</th>
               <th>Action</th>
             </tr>
           </thead>
@@ -36,9 +39,11 @@ export function TeamRadarView({ rows }: TeamRadarViewProps) {
                 <td>
                   <Badge variant={row.severityVariant}>{row.severity}</Badge>
                 </td>
-                <td>{row.reason}</td>
-                <td>{row.tasksAffected}</td>
-                <td>{row.action}</td>
+                <td className="performance-table__reason">{row.reason}</td>
+                <td className="performance-table__num">{row.tasksAffected}</td>
+                <td>
+                  <span className="performance-table__action">{row.action}</span>
+                </td>
               </tr>
             ))}
           </tbody>

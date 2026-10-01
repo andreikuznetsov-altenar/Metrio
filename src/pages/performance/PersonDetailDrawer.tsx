@@ -79,8 +79,8 @@ export function PersonDetailDrawer({
               </p>
             ) : (
               <div className="performance-work-list">
-                {snapshot.attention.map((item) => (
-                  <div key={item.reason} className="performance-work-row">
+                {snapshot.attention.map((item, index) => (
+                  <div key={`${item.label}-${index}`} className="performance-work-row">
                     <div className="performance-work-row__main">
                       <Badge variant={item.variant}>{item.label}</Badge>
                       <div className="performance-work-row__meta">

@@ -16,15 +16,15 @@ const NAV: { id: DemoSection; label: string }[] = [
 
 export function AppHeader({ activeSection, onSectionChange }: AppHeaderProps) {
   return (
-    <div className="app-header">
-      <p className="app-header__brand">Metrio</p>
+    <div className="foundation-header">
+      <p className="foundation-header__brand">Metrio</p>
 
-      <nav className="app-header__nav" aria-label="Primary">
+      <nav className="foundation-header__nav" aria-label="Primary">
         {NAV.map((item) => (
           <button
             key={item.id}
             type="button"
-            className="app-header__nav-btn"
+            className="foundation-header__nav-btn"
             aria-current={activeSection === item.id ? "page" : undefined}
             onClick={() => onSectionChange(item.id)}
           >
@@ -33,14 +33,14 @@ export function AppHeader({ activeSection, onSectionChange }: AppHeaderProps) {
         ))}
       </nav>
 
-      <div className="app-header__actions">
+      <div className="foundation-header__actions">
         <IconButton label="Settings">
           <Settings size={16} strokeWidth={1.75} />
         </IconButton>
         <IconButton label="Notifications">
           <Bell size={16} strokeWidth={1.75} />
         </IconButton>
-        <span className="app-header__avatar" aria-hidden>
+        <span className="foundation-header__avatar" aria-hidden>
           AK
         </span>
       </div>

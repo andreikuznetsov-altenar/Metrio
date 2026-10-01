@@ -14,6 +14,7 @@ export default defineConfig(() => ({
     css: true,
     exclude: [
       "**/node_modules/**",
+      "**/e2e/**",
     ],
   },
   clearScreen: false,

@@ -84,6 +84,37 @@
   box-shadow: var(--focus-ring);
 }
 
+.performance-table__person-name {
+  display: block;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.performance-table__person-role {
+  display: block;
+  margin-top: 2px;
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--color-text-tertiary);
+}
+
+.performance-table__reason {
+  max-width: 36rem;
+}
+
+.performance-table__action {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--color-accent);
+}
+
+.performance-issue-key {
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--color-accent);
+  letter-spacing: 0.02em;
+}
 
 .performance-section-head {
   display: flex;
@@ -171,11 +202,120 @@
 }
 
 .performance-metric-card {
-  padding: var(--space-4);
+  padding: var(--space-3) var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-height: 96px;
+  justify-content: flex-start;
+}
+
+.performance-metric-card__context {
+  font-size: 11px;
+  line-height: 1.35;
+  color: var(--color-text-secondary);
+  margin-top: auto;
+  padding-top: var(--space-1);
+}
+
+.performance-metric-card__context--positive {
+  color: var(--color-success, var(--color-text-secondary));
+}
+
+.performance-metric-card__context--negative {
+  color: var(--color-danger, var(--color-text-secondary));
+}
+
+.performance-metric-card__context--neutral,
+.performance-metric-card__context--unknown {
+  color: var(--color-text-tertiary);
+}
+
+.performance-section {
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
-  min-height: 104px;
+}
+
+.performance-avatar--sm {
+  width: 28px;
+  height: 28px;
+  font-size: 10px;
+}
+
+.performance-attention-row__title-line {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.performance-attention-row__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1);
+  justify-content: flex-end;
+}
+
+.performance-attention-row__more {
+  font-size: 11px;
+  color: var(--color-text-tertiary);
+}
+
+.performance-trend-card__value--positive {
+  color: var(--color-success, var(--color-text-primary));
+}
+
+.performance-trend-card__value--negative {
+  color: var(--color-danger, var(--color-text-primary));
+}
+
+.performance-trend-card__value--neutral,
+.performance-trend-card__value--unknown {
+  color: var(--color-text-primary);
+}
+
+.performance-trend-card__arrow {
+  font-size: 12px;
+  opacity: 0.85;
+}
+
+.performance-trend-card__sparkline-empty {
+  font-size: 11px;
+  color: var(--color-text-tertiary);
+  min-height: 28px;
+  display: flex;
+  align-items: flex-end;
+}
+
+.performance-table__num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.performance-empty--compact {
+  min-height: 56px;
+  padding: var(--space-3) var(--space-4);
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius-card);
+  background: var(--color-surface-secondary);
+}
+
+.performance-empty--timeoff {
+  justify-content: flex-start;
+}
+
+.performance-empty__icon {
+  opacity: 0.55;
+  font-size: 14px;
+}
+
+.performance-section__title {
+  color: var(--color-text-secondary);
 }
 
 .performance-metric-card__label {
@@ -211,10 +351,11 @@
   align-items: center;
   gap: var(--space-3);
   width: 100%;
+  min-height: 64px;
   border: none;
   background: transparent;
   text-align: left;
-  padding: var(--space-3) var(--space-4);
+  padding: var(--space-2) var(--space-3);
   cursor: pointer;
   transition: background var(--motion-hover) var(--transition-easing);
 }
@@ -297,6 +438,7 @@
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
+  min-height: 108px;
 }
 
 .performance-trend-card__label {
@@ -305,7 +447,10 @@
 }
 
 .performance-trend-card__value {
-  font-size: 20px;
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-1);
+  font-size: 18px;
   font-weight: 600;
   letter-spacing: -0.02em;
 }

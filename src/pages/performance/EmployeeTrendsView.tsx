@@ -1,6 +1,7 @@
 import { Card } from "../../components/Card/Card";
 import type { TrendCardData } from "../../domain/performance";
 import { Sparkline } from "./Sparkline";
+import { TrendValue } from "./TrendValue";
 
 export function EmployeeTrendsView({ trends }: { trends: TrendCardData[] }) {
   return (
@@ -9,8 +10,16 @@ export function EmployeeTrendsView({ trends }: { trends: TrendCardData[] }) {
         {trends.map((trend) => (
           <Card key={trend.label} className="performance-trend-card">
             <div className="performance-trend-card__label">{trend.label}</div>
-            <div className="performance-trend-card__value">{trend.value}</div>
-            {trend.sparkline ? <Sparkline values={trend.sparkline} /> : null}
+            <TrendValue trend={trend} />
+            {trend.sparkline ? (
+              <Sparkline values={trend.sparkline} />
+            ) : trend.insufficientHistory ? (
+              <div className="performance-trend-card__sparkline-empty">
+                Not enough history
+              </div>
+            ) : (
+              <div className="performance-trend-card__sparkline-empty" aria-hidden />
+            )}
           </Card>
         ))}
       </div>

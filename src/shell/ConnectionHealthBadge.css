@@ -1,22 +1,26 @@
 .connection-health-badge {
-  border: 1px solid var(--color-border-subtle, rgba(0, 0, 0, 0.12));
+  border: 1px solid var(--color-border);
   border-radius: 999px;
-  padding: 0.25rem 0.6rem;
+  padding: 0.2rem 0.55rem;
   font-size: 0.75rem;
   line-height: 1.2;
-  background: transparent;
-  color: inherit;
+  background: var(--color-surface-secondary);
+  color: var(--color-text-secondary);
   cursor: pointer;
+  transition:
+    border-color var(--motion-hover) var(--transition-easing),
+    color var(--motion-hover) var(--transition-easing);
 }
 
 .connection-health-badge--ok {
-  border-color: rgba(34, 139, 34, 0.35);
+  border-color: color-mix(in srgb, var(--color-success) 35%, var(--color-border));
+  color: var(--color-text-secondary);
 }
 
 .connection-health-badge--attention {
-  border-color: rgba(200, 120, 0, 0.45);
+  border-color: color-mix(in srgb, var(--color-warning) 45%, var(--color-border));
 }
 
 .connection-health-badge--offline {
-  border-color: rgba(160, 40, 40, 0.4);
+  border-color: color-mix(in srgb, var(--color-danger) 40%, var(--color-border));
 }

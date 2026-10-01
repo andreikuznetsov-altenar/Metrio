@@ -45,12 +45,19 @@ export function TeamPerformanceOverview({
   const secondary = viewModels.teamSecondary;
 
   return (
-    <div className="performance-dashboard">
+    <div
+      className="performance-dashboard"
+      data-testid="performance-dashboard-ready"
+    >
       <PerformanceStatusBanner />
       <TeamPerformanceSubnav activeView={activeView} onChange={setActiveView} />
 
       {activeView === "overview" ? (
-        <TeamOverviewView snapshot={snapshot} onOpenPerson={onOpenPerson} />
+        <TeamOverviewView
+          snapshot={snapshot}
+          onOpenPerson={onOpenPerson}
+          onViewAllRadar={() => setActiveView("radar")}
+        />
       ) : null}
 
       {activeView === "people" ? (

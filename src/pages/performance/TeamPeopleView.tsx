@@ -1,6 +1,14 @@
 import { Badge } from "../../components/Badge/Badge";
 import type { TeamPeopleRow } from "../../domain/performance";
 
+function workloadVariant(
+  workload: TeamPeopleRow["workload"],
+): "success" | "warning" | "neutral" {
+  if (workload === "Heavy") return "warning";
+  if (workload === "Light") return "success";
+  return "neutral";
+}
+
 export interface TeamPeopleViewProps {
   rows: TeamPeopleRow[];
   onOpenPerson: (personId: string) => void;
@@ -14,11 +22,10 @@ export function TeamPeopleView({ rows, onOpenPerson }: TeamPeopleViewProps) {
           <thead>
             <tr>
               <th>Person</th>
-              <th>Role</th>
-              <th>Efficiency</th>
+              <th className="performance-table__num">Efficiency</th>
               <th>Workload</th>
               <th>Availability</th>
-              <th>Attention state</th>
+              <th>Attention</th>
             </tr>
           </thead>
           <tbody>
@@ -30,13 +37,23 @@ export function TeamPeopleView({ rows, onOpenPerson }: TeamPeopleViewProps) {
                     className="performance-table__person-button"
                     onClick={() => onOpenPerson(row.personId)}
                   >
-                    {row.personName}
+                    <span className="performance-table__person-name">
+                      {row.personName}
+                    </span>
+                    <span className="performance-table__person-role">
+                      {row.role}
+                    </span>
                   </button>
                 </td>
-                <td>{row.role}</td>
-                <td>{row.efficiency}</td>
-                <td>{row.workload}</td>
-                <td>{row.availability}</td>
+                <td className="performance-table__num">{row.efficiency}</td>
+                <td>
+                  <Badge variant={workloadVariant(row.workload)}>
+                    {row.workload}
+                  </Badge>
+                </td>
+                <td>
+                  <Badge variant="neutral">{row.availability}</Badge>
+                </td>
                 <td>
                   <Badge variant={row.attentionVariant}>
                     {row.attentionState}

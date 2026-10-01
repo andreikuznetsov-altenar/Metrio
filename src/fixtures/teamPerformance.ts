@@ -11,6 +11,7 @@ import type {
   TrendCardData,
   WorkloadRow,
 } from "../domain/performance";
+import type { RadarSeverity } from "../domain/radar/types";
 import { roleLabel } from "../domain/types";
 import { getPerson } from "./people";
 
@@ -20,6 +21,12 @@ function hash(id: string): number {
 
 function pickAttention(directReportIds: string[]): AttentionPerson[] {
   const items: AttentionPerson[] = [];
+  const reasons = [
+    "Cycle time trending above team target",
+    "First-pass rate dropped this week",
+    "Active load exceeds planned capacity",
+    "Upcoming time off with open commitments",
+  ];
 
   directReportIds.forEach((personId, index) => {
     const score = hash(personId) % 5;
@@ -27,25 +34,15 @@ function pickAttention(directReportIds: string[]): AttentionPerson[] {
       return;
     }
 
-    const indicators: AttentionPerson["indicators"] =
-      score === 0
-        ? [
-            { label: "At risk", variant: "danger" },
-            { label: "Backflow", variant: "warning" },
-          ]
-        : [{ label: "Watch", variant: "warning" }];
-
-    const reasons = [
-      "Cycle time trending above team target",
-      "First-pass rate dropped this week",
-      "Active load exceeds planned capacity",
-      "Upcoming time off with open commitments",
-    ];
+    const severity: RadarSeverity = score === 0 ? "critical" : "warning";
+    const issueKeys = score === 0 ? ["UX-2962", "UX-5203"] : ["UX-1201"];
 
     items.push({
       personId,
-      indicators,
       reason: reasons[index % reasons.length],
+      severity,
+      issueKeys,
+      issueCount: issueKeys.length,
     });
   });
 
@@ -158,6 +155,7 @@ export function getTeamPerformanceSnapshot(
       },
     ],
     attention: pickAttention(directReportIds),
+    attentionTotalCount: pickAttention(directReportIds).length,
     trends: buildTrends(directReportIds, dateRange),
     workload: buildWorkloadRows(directReportIds),
     timeOff: directReportIds
@@ -194,9 +192,15 @@ function buildPeopleRows(
       efficiency: detail.efficiency,
       workload: load?.workload ?? detail.workload,
       availability: load?.availability ?? "Available",
-      attentionState: attentionItem ? attentionItem.indicators[0].label : "Clear",
+      attentionState: attentionItem
+        ? attentionItem.severity === "critical"
+          ? "High"
+          : "Watch"
+        : "Clear",
       attentionVariant: attentionItem
-        ? attentionItem.indicators[0].variant
+        ? attentionItem.severity === "critical"
+          ? "danger"
+          : "warning"
         : "success",
     };
   });
@@ -211,9 +215,9 @@ function buildRadarRows(
   attention.forEach((item, index) => {
     const seed = hash(item.personId);
     const severity =
-      item.indicators.some((i) => i.variant === "danger")
+      item.severity === "critical"
         ? "High"
-        : item.indicators.some((i) => i.variant === "warning")
+        : item.severity === "warning"
           ? "Medium"
           : "Low";
     const severityVariant =

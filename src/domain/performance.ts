@@ -1,4 +1,6 @@
 import type { BadgeVariant } from "../components/Badge/Badge";
+import type { RadarSeverity } from "./radar/types";
+import type { TrendDirection } from "./trends/trendEngine";
 
 export type DateRangeKey = "7d" | "30d" | "quarter";
 export type ReviewTargetKey = "team" | "sprint" | "org";
@@ -6,26 +8,35 @@ export type EmployeeReviewTargetKey = "personal" | "sprint" | "quarter";
 
 export type PerformanceReviewTarget = ReviewTargetKey | EmployeeReviewTargetKey;
 
+export type MetricContextSemantic = "positive" | "negative" | "neutral" | "unknown";
+
 export interface MetricCardData {
   label: string;
   value: string;
   status?: string;
   statusVariant?: BadgeVariant;
   tooltip?: string;
+  contextLabel?: string;
+  contextSemantic?: MetricContextSemantic;
 }
 
 export interface AttentionPerson {
   personId: string;
   personName?: string;
   personRole?: string;
-  indicators: { label: string; variant: BadgeVariant }[];
   reason: string;
+  severity: RadarSeverity;
+  issueKeys: string[];
+  issueCount: number;
 }
 
 export interface TrendCardData {
   label: string;
   value: string;
   sparkline?: number[];
+  insufficientHistory?: boolean;
+  trendDirection?: TrendDirection;
+  trendSemantic?: MetricContextSemantic;
 }
 
 export interface WorkloadRow {
@@ -72,6 +83,7 @@ export interface TeamPerformanceSnapshot {
   directReportIds: string[];
   summary: MetricCardData[];
   attention: AttentionPerson[];
+  attentionTotalCount: number;
   trends: TrendCardData[];
   workload: WorkloadRow[];
   timeOff: TimeOffEntry[];

@@ -25,6 +25,20 @@ const EMPLOYEE_REVIEW_TARGET_OPTIONS = [
   { value: "quarter", label: "Quarter goal" },
 ];
 
+function ExportIcon() {
+  return (
+    <svg viewBox="0 0 16 16" fill="none" aria-hidden className="performance-toolbar__export-icon">
+      <path
+        d="M8 2.5v7M5 7l3 3 3-3M3.5 12.5h9"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
 function RefreshIcon() {
   return (
     <svg viewBox="0 0 16 16" fill="none" aria-hidden>
@@ -92,7 +106,9 @@ export function PerformanceToolbar({
 
   return (
     <div className="performance-toolbar">
-      <h2 className="performance-toolbar__title">Performance</h2>
+      <h2 className="performance-toolbar__title" aria-hidden>
+        Filters
+      </h2>
       <div className="performance-toolbar__controls">
         <div className="performance-toolbar__field">
           <Select
@@ -116,7 +132,13 @@ export function PerformanceToolbar({
             }
           />
         </div>
-        <div className="performance-toolbar__refresh">
+        <div
+          className={
+            refreshing
+              ? "performance-toolbar__refresh is-refreshing"
+              : "performance-toolbar__refresh"
+          }
+        >
           <IconButton
             label="Refresh"
             onClick={onRefresh}
@@ -133,6 +155,7 @@ export function PerformanceToolbar({
               disabled={exportDisabled || exportBusy}
               onClick={onExportPdf}
             >
+              <ExportIcon />
               {exportBusy ? "Exporting…" : "Export PDF"}
             </Button>
           </div>

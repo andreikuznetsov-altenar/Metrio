@@ -52,7 +52,10 @@ export function EmployeePerformanceOverview({
   }
 
   return (
-    <div className="performance-dashboard">
+    <div
+      className="performance-dashboard"
+      data-testid="performance-dashboard-ready"
+    >
       <PerformanceStatusBanner />
       <EmployeePerformanceSubnav activeView={activeView} onChange={setActiveView} />
 

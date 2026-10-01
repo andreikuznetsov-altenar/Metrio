@@ -3,11 +3,21 @@ export function Sparkline({ values }: { values: number[] }) {
     return null;
   }
 
-  const max = Math.max(...values, 1);
+  const min = Math.min(...values);
+  const max = Math.max(...values);
+  const range = max - min;
+  const height = 20;
+  const baseline = 22;
+
   const points = values
     .map((value, index) => {
       const x = (index / (values.length - 1)) * 100;
-      const y = 24 - (value / max) * 20 - 2;
+      let y: number;
+      if (range === 0) {
+        y = baseline - height / 2;
+      } else {
+        y = baseline - ((value - min) / range) * height - 1;
+      }
       return `${x},${y}`;
     })
     .join(" ");
@@ -23,9 +33,10 @@ export function Sparkline({ values }: { values: number[] }) {
         points={points}
         fill="none"
         stroke="currentColor"
-        strokeWidth="2"
+        strokeWidth="1.75"
         strokeLinejoin="round"
         strokeLinecap="round"
+        vectorEffect="non-scaling-stroke"
       />
     </svg>
   );

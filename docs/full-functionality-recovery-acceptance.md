@@ -2,7 +2,7 @@
 
 **Date:** 2026-10-02  
 **Baseline SHA (Phase 7 start):** `7ae63df571a205fa6c5c0528f983ecd3dfde85e2`  
-**Acceptance SHA:** `ffb2ee5132656f87dc8322f569f338663e31cc1e`  
+**Acceptance SHA:** `894f50609ade5d472075b17cc527a767608f3009`  
 **Old app reference:** Jira App @ `43baf2e2f27c3d8c36f622c72b955e4ca7253d51`
 
 Status values: **RESTORED** · **INTENTIONALLY REPLACED** · **INTENTIONALLY REMOVED** · **NOT RESTORED**

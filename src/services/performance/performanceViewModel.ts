@@ -49,6 +49,15 @@ import {
   personSparklinePoints,
   personTrendPoints,
 } from "../../domain/snapshots/snapshotEngine";
+import {
+  sparklineValuesFromPoints,
+  teamAvgCycleDaysSparklinePoints,
+  teamFirstPassRateSparklinePoints,
+} from "../../domain/snapshots/sparklineSeries";
+import {
+  buildTrendCardData,
+  metricContextFromComparison,
+} from "../../pages/performance/trendPresentation";
 import type { KpiSnapshotFile } from "../../domain/snapshots/types";
 import { buildWorkloadBalance } from "../../domain/workload/workloadBalance";
 import { personRouteKey } from "../../domain/people/personDisplay";
@@ -62,7 +71,31 @@ function efficiencyStatusVariant(score: number): BadgeVariant {
 }
 
 function sparklineValues(points: { value: number }[]): number[] {
-  return points.map((point) => point.value);
+  return sparklineValuesFromPoints(points);
+}
+
+function attentionReasonFromSignal(label: string): string {
+  const parts = label.split(" — ");
+  return parts.length > 1 ? parts.slice(1).join(" — ") : label;
+}
+
+const ATTENTION_OVERVIEW_LIMIT = 5;
+
+function mapAttentionPerson(
+  item: ReturnType<typeof buildTeamRadar>[number],
+  teamSnapshot: PerformanceFetchResult["teamSnapshot"],
+): AttentionPerson {
+  const person = findPerson(teamSnapshot, item.personId);
+  const primary = item.signals[0];
+  return {
+    personId: item.personId,
+    personName: item.personName,
+    personRole: person?.bamboo.jobTitle || undefined,
+    reason: primary ? attentionReasonFromSignal(primary.label) : "Needs review",
+    severity: item.severity,
+    issueKeys: item.relatedIssueKeys.slice(0, 2),
+    issueCount: item.relatedIssueKeys.length || item.signalCount,
+  };
 }
 
 function severityToBadge(severity: RadarSeverity): BadgeVariant {
@@ -111,41 +144,6 @@ export function buildPerformanceViewModels(
       ? Math.round((teamKpi.firstPassAcceptedCount / teamKpi.completedCount) * 100)
       : 0;
 
-  const summary: MetricCardData[] = [
-    {
-      label: "Efficiency",
-      value: `${teamKpi.efficiencyIndex}%`,
-      status: getEfficiencyStatus(teamKpi.efficiencyIndex),
-      statusVariant: efficiencyStatusVariant(teamKpi.efficiencyIndex),
-    },
-    {
-      label: "First pass",
-      value: `${firstPassRate}%`,
-    },
-    {
-      label: "Completed",
-      value: String(teamKpi.completedCount),
-    },
-    {
-      label: "Backflows",
-      value: String(teamKpi.backflowCount),
-    },
-  ];
-
-  const attention: AttentionPerson[] = radar.slice(0, 8).map((item) => {
-    const person = findPerson(teamSnapshot, item.personId);
-    return {
-      personId: item.personId,
-      personName: item.personName,
-      personRole: person?.bamboo.jobTitle || undefined,
-      reason: item.signals[0]?.label || "Needs review",
-      indicators: item.signals.slice(0, 2).map((signal) => ({
-        label: signal.label.split(" — ")[0]?.slice(0, 32) || signal.label,
-        variant: severityToBadge(signal.severity),
-      })),
-    };
-  });
-
   const completedTrend = compareTrendPeriods(
     teamTrendPoints(kpiSnapshots, "completedOnDate"),
     "completed",
@@ -167,39 +165,49 @@ export function buildPerformanceViewModels(
     28,
   );
 
-  const sparkCompleted = sparklineValues(
-    teamSparklinePoints(kpiSnapshots, "completedOnDate"),
-  );
-
-  const trends: TrendCardData[] = [
+  const summary: MetricCardData[] = [
     {
-      label: "Completed",
-      value: completedTrend.sufficient
-        ? completedTrend.label
-        : completedTrend.sufficiencyMessage || "Not enough history yet",
-      sparkline:
-        completedTrend.sufficient && sparkCompleted.length >= 2
-          ? sparkCompleted
-          : undefined,
+      label: "Efficiency",
+      value: `${teamKpi.efficiencyIndex}%`,
+      status: getEfficiencyStatus(teamKpi.efficiencyIndex),
+      statusVariant: efficiencyStatusVariant(teamKpi.efficiencyIndex),
     },
     {
       label: "First pass",
-      value: firstPassTrend.sufficient
-        ? firstPassTrend.label
-        : firstPassTrend.sufficiencyMessage || "Not enough history yet",
+      value: `${firstPassRate}%`,
+      ...metricContextFromComparison(firstPassTrend),
     },
     {
-      label: "Avg cycle",
-      value: avgCycleTrend.sufficient
-        ? avgCycleTrend.label
-        : avgCycleTrend.sufficiencyMessage || "Not enough history yet",
+      label: "Completed",
+      value: String(teamKpi.completedCount),
+      ...metricContextFromComparison(completedTrend),
     },
     {
       label: "Backflows",
-      value: backflowTrend.sufficient
-        ? backflowTrend.label
-        : backflowTrend.sufficiencyMessage || "Not enough history yet",
+      value: String(teamKpi.backflowCount),
+      ...metricContextFromComparison(backflowTrend),
     },
+  ];
+
+  const attention: AttentionPerson[] = radar
+    .slice(0, ATTENTION_OVERVIEW_LIMIT)
+    .map((item) => mapAttentionPerson(item, teamSnapshot));
+  const attentionTotalCount = radar.length;
+
+  const sparkCompleted = sparklineValues(
+    teamSparklinePoints(kpiSnapshots, "completedOnDate"),
+  );
+  const sparkFirstPass = sparklineValues(teamFirstPassRateSparklinePoints(kpiSnapshots));
+  const sparkAvgCycle = sparklineValues(teamAvgCycleDaysSparklinePoints(kpiSnapshots));
+  const sparkBackflows = sparklineValues(
+    teamSparklinePoints(kpiSnapshots, "backflowsOnDate"),
+  );
+
+  const trends: TrendCardData[] = [
+    buildTrendCardData("Completed", completedTrend, sparkCompleted),
+    buildTrendCardData("First pass", firstPassTrend, sparkFirstPass),
+    buildTrendCardData("Avg cycle", avgCycleTrend, sparkAvgCycle),
+    buildTrendCardData("Backflows", backflowTrend, sparkBackflows),
   ];
 
   const workloadBalance = buildWorkloadBalance(teamSnapshot, personRouteKey, {
@@ -260,6 +268,7 @@ export function buildPerformanceViewModels(
     directReportIds,
     summary,
     attention,
+    attentionTotalCount,
     trends,
     workload,
     timeOff,
@@ -415,36 +424,15 @@ function buildPersonalTrendCards(
   const sparkCompleted = sparklineValues(
     personSparklinePoints(kpiSnapshots, personId, "completedOnDate"),
   );
+  const sparkBackflows = sparklineValues(
+    personSparklinePoints(kpiSnapshots, personId, "backflowsOnDate"),
+  );
 
   return [
-    {
-      label: "Completed",
-      value: completedTrend.sufficient
-        ? completedTrend.label
-        : completedTrend.sufficiencyMessage || "Not enough history yet",
-      sparkline:
-        completedTrend.sufficient && sparkCompleted.length >= 2
-          ? sparkCompleted
-          : undefined,
-    },
-    {
-      label: "First pass",
-      value: firstPassTrend.sufficient
-        ? firstPassTrend.label
-        : firstPassTrend.sufficiencyMessage || "Not enough history yet",
-    },
-    {
-      label: "Avg cycle",
-      value: avgCycleTrend.sufficient
-        ? avgCycleTrend.label
-        : avgCycleTrend.sufficiencyMessage || "Not enough history yet",
-    },
-    {
-      label: "Backflows",
-      value: backflowTrend.sufficient
-        ? backflowTrend.label
-        : backflowTrend.sufficiencyMessage || "Not enough history yet",
-    },
+    buildTrendCardData("Completed", completedTrend, sparkCompleted),
+    buildTrendCardData("First pass", firstPassTrend),
+    buildTrendCardData("Avg cycle", avgCycleTrend),
+    buildTrendCardData("Backflows", backflowTrend, sparkBackflows),
   ];
 }
 

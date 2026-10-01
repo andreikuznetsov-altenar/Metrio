@@ -104,6 +104,17 @@ export async function fetchPerformanceData(
   reviewTarget: PerformanceReviewTarget,
   audience: PerformanceAudience,
 ): Promise<PerformanceFetchResult> {
+  if (import.meta.env.VITE_VISUAL_FIXTURE === "1") {
+    const { buildVisualPerformanceFetchResult } = await import(
+      "../../fixtures/performanceFetchFixture"
+    );
+    return buildVisualPerformanceFetchResult(
+      dateRangeKey,
+      reviewTarget,
+      audience,
+    );
+  }
+
   const prefs = await loadPreferences();
   const partialWarnings: string[] = [];
 

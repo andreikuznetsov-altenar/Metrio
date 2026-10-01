@@ -36,8 +36,28 @@
   margin-bottom: 1px;
 }
 
-.performance-toolbar__export {
-  margin-bottom: 1px;
+.performance-toolbar__refresh .icon-button__icon {
+  transition: transform var(--motion-control) var(--transition-easing);
+}
+
+.performance-toolbar__refresh.is-refreshing .icon-button__icon {
+  animation: performance-spin 0.9s linear infinite;
+}
+
+.performance-toolbar__export .btn {
+  min-width: 7.5rem;
+}
+
+@keyframes performance-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .performance-toolbar__refresh.is-refreshing .icon-button__icon {
+    animation: none;
+  }
 }
 
 .performance-toolbar__status {

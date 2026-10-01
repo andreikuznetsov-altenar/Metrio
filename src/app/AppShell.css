@@ -1,4 +1,4 @@
-.app-shell {
+.foundation-shell {
   display: flex;
   flex-direction: column;
   height: 100%;
@@ -7,14 +7,14 @@
   background: var(--color-background);
 }
 
-.app-shell__header {
+.foundation-shell__header {
   flex-shrink: 0;
   height: var(--app-header-height);
   border-bottom: 1px solid var(--color-border);
   background: var(--color-surface);
 }
 
-.app-shell__toolbar {
+.foundation-shell__toolbar {
   flex-shrink: 0;
   min-height: var(--page-toolbar-height);
   border-bottom: 1px solid var(--color-border);
@@ -25,14 +25,14 @@
   gap: var(--space-4);
 }
 
-.app-shell__viewport {
+.foundation-shell__viewport {
   flex: 1;
   min-height: 0;
   min-width: 0;
   overflow: hidden;
 }
 
-.app-shell__footer {
+.foundation-shell__footer {
   flex-shrink: 0;
   height: var(--footer-height);
   border-top: 1px solid var(--color-border);

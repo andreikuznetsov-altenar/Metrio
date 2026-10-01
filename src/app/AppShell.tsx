@@ -10,11 +10,11 @@ export interface AppShellProps {
 
 export function AppShell({ header, toolbar, footer, children }: AppShellProps) {
   return (
-    <div className="app-shell" data-testid="app-shell">
-      <header className="app-shell__header">{header}</header>
-      {toolbar ? <div className="app-shell__toolbar">{toolbar}</div> : null}
-      <main className="app-shell__viewport">{children}</main>
-      {footer ? <footer className="app-shell__footer">{footer}</footer> : null}
+    <div className="foundation-shell" data-testid="foundation-shell">
+      <header className="foundation-shell__header">{header}</header>
+      {toolbar ? <div className="foundation-shell__toolbar">{toolbar}</div> : null}
+      <main className="foundation-shell__viewport">{children}</main>
+      {footer ? <footer className="foundation-shell__footer">{footer}</footer> : null}
     </div>
   );
 }
