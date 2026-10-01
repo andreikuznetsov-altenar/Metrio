@@ -1,47 +1,32 @@
-import { Component, type ErrorInfo, type ReactNode } from "react";
-import { AppShell } from "../components/AppShell/AppShell";
-import { ScrollArea } from "../components/ScrollArea/ScrollArea";
-import { MetrioAppHeader } from "../shell/MetrioAppHeader";
+import {
+  Component,
+  useEffect,
+  type ErrorInfo,
+  type ReactNode,
+} from "react";
+import { useConnectionGate } from "./ConnectionContext";
+import { clearConnection } from "./connectionStorage";
 import { AppLayout } from "./AppLayout";
+import { AuthenticatedWorkspaceShell } from "./AuthenticatedWorkspaceShell";
+import { useCurrentUser } from "./CurrentUserContext";
+import "./AuthenticatedApp.css";
 
-interface Props {
-  children?: ReactNode;
+interface ErrorBoundaryProps {
+  children: ReactNode;
+  onReconnect: () => void;
 }
 
-interface State {
+interface ErrorBoundaryState {
   hasError: boolean;
 }
 
-function PerformanceFallback() {
-  return (
-    <AppShell
-      header={
-        <MetrioAppHeader
-          activeRoute="performance"
-          feedbackEnabled={false}
-          onNavigate={() => undefined}
-          onOpenSettings={() => undefined}
-        />
-      }
-    >
-      <ScrollArea>
-        <div
-          data-testid="performance-fallback"
-          className="page-content"
-          style={{ padding: "var(--space-6)" }}
-        >
-          <h1 className="type-heading">Performance</h1>
-        </div>
-      </ScrollArea>
-    </AppShell>
-  );
-}
+class AuthenticatedRenderErrorBoundary extends Component<
+  ErrorBoundaryProps,
+  ErrorBoundaryState
+> {
+  state: ErrorBoundaryState = { hasError: false };
 
-/** Post-auth shell — never render an empty viewport. */
-export class AuthenticatedApp extends Component<Props, State> {
-  state: State = { hasError: false };
-
-  static getDerivedStateFromError(): State {
+  static getDerivedStateFromError(): ErrorBoundaryState {
     return { hasError: true };
   }
 
@@ -51,15 +36,70 @@ export class AuthenticatedApp extends Component<Props, State> {
     }
   }
 
+  private retryLayout = () => {
+    this.setState({ hasError: false });
+  };
+
   render() {
     if (this.state.hasError) {
-      return <PerformanceFallback />;
+      return (
+        <AuthenticatedWorkspaceShell
+          variant="error"
+          onRetry={this.retryLayout}
+          onReconnect={this.props.onReconnect}
+        />
+      );
     }
+    return this.props.children;
+  }
+}
 
+function AuthenticatedAppContent() {
+  const { workspaceStatus, initializeWorkspace } = useCurrentUser();
+  const { resetConnection } = useConnectionGate();
+
+  useEffect(() => {
+    if (workspaceStatus === "idle") {
+      void initializeWorkspace();
+    }
+  }, [workspaceStatus, initializeWorkspace]);
+
+  const onReconnect = () => {
+    void clearConnection().finally(() => {
+      resetConnection();
+    });
+  };
+
+  if (workspaceStatus === "error") {
     return (
-      <div data-testid="authenticated-app">
-        <AppLayout />
-      </div>
+      <AuthenticatedWorkspaceShell
+        variant="error"
+        onRetry={() => void initializeWorkspace()}
+        onReconnect={onReconnect}
+      />
     );
   }
+
+  if (workspaceStatus !== "ready") {
+    return <AuthenticatedWorkspaceShell variant="loading" />;
+  }
+
+  return (
+    <AuthenticatedRenderErrorBoundary onReconnect={onReconnect}>
+      <AppLayout />
+    </AuthenticatedRenderErrorBoundary>
+  );
+}
+
+/** Post-auth shell — never render an empty viewport. */
+export function AuthenticatedApp() {
+  return (
+    <div
+      data-testid="authenticated-app"
+      className="authenticated-app"
+      data-authenticated-viewport="true"
+    >
+      <AuthenticatedAppContent />
+    </div>
+  );
 }

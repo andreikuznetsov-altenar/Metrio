@@ -2,7 +2,6 @@ import {
   createContext,
   useCallback,
   useContext,
-  useEffect,
   useMemo,
   useState,
   type ReactNode,
@@ -11,6 +10,11 @@ import { buildCurrentUserFromTeamDetection } from "../domain/currentUser/fromTea
 import type { CurrentUser, DevFixtureId } from "../domain/types";
 import { getFixtureUser } from "../fixtures/currentUsers";
 import { loadPreferences } from "../platform/preferences";
+import {
+  validateWorkspacePreferences,
+  WORKSPACE_LOAD_ERROR_MESSAGE,
+  type WorkspaceStatus,
+} from "./workspaceSession";
 
 const DEV_FIXTURE_STORAGE_KEY = "metrio-dev-fixture";
 
@@ -25,12 +29,18 @@ function readInitialFixture(): DevFixtureId {
   return "employee";
 }
 
+function initialWorkspaceStatus(): WorkspaceStatus {
+  return import.meta.env.DEV ? "ready" : "idle";
+}
+
 interface CurrentUserContextValue {
   currentUser: CurrentUser;
   devFixtureId: DevFixtureId;
   setDevFixture: (fixtureId: DevFixtureId) => void;
   isDevFixtureMode: boolean;
-  refreshFromPreferences: () => Promise<void>;
+  workspaceStatus: WorkspaceStatus;
+  workspaceError: string | null;
+  initializeWorkspace: () => Promise<void>;
 }
 
 const CurrentUserContext = createContext<CurrentUserContextValue | null>(null);
@@ -42,21 +52,39 @@ export function CurrentUserProvider({ children }: { children: ReactNode }) {
   const [productionUser, setProductionUser] = useState<CurrentUser | null>(
     null,
   );
+  const [workspaceStatus, setWorkspaceStatus] =
+    useState<WorkspaceStatus>(initialWorkspaceStatus);
+  const [workspaceError, setWorkspaceError] = useState<string | null>(null);
 
-  const refreshFromPreferences = useCallback(async () => {
+  const initializeWorkspace = useCallback(async () => {
     if (import.meta.env.DEV) {
+      setWorkspaceStatus("ready");
+      setWorkspaceError(null);
       return;
     }
-    const prefs = await loadPreferences();
-    const fromTeam = prefs.teamDetection
-      ? buildCurrentUserFromTeamDetection(prefs.teamDetection)
-      : null;
-    setProductionUser(fromTeam);
-  }, []);
 
-  useEffect(() => {
-    void refreshFromPreferences();
-  }, [refreshFromPreferences]);
+    setWorkspaceStatus("initializing");
+    setWorkspaceError(null);
+
+    try {
+      const prefs = await loadPreferences();
+      const validation = validateWorkspacePreferences(prefs);
+      if (!validation.ok) {
+        setWorkspaceStatus("error");
+        setWorkspaceError(validation.message);
+        return;
+      }
+
+      const fromTeam = prefs.teamDetection
+        ? buildCurrentUserFromTeamDetection(prefs.teamDetection)
+        : null;
+      setProductionUser(fromTeam);
+      setWorkspaceStatus("ready");
+    } catch {
+      setWorkspaceStatus("error");
+      setWorkspaceError(WORKSPACE_LOAD_ERROR_MESSAGE);
+    }
+  }, []);
 
   const setDevFixture = useCallback((fixtureId: DevFixtureId) => {
     if (!import.meta.env.DEV) {
@@ -79,9 +107,18 @@ export function CurrentUserProvider({ children }: { children: ReactNode }) {
       devFixtureId,
       setDevFixture,
       isDevFixtureMode: import.meta.env.DEV,
-      refreshFromPreferences,
+      workspaceStatus,
+      workspaceError,
+      initializeWorkspace,
     }),
-    [currentUser, devFixtureId, setDevFixture, refreshFromPreferences],
+    [
+      currentUser,
+      devFixtureId,
+      setDevFixture,
+      workspaceStatus,
+      workspaceError,
+      initializeWorkspace,
+    ],
   );
 
   return (

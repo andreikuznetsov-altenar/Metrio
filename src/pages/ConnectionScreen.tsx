@@ -10,12 +10,10 @@ import { isAltenarWorkEmail } from "../domain/setup/validation";
 import { openExternalUrl } from "../platform/openExternal";
 import { Button } from "../components/Button/Button";
 import { Input } from "../components/Input/Input";
-import { useCurrentUser } from "../app/CurrentUserContext";
 import "./ConnectionScreen.css";
 
 export function ConnectionScreen() {
   const { completeConnection } = useConnectionGate();
-  const { refreshFromPreferences } = useCurrentUser();
 
   const [workEmail, setWorkEmail] = useState("");
   const [jiraToken, setJiraToken] = useState("");
@@ -83,7 +81,6 @@ export function ConnectionScreen() {
       await performConnection({ workEmail, jiraToken, bambooApiKey });
       setJiraToken("");
       setBambooApiKey("");
-      await refreshFromPreferences();
       completeConnection();
     } catch (error) {
       setStatus("error");

@@ -1,36 +1,99 @@
-import { describe, expect, it, vi } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
+import { render, screen, within, cleanup } from "@testing-library/react";
 import { AuthenticatedApp } from "./app/AuthenticatedApp";
-import { CurrentUserProvider } from "./app/CurrentUserContext";
+import * as CurrentUserContext from "./app/CurrentUserContext";
+import { getFixtureUser } from "./fixtures/currentUsers";
 import { ThemeProvider } from "./theme/ThemeProvider";
-
 import { ConnectionProvider } from "./app/ConnectionContext";
 
 vi.mock("./app/connectionStorage", () => ({
   isAppConnected: () => true,
+  clearConnection: vi.fn(async () => undefined),
 }));
 
-vi.mock("./platform/preferences", () => ({
-  loadPreferences: vi.fn(async () => ({
-    setup: { completed: true },
-    teamDetection: null,
-  })),
-}));
+function renderAuthenticatedApp() {
+  return render(
+    <ThemeProvider>
+      <ConnectionProvider>
+        <AuthenticatedApp />
+      </ConnectionProvider>
+    </ThemeProvider>,
+  );
+}
+
+function mockCurrentUser(
+  overrides: Partial<ReturnType<typeof CurrentUserContext.useCurrentUser>>,
+) {
+  const initializeWorkspace = vi.fn(async () => undefined);
+  vi.spyOn(CurrentUserContext, "useCurrentUser").mockReturnValue({
+    currentUser: getFixtureUser("employee"),
+    devFixtureId: "employee",
+    setDevFixture: vi.fn(),
+    isDevFixtureMode: true,
+    workspaceStatus: "ready",
+    workspaceError: null,
+    initializeWorkspace,
+    ...overrides,
+  });
+  return { initializeWorkspace };
+}
 
 describe("authenticated application", () => {
-  it("renders a non-empty shell for signed-in users", async () => {
-    render(
-      <ThemeProvider>
-        <CurrentUserProvider>
-          <ConnectionProvider>
-            <AuthenticatedApp />
-          </ConnectionProvider>
-        </CurrentUserProvider>
-      </ThemeProvider>,
-    );
+  beforeEach(() => {
+    vi.restoreAllMocks();
+  });
 
-    expect(await screen.findByTestId("authenticated-app")).toBeInTheDocument();
+  afterEach(() => {
+    cleanup();
+  });
+
+  it("renders Performance UI after workspace is ready", async () => {
+    mockCurrentUser({ workspaceStatus: "ready" });
+
+    renderAuthenticatedApp();
+
+    const viewport = await screen.findByTestId("authenticated-app");
+    expect(viewport).toHaveClass("authenticated-app");
+    expect(viewport).toHaveAttribute("data-authenticated-viewport", "true");
     expect(screen.getByTestId("app-shell")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /performance/i })).toBeInTheDocument();
+    expect(screen.queryByText(/^Metrio$/)).not.toBeInTheDocument();
+  });
+
+  it("shows initialization shell instead of an empty viewport", () => {
+    const { initializeWorkspace } = mockCurrentUser({
+      workspaceStatus: "initializing",
+    });
+
+    renderAuthenticatedApp();
+
+    const viewport = screen.getByTestId("authenticated-app");
+    expect(within(viewport).getByTestId("workspace-initializing")).toBeInTheDocument();
+    expect(within(viewport).getByText(/loading your workspace/i)).toBeInTheDocument();
+    expect(within(viewport).getByTestId("app-shell")).toBeInTheDocument();
+    expect(initializeWorkspace).not.toHaveBeenCalled();
+  });
+
+  it("shows recoverable error UI when workspace initialization fails", () => {
+    mockCurrentUser({ workspaceStatus: "error", workspaceError: "Couldn't load your workspace." });
+
+    renderAuthenticatedApp();
+
+    const viewport = screen.getByTestId("authenticated-app");
+    expect(within(viewport).getByTestId("workspace-init-error")).toBeInTheDocument();
+    expect(within(viewport).getByText(/couldn't load your workspace/i)).toBeInTheDocument();
+    expect(within(viewport).getByRole("button", { name: /retry/i })).toBeInTheDocument();
+    expect(within(viewport).getByRole("button", { name: /reconnect/i })).toBeInTheDocument();
+    expect(within(viewport).getByTestId("app-shell")).toBeInTheDocument();
+  });
+
+  it("starts workspace initialization from idle", () => {
+    const { initializeWorkspace } = mockCurrentUser({ workspaceStatus: "idle" });
+
+    renderAuthenticatedApp();
+
+    expect(initializeWorkspace).toHaveBeenCalled();
+    const viewport = screen.getByTestId("authenticated-app");
+    expect(within(viewport).getByTestId("workspace-initializing")).toBeInTheDocument();
   });
 });
