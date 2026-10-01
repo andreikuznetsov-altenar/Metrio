@@ -1,0 +1,57 @@
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.field__label {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+}
+
+.field--error .field__label {
+  color: var(--color-danger);
+}
+
+.input {
+  width: 100%;
+  height: 32px;
+  padding: 0 var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-control);
+  background: var(--color-surface);
+  color: var(--color-text-primary);
+  transition:
+    border-color var(--motion-hover) var(--transition-easing),
+    box-shadow var(--motion-control) var(--transition-easing),
+    background var(--motion-hover) var(--transition-easing);
+}
+
+.input::placeholder {
+  color: var(--color-text-tertiary);
+}
+
+.input:hover:not(:disabled):not(.input--error) {
+  border-color: color-mix(in srgb, var(--color-border) 70%, var(--color-text-tertiary));
+}
+
+.input:focus-visible {
+  border-color: var(--color-accent);
+  box-shadow: var(--focus-ring);
+}
+
+.input--error,
+.input--error:hover:not(:disabled) {
+  border-color: var(--control-error-border);
+}
+
+.input--error:focus-visible {
+  box-shadow: var(--control-error-ring);
+}
+
+.input:disabled {
+  opacity: var(--control-disabled-opacity);
+  cursor: not-allowed;
+  background: var(--color-surface-secondary);
+}

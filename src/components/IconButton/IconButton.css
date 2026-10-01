@@ -1,0 +1,41 @@
+.icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-control);
+  background: var(--color-surface);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition:
+    background var(--motion-hover) var(--transition-easing),
+    border-color var(--motion-hover) var(--transition-easing),
+    color var(--motion-hover) var(--transition-easing),
+    box-shadow var(--motion-control) var(--transition-easing);
+}
+
+.icon-btn:hover:not(:disabled) {
+  background: var(--color-surface-secondary);
+  color: var(--color-text-primary);
+}
+
+.icon-btn:active:not(:disabled) {
+  background: color-mix(in srgb, var(--color-surface-secondary) 88%, var(--color-border));
+}
+
+.icon-btn:focus-visible {
+  box-shadow: var(--focus-ring);
+}
+
+.icon-btn:disabled {
+  opacity: var(--control-disabled-opacity);
+  cursor: not-allowed;
+}
+
+.icon-btn svg {
+  width: 16px;
+  height: 16px;
+}

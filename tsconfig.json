@@ -21,5 +21,14 @@
     "noFallthroughCasesInSwitch": true
   },
   "include": ["src"],
+  "exclude": [
+    "src/**/*.test.ts",
+    "src/**/*.test.tsx",
+    "src/services/export/pdfExport.tsx",
+    "src/services/export/PdfReportDocument.tsx",
+    "src/services/export/MetrioPdfLogo.tsx",
+    "src/services/export/pdfStyles.ts",
+    "src/platform/diagnosticsExport.ts"
+  ],
   "references": [{ "path": "./tsconfig.node.json" }]
 }

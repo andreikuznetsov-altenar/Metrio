@@ -1,0 +1,38 @@
+.app-shell {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+  background: var(--color-background);
+}
+
+.app-shell__header {
+  flex-shrink: 0;
+  height: var(--app-header-height);
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-surface);
+}
+
+.app-shell__page-toolbar {
+  flex-shrink: 0;
+  min-height: var(--page-toolbar-height);
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-surface);
+}
+
+.app-shell__viewport {
+  flex: 1;
+  min-height: 0;
+  min-width: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.app-shell__footer {
+  flex-shrink: 0;
+  min-height: var(--bottom-action-height);
+  border-top: 1px solid var(--color-border);
+  background: var(--color-surface);
+}

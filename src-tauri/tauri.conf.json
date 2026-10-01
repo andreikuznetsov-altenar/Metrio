@@ -12,12 +12,11 @@
   "app": {
     "windows": [
       {
-        "title": "Metrio",
+        "label": "main",
+        "title": "",
         "width": 1180,
         "height": 760,
-        "resizable": false,
-        "decorations": true,
-        "transparent": false
+        "resizable": false
       }
     ],
     "security": {

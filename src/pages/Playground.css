@@ -1,0 +1,136 @@
+.playground-page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  height: 100%;
+  padding: 0 var(--space-4);
+}
+
+.playground-page-header__title {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.playground-page-header__meta {
+  font-size: 12px;
+  color: var(--color-text-tertiary);
+}
+
+.playground {
+  padding: var(--space-6);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+  max-width: 100%;
+}
+
+.playground__intro {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.playground__intro h2 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.playground__intro p {
+  margin: 0;
+  color: var(--color-text-secondary);
+  max-width: 62ch;
+}
+
+.playground__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-4);
+}
+
+.playground__section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.playground__section-title {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.playground__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.playground__stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.playground__tokens {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--space-2);
+}
+
+.playground__swatch {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-control);
+  overflow: hidden;
+  background: var(--color-surface);
+}
+
+.playground__swatch-color {
+  height: 36px;
+}
+
+.playground__swatch-label {
+  padding: var(--space-2);
+  font-size: 11px;
+  color: var(--color-text-secondary);
+}
+
+.playground__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  height: 100%;
+  padding: 0 var(--space-4);
+}
+
+.playground__footer-text {
+  font-size: 12px;
+  color: var(--color-text-secondary);
+}
+
+.playground__spacer-block {
+  height: 480px;
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius-card);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-text-tertiary);
+  font-size: 12px;
+  background: var(--color-surface-secondary);
+}
+
+@media (max-width: 900px) {
+  .playground__grid {
+    grid-template-columns: 1fr;
+  }
+}

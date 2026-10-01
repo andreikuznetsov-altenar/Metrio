@@ -1,0 +1,66 @@
+import { personRouteKey } from '../people/personDisplay';
+import type { ReportParams } from '../jira/types';
+import type { TeamSnapshot } from '../people/types';
+import {
+  classifyIssueAttention,
+  formatStageAgeLabel,
+  getActiveIssues,
+  vacationDaysLabel,
+} from './taskSignals';
+import type { DeliveryRiskItem, RadarSeverity } from './types';
+
+function maxSeverity(a: RadarSeverity, b: RadarSeverity): RadarSeverity {
+  const order = { critical: 0, warning: 1, info: 2 };
+  return order[a] <= order[b] ? a : b;
+}
+
+export function buildDeliveryRiskItems(
+  snapshot: TeamSnapshot,
+  params: ReportParams,
+  now = new Date(),
+): DeliveryRiskItem[] {
+  const items: DeliveryRiskItem[] = [];
+
+  for (const person of snapshot.persons) {
+    const routeKey = personRouteKey(person);
+    const vacationLabel = vacationDaysLabel(person);
+
+    for (const issue of getActiveIssues(person)) {
+      const attention = classifyIssueAttention(issue, params, now);
+      if (!attention) continue;
+
+      let severity = attention.severity;
+      let reason = attention.reason;
+
+      if (
+        vacationLabel &&
+        (person.availability.state === 'vacation_soon' ||
+          person.availability.state === 'vacation_tomorrow')
+      ) {
+        severity = maxSeverity(severity, 'critical');
+        reason = `${reason}; owner vacation soon`;
+      }
+
+      items.push({
+        issueKey: issue.issueKey,
+        summary: issue.issueSummary,
+        personId: person.id,
+        personName: person.bamboo.displayName,
+        personRouteKey: routeKey,
+        status: issue.currentStatus || '—',
+        health: attention.health.status.replace(/_/g, ' '),
+        stageLabel: formatStageAgeLabel(issue, now),
+        reason,
+        severity,
+        issue,
+      });
+    }
+  }
+
+  return items.sort((a, b) => {
+    const order = { critical: 0, warning: 1, info: 2 };
+    const diff = order[a.severity] - order[b.severity];
+    if (diff !== 0) return diff;
+    return a.issueKey.localeCompare(b.issueKey);
+  });
+}

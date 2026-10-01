@@ -1,20 +1,31 @@
-import { ThemeProvider } from "./app/ThemeProvider";
+import { ConnectionProvider, useConnectionGate } from "./app/ConnectionContext";
+import { AuthenticatedApp } from "./app/AuthenticatedApp";
 import { FoundationDevApp } from "./app/FoundationDevApp";
-import { ProductShellPlaceholder } from "./app/ProductShellPlaceholder";
+import { ConnectionScreen } from "./pages/ConnectionScreen";
 
-function AppContent() {
-  if (import.meta.env.DEV) {
+function isDevFoundationGallery(): boolean {
+  return import.meta.env.DEV && window.location.hash === "#foundation";
+}
+
+function AppRoot() {
+  const { isConnected } = useConnectionGate();
+
+  if (isDevFoundationGallery()) {
     return <FoundationDevApp />;
   }
 
-  return <ProductShellPlaceholder />;
+  if (!isConnected) {
+    return <ConnectionScreen />;
+  }
+
+  return <AuthenticatedApp />;
 }
 
 function App() {
   return (
-    <ThemeProvider>
-      <AppContent />
-    </ThemeProvider>
+    <ConnectionProvider>
+      <AppRoot />
+    </ConnectionProvider>
   );
 }
 

@@ -1,33 +1,21 @@
 /**
- * Semantic design tokens — change accent globally via --color-accent.
+ * Semantic design tokens — Phase 1+
+ * Accent is configurable via --color-accent (single primary: blue).
  */
+
 :root {
-  --color-accent: #1677ff;
-  --color-accent-hover: #0958d9;
+  /* Accent (configurable primary) */
+  --color-accent: #2563eb;
+  --color-accent-hover: #1d4ed8;
   --color-accent-foreground: #ffffff;
 
-  --color-background: #f5f6f8;
-  --color-surface: #ffffff;
-  --color-surface-secondary: #f0f1f4;
-  --color-surface-hover: #ebedf0;
-  --color-border: #e2e5ea;
-  --color-border-strong: #c8cdd6;
+  /* Radius */
+  --radius-small: 6px;
+  --radius-control: 8px;
+  --radius-card: 12px;
+  --radius-round: 999px;
 
-  --color-text-primary: #111827;
-  --color-text-secondary: #4b5563;
-  --color-text-tertiary: #6b7280;
-
-  --color-success: #15803d;
-  --color-warning: #b45309;
-  --color-danger: #b91c1c;
-
-  --font-display: 600 22px/1.25 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  --font-heading: 600 16px/1.35 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  --font-body: 400 14px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  --font-body-small: 400 13px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  --font-label: 500 12px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  --font-caption: 400 11px/1.35 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-
+  /* Spacing (4px scale) */
   --space-1: 4px;
   --space-2: 8px;
   --space-3: 12px;
@@ -36,52 +24,68 @@
   --space-6: 24px;
   --space-8: 32px;
   --space-10: 40px;
-  --space-12: 48px;
 
-  --radius-sm: 6px;
-  --radius-control: 8px;
-  --radius-card: 12px;
-  --radius-round: 999px;
+  /* Motion (Phase 10 — no transition: all; no scale/bounce) */
+  --motion-hover: 120ms;
+  --motion-control: 140ms;
+  --motion-popover: 160ms;
+  --motion-drawer: 200ms;
+  --transition-easing: cubic-bezier(0.4, 0, 0.2, 1);
+  /* Legacy aliases */
+  --transition-duration: var(--motion-control);
+  --drawer-transition-duration: var(--motion-drawer);
 
-  --motion-fast: 120ms;
-  --motion-normal: 160ms;
-  --motion-panel: 200ms;
-  --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  /* Layout */
+  --app-header-height: 56px;
+  --page-toolbar-height: 48px;
+  --page-header-height: 48px;
+  --bottom-action-height: 56px;
 
-  --app-header-height: 52px;
-  --page-toolbar-height: 44px;
-  --footer-height: 48px;
-
+  /* Focus */
   --focus-ring: 0 0 0 2px var(--color-background), 0 0 0 4px var(--color-accent);
+
+  /* Control states */
+  --control-disabled-opacity: 0.45;
+  --control-error-border: var(--color-danger);
+  --control-error-ring: 0 0 0 2px var(--color-background),
+    0 0 0 4px color-mix(in srgb, var(--color-danger) 55%, var(--color-accent));
+}
+
+[data-theme="light"] {
+  color-scheme: light;
+
+  --color-background: #f8f9fb;
+  --color-surface: #ffffff;
+  --color-surface-secondary: #f1f3f6;
+  --color-border: #e2e5eb;
+  --color-text-primary: #111318;
+  --color-text-secondary: #5c6370;
+  --color-text-tertiary: #8b919c;
+  --color-success: #15803d;
+  --color-warning: #b45309;
+  --color-danger: #dc2626;
 }
 
 [data-theme="dark"] {
-  --color-accent: #1677ff;
-  --color-accent-hover: #4096ff;
-  --color-accent-foreground: #ffffff;
+  color-scheme: dark;
 
   --color-background: #0f1115;
   --color-surface: #171a21;
   --color-surface-secondary: #1e222b;
-  --color-surface-hover: #262b36;
-  --color-border: #2a303c;
-  --color-border-strong: #3d4554;
-
+  --color-border: #2a2f3a;
   --color-text-primary: #f3f4f6;
-  --color-text-secondary: #c4c9d2;
-  --color-text-tertiary: #8b93a3;
-
-  --color-success: #4ade80;
-  --color-warning: #fbbf24;
-  --color-danger: #f87171;
-
-  --focus-ring: 0 0 0 2px var(--color-background), 0 0 0 4px var(--color-accent);
+  --color-text-secondary: #a1a7b3;
+  --color-text-tertiary: #6b7280;
+  --color-success: #22c55e;
+  --color-warning: #f59e0b;
+  --color-danger: #ef4444;
 }
 
 @media (prefers-reduced-motion: reduce) {
   :root {
-    --motion-fast: 0ms;
-    --motion-normal: 0ms;
-    --motion-panel: 0ms;
+    --motion-hover: 0ms;
+    --motion-control: 0ms;
+    --motion-popover: 0ms;
+    --motion-drawer: 0ms;
   }
 }

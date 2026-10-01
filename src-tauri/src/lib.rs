@@ -1,7 +1,545 @@
+mod api;
+mod logs;
+mod persistence;
+
+use api::credentials::{
+    cache_remove, cache_set, is_local_account, verify_secret_storage, SecureStoreVerify,
+    BAMBOO_TOKEN_KEY, JIRA_TOKEN_KEY,
+};
+use api::local_credentials::{delete_secret, init_store_path, set_secret};
+use api::bamboo::{
+    bamboo_get_directory, bamboo_get_employee, bamboo_get_whos_out, bamboo_list_employees,
+    bamboo_list_employees_all, bamboo_test_connection,
+};
+use std::time::Duration;
+use api::jira::{
+    jira_fetch_changelog, jira_fetch_changelogs_batch, jira_get_issue, jira_search_issues,
+    jira_search_users, jira_test_connection,
+};
+use api::kpi_snapshot_store::{kpi_snapshot_load, kpi_snapshot_save};
+use api::pdf_export::write_user_selected_pdf;
+use keyring::Entry;
+use logs::{log_write, logs_get_path, logs_open_folder};
+use persistence::{atomic_write_json, load_json_file, PREFERENCES_SCHEMA_VERSION};
+use serde::{Deserialize, Serialize};
+use std::fs;
+use std::path::PathBuf;
+use std::sync::Mutex;
+use std::time::{Instant, SystemTime, UNIX_EPOCH};
+use tauri::{
+    menu::{Menu, MenuItem},
+    tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent},
+    AppHandle, Emitter, Manager, RunEvent, State, WindowEvent,
+};
+
+struct TrayState {
+    lines: Vec<String>,
+    open_label: String,
+}
+
+struct AppState {
+    tray: Mutex<TrayState>,
+    quitting: Mutex<bool>,
+    storage_warnings: Mutex<Vec<String>>,
+}
+
+#[derive(Debug, Serialize)]
+struct BuildInfoResponse {
+    version: String,
+    commit: String,
+    channel: String,
+    product_name: String,
+}
+
+fn preferences_path(app: &AppHandle) -> Result<PathBuf, String> {
+    let dir = app.path().app_data_dir().map_err(|e| e.to_string())?;
+    fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
+    Ok(dir.join("preferences.json"))
+}
+
+fn local_credentials_path(app: &AppHandle) -> Result<PathBuf, String> {
+    let dir = app.path().app_data_dir().map_err(|e| e.to_string())?;
+    fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
+    Ok(dir.join("credentials.local.json"))
+}
+
+#[derive(Debug, Serialize)]
+struct CredentialImportLegacyResult {
+    jira_imported: bool,
+    bamboo_imported: bool,
+    google_imported: bool,
+}
+
+#[tauri::command]
+fn secure_store_set(service: String, account: String, secret: String) -> Result<(), String> {
+    if service != api::credentials::SERVICE {
+        return Err("Unsupported secure storage service".to_string());
+    }
+    if is_local_account(&account) {
+        return set_secret(&account, &secret);
+    }
+    Entry::new(&service, &account)
+        .map_err(|e| e.to_string())?
+        .set_password(&secret)
+        .map_err(|e| e.to_string())?;
+    cache_set(&account, &secret);
+    Ok(())
+}
+
+#[tauri::command]
+fn secure_store_delete(service: String, account: String) -> Result<(), String> {
+    if service != api::credentials::SERVICE {
+        return Err("Unsupported secure storage service".to_string());
+    }
+    if is_local_account(&account) {
+        return delete_secret(&account);
+    }
+    match Entry::new(&service, &account)
+        .map_err(|e| e.to_string())?
+        .delete_credential()
+    {
+        Ok(_) | Err(keyring::Error::NoEntry) => {
+            cache_remove(&account);
+            Ok(())
+        }
+        Err(e) => Err(e.to_string()),
+    }
+}
+
+#[tauri::command]
+fn secure_store_has(service: String, account: String) -> Result<bool, String> {
+    if service != api::credentials::SERVICE {
+        return Ok(false);
+    }
+    if is_local_account(&account) {
+        return Ok(api::local_credentials::exists(&account));
+    }
+    Ok(api::credentials::cache_contains(&account))
+}
+
+#[tauri::command]
+fn credential_import_legacy() -> Result<CredentialImportLegacyResult, String> {
+    let jira_imported = api::local_credentials::import_legacy_keychain_secret(JIRA_TOKEN_KEY)?;
+    let bamboo_imported = api::local_credentials::import_legacy_keychain_secret(BAMBOO_TOKEN_KEY)?;
+    let google_imported = api::local_credentials::import_legacy_google_keychain()?;
+    Ok(CredentialImportLegacyResult {
+        jira_imported,
+        bamboo_imported,
+        google_imported,
+    })
+}
+
+#[tauri::command]
+fn secure_store_verify(service: String, account: String) -> Result<SecureStoreVerify, String> {
+    if service != api::credentials::SERVICE {
+        return Err("Unsupported secure storage service".to_string());
+    }
+    Ok(verify_secret_storage(&account))
+}
+
+#[tauri::command]
+fn preferences_load(app: AppHandle, state: State<AppState>) -> Result<serde_json::Value, String> {
+    let path = preferences_path(&app)?;
+    let loaded = load_json_file(
+        &path,
+        serde_json::json!({ "schemaVersion": PREFERENCES_SCHEMA_VERSION }),
+    );
+    if let Some(warning) = loaded.warning {
+        if let Ok(mut warnings) = state.storage_warnings.lock() {
+            warnings.push(warning);
+        }
+    }
+    Ok(loaded.value)
+}
+
+#[tauri::command]
+fn preferences_save(app: AppHandle, preferences: serde_json::Value) -> Result<(), String> {
+    let path = preferences_path(&app)?;
+    let mut payload = preferences;
+    if payload.get("schemaVersion").is_none() {
+        if let Some(obj) = payload.as_object_mut() {
+            obj.insert(
+                "schemaVersion".to_string(),
+                serde_json::json!(PREFERENCES_SCHEMA_VERSION),
+            );
+        }
+    }
+    atomic_write_json(&path, &payload)
+}
+
+#[tauri::command]
+fn storage_get_warnings(state: State<AppState>) -> Result<Vec<String>, String> {
+    Ok(state
+        .storage_warnings
+        .lock()
+        .map_err(|_| "storage warning lock poisoned".to_string())?
+        .clone())
+}
+
+#[tauri::command]
+fn app_get_build_info() -> BuildInfoResponse {
+    BuildInfoResponse {
+        version: env!("CARGO_PKG_VERSION").to_string(),
+        commit: option_env!("GIT_COMMIT")
+            .unwrap_or("dev")
+            .to_string(),
+        channel: option_env!("BUILD_CHANNEL")
+            .unwrap_or("development")
+            .to_string(),
+        product_name: "Metrio".to_string(),
+    }
+}
+
+#[tauri::command]
+fn diagnostics_export_file(app: AppHandle, content: String) -> Result<String, String> {
+    let dir = app
+        .path()
+        .app_data_dir()
+        .map_err(|e| e.to_string())?
+        .join("exports");
+    fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
+    let timestamp = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map(|d| d.as_secs())
+        .unwrap_or(0);
+    let path = dir.join(format!("diagnostics-{}.json", timestamp));
+    fs::write(&path, content).map_err(|e| e.to_string())?;
+    Ok(path.to_string_lossy().to_string())
+}
+
+#[derive(Debug, Deserialize)]
+struct TraySnapshot {
+    title: String,
+    lines: Vec<String>,
+    open_label: Option<String>,
+}
+
+#[tauri::command]
+fn update_tray_snapshot(state: State<AppState>, snapshot: TraySnapshot) -> Result<(), String> {
+    {
+        let mut tray = state.tray.lock().map_err(|_| "tray lock poisoned".to_string())?;
+        tray.lines = vec![snapshot.title.clone()];
+        tray.lines.extend(snapshot.lines);
+        tray.open_label = snapshot
+            .open_label
+            .filter(|s| !s.is_empty())
+            .unwrap_or_else(|| "Open Metrio".to_string());
+    }
+    Ok(())
+}
+
+/// Reads tray text for menu rebuild. Must not call Tauri/AppKit while holding `AppState::tray`.
+fn read_tray_menu_snapshot(state: &AppState) -> Result<(Vec<String>, String), String> {
+    let tray_state = state.tray.lock().map_err(|_| "tray lock poisoned".to_string())?;
+    Ok((tray_state.lines.clone(), tray_state.open_label.clone()))
+}
+
+fn apply_tray_menu(app: &AppHandle) -> Result<(), String> {
+    let menu = build_tray_menu(app).map_err(|e| e.to_string())?;
+    if let Some(tray) = app.tray_by_id("main") {
+        tray.set_menu(Some(menu)).map_err(|e| e.to_string())?;
+    }
+    Ok(())
+}
+
+fn build_tray_menu(app: &AppHandle) -> Result<Menu<tauri::Wry>, Box<dyn std::error::Error>> {
+    let open_i = MenuItem::with_id(app, "open", "Open Metrio", true, None::<&str>)?;
+    let quit_i = MenuItem::with_id(app, "quit", "Quit", true, None::<&str>)?;
+    Ok(Menu::with_items(
+        app,
+        &[
+            &open_i as &dyn tauri::menu::IsMenuItem<tauri::Wry>,
+            &quit_i as &dyn tauri::menu::IsMenuItem<tauri::Wry>,
+        ],
+    )?)
+}
+
+#[cfg(target_os = "macos")]
+fn tray_icon(app: &AppHandle) -> tauri::image::Image<'static> {
+    let scale = app
+        .primary_monitor()
+        .ok()
+        .flatten()
+        .map(|monitor| monitor.scale_factor())
+        .unwrap_or(1.0);
+    if scale >= 2.0 {
+        tauri::include_image!("icons/tray-icon@2x.png")
+    } else {
+        tauri::include_image!("icons/tray-icon.png")
+    }
+}
+
+#[cfg(target_os = "windows")]
+fn windows_tray_icon_for_scale(scale: f64) -> tauri::image::Image<'static> {
+    if scale >= 2.0 {
+        tauri::include_image!("icons/tray-win-32.png")
+    } else if scale >= 1.5 {
+        tauri::include_image!("icons/tray-win-24.png")
+    } else if scale >= 1.25 {
+        tauri::include_image!("icons/tray-win-20.png")
+    } else {
+        tauri::include_image!("icons/tray-win-16.png")
+    }
+}
+
+#[cfg(target_os = "windows")]
+fn tray_icon(app: &AppHandle) -> tauri::image::Image<'static> {
+    let scale = app
+        .primary_monitor()
+        .ok()
+        .flatten()
+        .map(|monitor| monitor.scale_factor())
+        .unwrap_or(1.0);
+    windows_tray_icon_for_scale(scale)
+}
+
+#[cfg(not(any(target_os = "macos", target_os = "windows")))]
+fn tray_icon(_app: &AppHandle) -> tauri::image::Image<'static> {
+    tauri::include_image!("icons/tray-icon.png")
+}
+
+fn install_tray(app: &AppHandle) -> Result<(), Box<dyn std::error::Error>> {
+    let menu = build_tray_menu(app)?;
+
+    let mut tray_builder = TrayIconBuilder::with_id("main")
+        .icon(tray_icon(app))
+        .menu(&menu)
+        .tooltip("Metrio");
+
+    #[cfg(target_os = "macos")]
+    {
+        tray_builder = tray_builder.icon_as_template(true);
+    }
+
+    #[cfg(target_os = "windows")]
+    {
+        tray_builder = tray_builder.icon_as_template(false);
+    }
+
+    let _tray = tray_builder
+        .on_menu_event(|app, event| {
+            match event.id.as_ref() {
+                "open" => {
+                    show_main_window(app);
+                    let _ = app.emit("tray-open", ());
+                }
+                "quit" => {
+                    if let Some(state) = app.try_state::<AppState>() {
+                        if let Ok(mut q) = state.quitting.lock() {
+                            *q = true;
+                        }
+                    }
+                    app.exit(0);
+                }
+                _ => {}
+            }
+        })
+        .on_tray_icon_event(|tray, event| {
+            if let TrayIconEvent::Click {
+                button: MouseButton::Left,
+                button_state: MouseButtonState::Up,
+                ..
+            } = event
+            {
+                show_main_window(tray.app_handle());
+            }
+        })
+        .build(app)?;
+
+    Ok(())
+}
+
+/// Native background scheduling keeps tray-mode refresh reliable when the webview is hidden.
+/// React timers are not used for long-lived sync; the webview only handles emitted events.
+/// If the machine slept and wall-clock gap exceeds 2x the interval, emit immediately once.
+fn spawn_background_emitter(app: AppHandle, event_name: &'static str, every_secs: u64) {
+    tauri::async_runtime::spawn(async move {
+        let mut interval = tokio::time::interval(Duration::from_secs(every_secs));
+        let mut last_tick = Instant::now();
+        interval.tick().await;
+        loop {
+            interval.tick().await;
+            let elapsed = last_tick.elapsed();
+            last_tick = Instant::now();
+            if elapsed > Duration::from_secs(every_secs * 2) {
+                let _ = app.emit("system-resumed", ());
+            }
+            let _ = app.emit(event_name, ());
+        }
+    });
+}
+
+fn hide_main_window(app: &AppHandle) {
+    if let Some(window) = app.get_webview_window("main") {
+        let _ = window.hide();
+    }
+    #[cfg(target_os = "macos")]
+    {
+        let _ = app.set_activation_policy(tauri::ActivationPolicy::Accessory);
+    }
+}
+
+fn show_main_window(app: &AppHandle) {
+    #[cfg(target_os = "macos")]
+    {
+        let _ = app.set_activation_policy(tauri::ActivationPolicy::Regular);
+    }
+    if let Some(window) = app.get_webview_window("main") {
+        let _ = window.unminimize();
+        let _ = window.show();
+        let _ = window.set_focus();
+    }
+}
+
+#[tauri::command]
+async fn refresh_tray_menu(app: AppHandle) -> Result<(), String> {
+    apply_tray_menu(&app)
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
-        .run(tauri::generate_context!())
-        .expect("error while running tauri application");
+        .plugin(tauri_plugin_autostart::init(
+            tauri_plugin_autostart::MacosLauncher::LaunchAgent,
+            Some(vec!["--minimized"]),
+        ))
+        .plugin(tauri_plugin_notification::init())
+        .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_fs::init())
+        .manage(AppState {
+            tray: Mutex::new(TrayState {
+                lines: vec!["Metrio".to_string()],
+                open_label: "Open Metrio".to_string(),
+            }),
+            quitting: Mutex::new(false),
+            storage_warnings: Mutex::new(Vec::new()),
+        })
+        .invoke_handler(tauri::generate_handler![
+            secure_store_set,
+            secure_store_delete,
+            secure_store_has,
+            secure_store_verify,
+            preferences_load,
+            preferences_save,
+            storage_get_warnings,
+            app_get_build_info,
+            diagnostics_export_file,
+            log_write,
+            logs_get_path,
+            logs_open_folder,
+            update_tray_snapshot,
+            refresh_tray_menu,
+            jira_test_connection,
+            jira_search_issues,
+            jira_fetch_changelog,
+            jira_get_issue,
+            jira_search_users,
+            jira_fetch_changelogs_batch,
+            bamboo_test_connection,
+            bamboo_get_directory,
+            bamboo_list_employees,
+            bamboo_list_employees_all,
+            bamboo_get_employee,
+            bamboo_get_whos_out,
+            kpi_snapshot_load,
+            kpi_snapshot_save,
+            credential_import_legacy,
+            write_user_selected_pdf
+        ])
+        .setup(|app| {
+            let cred_path = local_credentials_path(app.handle())?;
+            init_store_path(cred_path);
+            install_tray(app.handle())?;
+            spawn_background_emitter(app.handle().clone(), "background-bamboo-refresh", 60 * 60);
+            spawn_background_emitter(app.handle().clone(), "background-jira-refresh", 30 * 60);
+            if let Some(window) = app.get_webview_window("main") {
+                let handle = app.handle().clone();
+                window.on_window_event(move |event| {
+                    if let WindowEvent::CloseRequested { api, .. } = event {
+                        let quitting = if let Some(state) = handle.try_state::<AppState>() {
+                            let q = state.quitting.lock().map(|guard| *guard).unwrap_or(false);
+                            q
+                        } else {
+                            false
+                        };
+                        if quitting {
+                            return;
+                        }
+                        api.prevent_close();
+                        hide_main_window(&handle);
+                    }
+                });
+            }
+            Ok(())
+        })
+        .build(tauri::generate_context!())
+        .expect("error while running tauri application")
+        .run(|app_handle, event| {
+            if let RunEvent::Reopen { .. } = event {
+                show_main_window(app_handle);
+            }
+        });
+}
+
+#[cfg(test)]
+mod tray_lock_tests {
+    use super::*;
+    use std::sync::Arc;
+    use std::thread;
+
+    fn test_app_state() -> AppState {
+        AppState {
+            tray: Mutex::new(TrayState {
+                lines: vec!["Metrio".to_string()],
+                open_label: "Open Metrio".to_string(),
+            }),
+            quitting: Mutex::new(false),
+            storage_warnings: Mutex::new(Vec::new()),
+        }
+    }
+
+    #[test]
+    fn read_tray_menu_snapshot_returns_cloned_strings() {
+        let state = test_app_state();
+        let (lines, open_label) = read_tray_menu_snapshot(&state).expect("read");
+        assert_eq!(lines, vec!["Metrio"]);
+        assert_eq!(open_label, "Open Metrio");
+    }
+
+    #[test]
+    fn update_tray_data_then_read_does_not_overlap_locks() {
+        let state = test_app_state();
+        {
+            let mut tray = state.tray.lock().expect("lock");
+            tray.lines = vec!["Title".into(), "Attention".into()];
+            tray.open_label = "Open Team Radar".into();
+        }
+        let (lines, open_label) = read_tray_menu_snapshot(&state).expect("read");
+        assert_eq!(lines, vec!["Title", "Attention"]);
+        assert_eq!(open_label, "Open Team Radar");
+    }
+
+    #[test]
+    fn concurrent_tray_reads_and_writes_complete() {
+        let state = Arc::new(test_app_state());
+        let mut handles = Vec::new();
+        for worker in 0..24 {
+            let state = Arc::clone(&state);
+            handles.push(thread::spawn(move || {
+                for step in 0..200 {
+                    if worker % 2 == 0 {
+                        let mut tray = state.tray.lock().expect("lock");
+                        tray.lines = vec![format!("worker-{worker}-step-{step}")];
+                    } else {
+                        let (lines, _) = read_tray_menu_snapshot(&state).expect("read");
+                        assert!(!lines.is_empty());
+                    }
+                }
+            }));
+        }
+        for handle in handles {
+            handle.join().expect("thread panicked");
+        }
+    }
 }
