@@ -46,7 +46,7 @@ import {
 import type { KpiSnapshotFile } from "../../domain/snapshots/types";
 import { buildWorkloadBalance } from "../../domain/workload/workloadBalance";
 import { personRouteKey } from "../../domain/people/personDisplay";
-import type { PerformanceFetchResult } from "./performanceDataService";
+import type { PerformanceFetchResult } from "./performanceTypes";
 import { getActiveIssues, classifyIssueAttention } from "../../domain/radar/taskSignals";
 function efficiencyStatusVariant(score: number): BadgeVariant {
   const status = getEfficiencyStatus(score);

@@ -16,7 +16,7 @@ vi.mock("../refresh/backgroundRefresh", () => ({
 
 import { fetchPerformanceData } from "../performance/performanceDataService";
 import { buildPerformanceViewModels } from "../performance/performanceViewModel";
-import type { PerformanceFetchResult } from "../performance/performanceDataService";
+import type { PerformanceFetchResult } from "../performance/performanceTypes";
 import { EMPTY_KPI_SNAPSHOT_FILE } from "../../domain/snapshots/snapshotEngine";
 import { testKpi } from "../../domain/testFixtures";
 import type { TeamSnapshot } from "../../domain/people/types";
@@ -65,7 +65,17 @@ const emptyResult: PerformanceFetchResult = {
     perUserKpi: {},
   } satisfies AuditReportData,
   kpiSnapshots: EMPTY_KPI_SNAPSHOT_FILE,
+  reportParams: {
+    dateFrom: "2026-01-01",
+    dateTo: "2026-03-01",
+    targetReviewDays: 3,
+    users: [],
+    projects: [],
+  },
+  identityResolution: [],
+  timeOffEntries: [],
   partialWarnings: [],
+  lastUpdatedAt: "2026-03-01T12:00:00.000Z",
 };
 
 describe("PerformanceDataContext", () => {
@@ -94,13 +104,25 @@ describe("PerformanceDataContext", () => {
     });
     await waitFor(() => expect(result.current.viewModels).not.toBeNull());
     const previous = result.current.viewModels;
+    const previousData = result.current.data;
     mockFetch.mockRejectedValueOnce(new Error("Jira unavailable"));
     await act(async () => {
       await result.current.refresh();
     });
     expect(result.current.viewModels).toBe(previous);
+    expect(result.current.data).toBe(previousData);
     expect(result.current.stale).toBe(true);
     expect(result.current.errorMessage).toMatch(/Jira/i);
+  });
+
+  it("stores shared fetch result with snapshot and report params", async () => {
+    mockFetch.mockResolvedValue(emptyResult);
+    const { result } = renderHook(() => usePerformanceData(), {
+      wrapper: wrapper(),
+    });
+    await waitFor(() => expect(result.current.data).not.toBeNull());
+    expect(result.current.data?.reportParams.dateFrom).toBe("2026-01-01");
+    expect(result.current.data?.lastUpdatedAt).toBeTruthy();
   });
 });
 

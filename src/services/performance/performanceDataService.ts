@@ -1,14 +1,12 @@
 import { resolveBambooSubdomain, resolveJiraBaseUrl } from "../../config/product";
 import { buildJql, normalizeReportParams } from "../../domain/jira/jql";
 import { buildEnhancedJiraAuditReport } from "../../domain/jira/report";
-import type { AuditReportData } from "../../domain/jira/types";
 import { buildTeamIdentityIndex } from "../../domain/jira/users";
 import type { TimeOffEntry } from "../../domain/people/availability";
-import type { TeamSnapshot } from "../../domain/people/types";
 import type { DateRangeKey } from "../../domain/performance";
 import { dateRangeKeyToBounds } from "../../domain/performance/dateRangeParams";
+import { resolveJiraIdentity, toPersonJiraIdentity } from "../../domain/people/identityResolver";
 import { recordDailySnapshots } from "../../domain/snapshots/snapshotEngine";
-import type { KpiSnapshotFile } from "../../domain/snapshots/types";
 import {
   getWorkEmail,
   loadPreferences,
@@ -26,13 +24,12 @@ import {
   loadKpiSnapshots,
   saveKpiSnapshots,
 } from "../snapshots/snapshotPersistence";
+import type {
+  PerformanceFetchResult,
+  PerformanceIdentityResolution,
+} from "./performanceTypes";
 
-export interface PerformanceFetchResult {
-  teamSnapshot: TeamSnapshot;
-  reportData: AuditReportData;
-  kpiSnapshots: KpiSnapshotFile;
-  partialWarnings: string[];
-}
+export type { PerformanceFetchResult, PerformanceIdentityResolution } from "./performanceTypes";
 
 export function scopeOrgForPerformance(
   org: OrgResolutionResult,
@@ -98,25 +95,32 @@ export async function fetchPerformanceData(
   const teamUsers = await jira.resolveTeamUsersForAudit(userInputs);
   const teamIdentityIndex = buildTeamIdentityIndex(teamUsers, userInputs);
 
-  for (const member of scope.members) {
-    const email = member.workEmail.trim().toLowerCase();
-    const matched = teamUsers.some(
-      (user) =>
-        user.accountId ||
-        user.email.trim().toLowerCase() === email,
-    );
-    if (!matched) {
-      partialWarnings.push(
-        `unresolved_jira_identity employeeId=${member.id} hasEmail=${Boolean(email)}`,
-      );
-      void writeLog(
-        "warn",
-        "app",
-        "performance_identity",
-        `Unresolved Jira identity for employeeId=${member.id} hasEmail=${Boolean(email)}`,
-      );
-    }
-  }
+  const identityResolution: PerformanceIdentityResolution[] = scope.members.map(
+    (member) => {
+      const mapping = resolveJiraIdentity(member, teamUsers);
+      const { identity } = toPersonJiraIdentity(mapping);
+      const matched = identity.matchedBy !== "unresolved";
+      if (!matched) {
+        partialWarnings.push(
+          `unresolved_jira_identity employeeId=${member.id} hasEmail=${Boolean(member.workEmail.trim())}`,
+        );
+        void writeLog(
+          "warn",
+          "app",
+          "performance_identity",
+          `Unresolved Jira identity for employeeId=${member.id} hasEmail=${Boolean(member.workEmail.trim())}`,
+        );
+      }
+      return {
+        employeeId: member.id,
+        displayName: member.displayName,
+        workEmail: member.workEmail,
+        matched,
+        matchedBy: identity.matchedBy,
+        warnings: identity.warnings,
+      };
+    },
+  );
 
   const bounds = dateRangeKeyToBounds(dateRangeKey);
   const params = normalizeReportParams({
@@ -182,6 +186,10 @@ export async function fetchPerformanceData(
     teamSnapshot,
     reportData,
     kpiSnapshots,
+    reportParams: reportData.params,
+    identityResolution,
+    timeOffEntries,
     partialWarnings,
+    lastUpdatedAt: new Date().toISOString(),
   };
 }

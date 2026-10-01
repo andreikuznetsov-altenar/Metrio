@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { buildPerformanceViewModels } from "./performanceViewModel";
-import type { PerformanceFetchResult } from "./performanceDataService";
+import type { PerformanceFetchResult } from "./performanceTypes";
 import type { Person, TeamSnapshot } from "../../domain/people/types";
 import type { AuditReportData } from "../../domain/jira/types";
 import { EMPTY_KPI_SNAPSHOT_FILE } from "../../domain/snapshots/snapshotEngine";
@@ -104,7 +104,11 @@ function buildResult(
     teamSnapshot,
     reportData,
     kpiSnapshots: EMPTY_KPI_SNAPSHOT_FILE,
+    reportParams: params,
+    identityResolution: [],
+    timeOffEntries: [],
     partialWarnings: [],
+    lastUpdatedAt: "2026-03-01T12:00:00.000Z",
   };
 }
 
@@ -190,6 +194,7 @@ describe("production Performance sources", () => {
       join(root, "pages", "PerformancePage.tsx"),
       join(root, "app", "AppLayout.tsx"),
       join(root, "app", "PerformanceDataContext.tsx"),
+      join(root, "app", "CurrentUserContext.tsx"),
     ];
     for (const file of targets) {
       const content = readFileSync(file, "utf8");

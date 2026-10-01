@@ -10,6 +10,7 @@ import {
 } from "react";
 import type { DateRangeKey } from "../domain/performance";
 import { fetchPerformanceData } from "../services/performance/performanceDataService";
+import type { PerformanceFetchResult } from "../services/performance/performanceTypes";
 import {
   buildPerformanceViewModels,
   type PerformanceViewModels,
@@ -26,6 +27,7 @@ export type PerformanceLoadStatus =
 
 export interface PerformanceDataContextValue {
   status: PerformanceLoadStatus;
+  data: PerformanceFetchResult | null;
   viewModels: PerformanceViewModels | null;
   loadingMessage: string | null;
   errorMessage: string | null;
@@ -61,6 +63,7 @@ export function PerformanceDataProvider({
   selfPersonId,
   children,
 }: PerformanceDataProviderProps) {
+  const [data, setData] = useState<PerformanceFetchResult | null>(null);
   const [viewModels, setViewModels] = useState<PerformanceViewModels | null>(
     null,
   );
@@ -68,7 +71,9 @@ export function PerformanceDataProvider({
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [stale, setStale] = useState(false);
   const inFlightRef = useRef(false);
+  const dataRef = useRef(data);
   const viewModelsRef = useRef(viewModels);
+  dataRef.current = data;
   viewModelsRef.current = viewModels;
 
   const load = useCallback(
@@ -77,7 +82,7 @@ export function PerformanceDataProvider({
         return;
       }
       inFlightRef.current = true;
-      const hasData = viewModelsRef.current != null;
+      const hasData = dataRef.current != null;
       setStatus(hasData ? "refreshing" : "loading");
       if (mode === "refresh" && hasData) {
         setStale(false);
@@ -85,18 +90,19 @@ export function PerformanceDataProvider({
       setErrorMessage(null);
 
       try {
-        const data = await fetchPerformanceData(dateRange);
-        const models = buildPerformanceViewModels(data, selfPersonId);
+        const next = await fetchPerformanceData(dateRange);
+        const models = buildPerformanceViewModels(next, selfPersonId);
+        setData(next);
         setViewModels(models);
         const partial =
-          data.partialWarnings.length > 0 || Boolean(models.statusMessage);
+          next.partialWarnings.length > 0 || Boolean(models.statusMessage);
         setStatus(partial ? "partial" : "ready");
         setStale(false);
         setErrorMessage(null);
       } catch (error) {
         const message = errorMessageFromError(error);
         setErrorMessage(message);
-        if (viewModelsRef.current) {
+        if (dataRef.current) {
           setStale(true);
           setStatus("partial");
         } else {
@@ -167,6 +173,7 @@ export function PerformanceDataProvider({
   const value = useMemo(
     (): PerformanceDataContextValue => ({
       status,
+      data,
       viewModels,
       loadingMessage,
       errorMessage,
@@ -176,6 +183,7 @@ export function PerformanceDataProvider({
     }),
     [
       status,
+      data,
       viewModels,
       loadingMessage,
       errorMessage,

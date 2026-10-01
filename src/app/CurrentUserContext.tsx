@@ -2,13 +2,13 @@ import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
   useState,
   type ReactNode,
 } from "react";
 import { buildCurrentUserFromTeamDetection } from "../domain/currentUser/fromTeamDetection";
 import type { CurrentUser, DevFixtureId } from "../domain/types";
-import { getFixtureUser } from "../fixtures/currentUsers";
 import {
   loadPreferencesOutcome,
   type AppPreferences,
@@ -27,6 +27,11 @@ import {
 
 const DEV_FIXTURE_STORAGE_KEY = "metrio-dev-fixture";
 
+/** Shown only while dev fixture module loads; not used for Performance data. */
+const PENDING_SHELL_USER: CurrentUser = {
+  person: { id: "__pending__", name: "…", role: "employee" },
+};
+
 function readInitialFixture(): DevFixtureId {
   if (!import.meta.env.DEV) {
     return "employee";
@@ -39,7 +44,7 @@ function readInitialFixture(): DevFixtureId {
 }
 
 function initialWorkspaceStatus(): WorkspaceStatus {
-  return import.meta.env.DEV ? "ready" : "idle";
+  return import.meta.env.DEV ? "initializing" : "idle";
 }
 
 function applyProductionUser(prefs: AppPreferences): CurrentUser | null {
@@ -64,6 +69,9 @@ export function CurrentUserProvider({ children }: { children: ReactNode }) {
   const [devFixtureId, setDevFixtureIdState] = useState<DevFixtureId>(
     readInitialFixture,
   );
+  const [devFixtureUser, setDevFixtureUser] = useState<CurrentUser | null>(
+    null,
+  );
   const [productionUser, setProductionUser] = useState<CurrentUser | null>(
     null,
   );
@@ -72,9 +80,24 @@ export function CurrentUserProvider({ children }: { children: ReactNode }) {
   const [workspaceError, setWorkspaceError] = useState<string | null>(null);
   const [bootstrapGeneration, setBootstrapGeneration] = useState(0);
 
+  useEffect(() => {
+    if (!import.meta.env.DEV) {
+      return;
+    }
+    let cancelled = false;
+    void import("../fixtures/currentUsers").then((module) => {
+      if (!cancelled) {
+        setDevFixtureUser(module.getFixtureUser(devFixtureId));
+        setWorkspaceStatus("ready");
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [devFixtureId]);
+
   const initializeWorkspace = useCallback(async () => {
     if (import.meta.env.DEV) {
-      setWorkspaceStatus("ready");
       setWorkspaceError(null);
       return;
     }
@@ -110,7 +133,14 @@ export function CurrentUserProvider({ children }: { children: ReactNode }) {
       return;
     }
 
-    setProductionUser(applyProductionUser(outcome.prefs));
+    const user = applyProductionUser(outcome.prefs);
+    if (!user) {
+      setWorkspaceStatus("error");
+      setWorkspaceError("Couldn't resolve your team profile from Bamboo.");
+      return;
+    }
+
+    setProductionUser(user);
     setWorkspaceStatus("ready");
     setBootstrapGeneration((value) => value + 1);
     bootLog("16", "initializeWorkspace finished status=ready");
@@ -126,10 +156,10 @@ export function CurrentUserProvider({ children }: { children: ReactNode }) {
 
   const currentUser = useMemo(() => {
     if (import.meta.env.DEV) {
-      return getFixtureUser(devFixtureId);
+      return devFixtureUser ?? PENDING_SHELL_USER;
     }
-    return productionUser ?? getFixtureUser("employee");
-  }, [devFixtureId, productionUser, bootstrapGeneration]);
+    return productionUser ?? PENDING_SHELL_USER;
+  }, [devFixtureId, devFixtureUser, productionUser, bootstrapGeneration]);
 
   const value = useMemo(
     () => ({

@@ -1,7 +1,7 @@
 import { usePerformanceData } from "../../app/PerformanceDataContext";
 
 export function PerformanceStatusBanner() {
-  const { status, loadingMessage, errorMessage, stale, viewModels } =
+  const { status, loadingMessage, errorMessage, stale, viewModels, data } =
     usePerformanceData();
 
   if (status === "loading" && !viewModels) {
@@ -29,6 +29,10 @@ export function PerformanceStatusBanner() {
   }
   if (viewModels?.statusMessage) {
     messages.push(viewModels.statusMessage);
+  }
+  const unresolved = data?.identityResolution.filter((row) => !row.matched) ?? [];
+  if (unresolved.length > 0 && !messages.some((m) => m.includes("Jira"))) {
+    messages.push("Some employee identities could not be matched to Jira.");
   }
 
   if (messages.length === 0) {
