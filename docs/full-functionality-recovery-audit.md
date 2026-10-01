@@ -1,42 +1,56 @@
-# Full functionality recovery audit (Phase 1)
+# Full functionality recovery audit (Phase 1 + Phase 7 refresh)
 
-**Date:** 2026-10-02  
-**Purpose:** Compare old functional Jira App (read-only baseline) with current Metrio. No UI restore, no wholesale copy. Identify gaps for phased recovery.
+**Date:** 2026-10-02 (Phase 7 acceptance refresh)  
+**Purpose:** Compare old functional Jira App (read-only baseline) with current Metrio. Phase 7 re-checked all PNW/PW/PH/MS items after Phases 2–6.
 
-## Repository verification
+**Acceptance record:** `docs/full-functionality-recovery-acceptance.md`
+
+## Repository verification (Phase 7)
 
 | Repo | Branch / HEAD | Notes |
 |------|----------------|-------|
-| **Metrio** (current) | `main` @ `f151cbf89df23eef64bef85a88b860161aef0b89` | Matches `origin/main`. Untracked: `src-tauri/*.ported` (not part of product). |
-| **Jira App** (old, read-only) | Working tree `feature/figma-metrio-rebuild` @ `bbe6e09`; **baseline inspected:** `43baf2e2f27c3d8c36f622c72b955e4ca7253d51` | Baseline commit: packaged PDF export via native `write_user_selected_pdf`. Old repo not modified during this audit. |
+| **Metrio** (current) | `main` @ `7ae63df571a205fa6c5c0528f983ecd3dfde85e2` → Phase 7 commit pending | Phases 3–6 landed on main before Phase 7. |
+| **Jira App** (old, read-only) | Baseline `43baf2e2f27c3d8c36f622c72b955e4ca7253d51` | Unchanged reference. |
 
 **Entry route (Metrio):** `src/main.tsx` → `App.tsx` → `ConnectionScreen` | `AuthenticatedApp` → `AppLayout` → `PerformancePage` / `FeedbackPage` / `SettingsPage`.
 
-**Entry route (old @ 43baf2e):** `src/main.tsx` → `BrowserRouter` → `src/app/AppShell.tsx` → `JiraPerformancePage` / Feedback / Settings; Zustand `src/app/store.ts` orchestrates Jira+Bamboo+snapshots+tray+notifications.
+**Entry route (old @ 43baf2e):** `src/main.tsx` → `BrowserRouter` → `src/app/AppShell.tsx` → `JiraPerformancePage` / Feedback / Settings; Zustand `src/app/store.ts`.
 
 ---
 
-## Production fixture import graph (Metrio)
+## Phase 7 re-check summary (was PNW / PW / PH / MS)
+
+| Former state | Feature IDs | Phase 7 status |
+|--------------|-------------|----------------|
+| **PH / MS** | Y, Z, AA, AB, AC, AD, AE | **RESTORED** — full Feedback stack + Rust Google/Apps Script/survey store @ Phase 6 |
+| **PNW** | N, U, X, AI | **RESTORED** — bootstrap, notifications, PDF export, autostart sync |
+| **PNW** | W (rich diagnostics) | **NOT RESTORED** — simplified Settings export only |
+| **PW** | E, I, K, L, M, S, T, V, AJ, AK, AL | Mostly **RESTORED**; see acceptance doc for one-on-one, digest UI, survey background listener |
+| **Fixture path** | Production user | **RESTORED** — prod uses Bamboo team detection only; fixtures DEV-only |
+
+---
+
+## Production fixture import graph (Metrio) — Phase 7
 
 Performance pages **do not** import `src/fixtures/*` (enforced by `src/services/performance/performanceViewModel.test.ts`).
 
 | Production file | Fixture import | Effect |
-|-----------------|------------------|--------|
-| `src/app/CurrentUserContext.tsx` | `fixtures/currentUsers` → `fixtures/people` | **DEV:** always fixture user. **PROD:** `buildCurrentUserFromTeamDetection`; if `productionUser === null`, falls back to `getFixtureUser("employee")` (should only occur before workspace ready / edge bootstrap). |
+|-----------------|----------------|--------|
+| `src/app/CurrentUserContext.tsx` | Dynamic `fixtures/currentUsers` | **DEV only.** Production resolves user from Bamboo `teamDetection` (no fixture user). |
 
-All other `src/fixtures/*` usage is limited to unit tests and fixture self-tests.
+All other `src/fixtures/*` usage: unit tests and DEV profile fixture switcher.
 
-Synthetic MET-* keys, 84%/76% KPI, and “Monitoring baseline signals” live only in `src/fixtures/teamPerformance.ts` (not in live Performance path after `f151cbf`).
+Synthetic MET-* keys and “Monitoring baseline signals” remain only in `src/fixtures/teamPerformance.ts` and are absent from production `dist/` bundles.
 
 ---
 
 ## Dependency comparison (package.json)
 
-| Area | Old Jira App @ 43baf2e | Current Metrio | Recovery note |
-|------|------------------------|----------------|---------------|
-| PDF | `@react-pdf/renderer` | **Removed** | Required for Phase 5; Rust `write_user_selected_pdf` **present** |
-| Routing | `react-router-dom` | **Removed** | Intentional: single-shell Metrio UI; person detail is drawer not `/person/:key` |
-| State | `zustand` | **Removed** | Replaced by React context (`PerformanceDataContext`, connection/session contexts) |
+| Area | Old Jira App @ 43baf2e | Current Metrio (Phase 7) | Recovery note |
+|------|------------------------|---------------------------|---------------|
+| PDF | `@react-pdf/renderer` | **Present** | Phase 5 — `PerformanceExportContext` |
+| Routing | `react-router-dom` | **Removed** | Intentional: Metrio shell |
+| State | `zustand` | **Present** (Feedback store only) | Performance uses contexts; Feedback uses `feedbackSurveyStore` |
 | UI primitives | `@radix-ui/*` | **Removed** | Metrio uses custom `components/*` + `shell/*` |
 | Fonts | `@fontsource/*` | **Removed** | Metrio tokens/CSS |
 | Visual QA | `@playwright/test` + scripts | **Removed** | Optional for Phase 7 regression; not required for core product |
@@ -44,8 +58,7 @@ Synthetic MET-* keys, 84%/76% KPI, and “Monitoring baseline signals” live on
 | Tauri plugins | autostart, dialog, fs, notification, opener | Same set | OK |
 | Vitest | v5 + coverage | v3 | OK for current CI |
 
-**Must return for parity:** `@react-pdf/renderer` (PDF export UI path).  
-**Must return for full Feedback:** Google client stack is partly Rust-side in old app (`google_*`, `apps_script_*`, `survey_data_*` commands)—**removed from current `src-tauri`** (see Tauri section).
+**Phase 7:** PDF and full Feedback/Google stacks are restored on `main`. See acceptance doc for per-feature disposition.
 
 ---
 
@@ -59,12 +72,12 @@ Synthetic MET-* keys, 84%/76% KPI, and “Monitoring baseline signals” live on
 | KPI snapshot file | `kpi_snapshot_load/save` | Yes |
 | PDF write | `write_user_selected_pdf` | Yes |
 | Tray install + menu + `update_tray_snapshot` | Yes | Yes (host) |
-| Background emitters | Jira 30m, Bamboo 60m, **Survey 15m** | Jira 30m, Bamboo 60m (**no survey**) |
-| Google OAuth / Forms / Gmail / Drive | Full command set | **Removed** |
-| Apps Script bridge | `apps_script_*` | **Removed** |
-| Survey persistence | `survey_data_load/save` | **Removed** (Rust constant `SURVEY_DATA_SCHEMA_VERSION` still in `persistence.rs`—dead) |
+| Background emitters | Jira 30m, Bamboo 60m, **Survey 15m** | Jira 30m, Bamboo 60m, **Survey 15m** |
+| Google OAuth / Forms / Gmail / Drive | Full command set | **Restored** |
+| Apps Script bridge | `apps_script_*` | **Restored** |
+| Survey persistence | `survey_data_load/save` | **Restored** |
 | Close → hide, Reopen → show | Yes | Yes |
-| Autostart plugin | Yes | Yes (plugin registered; **TS not wired** from Settings) |
+| Autostart plugin | Yes | Yes — Settings → `syncGeneralPreferencesToNative` |
 
 ---
 
@@ -84,18 +97,35 @@ flowchart LR
   Store --> History[Feedback History]
 ```
 
-| Legacy Apps Script / GS | Old TS @ 43baf2e | Metrio today |
-|-------------------------|------------------|--------------|
-| `runReporterSurveySearch` | `recipientDiscovery.ts`, `domain/survey/jql.ts`, `recipients.ts`, `surveyStore.prepareSurvey` | **MISSING** (no `domain/survey`, no `services/survey`, no `surveyStore`) |
-| `createOrUpdateSurveyForm` | `surveyFormService.ts`, `googleSurveyClient.ts`, `appsScriptSurveyClient.ts` | **MISSING** + Rust commands removed |
-| `sendSurveyEmails` | `surveyStore.sendSurveyBatch`, `emailTemplate.ts`, Gmail/Apps Script | **MISSING** |
-| `buildSurveyResultsSummary` | `domain/survey/metrics.ts`, `FeedbackResultsView.tsx` | **MISSING**; UI placeholder only |
+| Legacy Apps Script / GS | Old TS @ 43baf2e | Metrio Phase 7 |
+|-------------------------|------------------|----------------|
+| `runReporterSurveySearch` | `recipientDiscovery.ts`, … | **RESTORED** |
+| `createOrUpdateSurveyForm` | `surveyFormService.ts`, … | **RESTORED** |
+| `sendSurveyEmails` | `sendSurveyBatch`, templates | **RESTORED** |
+| `buildSurveyResultsSummary` | `metrics.ts`, Results view | **RESTORED** |
 
-**Metrio:** `src/pages/FeedbackPage.tsx` — subnav + static empty copy; gated by `featureGates.isFeedbackEnabled()` (default **off** unless localStorage flag set in tests).
+**Metrio:** `src/pages/FeedbackPage.tsx` → `FeedbackTeamProvider` + `src/pages/feedback/FeedbackPage.tsx` (Survey / Delivery / Results / History).
 
 ---
 
-## Feature matrix (A–AL)
+## Feature matrix (A–AL) — Phase 7 states
+
+Historical Phase 1 states below are **superseded** for recovery tracking by `docs/full-functionality-recovery-acceptance.md` (RESTORED / REPLACED / REMOVED / NOT RESTORED).
+
+Quick Phase 7 mapping:
+
+| IDs | Phase 1 gap | Phase 7 |
+|-----|-------------|---------|
+| N, U, X, AI, T, O, R | PNW / PW | RESTORED |
+| Y–AE | PH / MS | RESTORED (Feedback + Google) |
+| I | one-on-one | NOT RESTORED (drawer RESTORED) |
+| W | rich diagnostics | NOT RESTORED |
+| E | weekly digest block | NOT RESTORED (overview RESTORED) |
+| S | survey background UI listener | NOT RESTORED (Rust emitter only) |
+| AG | motion surface | INTENTIONALLY REPLACED |
+
+<details>
+<summary>Phase 1 matrix snapshot (archival)</summary>
 
 States: **FW** Fully wired · **PNW** Ported not wired · **PW** Partially wired · **FX** Fixture/mock only · **PH** Placeholder UI · **MS** Missing · **IR** Intentionally removed
 
@@ -140,28 +170,32 @@ States: **FW** Fully wired · **PNW** Ported not wired · **PW** Partially wired
 | AK | Local persistence | prefs, KPI, survey JSON | prefs + KPI via invoke; **no survey file** | **PW** | Survey persistence **MS** | Med | 6 |
 | AL | Packaged-app behavior | Tray, background, PDF path guard, legacy import | Same except survey/Google | **PW** | Feedback/sync gap | Med | 4–7 |
 
+</details>
+
 ---
 
-## Orphaned production code (Metrio)
+## Orphaned production code (Metrio) — Phase 7
 
-Reachable from tests or dead imports only—not from `AuthenticatedApp` → `AppLayout` → pages.
+Previously orphaned modules **now wired:**
 
-| Module | Path | Old equivalent | Recovery |
-|--------|------|----------------|----------|
-| Tray updater | `src/platform/tray.ts` | Called after every `runReport` | Wire after `fetchPerformanceData` (Phase 4) |
-| PDF pipeline | `src/services/export/buildPerformanceExportData.ts`, `pdfExport.tsx` (excluded), `PdfReportDocument.tsx` | Performance export button | Phase 5 + restore dependency |
-| Historical bootstrap | `src/services/history/historicalBootstrap.ts` | Post-report background job | Phase 3 after performance stable |
-| Notifications engine | `src/platform/notifications.ts` | After `runReport` | Phase 4 |
-| Connection health pill | `src/platform/connectionHealth.ts` | Header health | Phase 4 |
-| Jira refresh errors UX | `src/platform/jiraRefreshErrors.ts` | Refresh error mapping | Phase 3–4 |
-| Autostart | `src/platform/autostart.ts` | Settings toggle | Phase 4 |
-| Rich diagnostics | `src/platform/diagnosticsExport.ts` (tsconfig exclude) | Advanced settings | Phase 4 (fix survey type deps or split) |
-| Weekly digest / export-only domain | `domain/digests/weeklyDigest.ts`, `domain/trends/teamTrendHistory.ts` | Overview digest | Phase 3 UI or Phase 5 PDF |
-| Telemetry / clipboard | `platform/telemetry.ts`, `platform/clipboard.ts` | Minor utilities | Phase 7 if needed |
-| Fixture performance generators | `fixtures/teamPerformance.ts`, etc. | N/A | Keep for tests/dev gallery only |
-| Dead shell | `app/ProductShellPlaceholder.tsx` | — | Delete in Phase 7 cleanup |
+| Module | Wired from |
+|--------|------------|
+| `platform/tray.ts` | `performanceRefreshSideEffects.ts` after fetch |
+| `platform/notifications.ts` | Same side-effects path |
+| `platform/autostart.ts` | `generalPreferencesSync.ts` on boot + Settings |
+| `services/export/*` | `PerformanceExportContext` |
+| `services/history/historicalBootstrap.ts` | `performanceDataService.ts` |
+| `shell/ConnectionHealthBadge.tsx` | `MetrioAppHeader` |
 
-**Still wired (not orphaned):** `JiraClient`, `BambooClient`, `buildTeamSnapshot`, `buildTeamRadar`, `buildDeliveryRiskItems`, `buildMyWeek`, `buildWorkHistory`, snapshot persistence, trend engine (via fetch + VM).
+Still not in main UI path:
+
+| Module | Notes |
+|--------|--------|
+| `platform/diagnosticsExport.ts` | Excluded from tsconfig; not wired to Settings |
+| `domain/digests/weeklyDigest.ts` | No overview UI block |
+| `app/FoundationDevApp.tsx`, `Playground.tsx` | DEV gallery only |
+
+**Removed Phase 7:** `app/ProductShellPlaceholder.tsx` (unused).
 
 ---
 
@@ -179,65 +213,33 @@ Reachable from tests or dead imports only—not from `AuthenticatedApp` → `App
 
 ---
 
-## Summary counts (matrix A–AL, 38 features)
+## Summary counts (Phase 7 acceptance)
 
-| State | Count |
-|-------|------:|
-| FULLY WIRED | 14 |
-| PARTIALLY WIRED | 13 |
-| PORTED BUT NOT WIRED | 6 |
-| PLACEHOLDER UI | 4 |
-| FIXTURE / MOCK ONLY | 0 (production Performance path) |
-| MISSING | 0 standalone rows* |
-| INTENTIONALLY REMOVED | 1 (router/zustand/old shell — folded into “do not port”) |
+See **`docs/full-functionality-recovery-acceptance.md`** for authoritative counts:
 
-\*Several **MISSING** sub-capabilities (survey, Google Rust, one-on-one) are embedded in **PH/PNW/MS** rows Y–AE and I/K/L/M/N.
+| Disposition | Count (A–AL) |
+|-------------|-------------:|
+| RESTORED | 29 |
+| INTENTIONALLY REPLACED | 4 |
+| INTENTIONALLY REMOVED | 3 |
+| NOT RESTORED | 2 |
 
-**Fixture/mock in production:** 1 narrow path (`CurrentUserContext` prod fallback + dev fixtures).
-
-**Dependencies to restore:** `@react-pdf/renderer` (PDF); full Feedback requires restoring Rust Google/Apps Script/survey commands from old `src-tauri` (see `docs/phase8-port-audit.md`).
-
-**Highest-risk restoration:** Feedback end-to-end (Jira recipients → Forms → Gmail/Apps Script → sync → metrics) and Google credential lifecycle; PDF export second (dependency + tsconfig + UI hook).
+**Fixture/mock in production:** DEV-only dynamic import; Performance path fixture-free.
 
 ---
 
-## Ordered recovery plan (do not start Phase 2 in Phase 1)
+## Validation (Phase 7)
 
-### Phase 2 — Real Performance data foundation
-- Harden `performanceDataService` (identity matching, partial states, manager scope).
-- Remove prod reliance on `getFixtureUser` fallback when workspace ready.
-- Align `reviewTarget` toolbar with report params or document as display-only.
-
-### Phase 3 — Complete Performance functionality
-- Wire `runHistoricalBootstrap` + UI banner/progress.
-- Separate history date range if parity with old `historyReportData` required.
-- Optional My Week tab or explicit section for employee mode.
-- Person drawer: task detail depth, one-on-one prep port if still in scope.
-- Overview: weekly digest / team trends parity without redesigning layout.
-
-### Phase 4 — Runtime integrations and native behavior
-- Call `updateTrayFromSnapshot` after successful fetch.
-- Wire `processNotificationTransitions` + Settings toggles.
-- Wire `applyLaunchAtLogin`, connection test buttons, `connectionHealth` in header.
-- Rich diagnostics export or trim excluded module.
-
-### Phase 5 — PDF export
-- Add `@react-pdf/renderer`; re-include export TS in tsconfig.
-- Performance export entry (toolbar/sticky) → `exportPerformancePdf` → `write_user_selected_pdf`.
-
-### Phase 6 — Feedback workflow
-- Restore Rust: `survey_data_*`, `google_*`, `apps_script_*` (from old repo @ 43baf2e+).
-- Port `domain/survey/*`, `services/survey/*`, `surveyStore` (or equivalent) to Metrio architecture.
-- Replace `FeedbackPage` placeholders with real Survey/Delivery/Results/History.
-
-### Phase 7 — Packaged regression and cleanup
-- Packaged manual QA checklist (Performance, tray, PDF, Feedback).
-- Optional Playwright smoke; remove dead placeholders (`ProductShellPlaceholder`).
-- Document `featureGates` for Feedback enablement in production builds.
+| Check | Result |
+|-------|--------|
+| `npm test` | 342 passed |
+| `npm run build` | OK |
+| `cargo test` / `cargo check` | OK |
+| `npm run tauri build` | Metrio.app + DMG OK |
 
 ---
 
-## Validation (Phase 1 — no product code changes)
+## Validation (Phase 1 — archival)
 
 | Check | Result |
 |-------|--------|
