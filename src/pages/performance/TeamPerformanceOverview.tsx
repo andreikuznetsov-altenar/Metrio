@@ -1,61 +1,46 @@
-import { useMemo, useState } from "react";
-import type {
-  DateRangeKey,
-  ReviewTargetKey,
-  TeamPerformanceView,
-} from "../../domain/performance";
-import {
-  getTeamPerformanceSnapshot,
-  getTeamSecondarySnapshot,
-} from "../../fixtures/teamPerformance";
+import { useState } from "react";
+import type { TeamPerformanceView } from "../../domain/performance";
+import { usePerformanceData } from "../../app/PerformanceDataContext";
 import { TeamDeliveryRiskView } from "./TeamDeliveryRiskView";
 import { TeamOverviewView } from "./TeamOverviewView";
 import { TeamPeopleView } from "./TeamPeopleView";
 import { TeamPerformanceSubnav } from "./TeamPerformanceSubnav";
 import { TeamRadarView } from "./TeamRadarView";
+import { PerformanceStatusBanner } from "./PerformanceStatusBanner";
 import "./performance-dashboard.css";
 
 export interface TeamPerformanceOverviewProps {
-  directReportIds: string[];
-  dateRange: DateRangeKey;
-  reviewTarget: ReviewTargetKey;
-  refreshToken: number;
   onOpenPerson: (personId: string) => void;
 }
 
 export function TeamPerformanceOverview({
-  directReportIds,
-  dateRange,
-  reviewTarget,
-  refreshToken,
   onOpenPerson,
 }: TeamPerformanceOverviewProps) {
   const [activeView, setActiveView] = useState<TeamPerformanceView>("overview");
+  const { viewModels, status } = usePerformanceData();
 
-  const snapshot = useMemo(
-    () =>
-      getTeamPerformanceSnapshot(
-        directReportIds,
-        dateRange,
-        reviewTarget,
-        refreshToken,
-      ),
-    [directReportIds, dateRange, reviewTarget, refreshToken],
-  );
+  if (!viewModels && (status === "loading" || status === "idle")) {
+    return (
+      <div className="performance-dashboard">
+        <PerformanceStatusBanner />
+      </div>
+    );
+  }
 
-  const secondary = useMemo(
-    () =>
-      getTeamSecondarySnapshot(
-        directReportIds,
-        dateRange,
-        reviewTarget,
-        refreshToken,
-      ),
-    [directReportIds, dateRange, reviewTarget, refreshToken],
-  );
+  if (!viewModels) {
+    return (
+      <div className="performance-dashboard">
+        <PerformanceStatusBanner />
+      </div>
+    );
+  }
+
+  const snapshot = viewModels.teamOverview;
+  const secondary = viewModels.teamSecondary;
 
   return (
     <div className="performance-dashboard">
+      <PerformanceStatusBanner />
       <TeamPerformanceSubnav activeView={activeView} onChange={setActiveView} />
 
       {activeView === "overview" ? (

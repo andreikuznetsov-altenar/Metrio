@@ -2,7 +2,6 @@ import { useCallback, useState } from "react";
 import { useCurrentUser } from "../app/CurrentUserContext";
 import {
   isManagerRole,
-  type DateRangeKey,
   type EmployeeReviewTargetKey,
   type PerformanceReviewTarget,
   type ReviewTargetKey,
@@ -13,9 +12,7 @@ import { PersonDetailDrawer } from "./performance/PersonDetailDrawer";
 import { TeamPerformanceOverview } from "./performance/TeamPerformanceOverview";
 
 export interface PerformancePageProps {
-  dateRange: DateRangeKey;
   reviewTarget: PerformanceReviewTarget;
-  refreshToken: number;
 }
 
 function asTeamReviewTarget(
@@ -36,15 +33,14 @@ function asEmployeeReviewTarget(
   return "sprint";
 }
 
-export function PerformancePage({
-  dateRange,
-  reviewTarget,
-  refreshToken,
-}: PerformancePageProps) {
+export function PerformancePage({ reviewTarget }: PerformancePageProps) {
   const { currentUser } = useCurrentUser();
   const [personDetailId, setPersonDetailId] = useState<string | null>(null);
   const canViewTeamDashboard =
     isManagerRole(currentUser.person.role) && currentUser.team;
+
+  void asTeamReviewTarget(reviewTarget);
+  void asEmployeeReviewTarget(reviewTarget);
 
   const openPersonDetail = useCallback(
     (personId: string) => {
@@ -69,9 +65,6 @@ export function PerformancePage({
     content = (
       <EmployeePerformanceOverview
         personId={currentUser.person.id}
-        dateRange={dateRange}
-        reviewTarget={asEmployeeReviewTarget(reviewTarget)}
-        refreshToken={refreshToken}
         onOpenPerson={openPersonDetail}
       />
     );
@@ -79,21 +72,12 @@ export function PerformancePage({
     content = (
       <EmployeePerformanceOverview
         personId={currentUser.person.id}
-        dateRange={dateRange}
-        reviewTarget={asEmployeeReviewTarget(reviewTarget)}
-        refreshToken={refreshToken}
         onOpenPerson={openPersonDetail}
       />
     );
   } else {
     content = (
-      <TeamPerformanceOverview
-        directReportIds={currentUser.team!.directReportIds}
-        dateRange={dateRange}
-        reviewTarget={asTeamReviewTarget(reviewTarget)}
-        refreshToken={refreshToken}
-        onOpenPerson={openPersonDetail}
-      />
+      <TeamPerformanceOverview onOpenPerson={openPersonDetail} />
     );
   }
 

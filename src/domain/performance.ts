@@ -16,6 +16,8 @@ export interface MetricCardData {
 
 export interface AttentionPerson {
   personId: string;
+  personName?: string;
+  personRole?: string;
   indicators: { label: string; variant: BadgeVariant }[];
   reason: string;
 }
@@ -28,6 +30,7 @@ export interface TrendCardData {
 
 export interface WorkloadRow {
   personId: string;
+  personName?: string;
   activeWork: number;
   atRisk: number;
   workload: "Light" | "Balanced" | "Heavy";
@@ -36,6 +39,7 @@ export interface WorkloadRow {
 
 export interface TimeOffEntry {
   personId: string;
+  personName?: string;
   rangeLabel: string;
   note: string;
 }
@@ -51,6 +55,7 @@ export interface PersonPerformanceDetail {
 
 export interface PersonDetailSnapshot {
   personId: string;
+  personName?: string;
   availability: string;
   workload: string;
   efficiency: string;
@@ -114,6 +119,8 @@ export type TeamPerformanceView =
 
 export interface TeamPeopleRow {
   personId: string;
+  personName: string;
+  role: string;
   efficiency: string;
   workload: string;
   availability: string;
@@ -123,6 +130,7 @@ export interface TeamPeopleRow {
 
 export interface TeamRadarRow {
   personId: string;
+  personName: string;
   severity: "High" | "Medium" | "Low";
   severityVariant: BadgeVariant;
   reason: string;
@@ -134,6 +142,7 @@ export interface DeliveryRiskRow {
   issueKey: string;
   issueTitle: string;
   ownerId: string;
+  ownerName?: string;
   age: string;
   status: string;
   riskReason: string;

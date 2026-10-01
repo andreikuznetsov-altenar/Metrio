@@ -1,44 +1,46 @@
-import { useMemo } from "react";
 import { Badge } from "../../components/Badge/Badge";
 import { Button } from "../../components/Button/Button";
 import { Card } from "../../components/Card/Card";
 import { Tooltip } from "../../components/Tooltip/Tooltip";
-import type {
-  DateRangeKey,
-  EmployeeReviewTargetKey,
-} from "../../domain/performance";
-import { getEmployeePerformanceSnapshot } from "../../fixtures/employeePerformance";
+import { usePerformanceData } from "../../app/PerformanceDataContext";
 import { Sparkline } from "./Sparkline";
+import { PerformanceStatusBanner } from "./PerformanceStatusBanner";
 import "./performance-dashboard.css";
 
 export interface EmployeePerformanceOverviewProps {
   personId: string;
-  dateRange: DateRangeKey;
-  reviewTarget: EmployeeReviewTargetKey;
-  refreshToken: number;
   onOpenPerson: (personId: string) => void;
 }
 
 export function EmployeePerformanceOverview({
   personId,
-  dateRange,
-  reviewTarget,
-  refreshToken,
   onOpenPerson,
 }: EmployeePerformanceOverviewProps) {
-  const snapshot = useMemo(
-    () =>
-      getEmployeePerformanceSnapshot(
-        personId,
-        dateRange,
-        reviewTarget,
-        refreshToken,
-      ),
-    [personId, dateRange, reviewTarget, refreshToken],
-  );
+  const { viewModels, status } = usePerformanceData();
+
+  if (!viewModels?.employee && (status === "loading" || status === "idle")) {
+    return (
+      <div className="performance-dashboard">
+        <PerformanceStatusBanner />
+      </div>
+    );
+  }
+
+  const snapshot = viewModels?.employee;
+  if (!snapshot) {
+    return (
+      <div className="performance-dashboard">
+        <PerformanceStatusBanner />
+        <div className="performance-empty" role="status">
+          No Jira work found for this period.
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="performance-dashboard">
+      <PerformanceStatusBanner />
       <section aria-label="Overview">
         <div className="performance-section-head">
           <h3 className="performance-section__title performance-section__title--inline">
@@ -94,17 +96,23 @@ export function EmployeePerformanceOverview({
         </div>
 
         <h4 className="performance-subsection__title">Current work</h4>
-        <div className="performance-work-list">
-          {snapshot.activeWork.map((item) => (
-            <div key={item.key} className="performance-work-row">
-              <div className="performance-work-row__key">{item.key}</div>
-              <div className="performance-work-row__main">
-                <div className="performance-work-row__title">{item.title}</div>
-                <div className="performance-work-row__meta">{item.status}</div>
+        {snapshot.activeWork.length === 0 ? (
+          <div className="performance-empty performance-work-list">
+            No Jira work found for this period.
+          </div>
+        ) : (
+          <div className="performance-work-list">
+            {snapshot.activeWork.map((item) => (
+              <div key={item.key} className="performance-work-row">
+                <div className="performance-work-row__key">{item.key}</div>
+                <div className="performance-work-row__main">
+                  <div className="performance-work-row__title">{item.title}</div>
+                  <div className="performance-work-row__meta">{item.status}</div>
+                </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
 
         <h4 className="performance-subsection__title">Needs attention</h4>
         {snapshot.attention.length === 0 ? (
@@ -162,33 +170,39 @@ export function EmployeePerformanceOverview({
 
       <section aria-label="Work history">
         <h3 className="performance-section__title">Work history</h3>
-        <div className="performance-table-wrap">
-          <table className="performance-table">
-            <thead>
-              <tr>
-                <th>Work</th>
-                <th>Completed</th>
-                <th>Cycle</th>
-                <th>Outcome</th>
-              </tr>
-            </thead>
-            <tbody>
-              {snapshot.history.map((row) => (
-                <tr key={row.key}>
-                  <td>
-                    <div className="performance-work-row__key">{row.key}</div>
-                    <div className="performance-work-row__title">
-                      {row.title}
-                    </div>
-                  </td>
-                  <td>{row.completedOn}</td>
-                  <td>{row.cycle}</td>
-                  <td>{row.outcome}</td>
+        {snapshot.history.length === 0 ? (
+          <div className="performance-empty performance-table-wrap">
+            No Jira work found for this period.
+          </div>
+        ) : (
+          <div className="performance-table-wrap">
+            <table className="performance-table">
+              <thead>
+                <tr>
+                  <th>Work</th>
+                  <th>Completed</th>
+                  <th>Cycle</th>
+                  <th>Outcome</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {snapshot.history.map((row) => (
+                  <tr key={row.key}>
+                    <td>
+                      <div className="performance-work-row__key">{row.key}</div>
+                      <div className="performance-work-row__title">
+                        {row.title}
+                      </div>
+                    </td>
+                    <td>{row.completedOn}</td>
+                    <td>{row.cycle}</td>
+                    <td>{row.outcome}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </section>
     </div>
   );

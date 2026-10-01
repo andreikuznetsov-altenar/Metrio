@@ -1,7 +1,5 @@
 import { Badge } from "../../components/Badge/Badge";
 import type { TeamPeopleRow } from "../../domain/performance";
-import { roleLabel } from "../../domain/types";
-import { getPerson } from "../../fixtures/people";
 
 export interface TeamPeopleViewProps {
   rows: TeamPeopleRow[];
@@ -24,31 +22,28 @@ export function TeamPeopleView({ rows, onOpenPerson }: TeamPeopleViewProps) {
             </tr>
           </thead>
           <tbody>
-            {rows.map((row) => {
-              const person = getPerson(row.personId);
-              return (
-                <tr key={row.personId}>
-                  <td>
-                    <button
-                      type="button"
-                      className="performance-table__person-button"
-                      onClick={() => onOpenPerson(row.personId)}
-                    >
-                      {person.name}
-                    </button>
-                  </td>
-                  <td>{roleLabel(person.role)}</td>
-                  <td>{row.efficiency}</td>
-                  <td>{row.workload}</td>
-                  <td>{row.availability}</td>
-                  <td>
-                    <Badge variant={row.attentionVariant}>
-                      {row.attentionState}
-                    </Badge>
-                  </td>
-                </tr>
-              );
-            })}
+            {rows.map((row) => (
+              <tr key={row.personId}>
+                <td>
+                  <button
+                    type="button"
+                    className="performance-table__person-button"
+                    onClick={() => onOpenPerson(row.personId)}
+                  >
+                    {row.personName}
+                  </button>
+                </td>
+                <td>{row.role}</td>
+                <td>{row.efficiency}</td>
+                <td>{row.workload}</td>
+                <td>{row.availability}</td>
+                <td>
+                  <Badge variant={row.attentionVariant}>
+                    {row.attentionState}
+                  </Badge>
+                </td>
+              </tr>
+            ))}
           </tbody>
         </table>
       </div>

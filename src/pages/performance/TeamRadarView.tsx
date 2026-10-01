@@ -1,12 +1,21 @@
 import { Badge } from "../../components/Badge/Badge";
 import type { TeamRadarRow } from "../../domain/performance";
-import { getPerson } from "../../fixtures/people";
 
 export interface TeamRadarViewProps {
   rows: TeamRadarRow[];
 }
 
 export function TeamRadarView({ rows }: TeamRadarViewProps) {
+  if (rows.length === 0) {
+    return (
+      <section aria-label="Radar">
+        <div className="performance-empty performance-table-wrap">
+          No active team risks.
+        </div>
+      </section>
+    );
+  }
+
   return (
     <section aria-label="Radar">
       <div className="performance-table-wrap">
@@ -21,20 +30,17 @@ export function TeamRadarView({ rows }: TeamRadarViewProps) {
             </tr>
           </thead>
           <tbody>
-            {rows.map((row) => {
-              const person = getPerson(row.personId);
-              return (
-                <tr key={`${row.personId}-${row.reason}`}>
-                  <td>{person.name}</td>
-                  <td>
-                    <Badge variant={row.severityVariant}>{row.severity}</Badge>
-                  </td>
-                  <td>{row.reason}</td>
-                  <td>{row.tasksAffected}</td>
-                  <td>{row.action}</td>
-                </tr>
-              );
-            })}
+            {rows.map((row) => (
+              <tr key={`${row.personId}-${row.reason}`}>
+                <td>{row.personName}</td>
+                <td>
+                  <Badge variant={row.severityVariant}>{row.severity}</Badge>
+                </td>
+                <td>{row.reason}</td>
+                <td>{row.tasksAffected}</td>
+                <td>{row.action}</td>
+              </tr>
+            ))}
           </tbody>
         </table>
       </div>

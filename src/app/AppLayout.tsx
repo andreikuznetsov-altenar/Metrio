@@ -18,6 +18,10 @@ import { PerformanceToolbar } from "../shell/PerformanceToolbar";
 import { useCurrentUser } from "./CurrentUserContext";
 import { clearConnection } from "./connectionStorage";
 import { useConnectionGate } from "./ConnectionContext";
+import {
+  PerformanceDataProvider,
+  usePerformanceData,
+} from "./PerformanceDataContext";
 
 function toolbarCopy(route: AppRoute) {
   if (route === "performance") {
@@ -40,15 +44,57 @@ function defaultReviewTarget(role: string): PerformanceReviewTarget {
 export function AppLayout() {
   const [activeRoute, setActiveRoute] = useState<AppRoute>("performance");
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [dateRange, setDateRange] = useState<DateRangeKey>("30d");
+  const { currentUser } = useCurrentUser();
+
+  const performanceDataEnabled =
+    !settingsOpen && activeRoute === "performance";
+
+  return (
+    <PerformanceDataProvider
+      enabled={performanceDataEnabled}
+      dateRange={dateRange}
+      selfPersonId={currentUser.person.id}
+    >
+      <AppLayoutShell
+        activeRoute={activeRoute}
+        setActiveRoute={setActiveRoute}
+        settingsOpen={settingsOpen}
+        setSettingsOpen={setSettingsOpen}
+        dateRange={dateRange}
+        setDateRange={setDateRange}
+        performanceDataEnabled={performanceDataEnabled}
+      />
+    </PerformanceDataProvider>
+  );
+}
+
+interface AppLayoutShellProps {
+  activeRoute: AppRoute;
+  setActiveRoute: (route: AppRoute) => void;
+  settingsOpen: boolean;
+  setSettingsOpen: (open: boolean) => void;
+  dateRange: DateRangeKey;
+  setDateRange: (value: DateRangeKey) => void;
+  performanceDataEnabled: boolean;
+}
+
+function AppLayoutShell({
+  activeRoute,
+  setActiveRoute,
+  settingsOpen,
+  setSettingsOpen,
+  dateRange,
+  setDateRange,
+  performanceDataEnabled,
+}: AppLayoutShellProps) {
   const feedbackEnabled = isFeedbackEnabled();
   const { resetConnection } = useConnectionGate();
   const { currentUser } = useCurrentUser();
-  const [dateRange, setDateRange] = useState<DateRangeKey>("30d");
+  const { refresh, refreshing } = usePerformanceData();
   const [reviewTarget, setReviewTarget] = useState<PerformanceReviewTarget>(
     () => defaultReviewTarget(currentUser.person.role),
   );
-  const [refreshToken, setRefreshToken] = useState(0);
-  const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
     bootLog("17M", "AppLayout mounted");
@@ -62,7 +108,7 @@ export function AppLayout() {
     if (!feedbackEnabled && activeRoute === "feedback") {
       setActiveRoute("performance");
     }
-  }, [feedbackEnabled, activeRoute]);
+  }, [feedbackEnabled, activeRoute, setActiveRoute]);
 
   const isEmployee = currentUser.person.role === "employee";
   const showTeamPerformance =
@@ -76,30 +122,28 @@ export function AppLayout() {
     showTeamPerformance || showEmployeePerformance;
 
   const onRefresh = useCallback(() => {
-    setRefreshing(true);
-    window.setTimeout(() => {
-      setRefreshToken((value) => value + 1);
-      setRefreshing(false);
-    }, 500);
-  }, []);
+    if (performanceDataEnabled) {
+      void refresh();
+    }
+  }, [performanceDataEnabled, refresh]);
 
   const onNavigate = useCallback(
     (route: AppRoute) => {
       setSettingsOpen(false);
       setActiveRoute(route);
     },
-    [],
+    [setActiveRoute, setSettingsOpen],
   );
 
   const onOpenSettings = useCallback(() => {
     setSettingsOpen(true);
-  }, []);
+  }, [setSettingsOpen]);
 
   const onReconnect = useCallback(async () => {
     await clearConnection();
     resetConnection();
     setSettingsOpen(false);
-  }, [resetConnection]);
+  }, [resetConnection, setSettingsOpen]);
 
   const feedbackToolbar = useMemo(() => toolbarCopy("feedback"), []);
 
@@ -115,7 +159,7 @@ export function AppLayout() {
           audience={showEmployeePerformance ? "employee" : "team"}
           dateRange={dateRange}
           reviewTarget={reviewTarget}
-          refreshing={refreshing}
+          refreshing={performanceDataEnabled ? refreshing : false}
           onDateRangeChange={setDateRange}
           onReviewTargetChange={setReviewTarget}
           onRefresh={onRefresh}
@@ -138,20 +182,18 @@ export function AppLayout() {
     showEmployeePerformance,
     dateRange,
     reviewTarget,
+    performanceDataEnabled,
     refreshing,
     onRefresh,
     activeRoute,
     feedbackToolbar,
+    setDateRange,
   ]);
 
   const mainContent = settingsOpen ? (
     <SettingsPage onReconnect={() => void onReconnect()} />
   ) : activeRoute === "performance" ? (
-    <PerformancePage
-      dateRange={dateRange}
-      reviewTarget={reviewTarget}
-      refreshToken={refreshToken}
-    />
+    <PerformancePage reviewTarget={reviewTarget} />
   ) : (
     <FeedbackPage />
   );

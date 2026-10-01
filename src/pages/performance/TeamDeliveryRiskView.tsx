@@ -1,11 +1,20 @@
 import type { DeliveryRiskRow } from "../../domain/performance";
-import { getPerson } from "../../fixtures/people";
 
 export interface TeamDeliveryRiskViewProps {
   rows: DeliveryRiskRow[];
 }
 
 export function TeamDeliveryRiskView({ rows }: TeamDeliveryRiskViewProps) {
+  if (rows.length === 0) {
+    return (
+      <section aria-label="Delivery risk">
+        <div className="performance-empty performance-table-wrap">
+          No delivery risks for this period.
+        </div>
+      </section>
+    );
+  }
+
   return (
     <section aria-label="Delivery risk">
       <div className="performance-table-wrap">
@@ -20,23 +29,20 @@ export function TeamDeliveryRiskView({ rows }: TeamDeliveryRiskViewProps) {
             </tr>
           </thead>
           <tbody>
-            {rows.map((row) => {
-              const owner = getPerson(row.ownerId);
-              return (
-                <tr key={row.issueKey}>
-                  <td>
-                    <div className="performance-work-row__key">{row.issueKey}</div>
-                    <div className="performance-work-row__title">
-                      {row.issueTitle}
-                    </div>
-                  </td>
-                  <td>{owner.name}</td>
-                  <td>{row.age}</td>
-                  <td>{row.status}</td>
-                  <td>{row.riskReason}</td>
-                </tr>
-              );
-            })}
+            {rows.map((row) => (
+              <tr key={row.issueKey}>
+                <td>
+                  <div className="performance-work-row__key">{row.issueKey}</div>
+                  <div className="performance-work-row__title">
+                    {row.issueTitle}
+                  </div>
+                </td>
+                <td>{row.ownerName || row.ownerId}</td>
+                <td>{row.age}</td>
+                <td>{row.status}</td>
+                <td>{row.riskReason}</td>
+              </tr>
+            ))}
           </tbody>
         </table>
       </div>

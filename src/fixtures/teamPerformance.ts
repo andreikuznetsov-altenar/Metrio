@@ -11,6 +11,8 @@ import type {
   TrendCardData,
   WorkloadRow,
 } from "../domain/performance";
+import { roleLabel } from "../domain/types";
+import { getPerson } from "./people";
 
 function hash(id: string): number {
   return id.split("").reduce((acc, char) => acc + char.charCodeAt(0), 0);
@@ -180,12 +182,15 @@ function buildPeopleRows(
   );
 
   return directReportIds.map((personId) => {
+    const person = getPerson(personId);
     const detail = buildPersonDetail(personId);
     const load = workload.find((row) => row.personId === personId);
     const attentionItem = attentionByPerson.get(personId);
 
     return {
       personId,
+      personName: person.name,
+      role: roleLabel(person.role),
       efficiency: detail.efficiency,
       workload: load?.workload ?? detail.workload,
       availability: load?.availability ?? "Available",
@@ -220,6 +225,7 @@ function buildRadarRows(
 
     rows.push({
       personId: item.personId,
+      personName: getPerson(item.personId).name,
       severity,
       severityVariant,
       reason: item.reason,
@@ -231,7 +237,8 @@ function buildRadarRows(
   if (rows.length === 0) {
     return directReportIds.slice(0, 1).map((personId) => ({
       personId,
-      severity: "Low",
+      personName: getPerson(personId).name,
+      severity: "Low" as const,
       severityVariant: "neutral",
       reason: "Monitoring baseline signals",
       tasksAffected: 1,
@@ -280,6 +287,7 @@ function buildDeliveryRiskRows(directReportIds: string[]): DeliveryRiskRow[] {
         issueKey: issue.key,
         issueTitle: issue.title,
         ownerId,
+        ownerName: getPerson(ownerId).name,
         age: `${3 + index}d`,
         status: issue.status,
         riskReason: issue.risk,

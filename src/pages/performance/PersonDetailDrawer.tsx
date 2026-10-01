@@ -2,9 +2,8 @@ import { useMemo } from "react";
 import { Badge } from "../../components/Badge/Badge";
 import { Drawer } from "../../components/Drawer/Drawer";
 import { Tabs } from "../../components/Tabs/Tabs";
-import { personInitials, roleLabel } from "../../domain/types";
-import { getPersonDetailSnapshot } from "../../fixtures/personDetail";
-import { getPerson } from "../../fixtures/people";
+import { usePerformanceData } from "../../app/PerformanceDataContext";
+import { personInitials } from "../../domain/types";
 import "./person-detail-drawer.css";
 import "./performance-dashboard.css";
 
@@ -19,14 +18,18 @@ export function PersonDetailDrawer({
   open,
   onClose,
 }: PersonDetailDrawerProps) {
-  const person = getPerson(personId);
-  const snapshot = useMemo(
-    () => getPersonDetailSnapshot(personId),
-    [personId],
-  );
+  const { viewModels } = usePerformanceData();
+  const person = viewModels?.getPerson(personId);
+  const snapshot = viewModels?.getPersonDetail(personId);
 
-  const tabs = useMemo(
-    () => [
+  const displayName = snapshot?.personName || person?.bamboo.displayName || "—";
+  const jobTitle = person?.bamboo.jobTitle || "—";
+
+  const tabs = useMemo(() => {
+    if (!snapshot) {
+      return [];
+    }
+    return [
       {
         value: "overview",
         label: "Overview",
@@ -151,25 +154,26 @@ export function PersonDetailDrawer({
           </div>
         ),
       },
-    ],
-    [snapshot],
-  );
+    ];
+  }, [snapshot]);
+
+  if (!snapshot) {
+    return null;
+  }
 
   return (
     <Drawer
       open={open}
       onClose={onClose}
-      ariaLabel={`Person detail for ${person.name}`}
+      ariaLabel={`Person detail for ${displayName}`}
       header={
         <div className="person-detail-drawer__identity">
           <span className="performance-avatar" aria-hidden>
-            {personInitials(person.name)}
+            {personInitials(displayName)}
           </span>
           <div>
-            <div className="person-detail-drawer__name">{person.name}</div>
-            <div className="person-detail-drawer__role">
-              {roleLabel(person.role)}
-            </div>
+            <div className="person-detail-drawer__name">{displayName}</div>
+            <div className="person-detail-drawer__role">{jobTitle}</div>
             <div className="person-detail-drawer__meta">
               {snapshot.availability} · {snapshot.workload} workload
             </div>

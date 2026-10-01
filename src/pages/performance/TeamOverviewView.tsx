@@ -2,8 +2,7 @@ import { Badge } from "../../components/Badge/Badge";
 import { Card } from "../../components/Card/Card";
 import { Tooltip } from "../../components/Tooltip/Tooltip";
 import type { TeamPerformanceSnapshot } from "../../domain/performance";
-import { personInitials, roleLabel } from "../../domain/types";
-import { getPerson } from "../../fixtures/people";
+import { personInitials } from "../../domain/types";
 import { Sparkline } from "./Sparkline";
 
 export interface TeamOverviewViewProps {
@@ -67,7 +66,7 @@ export function TeamOverviewView({
         ) : (
           <div className="performance-attention-list">
             {snapshot.attention.map((item) => {
-              const person = getPerson(item.personId);
+              const name = item.personName || item.personId;
               return (
                 <button
                   key={item.personId}
@@ -76,15 +75,17 @@ export function TeamOverviewView({
                   onClick={() => onOpenPerson(item.personId)}
                 >
                   <span className="performance-avatar" aria-hidden>
-                    {personInitials(person.name)}
+                    {personInitials(name)}
                   </span>
                   <span className="performance-attention-row__main">
                     <div className="performance-attention-row__name">
-                      {person.name}
+                      {name}
                     </div>
-                    <div className="performance-attention-row__role">
-                      {roleLabel(person.role)}
-                    </div>
+                    {item.personRole ? (
+                      <div className="performance-attention-row__role">
+                        {item.personRole}
+                      </div>
+                    ) : null}
                     <div className="performance-attention-row__reason">
                       {item.reason}
                     </div>
@@ -132,18 +133,15 @@ export function TeamOverviewView({
               </tr>
             </thead>
             <tbody>
-              {snapshot.workload.map((row) => {
-                const person = getPerson(row.personId);
-                return (
-                  <tr key={row.personId}>
-                    <td>{person.name}</td>
-                    <td>{row.activeWork}</td>
-                    <td>{row.atRisk}</td>
-                    <td>{row.workload}</td>
-                    <td>{row.availability}</td>
-                  </tr>
-                );
-              })}
+              {snapshot.workload.map((row) => (
+                <tr key={row.personId}>
+                  <td>{row.personName || row.personId}</td>
+                  <td>{row.activeWork}</td>
+                  <td>{row.atRisk}</td>
+                  <td>{row.workload}</td>
+                  <td>{row.availability}</td>
+                </tr>
+              ))}
             </tbody>
           </table>
         </div>
@@ -157,28 +155,25 @@ export function TeamOverviewView({
           </div>
         ) : (
           <ul className="performance-timeoff-list">
-            {snapshot.timeOff.map((entry) => {
-              const person = getPerson(entry.personId);
-              return (
-                <li
-                  key={`${entry.personId}-${entry.rangeLabel}`}
-                  className="performance-timeoff-item"
-                >
-                  <span>
-                    <span className="performance-timeoff-item__name">
-                      {person.name}
-                    </span>
-                    <span className="performance-timeoff-item__meta">
-                      {" "}
-                      · {entry.rangeLabel}
-                    </span>
+            {snapshot.timeOff.map((entry) => (
+              <li
+                key={`${entry.personId}-${entry.rangeLabel}`}
+                className="performance-timeoff-item"
+              >
+                <span>
+                  <span className="performance-timeoff-item__name">
+                    {entry.personName || entry.personId}
                   </span>
                   <span className="performance-timeoff-item__meta">
-                    {entry.note}
+                    {" "}
+                    · {entry.rangeLabel}
                   </span>
-                </li>
-              );
-            })}
+                </span>
+                <span className="performance-timeoff-item__meta">
+                  {entry.note}
+                </span>
+              </li>
+            ))}
           </ul>
         )}
       </section>
