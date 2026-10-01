@@ -40,6 +40,7 @@ struct TrayState {
 struct AppState {
     tray: Mutex<TrayState>,
     quitting: Mutex<bool>,
+    keep_running_in_tray: Mutex<bool>,
     storage_warnings: Mutex<Vec<String>>,
 }
 
@@ -407,6 +408,16 @@ fn show_main_window(app: &AppHandle) {
 }
 
 #[tauri::command]
+fn set_keep_running_in_tray(state: State<AppState>, enabled: bool) -> Result<(), String> {
+    let mut guard = state
+        .keep_running_in_tray
+        .lock()
+        .map_err(|_| "keep_running_in_tray lock poisoned".to_string())?;
+    *guard = enabled;
+    Ok(())
+}
+
+#[tauri::command]
 async fn refresh_tray_menu(app: AppHandle) -> Result<(), String> {
     apply_tray_menu(&app)
 }
@@ -428,6 +439,7 @@ pub fn run() {
                 open_label: "Open Metrio".to_string(),
             }),
             quitting: Mutex::new(false),
+            keep_running_in_tray: Mutex::new(true),
             storage_warnings: Mutex::new(Vec::new()),
         })
         .invoke_handler(tauri::generate_handler![
@@ -445,6 +457,7 @@ pub fn run() {
             logs_open_folder,
             update_tray_snapshot,
             refresh_tray_menu,
+            set_keep_running_in_tray,
             jira_test_connection,
             jira_search_issues,
             jira_fetch_changelog,
@@ -484,6 +497,24 @@ pub fn run() {
                         if quitting {
                             return;
                         }
+                        let keep_in_tray = if let Some(state) = handle.try_state::<AppState>() {
+                            state
+                                .keep_running_in_tray
+                                .lock()
+                                .map(|guard| *guard)
+                                .unwrap_or(true)
+                        } else {
+                            true
+                        };
+                        if !keep_in_tray {
+                            if let Some(state) = handle.try_state::<AppState>() {
+                                if let Ok(mut q) = state.quitting.lock() {
+                                    *q = true;
+                                }
+                            }
+                            handle.exit(0);
+                            return;
+                        }
                         api.prevent_close();
                         hide_main_window(&handle);
                     }
@@ -514,6 +545,7 @@ mod tray_lock_tests {
                 open_label: "Open Metrio".to_string(),
             }),
             quitting: Mutex::new(false),
+            keep_running_in_tray: Mutex::new(true),
             storage_warnings: Mutex::new(Vec::new()),
         }
     }

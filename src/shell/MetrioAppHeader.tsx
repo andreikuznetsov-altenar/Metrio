@@ -1,5 +1,6 @@
 import { IconButton } from "../components/IconButton/IconButton";
 import type { AppRoute } from "../domain/types";
+import { ConnectionHealthBadge } from "./ConnectionHealthBadge";
 import { ProfileMenu } from "./ProfileMenu";
 import "./AppHeader.css";
 
@@ -13,6 +14,9 @@ export interface MetrioAppHeaderProps {
   onNavigate: (route: AppRoute) => void;
   feedbackEnabled?: boolean;
   onOpenSettings?: () => void;
+  onOpenNotifications?: () => void;
+  onOpenConnections?: () => void;
+  onLogout?: () => void;
 }
 
 function SettingsIcon() {
@@ -57,6 +61,9 @@ export function MetrioAppHeader({
   onNavigate,
   feedbackEnabled = true,
   onOpenSettings,
+  onOpenNotifications,
+  onOpenConnections,
+  onLogout,
 }: MetrioAppHeaderProps) {
   const navItems = NAV_ITEMS.filter(
     (item) => item.route !== "feedback" || feedbackEnabled,
@@ -88,13 +95,17 @@ export function MetrioAppHeader({
       </div>
 
       <div className="app-header__actions">
+        <ConnectionHealthBadge onOpenConnections={onOpenConnections} />
         <IconButton label="Settings" onClick={onOpenSettings}>
           <SettingsIcon />
         </IconButton>
-        <IconButton label="Notifications">
+        <IconButton
+          label="Notification settings"
+          onClick={onOpenNotifications}
+        >
           <BellIcon />
         </IconButton>
-        <ProfileMenu onOpenSettings={onOpenSettings} />
+        <ProfileMenu onOpenSettings={onOpenSettings} onLogout={onLogout} />
       </div>
     </div>
   );

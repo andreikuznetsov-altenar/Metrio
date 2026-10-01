@@ -1,4 +1,5 @@
 import { listen } from '@tauri-apps/api/event';
+import { createCoalescedRefresh } from './refreshCoordinator';
 
 export type BackgroundRefreshEvent =
   | 'background-jira-refresh'
@@ -10,6 +11,8 @@ export interface BackgroundRefreshHandlers {
   onBambooRefresh?: () => void | Promise<void>;
   onSystemResumed?: () => void | Promise<void>;
 }
+
+const RESUME_DEBOUNCE_MS = 1500;
 
 /** Subscribe to native background refresh ticks emitted from the Tauri host. */
 export async function registerBackgroundRefreshListeners(
@@ -30,4 +33,41 @@ export async function registerBackgroundRefreshListeners(
   return () => {
     for (const unsub of unsubs) unsub();
   };
+}
+
+/**
+ * Routes Jira, Bamboo, and resume events into one coalesced refresh callback.
+ * Resume is debounced so wake-from-sleep does not stack with immediate emitter ticks.
+ */
+export async function registerCoalescedBackgroundRefresh(
+  refresh: () => Promise<void>,
+): Promise<() => void> {
+  const coalesced = createCoalescedRefresh(refresh);
+  let resumeTimer: ReturnType<typeof setTimeout> | undefined;
+  let batchScheduled = false;
+
+  const trigger = () => {
+    if (batchScheduled) {
+      return;
+    }
+    batchScheduled = true;
+    queueMicrotask(() => {
+      batchScheduled = false;
+      void coalesced();
+    });
+  };
+
+  return registerBackgroundRefreshListeners({
+    onJiraRefresh: trigger,
+    onBambooRefresh: trigger,
+    onSystemResumed: () => {
+      if (resumeTimer) {
+        clearTimeout(resumeTimer);
+      }
+      resumeTimer = setTimeout(() => {
+        resumeTimer = undefined;
+        trigger();
+      }, RESUME_DEBOUNCE_MS);
+    },
+  });
 }

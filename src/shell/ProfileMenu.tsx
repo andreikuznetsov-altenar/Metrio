@@ -18,7 +18,13 @@ const DEV_FIXTURES: { id: DevFixtureId; label: string }[] = [
   { id: "director", label: "Director fixture (4 reports)" },
 ];
 
-export function ProfileMenu({ onOpenSettings }: { onOpenSettings?: () => void }) {
+export function ProfileMenu({
+  onOpenSettings,
+  onLogout,
+}: {
+  onOpenSettings?: () => void;
+  onLogout?: () => void;
+}) {
   const menuId = useId();
   const rootRef = useRef<HTMLDivElement>(null);
   const [open, setOpen] = useState(false);
@@ -119,7 +125,10 @@ export function ProfileMenu({ onOpenSettings }: { onOpenSettings?: () => void })
             type="button"
             role="menuitem"
             className="profile-menu__item profile-menu__item--danger"
-            onClick={() => setOpen(false)}
+            onClick={() => {
+              onLogout?.();
+              setOpen(false);
+            }}
           >
             Log out
           </button>

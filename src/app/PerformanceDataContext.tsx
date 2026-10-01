@@ -11,12 +11,17 @@ import {
 import type { DateRangeKey, PerformanceReviewTarget } from "../domain/performance";
 import type { PerformanceAudience } from "../domain/performance/reportParams";
 import { fetchPerformanceData } from "../services/performance/performanceDataService";
+import {
+  applyPerformanceRefreshSideEffects,
+  markPerformanceIntegrationsStale,
+} from "../services/performance/performanceRefreshSideEffects";
 import type { PerformanceFetchResult } from "../services/performance/performanceTypes";
 import {
   buildPerformanceViewModels,
   type PerformanceViewModels,
 } from "../services/performance/performanceViewModel";
-import { registerBackgroundRefreshListeners } from "../services/refresh/backgroundRefresh";
+import { registerCoalescedBackgroundRefresh } from "../services/refresh/backgroundRefresh";
+import { createCoalescedRefresh } from "../services/refresh/refreshCoordinator";
 
 export type PerformanceLoadStatus =
   | "idle"
@@ -57,6 +62,7 @@ export interface PerformanceDataProviderProps {
   reviewTarget: PerformanceReviewTarget;
   audience: PerformanceAudience;
   selfPersonId: string;
+  managerTeamTray: boolean;
   children: ReactNode;
 }
 
@@ -66,6 +72,7 @@ export function PerformanceDataProvider({
   reviewTarget,
   audience,
   selfPersonId,
+  managerTeamTray,
   children,
 }: PerformanceDataProviderProps) {
   const [data, setData] = useState<PerformanceFetchResult | null>(null);
@@ -75,18 +82,18 @@ export function PerformanceDataProvider({
   const [status, setStatus] = useState<PerformanceLoadStatus>("idle");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [stale, setStale] = useState(false);
-  const inFlightRef = useRef(false);
   const dataRef = useRef(data);
   const viewModelsRef = useRef(viewModels);
+  const managerTeamTrayRef = useRef(managerTeamTray);
   dataRef.current = data;
   viewModelsRef.current = viewModels;
+  managerTeamTrayRef.current = managerTeamTray;
 
   const load = useCallback(
     async (mode: "initial" | "refresh") => {
-      if (!enabled || inFlightRef.current) {
+      if (!enabled) {
         return;
       }
-      inFlightRef.current = true;
       const hasData = dataRef.current != null;
       setStatus(hasData ? "refreshing" : "loading");
       if (mode === "refresh" && hasData) {
@@ -104,33 +111,48 @@ export function PerformanceDataProvider({
         setStatus(partial ? "partial" : "ready");
         setStale(false);
         setErrorMessage(null);
+        await applyPerformanceRefreshSideEffects(next, {
+          managerTeamTray: managerTeamTrayRef.current,
+        });
       } catch (error) {
         const message = errorMessageFromError(error);
         setErrorMessage(message);
         if (dataRef.current) {
           setStale(true);
           setStatus("partial");
+          await markPerformanceIntegrationsStale({
+            jira: /jira/i.test(message),
+            bamboo: /bamboo/i.test(message),
+          });
         } else {
           setStatus("error");
         }
-      } finally {
-        inFlightRef.current = false;
       }
     },
     [dateRange, reviewTarget, audience, enabled, selfPersonId],
   );
 
-  const refresh = useCallback(async () => {
-    await load("refresh");
+  const coalescedLoadRef = useRef(createCoalescedRefresh(() => load("refresh")));
+
+  useEffect(() => {
+    coalescedLoadRef.current = createCoalescedRefresh(() => load("refresh"));
   }, [load]);
+
+  const refresh = useCallback(async () => {
+    await coalescedLoadRef.current();
+  }, []);
 
   useEffect(() => {
     if (!enabled) {
       setStatus("idle");
       return;
     }
-    void load("initial");
-  }, [enabled, load]);
+    if (dataRef.current) {
+      void coalescedLoadRef.current();
+    } else {
+      void load("initial");
+    }
+  }, [enabled, dateRange, reviewTarget, audience, selfPersonId, load]);
 
   useEffect(() => {
     if (!enabled) {
@@ -141,17 +163,7 @@ export function PerformanceDataProvider({
 
     void (async () => {
       try {
-        const unsub = await registerBackgroundRefreshListeners({
-          onJiraRefresh: () => {
-            if (!disposed) void refresh();
-          },
-          onBambooRefresh: () => {
-            if (!disposed) void refresh();
-          },
-          onSystemResumed: () => {
-            if (!disposed) void refresh();
-          },
-        });
+        const unsub = await registerCoalescedBackgroundRefresh(refresh);
         if (disposed) {
           unsub();
           return;

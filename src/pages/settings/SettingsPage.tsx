@@ -5,6 +5,11 @@ import { Button } from "../../components/Button/Button";
 import { Card } from "../../components/Card/Card";
 import { Input } from "../../components/Input/Input";
 import { Select } from "../../components/Select/Select";
+import { syncGeneralPreferencesToNative } from "../../platform/generalPreferencesSync";
+import {
+  testBambooConnectionSaved,
+  testJiraConnectionSaved,
+} from "../../platform/connectionTest";
 import {
   DEFAULT_PREFERENCES,
   loadPreferences,
@@ -33,15 +38,25 @@ const THEME_OPTIONS: { value: ThemePreference; label: string }[] = [
 
 export interface SettingsPageProps {
   onReconnect?: () => void;
+  initialSection?: SettingsSection;
 }
 
-export function SettingsPage({ onReconnect }: SettingsPageProps) {
+export function SettingsPage({
+  onReconnect,
+  initialSection = "general",
+}: SettingsPageProps) {
   const { preference, setPreference } = useTheme();
-  const [section, setSection] = useState<SettingsSection>("general");
+  const [section, setSection] = useState<SettingsSection>(initialSection);
   const [prefs, setPrefs] = useState<AppPreferences>(DEFAULT_PREFERENCES);
   const [connection, setConnection] = useState<SavedConnection | null>(null);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [jiraTest, setJiraTest] = useState<string | null>(null);
+  const [bambooTest, setBambooTest] = useState<string | null>(null);
+
+  useEffect(() => {
+    setSection(initialSection);
+  }, [initialSection]);
 
   useEffect(() => {
     let cancelled = false;
@@ -60,6 +75,7 @@ export function SettingsPage({ onReconnect }: SettingsPageProps) {
     setPrefs(next);
     try {
       await savePreferences(next);
+      await syncGeneralPreferencesToNative(next.general);
       setStatusMessage("Settings saved.");
     } catch {
       setStatusMessage("Could not save settings to disk.");
@@ -122,12 +138,29 @@ export function SettingsPage({ onReconnect }: SettingsPageProps) {
       await savePreferences({ ...DEFAULT_PREFERENCES });
       setPrefs({ ...DEFAULT_PREFERENCES });
       setConnection(null);
-      setStatusMessage("Local app data reset.");
+      setStatusMessage("Local app data reset. Reconnect to continue.");
+      onReconnect?.();
     } catch {
       setStatusMessage("Reset failed.");
     } finally {
       setBusy(false);
     }
+  };
+
+  const onTestJira = async () => {
+    setBusy(true);
+    setJiraTest(null);
+    const result = await testJiraConnectionSaved();
+    setJiraTest(`${result.label}: ${result.detail}`);
+    setBusy(false);
+  };
+
+  const onTestBamboo = async () => {
+    setBusy(true);
+    setBambooTest(null);
+    const result = await testBambooConnectionSaved();
+    setBambooTest(`${result.label}: ${result.detail}`);
+    setBusy(false);
   };
 
   return (
@@ -333,13 +366,25 @@ export function SettingsPage({ onReconnect }: SettingsPageProps) {
                 : "Integration timestamps look current."}
             </p>
             <div className="settings-actions">
-              <Button type="button" variant="secondary" disabled={busy}>
+              <Button
+                type="button"
+                variant="secondary"
+                disabled={busy}
+                onClick={() => void onTestJira()}
+              >
                 Test Jira connection
               </Button>
-              <Button type="button" variant="secondary" disabled={busy}>
+              <Button
+                type="button"
+                variant="secondary"
+                disabled={busy}
+                onClick={() => void onTestBamboo()}
+              >
                 Test Bamboo connection
               </Button>
             </div>
+            {jiraTest ? <p className="settings-row__hint">{jiraTest}</p> : null}
+            {bambooTest ? <p className="settings-row__hint">{bambooTest}</p> : null}
           </Card>
         </div>
       ) : null}

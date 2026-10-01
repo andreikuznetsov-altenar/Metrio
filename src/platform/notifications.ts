@@ -67,6 +67,20 @@ export async function processNotificationTransitions(
       }
     }
 
+    if (
+      toggles.vacationReminder &&
+      (person.availability.state === 'vacation_soon' ||
+        person.availability.state === 'vacation_tomorrow')
+    ) {
+      if (state.vacationNotified[key] !== availKey) {
+        await sendNotification({
+          title: 'Upcoming time off',
+          body: `${person.bamboo.displayName} · ${person.availability.label}`,
+        });
+        state.vacationNotified[key] = availKey;
+      }
+    }
+
     const problematic = person.workload?.problematicCount || 0;
     const prevProb = state.problematicCounts[key] || 0;
     if (toggles.problematicTaskAlerts && problematic > prevProb) {

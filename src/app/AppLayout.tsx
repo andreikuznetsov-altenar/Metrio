@@ -12,12 +12,15 @@ import { isFeedbackEnabled } from "./featureGates";
 import { FeedbackPage } from "../pages/FeedbackPage";
 import { PerformancePage } from "../pages/PerformancePage";
 import { SettingsPage } from "../pages/settings/SettingsPage";
+import type { SettingsSection } from "../pages/settings/types";
 import { MetrioAppHeader } from "../shell/MetrioAppHeader";
 import { PageToolbar } from "../shell/PageToolbar";
 import { PerformanceToolbar } from "../shell/PerformanceToolbar";
+import { RuntimeShellEffects } from "./RuntimeShellEffects";
 import { useCurrentUser } from "./CurrentUserContext";
 import { clearConnection } from "./connectionStorage";
 import { useConnectionGate } from "./ConnectionContext";
+import { logoutSession } from "./logoutSession";
 import {
   PerformanceDataProvider,
   usePerformanceData,
@@ -44,21 +47,55 @@ function defaultReviewTarget(role: string): PerformanceReviewTarget {
 export function AppLayout() {
   const [activeRoute, setActiveRoute] = useState<AppRoute>("performance");
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [settingsSection, setSettingsSection] =
+    useState<SettingsSection>("general");
   const [dateRange, setDateRange] = useState<DateRangeKey>("30d");
+  const { currentUser } = useCurrentUser();
+  const [reviewTarget, setReviewTarget] = useState<PerformanceReviewTarget>(
+    () => defaultReviewTarget(currentUser.person.role),
+  );
+
+  useEffect(() => {
+    setReviewTarget(defaultReviewTarget(currentUser.person.role));
+  }, [currentUser.person.id, currentUser.person.role]);
 
   const performanceDataEnabled =
     !settingsOpen && activeRoute === "performance";
 
+  const isEmployee = currentUser.person.role === "employee";
+  const showTeamPerformance =
+    performanceDataEnabled &&
+    isManagerRole(currentUser.person.role) &&
+    Boolean(currentUser.team);
+
   return (
-    <AppLayoutShell
-      activeRoute={activeRoute}
-      setActiveRoute={setActiveRoute}
-      settingsOpen={settingsOpen}
-      setSettingsOpen={setSettingsOpen}
-      dateRange={dateRange}
-      setDateRange={setDateRange}
-      performanceDataEnabled={performanceDataEnabled}
-    />
+    <>
+      <RuntimeShellEffects />
+      <PerformanceDataProvider
+        enabled={performanceDataEnabled}
+        dateRange={dateRange}
+        reviewTarget={reviewTarget}
+        audience={showTeamPerformance ? "team" : "employee"}
+        selfPersonId={currentUser.person.id}
+        managerTeamTray={showTeamPerformance}
+      >
+        <AppLayoutShell
+          activeRoute={activeRoute}
+          setActiveRoute={setActiveRoute}
+          settingsOpen={settingsOpen}
+          setSettingsOpen={setSettingsOpen}
+          settingsSection={settingsSection}
+          setSettingsSection={setSettingsSection}
+          dateRange={dateRange}
+          setDateRange={setDateRange}
+          reviewTarget={reviewTarget}
+          setReviewTarget={setReviewTarget}
+          performanceDataEnabled={performanceDataEnabled}
+          showTeamPerformance={showTeamPerformance}
+          showEmployeePerformance={performanceDataEnabled && isEmployee}
+        />
+      </PerformanceDataProvider>
+    </>
   );
 }
 
@@ -67,9 +104,15 @@ interface AppLayoutShellProps {
   setActiveRoute: (route: AppRoute) => void;
   settingsOpen: boolean;
   setSettingsOpen: (open: boolean) => void;
+  settingsSection: SettingsSection;
+  setSettingsSection: (section: SettingsSection) => void;
   dateRange: DateRangeKey;
   setDateRange: (value: DateRangeKey) => void;
+  reviewTarget: PerformanceReviewTarget;
+  setReviewTarget: (value: PerformanceReviewTarget) => void;
   performanceDataEnabled: boolean;
+  showTeamPerformance: boolean;
+  showEmployeePerformance: boolean;
 }
 
 function AppLayoutShell({
@@ -77,25 +120,23 @@ function AppLayoutShell({
   setActiveRoute,
   settingsOpen,
   setSettingsOpen,
+  settingsSection,
+  setSettingsSection,
   dateRange,
   setDateRange,
+  reviewTarget,
+  setReviewTarget,
   performanceDataEnabled,
+  showTeamPerformance,
+  showEmployeePerformance,
 }: AppLayoutShellProps) {
   const feedbackEnabled = isFeedbackEnabled();
-  const { resetConnection } = useConnectionGate();
-  const { currentUser } = useCurrentUser();
+  const { resetConnection, invalidateSession } = useConnectionGate();
   const { refresh, refreshing } = usePerformanceData();
-  const [reviewTarget, setReviewTarget] = useState<PerformanceReviewTarget>(
-    () => defaultReviewTarget(currentUser.person.role),
-  );
 
   useEffect(() => {
     bootLog("17M", "AppLayout mounted");
   }, []);
-
-  useEffect(() => {
-    setReviewTarget(defaultReviewTarget(currentUser.person.role));
-  }, [currentUser.person.id, currentUser.person.role]);
 
   useEffect(() => {
     if (!feedbackEnabled && activeRoute === "feedback") {
@@ -103,14 +144,6 @@ function AppLayoutShell({
     }
   }, [feedbackEnabled, activeRoute, setActiveRoute]);
 
-  const isEmployee = currentUser.person.role === "employee";
-  const showTeamPerformance =
-    !settingsOpen &&
-    activeRoute === "performance" &&
-    isManagerRole(currentUser.person.role) &&
-    Boolean(currentUser.team);
-  const showEmployeePerformance =
-    !settingsOpen && activeRoute === "performance" && isEmployee;
   const showPerformanceToolbar =
     showTeamPerformance || showEmployeePerformance;
 
@@ -128,9 +161,18 @@ function AppLayoutShell({
     [setActiveRoute, setSettingsOpen],
   );
 
-  const onOpenSettings = useCallback(() => {
-    setSettingsOpen(true);
-  }, [setSettingsOpen]);
+  const onOpenSettings = useCallback(
+    (section: SettingsSection = "general") => {
+      setSettingsSection(section);
+      setSettingsOpen(true);
+    },
+    [setSettingsOpen, setSettingsSection],
+  );
+
+  const onLogout = useCallback(() => {
+    logoutSession();
+    invalidateSession();
+  }, [invalidateSession]);
 
   const onReconnect = useCallback(async () => {
     await clearConnection();
@@ -184,7 +226,10 @@ function AppLayoutShell({
   ]);
 
   const mainContent = settingsOpen ? (
-    <SettingsPage onReconnect={() => void onReconnect()} />
+    <SettingsPage
+      initialSection={settingsSection}
+      onReconnect={() => void onReconnect()}
+    />
   ) : activeRoute === "performance" ? (
     <PerformancePage reviewTarget={reviewTarget} />
   ) : (
@@ -192,26 +237,21 @@ function AppLayoutShell({
   );
 
   return (
-    <PerformanceDataProvider
-      enabled={performanceDataEnabled}
-      dateRange={dateRange}
-      reviewTarget={reviewTarget}
-      audience={showTeamPerformance ? "team" : "employee"}
-      selfPersonId={currentUser.person.id}
+    <AppShell
+      header={
+        <MetrioAppHeader
+          activeRoute={settingsOpen ? activeRoute : activeRoute}
+          feedbackEnabled={feedbackEnabled}
+          onNavigate={onNavigate}
+          onOpenSettings={() => onOpenSettings("general")}
+          onOpenNotifications={() => onOpenSettings("notifications")}
+          onOpenConnections={() => onOpenSettings("connections")}
+          onLogout={onLogout}
+        />
+      }
+      pageToolbar={pageToolbar}
     >
-      <AppShell
-        header={
-          <MetrioAppHeader
-            activeRoute={settingsOpen ? activeRoute : activeRoute}
-            feedbackEnabled={feedbackEnabled}
-            onNavigate={onNavigate}
-            onOpenSettings={onOpenSettings}
-          />
-        }
-        pageToolbar={pageToolbar}
-      >
-        <ScrollArea>{mainContent}</ScrollArea>
-      </AppShell>
-    </PerformanceDataProvider>
+      <ScrollArea>{mainContent}</ScrollArea>
+    </AppShell>
   );
 }

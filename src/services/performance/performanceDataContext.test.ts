@@ -10,6 +10,11 @@ vi.mock("../performance/performanceDataService", () => ({
   fetchPerformanceData: vi.fn(),
 }));
 
+vi.mock("../performance/performanceRefreshSideEffects", () => ({
+  applyPerformanceRefreshSideEffects: vi.fn(async () => undefined),
+  markPerformanceIntegrationsStale: vi.fn(async () => undefined),
+}));
+
 vi.mock("../refresh/backgroundRefresh", () => ({
   registerBackgroundRefreshListeners: vi.fn(async () => () => {}),
 }));
@@ -35,6 +40,7 @@ function wrapper(enabled = true) {
         reviewTarget: "team",
         audience: "team",
         selfPersonId: "1114",
+        managerTeamTray: true,
       },
       children,
     );
