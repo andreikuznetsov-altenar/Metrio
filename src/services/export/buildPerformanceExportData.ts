@@ -189,28 +189,31 @@ export function buildPerformanceExportData(input: {
   prefs: AppPreferences;
   historyPerson?: TeamSnapshot['persons'][number];
   workHistoryPeriod?: 'week' | 'month' | 'quarter';
+  teamScopeLabel?: string;
+  historyReportData?: AuditReportData;
   generatedAt?: Date;
 }): PerformanceExportPayload {
   const { view, snapshot, reportData, kpiSnapshots, firstPassMetrics, prefs, historyPerson, workHistoryPeriod } =
     input;
   const generatedAt = input.generatedAt ?? new Date();
-  const filters = prefs.reportFilters;
+  const params = reportData.params;
   const timezone = resolveDisplayTimezone(prefs.appearance.displayTimezone);
   const person = snapshot.persons[0];
 
   const metadata: PerformanceExportPayload['metadata'] = {
-    reportRange: formatRange(filters.dateFrom, filters.dateTo),
+    reportRange: formatRange(params.dateFrom, params.dateTo),
     generatedAt: formatGeneratedTimestamp(generatedAt),
     timezone,
     timezoneOffset: formatUtcOffset(generatedAt, timezone),
-    targetReviewDays: filters.targetReviewDays,
+    targetReviewDays: params.targetReviewDays,
     teamScope:
-      snapshot.mode === 'team'
-        ? filters.teamScope === 'direct'
+      input.teamScopeLabel ??
+      (snapshot.mode === 'team'
+        ? prefs.reportFilters.teamScope === 'direct'
           ? 'Direct reports only'
           : 'Full reporting tree'
-        : undefined,
-    projects: filters.projects.length ? filters.projects.join(', ') : undefined,
+        : undefined),
+    projects: params.projects.length ? params.projects.join(', ') : undefined,
     personName: person?.bamboo.displayName,
     workHistoryGrouping: workHistoryPeriod
       ? workHistoryPeriod.charAt(0).toUpperCase() + workHistoryPeriod.slice(1)
@@ -370,7 +373,8 @@ export function buildPerformanceExportData(input: {
   } else if (view === 'personal-work-history' && person) {
     const source = historyPerson || person;
     const period = workHistoryPeriod || 'month';
-    const groups = buildWorkHistory(source, reportData.params, period);
+    const historyParams = input.historyReportData?.params ?? reportData.params;
+    const groups = buildWorkHistory(source, historyParams, period);
     sections = [
       {
         title: 'Work History',

@@ -1,9 +1,10 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Badge } from "../../components/Badge/Badge";
 import { Button } from "../../components/Button/Button";
 import { Card } from "../../components/Card/Card";
 import { Tooltip } from "../../components/Tooltip/Tooltip";
 import { usePerformanceData } from "../../app/PerformanceDataContext";
+import { usePerformanceExport } from "../../app/PerformanceExportContext";
 import type { EmployeePerformanceView } from "../../domain/performance";
 import { EmployeeMyWeekView } from "./EmployeeMyWeekView";
 import { EmployeePerformanceSubnav } from "./EmployeePerformanceSubnav";
@@ -24,6 +25,11 @@ export function EmployeePerformanceOverview({
   const [activeView, setActiveView] =
     useState<EmployeePerformanceView>("overview");
   const { viewModels, status } = usePerformanceData();
+  const { registerEmployeeView } = usePerformanceExport();
+
+  useEffect(() => {
+    registerEmployeeView(activeView);
+  }, [activeView, registerEmployeeView]);
 
   if (!viewModels?.employee && (status === "loading" || status === "idle")) {
     return (

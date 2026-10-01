@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { TeamPerformanceView } from "../../domain/performance";
 import { usePerformanceData } from "../../app/PerformanceDataContext";
+import { usePerformanceExport } from "../../app/PerformanceExportContext";
 import { TeamDeliveryRiskView } from "./TeamDeliveryRiskView";
 import { TeamOverviewView } from "./TeamOverviewView";
 import { TeamPeopleView } from "./TeamPeopleView";
@@ -18,6 +19,11 @@ export function TeamPerformanceOverview({
 }: TeamPerformanceOverviewProps) {
   const [activeView, setActiveView] = useState<TeamPerformanceView>("overview");
   const { viewModels, status } = usePerformanceData();
+  const { registerTeamView } = usePerformanceExport();
+
+  useEffect(() => {
+    registerTeamView(activeView);
+  }, [activeView, registerTeamView]);
 
   if (!viewModels && (status === "loading" || status === "idle")) {
     return (

@@ -1,5 +1,6 @@
-import { pdf } from '@react-pdf/renderer';
+import { pdf, renderToBuffer } from '@react-pdf/renderer';
 import { invoke } from '@tauri-apps/api/core';
+import type React from 'react';
 import { save } from '@tauri-apps/plugin-dialog';
 import { PdfReportDocument } from './PdfReportDocument';
 import type { PerformanceExportPayload } from './types';
@@ -23,6 +24,24 @@ function errorClass(error: unknown): string {
   return typeof error;
 }
 
+async function pdfDocumentToBytes(
+  document: React.ReactElement,
+  doc: ReturnType<typeof pdf>,
+): Promise<Uint8Array> {
+  try {
+    const blob = await doc.toBlob();
+    if (typeof blob.arrayBuffer === 'function') {
+      return new Uint8Array(await blob.arrayBuffer());
+    }
+  } catch {
+    // Fall back to buffer rendering (Vitest/jsdom and some WebViews).
+  }
+  const buffer = await renderToBuffer(
+    document as Parameters<typeof renderToBuffer>[0],
+  );
+  return new Uint8Array(buffer);
+}
+
 function toExportError(code: PdfExportErrorCode, error: unknown): PdfExportResult {
   const raw = error instanceof Error ? error.message : String(error);
   const message = sanitizePdfDiagnosticMessage(raw);
@@ -36,9 +55,10 @@ function toExportError(code: PdfExportErrorCode, error: unknown): PdfExportResul
 
 export async function renderPerformancePdfBytes(payload: PerformanceExportPayload): Promise<Uint8Array> {
   const normalized = normalizePerformanceExportPayload(payload);
-  let blob: Blob;
+  const document = <PdfReportDocument payload={normalized} />;
+  let bytes: Uint8Array;
   try {
-    blob = await pdf(<PdfReportDocument payload={normalized} />).toBlob();
+    bytes = await pdfDocumentToBytes(document, pdf(document));
   } catch (error) {
     await logPdfExportEvent({
       stage: 'render',
@@ -53,14 +73,8 @@ export async function renderPerformancePdfBytes(payload: PerformanceExportPayloa
     throw error;
   }
 
-  try {
-    const buffer = await blob.arrayBuffer();
-    const bytes = new Uint8Array(buffer);
-    if (bytes.length < 5 || new TextDecoder().decode(bytes.slice(0, 4)) !== '%PDF') {
-      throw new Error('Rendered PDF bytes are invalid');
-    }
-    return bytes;
-  } catch (error) {
+  if (bytes.length < 5 || new TextDecoder().decode(bytes.slice(0, 4)) !== '%PDF') {
+    const invalid = new Error('Rendered PDF bytes are invalid');
     await logPdfExportEvent({
       stage: 'array_buffer',
       outcome: 'error',
@@ -68,11 +82,12 @@ export async function renderPerformancePdfBytes(payload: PerformanceExportPayloa
       sectionCount: payload.sections.length,
       targetExtension: 'pdf',
       errorCode: 'pdf_render_failed',
-      errorClass: errorClass(error),
-      errorMessage: error instanceof Error ? error.message : String(error),
+      errorClass: errorClass(invalid),
+      errorMessage: invalid.message,
     });
-    throw error;
+    throw invalid;
   }
+  return bytes;
 }
 
 async function writePdfToUserPath(path: string, bytes: Uint8Array): Promise<string> {

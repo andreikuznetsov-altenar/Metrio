@@ -35,3 +35,14 @@
 .performance-toolbar__refresh {
   margin-bottom: 1px;
 }
+
+.performance-toolbar__export {
+  margin-bottom: 1px;
+}
+
+.performance-toolbar__status {
+  margin: 0;
+  padding: 0 var(--space-4) var(--space-2);
+  font-size: 12px;
+  color: var(--color-text-secondary);
+}

@@ -25,6 +25,10 @@ import {
   PerformanceDataProvider,
   usePerformanceData,
 } from "./PerformanceDataContext";
+import {
+  PerformanceExportProvider,
+  usePerformanceExport,
+} from "./PerformanceExportContext";
 
 function toolbarCopy(route: AppRoute) {
   if (route === "performance") {
@@ -79,7 +83,11 @@ export function AppLayout() {
         selfPersonId={currentUser.person.id}
         managerTeamTray={showTeamPerformance}
       >
-        <AppLayoutShell
+        <PerformanceExportProvider
+          audience={showTeamPerformance ? "team" : "employee"}
+          selfPersonId={currentUser.person.id}
+        >
+          <AppLayoutShell
           activeRoute={activeRoute}
           setActiveRoute={setActiveRoute}
           settingsOpen={settingsOpen}
@@ -94,6 +102,7 @@ export function AppLayout() {
           showTeamPerformance={showTeamPerformance}
           showEmployeePerformance={performanceDataEnabled && isEmployee}
         />
+        </PerformanceExportProvider>
       </PerformanceDataProvider>
     </>
   );
@@ -133,6 +142,7 @@ function AppLayoutShell({
   const feedbackEnabled = isFeedbackEnabled();
   const { resetConnection, invalidateSession } = useConnectionGate();
   const { refresh, refreshing } = usePerformanceData();
+  const performanceExport = usePerformanceExport();
 
   useEffect(() => {
     bootLog("17M", "AppLayout mounted");
@@ -198,6 +208,16 @@ function AppLayoutShell({
           onDateRangeChange={setDateRange}
           onReviewTargetChange={setReviewTarget}
           onRefresh={onRefresh}
+          onExportPdf={
+            performanceDataEnabled
+              ? () => {
+                  void performanceExport.exportCurrentView();
+                }
+              : undefined
+          }
+          exportDisabled={!performanceExport.canExport}
+          exportBusy={performanceExport.exporting}
+          exportStatusMessage={performanceExport.exportMessage}
         />
       );
     }
@@ -220,6 +240,10 @@ function AppLayoutShell({
     performanceDataEnabled,
     refreshing,
     onRefresh,
+    performanceExport.canExport,
+    performanceExport.exporting,
+    performanceExport.exportMessage,
+    performanceExport.exportCurrentView,
     activeRoute,
     feedbackToolbar,
     setDateRange,

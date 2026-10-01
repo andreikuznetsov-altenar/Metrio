@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Select } from "../../components/Select/Select";
+import { usePerformanceExport } from "../../app/PerformanceExportContext";
 import type { WorkHistoryGroupView } from "../../domain/performance";
 
 type HistoryPeriod = "week" | "month" | "quarter";
@@ -16,6 +17,11 @@ export function EmployeeWorkHistoryView({
   historyQuarter,
 }: EmployeeWorkHistoryViewProps) {
   const [period, setPeriod] = useState<HistoryPeriod>("month");
+  const { registerWorkHistoryPeriod } = usePerformanceExport();
+
+  useEffect(() => {
+    registerWorkHistoryPeriod(period);
+  }, [period, registerWorkHistoryPeriod]);
   const groups =
     period === "week"
       ? historyWeek

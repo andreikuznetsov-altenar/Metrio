@@ -14,9 +14,6 @@ export default defineConfig(() => ({
     css: true,
     exclude: [
       "**/node_modules/**",
-      "**/pdfExport.test.tsx",
-      "**/MetrioPdfLogo.tsx",
-      "**/PdfReportDocument.tsx",
     ],
   },
   clearScreen: false,

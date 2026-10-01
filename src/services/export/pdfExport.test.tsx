@@ -49,6 +49,10 @@ vi.mock('@tauri-apps/plugin-dialog', () => ({
   save: vi.fn(),
 }));
 
+vi.mock('@tauri-apps/plugin-opener', () => ({
+  openPath: vi.fn(async () => undefined),
+}));
+
 const snapshot: TeamSnapshot = {
   mode: 'team',
   persons: [],
@@ -150,5 +154,13 @@ describe('exportPerformancePdf', () => {
     const { exportPerformancePdf } = await import('./pdfExport');
     const result = await exportPerformancePdf(payloadFor('team-overview'));
     expect(result).toEqual({ status: 'saved', path: '/Users/test/Desktop/out.pdf' });
+  });
+
+  it('opens saved pdf via opener plugin', async () => {
+    const { openPath } = await import('@tauri-apps/plugin-opener');
+    const { openExportedPdf } = await import('./pdfExport');
+    const result = await openExportedPdf('/Users/test/Desktop/out.pdf');
+    expect(openPath).toHaveBeenCalledWith('/Users/test/Desktop/out.pdf');
+    expect(result).toEqual({ status: 'opened' });
   });
 });

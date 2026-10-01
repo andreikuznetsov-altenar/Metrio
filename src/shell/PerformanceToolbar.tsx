@@ -1,3 +1,4 @@
+import { Button } from "../components/Button/Button";
 import { IconButton } from "../components/IconButton/IconButton";
 import { Select } from "../components/Select/Select";
 import type {
@@ -65,6 +66,10 @@ export interface PerformanceToolbarProps {
   onDateRangeChange: (value: DateRangeKey) => void;
   onReviewTargetChange: (value: PerformanceReviewTarget) => void;
   onRefresh: () => void;
+  onExportPdf?: () => void;
+  exportDisabled?: boolean;
+  exportBusy?: boolean;
+  exportStatusMessage?: string | null;
 }
 
 export function PerformanceToolbar({
@@ -75,6 +80,10 @@ export function PerformanceToolbar({
   onDateRangeChange,
   onReviewTargetChange,
   onRefresh,
+  onExportPdf,
+  exportDisabled = false,
+  exportBusy = false,
+  exportStatusMessage,
 }: PerformanceToolbarProps) {
   const reviewOptions =
     audience === "employee"
@@ -116,7 +125,24 @@ export function PerformanceToolbar({
             <RefreshIcon />
           </IconButton>
         </div>
+        {onExportPdf ? (
+          <div className="performance-toolbar__export">
+            <Button
+              type="button"
+              variant="secondary"
+              disabled={exportDisabled || exportBusy}
+              onClick={onExportPdf}
+            >
+              {exportBusy ? "Exporting…" : "Export PDF"}
+            </Button>
+          </div>
+        ) : null}
       </div>
+      {exportStatusMessage ? (
+        <p className="performance-toolbar__status" role="status">
+          {exportStatusMessage}
+        </p>
+      ) : null}
     </div>
   );
 }
