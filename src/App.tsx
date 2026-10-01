@@ -1,6 +1,7 @@
 import { ConnectionProvider, useConnectionGate } from "./app/ConnectionContext";
 import { AuthenticatedApp } from "./app/AuthenticatedApp";
 import { FoundationDevApp } from "./app/FoundationDevApp";
+import { SessionBootstrapShell } from "./app/SessionBootstrapShell";
 import { ConnectionScreen } from "./pages/ConnectionScreen";
 
 function isDevFoundationGallery(): boolean {
@@ -8,10 +9,14 @@ function isDevFoundationGallery(): boolean {
 }
 
 function AppRoot() {
-  const { isConnected } = useConnectionGate();
+  const { isConnected, isBootstrapping } = useConnectionGate();
 
   if (isDevFoundationGallery()) {
     return <FoundationDevApp />;
+  }
+
+  if (isBootstrapping) {
+    return <SessionBootstrapShell />;
   }
 
   if (!isConnected) {

@@ -9,10 +9,18 @@ import {
 import { buildCurrentUserFromTeamDetection } from "../domain/currentUser/fromTeamDetection";
 import type { CurrentUser, DevFixtureId } from "../domain/types";
 import { getFixtureUser } from "../fixtures/currentUsers";
-import { loadPreferences } from "../platform/preferences";
 import {
-  validateWorkspacePreferences,
-  WORKSPACE_LOAD_ERROR_MESSAGE,
+  loadPreferencesOutcome,
+  type AppPreferences,
+} from "../platform/preferences";
+import {
+  invalidateAuthenticatedSession,
+} from "./ConnectionContext";
+import {
+  SESSION_STORAGE_ERROR_MESSAGE,
+  logWorkspaceBootstrap,
+} from "./appSession";
+import {
   type WorkspaceStatus,
 } from "./workspaceSession";
 
@@ -31,6 +39,12 @@ function readInitialFixture(): DevFixtureId {
 
 function initialWorkspaceStatus(): WorkspaceStatus {
   return import.meta.env.DEV ? "ready" : "idle";
+}
+
+function applyProductionUser(prefs: AppPreferences): CurrentUser | null {
+  return prefs.teamDetection
+    ? buildCurrentUserFromTeamDetection(prefs.teamDetection)
+    : null;
 }
 
 interface CurrentUserContextValue {
@@ -55,6 +69,7 @@ export function CurrentUserProvider({ children }: { children: ReactNode }) {
   const [workspaceStatus, setWorkspaceStatus] =
     useState<WorkspaceStatus>(initialWorkspaceStatus);
   const [workspaceError, setWorkspaceError] = useState<string | null>(null);
+  const [bootstrapGeneration, setBootstrapGeneration] = useState(0);
 
   const initializeWorkspace = useCallback(async () => {
     if (import.meta.env.DEV) {
@@ -66,24 +81,36 @@ export function CurrentUserProvider({ children }: { children: ReactNode }) {
     setWorkspaceStatus("initializing");
     setWorkspaceError(null);
 
-    try {
-      const prefs = await loadPreferences();
-      const validation = validateWorkspacePreferences(prefs);
-      if (!validation.ok) {
-        setWorkspaceStatus("error");
-        setWorkspaceError(validation.message);
-        return;
-      }
-
-      const fromTeam = prefs.teamDetection
-        ? buildCurrentUserFromTeamDetection(prefs.teamDetection)
-        : null;
-      setProductionUser(fromTeam);
-      setWorkspaceStatus("ready");
-    } catch {
+    const outcome = await loadPreferencesOutcome();
+    if (!outcome.ok) {
+      logWorkspaceBootstrap({
+        connectionMarkerPresent: true,
+        preferencesLoaded: false,
+        failedStage: "preferences_load",
+        sanitizedReason: outcome.reason,
+      });
       setWorkspaceStatus("error");
-      setWorkspaceError(WORKSPACE_LOAD_ERROR_MESSAGE);
+      setWorkspaceError(SESSION_STORAGE_ERROR_MESSAGE);
+      return;
     }
+
+    logWorkspaceBootstrap({
+      connectionMarkerPresent: true,
+      preferencesLoaded: true,
+      preferencesSource: outcome.source,
+      preferencesWarning: outcome.warning,
+      setupCompleted: outcome.prefs.setup?.completed ?? false,
+      teamDetectionPresent: Boolean(outcome.prefs.teamDetection),
+    });
+
+    if (outcome.source !== "file" || !outcome.prefs.setup?.completed) {
+      invalidateAuthenticatedSession();
+      return;
+    }
+
+    setProductionUser(applyProductionUser(outcome.prefs));
+    setWorkspaceStatus("ready");
+    setBootstrapGeneration((value) => value + 1);
   }, []);
 
   const setDevFixture = useCallback((fixtureId: DevFixtureId) => {
@@ -99,7 +126,7 @@ export function CurrentUserProvider({ children }: { children: ReactNode }) {
       return getFixtureUser(devFixtureId);
     }
     return productionUser ?? getFixtureUser("employee");
-  }, [devFixtureId, productionUser]);
+  }, [devFixtureId, productionUser, bootstrapGeneration]);
 
   const value = useMemo(
     () => ({

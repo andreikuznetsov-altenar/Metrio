@@ -1,53 +1,52 @@
-import { describe, expect, it, beforeEach, vi } from "vitest";
-import { COMPANY_CONFIG } from "../config/company";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
-vi.mock("../platform/secureStorage", () => {
-  const store = new Map<string, string>();
-  return {
-    SECRET_KEYS: {
-      JIRA_API_TOKEN: "jira_api_token",
-      BAMBOO_API_TOKEN: "bamboo_api_token",
-    },
-    secureStoreSet: vi.fn(async (key: string, secret: string) => {
-      store.set(key, secret);
-    }),
-    secureStoreDelete: vi.fn(async (key: string) => {
-      store.delete(key);
-    }),
-    secureStoreHas: vi.fn(async (key: string) => store.has(key)),
-  };
-});
-
-vi.mock("./connectAndContinue", () => ({
-  connectAndContinue: vi.fn(async () => undefined),
+vi.mock("../platform/secureStorage", () => ({
+  SECRET_KEYS: { JIRA_API_TOKEN: "jira", BAMBOO_API_TOKEN: "bamboo" },
+  secureStoreSet: vi.fn(async () => undefined),
+  secureStoreHas: vi.fn(async () => true),
+  secureStoreDelete: vi.fn(async () => undefined),
 }));
 
 import {
-  clearConnection,
+  clearSessionMarker,
   isAppConnected,
-  readSavedConnection,
-  saveConnection,
+  markSessionConnected,
+  persistConnectionConfig,
 } from "./connectionStorage";
 
-describe("connectionStorage", () => {
-  beforeEach(async () => {
-    await clearConnection();
+describe("connection session marker", () => {
+  beforeEach(() => {
     localStorage.clear();
   });
 
-  it("marks app connected after save without persisting secrets in localStorage", async () => {
-    await saveConnection(
+  it("does not mark connected when only persisting config", async () => {
+    await persistConnectionConfig(
       { workEmail: "user@altenar.com" },
-      { jiraToken: "secret-token", bambooApiKey: "secret-key" },
+      { jiraToken: "jira", bambooApiKey: "bamboo" },
     );
 
+    expect(isAppConnected()).toBe(false);
+    expect(localStorage.getItem("metrio-connection-config")).toContain(
+      "user@altenar.com",
+    );
+  });
+
+  it("marks connected only when explicitly requested", () => {
+    markSessionConnected();
     expect(isAppConnected()).toBe(true);
-    const saved = await readSavedConnection();
-    expect(saved?.workEmail).toBe("user@altenar.com");
-    expect(saved?.jiraBaseUrl).toBe(COMPANY_CONFIG.jiraBaseUrl);
-    expect(saved?.bambooSubdomain).toBe(COMPANY_CONFIG.bambooSubdomain);
-    expect(saved?.hasJiraToken).toBe(true);
-    expect(saved?.hasBambooApiKey).toBe(true);
-    expect(localStorage.getItem("metrio-connection-jira-token")).toBeNull();
+  });
+
+  it("clears stale marker without removing config", async () => {
+    localStorage.setItem(
+      "metrio-connection-config",
+      JSON.stringify({ workEmail: "user@altenar.com" }),
+    );
+    markSessionConnected();
+    clearSessionMarker();
+
+    expect(isAppConnected()).toBe(false);
+    expect(localStorage.getItem("metrio-connection-config")).toContain(
+      "user@altenar.com",
+    );
   });
 });

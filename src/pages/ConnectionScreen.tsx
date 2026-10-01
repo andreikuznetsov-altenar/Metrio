@@ -13,7 +13,7 @@ import { Input } from "../components/Input/Input";
 import "./ConnectionScreen.css";
 
 export function ConnectionScreen() {
-  const { completeConnection } = useConnectionGate();
+  const { completeConnection, sessionRestoreError } = useConnectionGate();
 
   const [workEmail, setWorkEmail] = useState("");
   const [jiraToken, setJiraToken] = useState("");
@@ -35,6 +35,13 @@ export function ConnectionScreen() {
       cancelled = true;
     };
   }, []);
+
+  useEffect(() => {
+    if (sessionRestoreError) {
+      setFormError(sessionRestoreError);
+      setStatus("error");
+    }
+  }, [sessionRestoreError]);
 
   const canSubmit = useMemo(() => {
     return (

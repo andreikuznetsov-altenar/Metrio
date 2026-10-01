@@ -14,7 +14,7 @@ import { BambooClient } from '../services/bamboo/bambooClient';
 import { detectTeam } from '../services/bamboo/teamDetection';
 import { JiraClient } from '../services/jira/jiraClient';
 import {
-  loadPreferences,
+  loadPreferencesForMerge,
   savePreferences,
   syncWorkEmailFields,
   type StoredJiraIdentity,
@@ -24,7 +24,7 @@ import {
   secureStoreSet,
   secureStoreVerify,
 } from '../platform/secureStorage';
-import { saveConnection } from './connectionStorage';
+import { persistConnectionConfig } from './connectionStorage';
 
 export interface ConnectFormInput {
   workEmail: string;
@@ -156,7 +156,7 @@ export async function connectAndContinue(input: ConnectFormInput): Promise<void>
   }
 
   const prefs = applyProductConfig({
-    ...(await loadPreferences()),
+    ...(await loadPreferencesForMerge()),
     ...syncWorkEmailFields(workEmail),
     jiraIdentity,
     teamDetection,
@@ -169,5 +169,5 @@ export async function connectAndContinue(input: ConnectFormInput): Promise<void>
   });
 
   await savePreferences(prefs);
-  await saveConnection({ workEmail }, { jiraToken, bambooApiKey });
+  await persistConnectionConfig({ workEmail }, { jiraToken, bambooApiKey });
 }

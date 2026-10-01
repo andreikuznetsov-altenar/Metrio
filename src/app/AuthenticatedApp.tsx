@@ -55,7 +55,7 @@ class AuthenticatedRenderErrorBoundary extends Component<
 }
 
 function AuthenticatedAppContent() {
-  const { workspaceStatus, initializeWorkspace } = useCurrentUser();
+  const { workspaceStatus, workspaceError, initializeWorkspace } = useCurrentUser();
   const { resetConnection } = useConnectionGate();
 
   useEffect(() => {
@@ -74,6 +74,7 @@ function AuthenticatedAppContent() {
     return (
       <AuthenticatedWorkspaceShell
         variant="error"
+        message={workspaceError}
         onRetry={() => void initializeWorkspace()}
         onReconnect={onReconnect}
       />

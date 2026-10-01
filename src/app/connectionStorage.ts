@@ -33,6 +33,14 @@ export function isAppConnected(): boolean {
   return localStorage.getItem(CONNECTED_KEY) === "true";
 }
 
+export function markSessionConnected(): void {
+  localStorage.setItem(CONNECTED_KEY, "true");
+}
+
+export function clearSessionMarker(): void {
+  localStorage.removeItem(CONNECTED_KEY);
+}
+
 export async function readSavedConnection(): Promise<SavedConnection | null> {
   const raw = localStorage.getItem(CONFIG_KEY);
   if (!raw) {
@@ -57,7 +65,7 @@ export async function readSavedConnection(): Promise<SavedConnection | null> {
   }
 }
 
-export async function saveConnection(
+export async function persistConnectionConfig(
   config: ConnectionConfig,
   secrets: ConnectionSecrets,
 ): Promise<void> {
@@ -74,12 +82,19 @@ export async function saveConnection(
   if (secrets.bambooApiKey.trim()) {
     await secureStoreSet(SECRET_KEYS.BAMBOO_API_TOKEN, secrets.bambooApiKey.trim());
   }
+}
 
-  localStorage.setItem(CONNECTED_KEY, "true");
+/** @deprecated Prefer persistConnectionConfig + markSessionConnected at the UI gate. */
+export async function saveConnection(
+  config: ConnectionConfig,
+  secrets: ConnectionSecrets,
+): Promise<void> {
+  await persistConnectionConfig(config, secrets);
+  markSessionConnected();
 }
 
 export async function clearConnection(): Promise<void> {
-  localStorage.removeItem(CONNECTED_KEY);
+  clearSessionMarker();
   localStorage.removeItem(CONFIG_KEY);
   await Promise.all([
     secureStoreDelete(SECRET_KEYS.JIRA_API_TOKEN).catch(() => undefined),

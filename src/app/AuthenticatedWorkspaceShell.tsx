@@ -9,16 +9,19 @@ type ShellVariant = "loading" | "error";
 
 export interface AuthenticatedWorkspaceShellProps {
   variant: ShellVariant;
+  message?: string | null;
   onRetry?: () => void;
   onReconnect?: () => void;
 }
 
 export function AuthenticatedWorkspaceShell({
   variant,
+  message,
   onRetry,
   onReconnect,
 }: AuthenticatedWorkspaceShellProps) {
   const isLoading = variant === "loading";
+  const errorMessage = message?.trim() || WORKSPACE_LOAD_ERROR_MESSAGE;
 
   return (
     <AppShell
@@ -46,7 +49,7 @@ export function AuthenticatedWorkspaceShell({
           ) : (
             <>
               <p className="workspace-shell__message">
-                {WORKSPACE_LOAD_ERROR_MESSAGE}
+                {errorMessage}
               </p>
               <div className="workspace-shell__actions">
                 <Button type="button" onClick={onRetry}>

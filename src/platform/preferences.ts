@@ -153,6 +153,51 @@ export const DEFAULT_PREFERENCES: AppPreferences = {
   },
 };
 
+export type PreferencesLoadSource = 'file' | 'default';
+
+export type PreferencesLoadStage = 'invoke' | 'migrate';
+
+export class PreferencesLoadError extends Error {
+  readonly stage: PreferencesLoadStage;
+
+  constructor(message: string, stage: PreferencesLoadStage) {
+    super(message);
+    this.name = 'PreferencesLoadError';
+    this.stage = stage;
+  }
+}
+
+export interface PreferencesLoadSuccess {
+  ok: true;
+  prefs: AppPreferences;
+  source: PreferencesLoadSource;
+  warning?: string;
+}
+
+export interface PreferencesLoadFailure {
+  ok: false;
+  reason: string;
+  stage: PreferencesLoadStage;
+}
+
+export type PreferencesLoadOutcome = PreferencesLoadSuccess | PreferencesLoadFailure;
+
+interface PreferencesLoadResponse {
+  preferences: Partial<AppPreferences> & { schemaVersion?: number };
+  source: string;
+  warning?: string | null;
+}
+
+function sanitizeInvokeError(error: unknown): string {
+  if (error instanceof Error && error.message.trim()) {
+    return error.message.trim();
+  }
+  if (typeof error === 'string' && error.trim()) {
+    return error.trim();
+  }
+  return 'Preferences storage is unavailable.';
+}
+
 export function getWorkEmail(prefs: Pick<AppPreferences, 'workEmail' | 'jiraEmail' | 'bambooWorkEmail'>): string {
   return (prefs.workEmail || prefs.jiraEmail || prefs.bambooWorkEmail || '').trim();
 }
@@ -202,10 +247,6 @@ export function migratePreferences(raw: Partial<AppPreferences> & { schemaVersio
     }
   }
 
-  // Legacy v4 migration: preserve "configured" metadata for completed installs so users
-  // are not forced through first-run again. This is compatibility metadata only — it is
-  // NOT proof that Keychain credentials exist and must never be treated as verified.
-  // Verified connection state comes only from successful integration tests at runtime.
   if (version < 4) {
     if (merged.setup.completed) {
       merged.credentials = {
@@ -244,13 +285,47 @@ export function migratePreferences(raw: Partial<AppPreferences> & { schemaVersio
   return applyProductConfig(merged);
 }
 
-export async function loadPreferences(): Promise<AppPreferences> {
+export async function loadPreferencesOutcome(): Promise<PreferencesLoadOutcome> {
   try {
-    const data = await invoke<Partial<AppPreferences>>('preferences_load');
-    return migratePreferences(data);
-  } catch {
-    return { ...DEFAULT_PREFERENCES };
+    const response = await invoke<PreferencesLoadResponse>('preferences_load');
+    try {
+      const prefs = migratePreferences(response.preferences);
+      const source: PreferencesLoadSource =
+        response.source === 'file' ? 'file' : 'default';
+      return {
+        ok: true,
+        prefs,
+        source,
+        warning: response.warning ?? undefined,
+      };
+    } catch (error) {
+      return {
+        ok: false,
+        reason: sanitizeInvokeError(error),
+        stage: 'migrate',
+      };
+    }
+  } catch (error) {
+    return {
+      ok: false,
+      reason: sanitizeInvokeError(error),
+      stage: 'invoke',
+    };
   }
+}
+
+/** Loads persisted preferences or throws when storage is unavailable. */
+export async function loadPreferences(): Promise<AppPreferences> {
+  const outcome = await loadPreferencesOutcome();
+  if (!outcome.ok) {
+    throw new PreferencesLoadError(outcome.reason, outcome.stage);
+  }
+  return outcome.prefs;
+}
+
+/** Same as loadPreferences — explicit name for merge flows (e.g. connect). */
+export async function loadPreferencesForMerge(): Promise<AppPreferences> {
+  return loadPreferences();
 }
 
 export async function savePreferences(prefs: AppPreferences): Promise<void> {

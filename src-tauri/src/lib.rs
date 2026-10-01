@@ -137,19 +137,34 @@ fn secure_store_verify(service: String, account: String) -> Result<SecureStoreVe
     Ok(verify_secret_storage(&account))
 }
 
+#[derive(Debug, Serialize)]
+struct PreferencesLoadResponse {
+    preferences: serde_json::Value,
+    source: String,
+    warning: Option<String>,
+}
+
 #[tauri::command]
-fn preferences_load(app: AppHandle, state: State<AppState>) -> Result<serde_json::Value, String> {
+fn preferences_load(app: AppHandle, state: State<AppState>) -> Result<PreferencesLoadResponse, String> {
     let path = preferences_path(&app)?;
     let loaded = load_json_file(
         &path,
         serde_json::json!({ "schemaVersion": PREFERENCES_SCHEMA_VERSION }),
     );
-    if let Some(warning) = loaded.warning {
+    if let Some(warning) = loaded.warning.clone() {
         if let Ok(mut warnings) = state.storage_warnings.lock() {
             warnings.push(warning);
         }
     }
-    Ok(loaded.value)
+    let source = match loaded.source {
+        persistence::JsonLoadSource::File => "file",
+        persistence::JsonLoadSource::Default => "default",
+    };
+    Ok(PreferencesLoadResponse {
+        preferences: loaded.value,
+        source: source.to_string(),
+        warning: loaded.warning,
+    })
 }
 
 #[tauri::command]

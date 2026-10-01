@@ -27,18 +27,19 @@ vi.mock('../services/bamboo/teamDetection', () => ({
 }));
 
 const savePreferences = vi.fn(async () => undefined);
+const loadPreferencesForMerge = vi.fn(async () => ({
+  setup: { completed: false },
+  workEmail: '',
+  jiraIdentity: null,
+  jiraBaseUrl: '',
+  jiraEmail: '',
+  bambooSubdomain: '',
+  bambooWorkEmail: '',
+  teamDetection: null,
+  credentials: { jiraConfigured: false, bambooConfigured: false, migrationVersion: 0 },
+}));
 vi.mock('../platform/preferences', () => ({
-  loadPreferences: vi.fn(async () => ({
-    setup: { completed: false },
-    workEmail: '',
-    jiraIdentity: null,
-    jiraBaseUrl: '',
-    jiraEmail: '',
-    bambooSubdomain: '',
-    bambooWorkEmail: '',
-    teamDetection: null,
-    credentials: { jiraConfigured: false, bambooConfigured: false, migrationVersion: 0 },
-  })),
+  loadPreferencesForMerge: (...args: unknown[]) => loadPreferencesForMerge(...args),
   savePreferences: (...args: unknown[]) => savePreferences(...args),
   syncWorkEmailFields: (email: string) => ({
     workEmail: email,
@@ -47,8 +48,9 @@ vi.mock('../platform/preferences', () => ({
   }),
 }));
 
+const persistConnectionConfig = vi.fn(async () => undefined);
 vi.mock('./connectionStorage', () => ({
-  saveConnection: vi.fn(async () => undefined),
+  persistConnectionConfig: (...args: unknown[]) => persistConnectionConfig(...args),
 }));
 
 describe('connectAndContinue', () => {
@@ -57,6 +59,7 @@ describe('connectAndContinue', () => {
     bambooTest.mockReset();
     detectTeam.mockReset();
     savePreferences.mockClear();
+    persistConnectionConfig.mockClear();
   });
 
   it('rejects external email before API calls', async () => {
@@ -109,5 +112,47 @@ describe('connectAndContinue', () => {
         setup: { completed: true },
       }),
     );
+    expect(persistConnectionConfig).toHaveBeenCalledWith(
+      { workEmail: 'user@altenar.com' },
+      { jiraToken: 'token', bambooApiKey: 'key' },
+    );
+    expect(savePreferences.mock.invocationCallOrder[0]).toBeLessThan(
+      persistConnectionConfig.mock.invocationCallOrder[0] ?? Number.MAX_SAFE_INTEGER,
+    );
+  });
+
+  it('does not mark the session connected during connectAndContinue', async () => {
+    jiraTest.mockResolvedValue({
+      accountId: 'acc',
+      displayName: 'User',
+      emailAddress: 'user@altenar.com',
+    });
+    bambooTest.mockResolvedValue({ ok: true });
+    detectTeam.mockResolvedValue({
+      ok: true,
+      mode: 'personal',
+      employee: {
+        id: '1',
+        displayName: 'User',
+        workEmail: 'user@altenar.com',
+        jobTitle: 'IC',
+        status: 'active',
+      },
+      directReports: [],
+      fullTeam: [],
+      missingFields: [],
+      restrictedFields: [],
+      diagnostics: [],
+      reportingSource: 'id',
+      ambiguousSupervisorNames: 0,
+    });
+
+    await connectAndContinue({
+      workEmail: 'user@altenar.com',
+      jiraToken: 'token',
+      bambooApiKey: 'key',
+    });
+
+    expect(persistConnectionConfig).toHaveBeenCalled();
   });
 });

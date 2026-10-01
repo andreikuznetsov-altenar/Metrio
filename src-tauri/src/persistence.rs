@@ -7,9 +7,16 @@ use std::time::{SystemTime, UNIX_EPOCH};
 pub const PREFERENCES_SCHEMA_VERSION: u32 = 1;
 pub const SURVEY_DATA_SCHEMA_VERSION: u32 = 1;
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum JsonLoadSource {
+    File,
+    Default,
+}
+
 pub struct LoadedJson {
     pub value: Value,
     pub warning: Option<String>,
+    pub source: JsonLoadSource,
 }
 
 fn backup_corrupt_file(path: &Path) -> Option<PathBuf> {
@@ -29,6 +36,7 @@ pub fn load_json_file(path: &Path, default: Value) -> LoadedJson {
         return LoadedJson {
             value: default,
             warning: None,
+            source: JsonLoadSource::Default,
         };
     }
 
@@ -38,6 +46,7 @@ pub fn load_json_file(path: &Path, default: Value) -> LoadedJson {
             return LoadedJson {
                 value: default,
                 warning: Some(format!("Failed to read {}: {}", path.display(), e)),
+                source: JsonLoadSource::Default,
             };
         }
     };
@@ -46,6 +55,7 @@ pub fn load_json_file(path: &Path, default: Value) -> LoadedJson {
         Ok(value) => LoadedJson {
             value,
             warning: None,
+            source: JsonLoadSource::File,
         },
         Err(e) => {
             let backup = backup_corrupt_file(path);
@@ -64,6 +74,7 @@ pub fn load_json_file(path: &Path, default: Value) -> LoadedJson {
             LoadedJson {
                 value: default,
                 warning: Some(warning),
+                source: JsonLoadSource::Default,
             }
         }
     }
