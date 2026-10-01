@@ -17,6 +17,7 @@ vi.mock("../refresh/backgroundRefresh", () => ({
 import { fetchPerformanceData } from "../performance/performanceDataService";
 import { buildPerformanceViewModels } from "../performance/performanceViewModel";
 import type { PerformanceFetchResult } from "../performance/performanceTypes";
+import { resolvePerformanceReportRanges } from "../../domain/performance/reportParams";
 import { EMPTY_KPI_SNAPSHOT_FILE } from "../../domain/snapshots/snapshotEngine";
 import { testKpi } from "../../domain/testFixtures";
 import type { TeamSnapshot } from "../../domain/people/types";
@@ -31,6 +32,8 @@ function wrapper(enabled = true) {
       {
         enabled,
         dateRange: "30d",
+        reviewTarget: "team",
+        audience: "team",
         selfPersonId: "1114",
       },
       children,
@@ -40,6 +43,17 @@ function wrapper(enabled = true) {
 
 const emptyResult: PerformanceFetchResult = {
   teamSnapshot: {
+    mode: "personal",
+    persons: [],
+    summary: {
+      available: 0,
+      onVacation: 0,
+      vacationSoon: 0,
+      highWorkload: 0,
+      problematic: 0,
+    },
+  } satisfies TeamSnapshot,
+  historyTeamSnapshot: {
     mode: "personal",
     persons: [],
     summary: {
@@ -64,6 +78,20 @@ const emptyResult: PerformanceFetchResult = {
     teamKpi: testKpi(),
     perUserKpi: {},
   } satisfies AuditReportData,
+  historyReportData: {
+    params: {
+      dateFrom: "2026-01-01",
+      dateTo: "2026-03-01",
+      targetReviewDays: 3,
+      users: [],
+      projects: [],
+    },
+    grouped: {},
+    totalTransitions: 0,
+    teamSummaryColumns: [],
+    teamKpi: testKpi(),
+    perUserKpi: {},
+  } satisfies AuditReportData,
   kpiSnapshots: EMPTY_KPI_SNAPSHOT_FILE,
   reportParams: {
     dateFrom: "2026-01-01",
@@ -72,10 +100,12 @@ const emptyResult: PerformanceFetchResult = {
     users: [],
     projects: [],
   },
+  reportRanges: resolvePerformanceReportRanges("30d", "team", "team"),
   identityResolution: [],
   timeOffEntries: [],
   partialWarnings: [],
   lastUpdatedAt: "2026-03-01T12:00:00.000Z",
+  historicalBootstrapRan: false,
 };
 
 describe("PerformanceDataContext", () => {
@@ -94,7 +124,7 @@ describe("PerformanceDataContext", () => {
       await result.current.refresh();
     });
     expect(mockFetch).toHaveBeenCalledTimes(1);
-    expect(mockFetch).toHaveBeenCalledWith("30d");
+    expect(mockFetch).toHaveBeenCalledWith("30d", "team", "team");
   });
 
   it("keeps previous viewModels when refresh fails", async () => {

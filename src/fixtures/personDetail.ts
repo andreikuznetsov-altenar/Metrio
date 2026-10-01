@@ -19,6 +19,7 @@ const HISTORY_TEMPLATES: WorkHistoryRow[] = [
   {
     key: "MET-120",
     title: "Add validation to settings form",
+    project: "MET",
     completedOn: "Sep 24",
     cycle: "2.0d",
     outcome: "First pass",
@@ -26,6 +27,7 @@ const HISTORY_TEMPLATES: WorkHistoryRow[] = [
   {
     key: "MET-117",
     title: "Fix pagination on activity feed",
+    project: "MET",
     completedOn: "Sep 18",
     cycle: "3.1d",
     outcome: "Reworked once",
@@ -33,6 +35,7 @@ const HISTORY_TEMPLATES: WorkHistoryRow[] = [
   {
     key: "MET-112",
     title: "Document release checklist",
+    project: "MET",
     completedOn: "Sep 11",
     cycle: "1.6d",
     outcome: "First pass",
@@ -81,6 +84,7 @@ export function getPersonDetailSnapshot(personId: string): PersonDetailSnapshot 
     backflows: `${1 + (seed % 2)}`,
     attention,
     activeWork,
+    problematicWork: [],
     history: HISTORY_TEMPLATES,
   };
 }

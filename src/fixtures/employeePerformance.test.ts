@@ -13,7 +13,8 @@ describe("employeePerformance fixtures", () => {
     expect(snapshot.personId).toBe("person-alex");
     expect(snapshot.metrics).toHaveLength(4);
     expect(snapshot.activeWork.length).toBeGreaterThan(0);
-    expect(snapshot.history.length).toBeGreaterThan(0);
+    expect(snapshot.myWeek.summary).toHaveLength(5);
+    expect(snapshot.historyMonth.length).toBeGreaterThan(0);
     expect(snapshot.trends).toHaveLength(4);
   });
 });

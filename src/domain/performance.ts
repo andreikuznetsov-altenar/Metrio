@@ -65,6 +65,7 @@ export interface PersonDetailSnapshot {
   attention: PersonalAttentionItem[];
   activeWork: ActiveWorkItem[];
   history: WorkHistoryRow[];
+  problematicWork: ActiveWorkItem[];
 }
 
 export interface TeamPerformanceSnapshot {
@@ -92,9 +93,37 @@ export interface PersonalAttentionItem {
 export interface WorkHistoryRow {
   key: string;
   title: string;
+  project: string;
   completedOn: string;
   cycle: string;
   outcome: string;
+}
+
+export type EmployeePerformanceView =
+  | "overview"
+  | "my-week"
+  | "trends"
+  | "work-history";
+
+export interface MyWeekMetricCard {
+  label: string;
+  value: string;
+}
+
+export interface EmployeeMyWeekSnapshot {
+  summary: MyWeekMetricCard[];
+  needsAttention: PersonalAttentionItem[];
+  inProgress: ActiveWorkItem[];
+  inReview: ActiveWorkItem[];
+  completedThisWeek: ActiveWorkItem[];
+}
+
+export interface WorkHistoryGroupView {
+  label: string;
+  completedCount: number;
+  firstPassCount: number;
+  reviewReturns: number;
+  rows: WorkHistoryRow[];
 }
 
 export interface EmployeePerformanceSnapshot {
@@ -104,7 +133,10 @@ export interface EmployeePerformanceSnapshot {
   attention: PersonalAttentionItem[];
   timeOff?: { rangeLabel: string; note: string };
   trends: TrendCardData[];
-  history: WorkHistoryRow[];
+  myWeek: EmployeeMyWeekSnapshot;
+  historyWeek: WorkHistoryGroupView[];
+  historyMonth: WorkHistoryGroupView[];
+  historyQuarter: WorkHistoryGroupView[];
 }
 
 export function isManagerRole(role: string): boolean {

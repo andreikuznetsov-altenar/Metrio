@@ -3,6 +3,7 @@ import type { TimeOffEntry } from "../../domain/people/availability";
 import type { PersonIdentityDiagnostics } from "../../domain/people/types";
 import type { TeamSnapshot } from "../../domain/people/types";
 import type { KpiSnapshotFile } from "../../domain/snapshots/types";
+import type { PerformanceReportRanges } from "../../domain/performance/reportParams";
 
 export interface PerformanceIdentityResolution {
   employeeId: string;
@@ -15,11 +16,15 @@ export interface PerformanceIdentityResolution {
 
 export interface PerformanceFetchResult {
   teamSnapshot: TeamSnapshot;
+  historyTeamSnapshot: TeamSnapshot;
   reportData: AuditReportData;
+  historyReportData: AuditReportData;
   kpiSnapshots: KpiSnapshotFile;
   reportParams: AuditReportData["params"];
+  reportRanges: PerformanceReportRanges;
   identityResolution: PerformanceIdentityResolution[];
   timeOffEntries: TimeOffEntry[];
   partialWarnings: string[];
   lastUpdatedAt: string;
+  historicalBootstrapRan: boolean;
 }

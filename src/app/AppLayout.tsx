@@ -45,27 +45,20 @@ export function AppLayout() {
   const [activeRoute, setActiveRoute] = useState<AppRoute>("performance");
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [dateRange, setDateRange] = useState<DateRangeKey>("30d");
-  const { currentUser } = useCurrentUser();
 
   const performanceDataEnabled =
     !settingsOpen && activeRoute === "performance";
 
   return (
-    <PerformanceDataProvider
-      enabled={performanceDataEnabled}
+    <AppLayoutShell
+      activeRoute={activeRoute}
+      setActiveRoute={setActiveRoute}
+      settingsOpen={settingsOpen}
+      setSettingsOpen={setSettingsOpen}
       dateRange={dateRange}
-      selfPersonId={currentUser.person.id}
-    >
-      <AppLayoutShell
-        activeRoute={activeRoute}
-        setActiveRoute={setActiveRoute}
-        settingsOpen={settingsOpen}
-        setSettingsOpen={setSettingsOpen}
-        dateRange={dateRange}
-        setDateRange={setDateRange}
-        performanceDataEnabled={performanceDataEnabled}
-      />
-    </PerformanceDataProvider>
+      setDateRange={setDateRange}
+      performanceDataEnabled={performanceDataEnabled}
+    />
   );
 }
 
@@ -199,18 +192,26 @@ function AppLayoutShell({
   );
 
   return (
-    <AppShell
-      header={
-        <MetrioAppHeader
-          activeRoute={settingsOpen ? activeRoute : activeRoute}
-          feedbackEnabled={feedbackEnabled}
-          onNavigate={onNavigate}
-          onOpenSettings={onOpenSettings}
-        />
-      }
-      pageToolbar={pageToolbar}
+    <PerformanceDataProvider
+      enabled={performanceDataEnabled}
+      dateRange={dateRange}
+      reviewTarget={reviewTarget}
+      audience={showTeamPerformance ? "team" : "employee"}
+      selfPersonId={currentUser.person.id}
     >
-      <ScrollArea>{mainContent}</ScrollArea>
-    </AppShell>
+      <AppShell
+        header={
+          <MetrioAppHeader
+            activeRoute={settingsOpen ? activeRoute : activeRoute}
+            feedbackEnabled={feedbackEnabled}
+            onNavigate={onNavigate}
+            onOpenSettings={onOpenSettings}
+          />
+        }
+        pageToolbar={pageToolbar}
+      >
+        <ScrollArea>{mainContent}</ScrollArea>
+      </AppShell>
+    </PerformanceDataProvider>
   );
 }

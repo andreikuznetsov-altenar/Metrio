@@ -3,6 +3,7 @@ import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { buildPerformanceViewModels } from "./performanceViewModel";
 import type { PerformanceFetchResult } from "./performanceTypes";
+import { resolvePerformanceReportRanges } from "../../domain/performance/reportParams";
 import type { Person, TeamSnapshot } from "../../domain/people/types";
 import type { AuditReportData } from "../../domain/jira/types";
 import { EMPTY_KPI_SNAPSHOT_FILE } from "../../domain/snapshots/snapshotEngine";
@@ -102,13 +103,17 @@ function buildResult(
   };
   return {
     teamSnapshot,
+    historyTeamSnapshot: teamSnapshot,
     reportData,
+    historyReportData: reportData,
     kpiSnapshots: EMPTY_KPI_SNAPSHOT_FILE,
     reportParams: params,
+    reportRanges: resolvePerformanceReportRanges("30d", "team", "team"),
     identityResolution: [],
     timeOffEntries: [],
     partialWarnings: [],
     lastUpdatedAt: "2026-03-01T12:00:00.000Z",
+    historicalBootstrapRan: false,
   };
 }
 
@@ -152,14 +157,43 @@ describe("buildPerformanceViewModels", () => {
     expect(vm.teamSecondary.radar).toHaveLength(0);
   });
 
-  it("builds employee snapshot from real person issues", () => {
+  it("builds employee my week and grouped work history from real issues", () => {
     const person = bambooPerson("914", "Sam Dev", [
       activeIssue("MET-142", "Real active task"),
     ]);
     const data = buildResult([person]);
     const vm = buildPerformanceViewModels(data, "914");
-    expect(vm.employee?.activeWork.some((w) => w.key === "MET-142")).toBe(true);
-    expect(vm.employee?.activeWork.some((w) => w.key === "MET-131")).toBe(false);
+    expect(vm.employee?.myWeek.summary.length).toBe(5);
+    expect(vm.employee?.myWeek.inProgress.some((w) => w.key === "MET-142")).toBe(
+      true,
+    );
+    expect(vm.employee?.historyMonth.length).toBeGreaterThanOrEqual(0);
+    expect(vm.employee?.trends).toHaveLength(4);
+    expect(vm.employee?.trends[0].value).toContain("Not enough history");
+  });
+
+  it("builds person drawer snapshot with Bamboo name and history project column", () => {
+    const person = bambooPerson("914", "Sam Dev", [
+      activeIssue("MET-142", "Real active task"),
+    ]);
+    const data = buildResult([person]);
+    const vm = buildPerformanceViewModels(data, "1114");
+    const detail = vm.getPersonDetail("914");
+    expect(detail?.personName).toBe("Sam Dev");
+    expect(detail?.activeWork.some((w) => w.key === "MET-142")).toBe(true);
+    expect(Array.isArray(detail?.problematicWork)).toBe(true);
+  });
+
+  it("exposes team views for leads and personal employee slice keyed to self", () => {
+    const manager = bambooPerson("1114", "Team Lead");
+    const ic = bambooPerson("914", "Sam Dev", [activeIssue("MET-1", "Task")]);
+    const data = buildResult([manager, ic]);
+    const managerVm = buildPerformanceViewModels(data, "1114");
+    const icVm = buildPerformanceViewModels(data, "914");
+    expect(managerVm.teamOverview.summary.length).toBeGreaterThan(0);
+    expect(managerVm.teamSecondary.people).toHaveLength(2);
+    expect(icVm.employee?.personId).toBe("914");
+    expect(icVm.employee?.myWeek.inProgress.length).toBeGreaterThan(0);
   });
 
   it("surfaces partial status message when no Jira issues in period", () => {

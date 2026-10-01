@@ -105,35 +105,50 @@ export function getEmployeePerformanceSnapshot(
         sparkline: [2, 2, 1, 2, 1, 1, 1],
       },
     ],
-    history: [
+    myWeek: {
+      summary: [
+        { label: "Active", value: "3" },
+        { label: "In review", value: "1" },
+        { label: "Completed", value: "2" },
+        { label: "At risk", value: "0" },
+        { label: "Backflows", value: "1" },
+      ],
+      needsAttention: [],
+      inProgress: [
+        {
+          key: "MET-142",
+          title: "Improve onboarding checklist flow",
+          status: "In progress",
+        },
+      ],
+      inReview: [
+        {
+          key: "MET-139",
+          title: "Resolve flaky integration test",
+          status: "In review",
+        },
+      ],
+      completedThisWeek: [],
+    },
+    historyWeek: [],
+    historyMonth: [
       {
-        key: "MET-120",
-        title: "Add validation to settings form",
-        completedOn: "Sep 24",
-        cycle: "2.0d",
-        outcome: "First pass",
-      },
-      {
-        key: "MET-117",
-        title: "Fix pagination on activity feed",
-        completedOn: "Sep 18",
-        cycle: "3.1d",
-        outcome: "Reworked once",
-      },
-      {
-        key: "MET-112",
-        title: "Document release checklist",
-        completedOn: "Sep 11",
-        cycle: "1.6d",
-        outcome: "First pass",
-      },
-      {
-        key: "MET-108",
-        title: "Tune query for dashboard cards",
-        completedOn: "Sep 4",
-        cycle: "2.8d",
-        outcome: "First pass",
+        label: "September 2026",
+        completedCount: 4,
+        firstPassCount: 3,
+        reviewReturns: 1,
+        rows: [
+          {
+            key: "MET-120",
+            title: "Add validation to settings form",
+            project: "MET",
+            completedOn: "Sep 24",
+            cycle: "2.0d",
+            outcome: "First pass",
+          },
+        ],
       },
     ],
+    historyQuarter: [],
   };
 }

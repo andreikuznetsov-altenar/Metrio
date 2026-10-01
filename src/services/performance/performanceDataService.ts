@@ -3,8 +3,17 @@ import { buildJql, normalizeReportParams } from "../../domain/jira/jql";
 import { buildEnhancedJiraAuditReport } from "../../domain/jira/report";
 import { buildTeamIdentityIndex } from "../../domain/jira/users";
 import type { TimeOffEntry } from "../../domain/people/availability";
-import type { DateRangeKey } from "../../domain/performance";
-import { dateRangeKeyToBounds } from "../../domain/performance/dateRangeParams";
+import type { DateRangeKey, PerformanceReviewTarget } from "../../domain/performance";
+import type { PerformanceAudience } from "../../domain/performance/reportParams";
+import {
+  resolvePerformanceReportRanges,
+} from "../../domain/performance/reportParams";
+import {
+  buildScopeKeyFromSnapshot,
+  needsHistoricalBootstrap,
+  runHistoricalBootstrap,
+} from "../history/historicalBootstrap";
+import type { ResolvedEmployee } from "../bamboo/orgResolver";
 import { resolveJiraIdentity, toPersonJiraIdentity } from "../../domain/people/identityResolver";
 import { recordDailySnapshots } from "../../domain/snapshots/snapshotEngine";
 import {
@@ -65,8 +74,35 @@ function issueKeyFromRaw(issue: unknown): string {
   return typeof key === "string" ? key : "";
 }
 
+function membersForJiraScope(
+  teamDetection: OrgResolutionResult,
+  scopedOrg: OrgResolutionResult,
+  teamScope: "direct" | "full",
+): ResolvedEmployee[] {
+  const scope = resolveTeamScope(scopedOrg);
+  if (!scope) {
+    return [];
+  }
+  if (teamScope === "full" && teamDetection.fullTeam.length > 0) {
+    const seen = new Set<string>();
+    const members: ResolvedEmployee[] = [];
+    const seed = teamDetection.employee
+      ? [teamDetection.employee, ...teamDetection.fullTeam]
+      : teamDetection.fullTeam;
+    for (const member of seed) {
+      if (seen.has(member.id)) continue;
+      seen.add(member.id);
+      members.push(member);
+    }
+    return members;
+  }
+  return scope.members;
+}
+
 export async function fetchPerformanceData(
   dateRangeKey: DateRangeKey,
+  reviewTarget: PerformanceReviewTarget,
+  audience: PerformanceAudience,
 ): Promise<PerformanceFetchResult> {
   const prefs = await loadPreferences();
   const partialWarnings: string[] = [];
@@ -81,6 +117,12 @@ export async function fetchPerformanceData(
     throw new Error("Could not resolve team scope.");
   }
 
+  const reportRanges = resolvePerformanceReportRanges(
+    dateRangeKey,
+    reviewTarget,
+    audience,
+  );
+
   const workEmail = getWorkEmail(prefs);
   const jira = new JiraClient({
     baseUrl: resolveJiraBaseUrl(),
@@ -88,14 +130,19 @@ export async function fetchPerformanceData(
   });
   const bamboo = new BambooClient({ subdomain: resolveBambooSubdomain() });
 
-  const userInputs = scope.members
+  const scopeMembers = membersForJiraScope(
+    prefs.teamDetection,
+    org,
+    reportRanges.teamScope,
+  );
+  const userInputs = scopeMembers
     .map((member) => member.workEmail.trim())
     .filter(Boolean);
 
   const teamUsers = await jira.resolveTeamUsersForAudit(userInputs);
   const teamIdentityIndex = buildTeamIdentityIndex(teamUsers, userInputs);
 
-  const identityResolution: PerformanceIdentityResolution[] = scope.members.map(
+  const identityResolution: PerformanceIdentityResolution[] = scopeMembers.map(
     (member) => {
       const mapping = resolveJiraIdentity(member, teamUsers);
       const { identity } = toPersonJiraIdentity(mapping);
@@ -122,24 +169,42 @@ export async function fetchPerformanceData(
     },
   );
 
-  const bounds = dateRangeKeyToBounds(dateRangeKey);
-  const params = normalizeReportParams({
-    dateFrom: bounds.dateFrom,
-    dateTo: bounds.dateTo,
+  const fetchParams = normalizeReportParams({
+    dateFrom: reportRanges.fetchDateFrom,
+    dateTo: reportRanges.fetchDateTo,
     targetReviewDays: prefs.reportFilters.targetReviewDays,
     users: userInputs,
     projects: prefs.reportFilters.projects,
-    teamScope: "direct",
+    teamScope: reportRanges.teamScope,
   });
 
-  const jql = buildJql(params);
+  const displayParams = normalizeReportParams({
+    dateFrom: reportRanges.displayDateFrom,
+    dateTo: reportRanges.displayDateTo,
+    targetReviewDays: prefs.reportFilters.targetReviewDays,
+    users: userInputs,
+    projects: prefs.reportFilters.projects,
+    teamScope: reportRanges.teamScope,
+  });
+
+  const jql = buildJql(fetchParams);
   const issues = await jira.fetchAllIssues(jql);
   const issueKeys = issues.map(issueKeyFromRaw).filter(Boolean);
   const changelogByIssue = await jira.fetchAllChangelogsBatch(issueKeys);
 
+  const historyReportData = await buildEnhancedJiraAuditReport({
+    issues,
+    params: fetchParams,
+    teamUsers,
+    teamIdentityIndex,
+    changelogByIssue,
+    fetchIssueByKey: (key) => jira.fetchIssueByKey(key),
+    fetchChangelog: (key) => jira.fetchAllChangelog(key),
+  });
+
   const reportData = await buildEnhancedJiraAuditReport({
     issues,
-    params,
+    params: displayParams,
     teamUsers,
     teamIdentityIndex,
     changelogByIssue,
@@ -170,12 +235,35 @@ export async function fetchPerformanceData(
     teamUsers,
   );
 
+  const historyTeamSnapshot = buildTeamSnapshot(
+    org,
+    historyReportData,
+    timeOffEntries,
+    prefs.workloadThresholds,
+    teamUsers,
+  );
+
   let kpiSnapshots = await loadKpiSnapshots();
   kpiSnapshots = recordDailySnapshots(
     kpiSnapshots,
     teamSnapshot,
     reportData,
   );
+
+  let historicalBootstrapRan = false;
+  const scopeKey = buildScopeKeyFromSnapshot(
+    historyTeamSnapshot,
+    historyReportData,
+  );
+  if (needsHistoricalBootstrap(kpiSnapshots, scopeKey)) {
+    kpiSnapshots = runHistoricalBootstrap(
+      kpiSnapshots,
+      historyTeamSnapshot,
+      historyReportData,
+    );
+    historicalBootstrapRan = true;
+  }
+
   await saveKpiSnapshots(kpiSnapshots);
 
   if (issues.length === 0) {
@@ -184,12 +272,16 @@ export async function fetchPerformanceData(
 
   return {
     teamSnapshot,
+    historyTeamSnapshot,
     reportData,
+    historyReportData,
     kpiSnapshots,
     reportParams: reportData.params,
+    reportRanges,
     identityResolution,
     timeOffEntries,
     partialWarnings,
     lastUpdatedAt: new Date().toISOString(),
+    historicalBootstrapRan,
   };
 }

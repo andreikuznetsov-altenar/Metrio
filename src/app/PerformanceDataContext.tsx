@@ -8,7 +8,8 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import type { DateRangeKey } from "../domain/performance";
+import type { DateRangeKey, PerformanceReviewTarget } from "../domain/performance";
+import type { PerformanceAudience } from "../domain/performance/reportParams";
 import { fetchPerformanceData } from "../services/performance/performanceDataService";
 import type { PerformanceFetchResult } from "../services/performance/performanceTypes";
 import {
@@ -53,6 +54,8 @@ function errorMessageFromError(error: unknown): string {
 export interface PerformanceDataProviderProps {
   enabled: boolean;
   dateRange: DateRangeKey;
+  reviewTarget: PerformanceReviewTarget;
+  audience: PerformanceAudience;
   selfPersonId: string;
   children: ReactNode;
 }
@@ -60,6 +63,8 @@ export interface PerformanceDataProviderProps {
 export function PerformanceDataProvider({
   enabled,
   dateRange,
+  reviewTarget,
+  audience,
   selfPersonId,
   children,
 }: PerformanceDataProviderProps) {
@@ -90,7 +95,7 @@ export function PerformanceDataProvider({
       setErrorMessage(null);
 
       try {
-        const next = await fetchPerformanceData(dateRange);
+        const next = await fetchPerformanceData(dateRange, reviewTarget, audience);
         const models = buildPerformanceViewModels(next, selfPersonId);
         setData(next);
         setViewModels(models);
@@ -112,7 +117,7 @@ export function PerformanceDataProvider({
         inFlightRef.current = false;
       }
     },
-    [dateRange, enabled, selfPersonId],
+    [dateRange, reviewTarget, audience, enabled, selfPersonId],
   );
 
   const refresh = useCallback(async () => {

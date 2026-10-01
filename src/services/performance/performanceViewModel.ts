@@ -18,6 +18,7 @@ import type {
   ActiveWorkItem,
   AttentionPerson,
   DeliveryRiskRow,
+  EmployeeMyWeekSnapshot,
   EmployeePerformanceSnapshot,
   MetricCardData,
   PersonDetailSnapshot,
@@ -27,9 +28,13 @@ import type {
   TeamRadarRow,
   TeamSecondarySnapshot,
   TrendCardData,
+  WorkHistoryGroupView,
   WorkloadRow,
   TimeOffEntry as UiTimeOffEntry,
 } from "../../domain/performance";
+import type { AuditIssue, ReportParams } from "../../domain/jira/types";
+import type { WorkHistoryPeriod } from "../../domain/personal/workHistory";
+import { classifyTaskHealth } from "../../domain/task-health/taskHealthEngine";
 import { buildDeliveryRiskItems } from "../../domain/radar/deliveryRisk";
 import { buildTeamRadar } from "../../domain/radar/teamRadar";
 import type { RadarSeverity } from "../../domain/radar/types";
@@ -42,6 +47,7 @@ import {
   teamSparklinePoints,
   teamTrendPoints,
   personSparklinePoints,
+  personTrendPoints,
 } from "../../domain/snapshots/snapshotEngine";
 import type { KpiSnapshotFile } from "../../domain/snapshots/types";
 import { buildWorkloadBalance } from "../../domain/workload/workloadBalance";
@@ -92,8 +98,10 @@ export function buildPerformanceViewModels(
   data: PerformanceFetchResult,
   selfPersonId: string,
 ): PerformanceViewModels {
-  const { teamSnapshot, reportData, kpiSnapshots, partialWarnings } = data;
+  const { teamSnapshot, historyTeamSnapshot, reportData, historyReportData, kpiSnapshots, partialWarnings } =
+    data;
   const params = reportData.params;
+  const historyParams = historyReportData.params;
   const radar = buildTeamRadar(teamSnapshot, params);
   const deliveryRisk = buildDeliveryRiskItems(teamSnapshot, params);
 
@@ -312,14 +320,24 @@ export function buildPerformanceViewModels(
 
   const employeePerson =
     findPerson(teamSnapshot, selfPersonId) || selfPerson(teamSnapshot);
+  const historyEmployeePerson =
+    findPerson(historyTeamSnapshot, selfPersonId) || employeePerson;
   const employee = employeePerson
-    ? buildEmployeeSnapshot(employeePerson, params, kpiSnapshots)
+    ? buildEmployeeSnapshot(
+        employeePerson,
+        historyEmployeePerson || employeePerson,
+        params,
+        historyParams,
+        kpiSnapshots,
+      )
     : null;
 
   const getPersonDetail = (personId: string): PersonDetailSnapshot | null => {
     const person = findPerson(teamSnapshot, personId);
     if (!person) return null;
-    return buildPersonDetailSnapshot(person, params);
+    const historyPerson =
+      findPerson(historyTeamSnapshot, personId) || person;
+    return buildPersonDetailSnapshot(person, historyPerson, params, historyParams);
   };
 
   let statusMessage: string | null = null;
@@ -339,12 +357,105 @@ export function buildPerformanceViewModels(
   };
 }
 
+function issueToActiveWork(issue: AuditIssue): ActiveWorkItem {
+  return {
+    key: issue.issueKey,
+    title: issue.issueSummary,
+    status: issue.currentStatus || "—",
+  };
+}
+
+function mapWorkHistoryGroups(
+  person: Person,
+  params: ReportParams,
+  period: WorkHistoryPeriod,
+): WorkHistoryGroupView[] {
+  return buildWorkHistory(person, params, period).map((group) => ({
+    label: group.label,
+    completedCount: group.completedCount,
+    firstPassCount: group.firstPassCount,
+    reviewReturns: group.reviewReturns,
+    rows: group.entries.map((entry) => ({
+      key: entry.issueKey,
+      title: entry.summary,
+      project: entry.project,
+      completedOn: entry.completedAt
+        ? format(parseISO(entry.completedAt), "dd MMM yyyy")
+        : "—",
+      cycle: entry.cycleMs != null ? formatDuration(entry.cycleMs) : "—",
+      outcome: entry.firstPass ? "First pass" : "Rework",
+    })),
+  }));
+}
+
+function buildPersonalTrendCards(
+  personId: string,
+  kpiSnapshots: KpiSnapshotFile,
+): TrendCardData[] {
+  const completedTrend = compareTrendPeriods(
+    personTrendPoints(kpiSnapshots, personId, "completedOnDate"),
+    "completed",
+    28,
+  );
+  const firstPassTrend = compareWeightedFirstPassTrend(
+    personTrendPoints(kpiSnapshots, personId, "completedOnDate"),
+    personTrendPoints(kpiSnapshots, personId, "firstPassOnDate"),
+    28,
+  );
+  const avgCycleTrend = compareWeightedAvgCycleTrend(
+    personTrendPoints(kpiSnapshots, personId, "cycleMsSumOnDate"),
+    personTrendPoints(kpiSnapshots, personId, "completedWithCycleOnDate"),
+    28,
+  );
+  const backflowTrend = compareTrendPeriods(
+    personTrendPoints(kpiSnapshots, personId, "backflowsOnDate"),
+    "backflows",
+    28,
+  );
+  const sparkCompleted = sparklineValues(
+    personSparklinePoints(kpiSnapshots, personId, "completedOnDate"),
+  );
+
+  return [
+    {
+      label: "Completed",
+      value: completedTrend.sufficient
+        ? completedTrend.label
+        : completedTrend.sufficiencyMessage || "Not enough history yet",
+      sparkline:
+        completedTrend.sufficient && sparkCompleted.length >= 2
+          ? sparkCompleted
+          : undefined,
+    },
+    {
+      label: "First pass",
+      value: firstPassTrend.sufficient
+        ? firstPassTrend.label
+        : firstPassTrend.sufficiencyMessage || "Not enough history yet",
+    },
+    {
+      label: "Avg cycle",
+      value: avgCycleTrend.sufficient
+        ? avgCycleTrend.label
+        : avgCycleTrend.sufficiencyMessage || "Not enough history yet",
+    },
+    {
+      label: "Backflows",
+      value: backflowTrend.sufficient
+        ? backflowTrend.label
+        : backflowTrend.sufficiencyMessage || "Not enough history yet",
+    },
+  ];
+}
+
 function buildEmployeeSnapshot(
   person: Person,
+  historyPerson: Person,
   params: AuditReportData["params"],
+  historyParams: AuditReportData["params"],
   kpiSnapshots: KpiSnapshotFile,
 ): EmployeePerformanceSnapshot {
-  const myWeek = buildMyWeek(person, params);
+  const myWeek = buildMyWeek(historyPerson, historyParams);
   const perf = person.performance;
 
   const metrics: MetricCardData[] = [
@@ -352,6 +463,9 @@ function buildEmployeeSnapshot(
       label: "Efficiency",
       value: perf ? `${perf.efficiencyIndex}%` : "—",
       status: perf ? getEfficiencyStatus(perf.efficiencyIndex) : undefined,
+      statusVariant: perf
+        ? efficiencyStatusVariant(perf.efficiencyIndex)
+        : undefined,
     },
     {
       label: "First pass",
@@ -362,18 +476,22 @@ function buildEmployeeSnapshot(
       value: perf ? String(perf.completedCount) : "0",
     },
     {
+      label: "Backflows",
+      value: perf ? String(perf.backflowCount) : "0",
+    },
+    {
       label: "Active",
       value: String(personActiveCount(person, params)),
+    },
+    {
+      label: "Avg cycle",
+      value: avgCycleLabel(person),
     },
   ];
 
   const activeWork: ActiveWorkItem[] = getActiveIssues(person, params)
     .slice(0, 12)
-    .map((issue) => ({
-      key: issue.issueKey,
-      title: issue.issueSummary,
-      status: issue.currentStatus || "—",
-    }));
+    .map(issueToActiveWork);
 
   const attention = myWeek.needsAttention.map((task) => ({
     label: task.issueKey,
@@ -391,32 +509,19 @@ function buildEmployeeSnapshot(
         }
       : undefined;
 
-  const sparkValues = sparklineValues(
-    personSparklinePoints(kpiSnapshots, person.id, "completedOnDate"),
-  );
-  const trends: TrendCardData[] = [
-    {
-      label: "Completed",
-      value:
-        sparkValues.length >= 2
-          ? String(perf?.completedCount ?? 0)
-          : "Not enough history yet",
-      sparkline: sparkValues.length >= 2 ? sparkValues : undefined,
-    },
-  ];
-
-  const historyGroups = buildWorkHistory(person, params, "week");
-  const history = historyGroups.flatMap((group) =>
-    group.entries.slice(0, 20).map((entry) => ({
-      key: entry.issueKey,
-      title: entry.summary,
-      completedOn: entry.completedAt
-        ? format(parseISO(entry.completedAt), "dd MMM yyyy")
-        : "—",
-      cycle: entry.cycleMs != null ? formatDuration(entry.cycleMs) : "—",
-      outcome: entry.firstPass ? "First pass" : "Rework",
-    })),
-  );
+  const myWeekView: EmployeeMyWeekSnapshot = {
+    summary: [
+      { label: "Completed this week", value: String(myWeek.summary.completedThisWeek) },
+      { label: "Currently active", value: String(myWeek.summary.currentlyActive) },
+      { label: "At risk", value: String(myWeek.summary.atRisk) },
+      { label: "In review", value: String(myWeek.summary.inReview) },
+      { label: "Backflows this week", value: String(myWeek.summary.backflowsThisWeek) },
+    ],
+    needsAttention: attention,
+    inProgress: myWeek.inProgress.map(issueToActiveWork),
+    inReview: myWeek.inReview.map(issueToActiveWork),
+    completedThisWeek: myWeek.completedThisWeek.map(issueToActiveWork),
+  };
 
   return {
     personId: person.id,
@@ -424,18 +529,30 @@ function buildEmployeeSnapshot(
     activeWork,
     attention,
     timeOff,
-    trends,
-    history,
+    trends: buildPersonalTrendCards(person.id, kpiSnapshots),
+    myWeek: myWeekView,
+    historyWeek: mapWorkHistoryGroups(historyPerson, historyParams, "week"),
+    historyMonth: mapWorkHistoryGroups(historyPerson, historyParams, "month"),
+    historyQuarter: mapWorkHistoryGroups(historyPerson, historyParams, "quarter"),
   };
 }
 
 function buildPersonDetailSnapshot(
   person: Person,
+  historyPerson: Person,
   params: AuditReportData["params"],
+  historyParams: AuditReportData["params"],
 ): PersonDetailSnapshot {
   const perf = person.performance;
   const activeIssues = getActiveIssues(person, params);
   const now = new Date();
+  const problematicWork = person.issues
+    .filter(
+      (issue) =>
+        classifyTaskHealth({ issue, params, now }).status === "problematic",
+    )
+    .slice(0, 8)
+    .map(issueToActiveWork);
 
   return {
     personId: person.id,
@@ -455,17 +572,15 @@ function buildPersonDetailSnapshot(
         variant: severityToBadge(item!.severity),
         reason: item!.reason,
       })),
-    activeWork: activeIssues.slice(0, 10).map((issue) => ({
-      key: issue.issueKey,
-      title: issue.issueSummary,
-      status: issue.currentStatus || "—",
-    })),
-    history: buildWorkHistory(person, params, "month")
+    activeWork: activeIssues.slice(0, 10).map(issueToActiveWork),
+    problematicWork,
+    history: buildWorkHistory(historyPerson, historyParams, "month")
       .flatMap((group) => group.entries)
       .slice(0, 15)
       .map((entry) => ({
         key: entry.issueKey,
         title: entry.summary,
+        project: entry.project,
         completedOn: entry.completedAt
           ? format(parseISO(entry.completedAt), "dd MMM yyyy")
           : "—",

@@ -114,6 +114,28 @@ export function PersonDetailDrawer({
                 </div>
               ))}
             </div>
+            {snapshot.problematicWork.length > 0 ? (
+              <>
+                <h3 className="person-detail-drawer__section-title">
+                  Problematic tasks
+                </h3>
+                <div className="performance-work-list">
+                  {snapshot.problematicWork.map((item) => (
+                    <div key={`problem-${item.key}`} className="performance-work-row">
+                      <div className="performance-work-row__key">{item.key}</div>
+                      <div className="performance-work-row__main">
+                        <div className="performance-work-row__title">
+                          {item.title}
+                        </div>
+                        <div className="performance-work-row__meta">
+                          {item.status}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </>
+            ) : null}
           </div>
         ),
       },
@@ -127,6 +149,7 @@ export function PersonDetailDrawer({
                 <thead>
                   <tr>
                     <th>Work</th>
+                    <th>Project</th>
                     <th>Completed</th>
                     <th>Cycle</th>
                     <th>Outcome</th>
@@ -143,6 +166,7 @@ export function PersonDetailDrawer({
                           {row.title}
                         </div>
                       </td>
+                      <td>{row.project}</td>
                       <td>{row.completedOn}</td>
                       <td>{row.cycle}</td>
                       <td>{row.outcome}</td>
