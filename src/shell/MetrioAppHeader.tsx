@@ -65,11 +65,6 @@ export function MetrioAppHeader({
   return (
     <div className="app-header">
       <div className="app-header__start">
-        <div className="app-header__brand">
-          <span className="app-header__logo" aria-hidden />
-          <span className="app-header__title">Metrio</span>
-        </div>
-
         <nav className="app-header__nav" aria-label="Main">
           {navItems.map((item) => {
             const active = item.route === activeRoute;
