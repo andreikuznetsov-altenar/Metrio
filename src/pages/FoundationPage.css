@@ -1,0 +1,93 @@
+.foundation-page {
+  padding: var(--space-6);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+  max-width: 100%;
+}
+
+.foundation-page__intro {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.foundation-page__grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-4);
+}
+
+.foundation-preview {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
+  overflow: hidden;
+}
+
+.foundation-preview__label {
+  padding: var(--space-2) var(--space-3);
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-surface-secondary);
+  font: var(--font-label);
+}
+
+.foundation-preview__canvas {
+  padding: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.foundation-preview__canvas[data-theme-preview="light"] {
+  background: #f5f6f8;
+  color: #111827;
+}
+
+.foundation-preview__canvas[data-theme-preview="dark"] {
+  background: #0f1115;
+  color: #f3f4f6;
+}
+
+.foundation-preview__canvas[data-theme-preview="light"] .ui-card,
+.foundation-preview__canvas[data-theme-preview="light"] .ui-input,
+.foundation-preview__canvas[data-theme-preview="light"] .ui-select {
+  --color-surface: #ffffff;
+  --color-surface-secondary: #f0f1f4;
+  --color-surface-hover: #ebedf0;
+  --color-border: #e2e5ea;
+  --color-border-strong: #c8cdd6;
+  --color-text-primary: #111827;
+  --color-text-secondary: #4b5563;
+  --color-text-tertiary: #6b7280;
+}
+
+.foundation-preview__canvas[data-theme-preview="dark"] .ui-card,
+.foundation-preview__canvas[data-theme-preview="dark"] .ui-input,
+.foundation-preview__canvas[data-theme-preview="dark"] .ui-select {
+  --color-surface: #171a21;
+  --color-surface-secondary: #1e222b;
+  --color-surface-hover: #262b36;
+  --color-border: #2a303c;
+  --color-border-strong: #3d4554;
+  --color-text-primary: #f3f4f6;
+  --color-text-secondary: #c4c9d2;
+  --color-text-tertiary: #8b93a3;
+}
+
+.foundation-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  align-items: center;
+}
+
+.foundation-scroll-block {
+  padding: var(--space-4);
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius-control);
+  background: var(--color-surface-secondary);
+}
+
+.foundation-scroll-block + .foundation-scroll-block {
+  margin-top: var(--space-3);
+}

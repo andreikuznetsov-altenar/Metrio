@@ -1,0 +1,87 @@
+/**
+ * Semantic design tokens — change accent globally via --color-accent.
+ */
+:root {
+  --color-accent: #1677ff;
+  --color-accent-hover: #0958d9;
+  --color-accent-foreground: #ffffff;
+
+  --color-background: #f5f6f8;
+  --color-surface: #ffffff;
+  --color-surface-secondary: #f0f1f4;
+  --color-surface-hover: #ebedf0;
+  --color-border: #e2e5ea;
+  --color-border-strong: #c8cdd6;
+
+  --color-text-primary: #111827;
+  --color-text-secondary: #4b5563;
+  --color-text-tertiary: #6b7280;
+
+  --color-success: #15803d;
+  --color-warning: #b45309;
+  --color-danger: #b91c1c;
+
+  --font-display: 600 22px/1.25 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-heading: 600 16px/1.35 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-body: 400 14px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-body-small: 400 13px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-label: 500 12px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-caption: 400 11px/1.35 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+
+  --radius-sm: 6px;
+  --radius-control: 8px;
+  --radius-card: 12px;
+  --radius-round: 999px;
+
+  --motion-fast: 120ms;
+  --motion-normal: 160ms;
+  --motion-panel: 200ms;
+  --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+
+  --app-header-height: 52px;
+  --page-toolbar-height: 44px;
+  --footer-height: 48px;
+
+  --focus-ring: 0 0 0 2px var(--color-background), 0 0 0 4px var(--color-accent);
+}
+
+[data-theme="dark"] {
+  --color-accent: #1677ff;
+  --color-accent-hover: #4096ff;
+  --color-accent-foreground: #ffffff;
+
+  --color-background: #0f1115;
+  --color-surface: #171a21;
+  --color-surface-secondary: #1e222b;
+  --color-surface-hover: #262b36;
+  --color-border: #2a303c;
+  --color-border-strong: #3d4554;
+
+  --color-text-primary: #f3f4f6;
+  --color-text-secondary: #c4c9d2;
+  --color-text-tertiary: #8b93a3;
+
+  --color-success: #4ade80;
+  --color-warning: #fbbf24;
+  --color-danger: #f87171;
+
+  --focus-ring: 0 0 0 2px var(--color-background), 0 0 0 4px var(--color-accent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --motion-fast: 0ms;
+    --motion-normal: 0ms;
+    --motion-panel: 0ms;
+  }
+}
