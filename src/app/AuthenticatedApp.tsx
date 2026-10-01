@@ -4,6 +4,7 @@ import {
   type ErrorInfo,
   type ReactNode,
 } from "react";
+import { bootLog, bootLogError } from "./bootDiagnostics";
 import { useConnectionGate } from "./ConnectionContext";
 import { clearConnection } from "./connectionStorage";
 import { AppLayout } from "./AppLayout";
@@ -31,6 +32,7 @@ class AuthenticatedRenderErrorBoundary extends Component<
   }
 
   componentDidCatch(error: unknown, info: ErrorInfo) {
+    bootLogError("ERR-AUTH", error);
     if (import.meta.env.DEV) {
       console.error("AuthenticatedApp render error", error, info.componentStack);
     }
@@ -81,6 +83,12 @@ function AuthenticatedAppContent() {
     );
   }
 
+  useEffect(() => {
+    if (workspaceStatus === "ready") {
+      bootLog("16R", "AuthenticatedApp workspace ready");
+    }
+  }, [workspaceStatus]);
+
   if (workspaceStatus !== "ready") {
     return <AuthenticatedWorkspaceShell variant="loading" />;
   }
@@ -94,6 +102,10 @@ function AuthenticatedAppContent() {
 
 /** Post-auth shell — never render an empty viewport. */
 export function AuthenticatedApp() {
+  useEffect(() => {
+    bootLog("14", "AuthenticatedApp mounted");
+  }, []);
+
   return (
     <div
       data-testid="authenticated-app"

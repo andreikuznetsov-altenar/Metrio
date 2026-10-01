@@ -1,7 +1,10 @@
+import { useEffect } from "react";
 import { ConnectionProvider, useConnectionGate } from "./app/ConnectionContext";
 import { AuthenticatedApp } from "./app/AuthenticatedApp";
 import { FoundationDevApp } from "./app/FoundationDevApp";
 import { SessionBootstrapShell } from "./app/SessionBootstrapShell";
+import { StartupErrorShell } from "./app/StartupErrorShell";
+import { bootLog } from "./app/bootDiagnostics";
 import { ConnectionScreen } from "./pages/ConnectionScreen";
 
 function isDevFoundationGallery(): boolean {
@@ -9,7 +12,27 @@ function isDevFoundationGallery(): boolean {
 }
 
 function AppRoot() {
-  const { isConnected, isBootstrapping } = useConnectionGate();
+  const {
+    isConnected,
+    isBootstrapping,
+    startupError,
+    retryBootstrap,
+    resetConnection,
+  } = useConnectionGate();
+
+  useEffect(() => {
+    bootLog("12", `AppRoot render gate=${isBootstrapping ? "bootstrapping" : isConnected ? "connected" : "disconnected"}`);
+  }, [isBootstrapping, isConnected]);
+
+  if (startupError && !import.meta.env.DEV) {
+    return (
+      <StartupErrorShell
+        message={startupError}
+        onRetry={retryBootstrap}
+        onReturnToConnection={resetConnection}
+      />
+    );
+  }
 
   if (isDevFoundationGallery()) {
     return <FoundationDevApp />;

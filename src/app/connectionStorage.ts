@@ -5,7 +5,7 @@ import {
   secureStoreHas,
   secureStoreSet,
 } from "../platform/secureStorage";
-import { connectAndContinue, type ConnectFormInput } from "./connectAndContinue";
+import type { ConnectFormInput } from "./connectAndContinue";
 
 export type ConnectionStatus = "idle" | "connecting" | "connected" | "error";
 
@@ -103,5 +103,6 @@ export async function clearConnection(): Promise<void> {
 }
 
 export async function performConnection(input: ConnectFormInput): Promise<void> {
+  const { connectAndContinue } = await import("./connectAndContinue");
   await connectAndContinue(input);
 }

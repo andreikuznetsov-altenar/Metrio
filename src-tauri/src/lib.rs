@@ -19,7 +19,7 @@ use api::jira::{
 use api::kpi_snapshot_store::{kpi_snapshot_load, kpi_snapshot_save};
 use api::pdf_export::write_user_selected_pdf;
 use keyring::Entry;
-use logs::{log_write, logs_get_path, logs_open_folder};
+use logs::{log_write, logs_get_path, logs_open_folder, write_setup_log};
 use persistence::{atomic_write_json, load_json_file, PREFERENCES_SCHEMA_VERSION};
 use serde::{Deserialize, Serialize};
 use std::fs;
@@ -463,9 +463,12 @@ pub fn run() {
             write_user_selected_pdf
         ])
         .setup(|app| {
+            write_setup_log(app.handle(), "NATIVE 01 setup begin");
             let cred_path = local_credentials_path(app.handle())?;
             init_store_path(cred_path);
+            write_setup_log(app.handle(), "NATIVE 02 credentials store initialized");
             install_tray(app.handle())?;
+            write_setup_log(app.handle(), "NATIVE 03 tray installed");
             spawn_background_emitter(app.handle().clone(), "background-bamboo-refresh", 60 * 60);
             spawn_background_emitter(app.handle().clone(), "background-jira-refresh", 30 * 60);
             if let Some(window) = app.get_webview_window("main") {
@@ -486,6 +489,7 @@ pub fn run() {
                     }
                 });
             }
+            write_setup_log(app.handle(), "NATIVE 04 setup finished");
             Ok(())
         })
         .build(tauri::generate_context!())

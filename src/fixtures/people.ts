@@ -21,10 +21,11 @@ export const PEOPLE: Record<string, Person> = {
 
 export function getPerson(id: string): Person {
   const person = PEOPLE[id];
-  if (!person) {
-    throw new Error(`Unknown person id: ${id}`);
+  if (person) {
+    return person;
   }
-  return person;
+  // Production team members use Bamboo employee ids, not fixture keys.
+  return { id, name: `Employee ${id}`, role: "employee" };
 }
 
 export function getDirectReports(team: { directReportIds: string[] }): Person[] {

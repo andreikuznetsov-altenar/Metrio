@@ -8,6 +8,7 @@ import {
   isAppConnected,
   readSavedConnection,
 } from "./connectionStorage";
+import { bootLog } from "./bootDiagnostics";
 
 export type WorkspaceBootstrapStage =
   | "connection_marker"
@@ -54,20 +55,34 @@ export const SESSION_STORAGE_ERROR_MESSAGE =
 export function logWorkspaceBootstrap(
   diagnostic: WorkspaceBootstrapDiagnostic,
 ): void {
-  if (import.meta.env.DEV) {
-    console.info("[metrio workspace bootstrap]", {
-      connectionMarkerPresent: diagnostic.connectionMarkerPresent,
-      preferencesLoaded: diagnostic.preferencesLoaded,
-      preferencesSource: diagnostic.preferencesSource,
-      setupCompleted: diagnostic.setupCompleted,
-      teamDetectionPresent: diagnostic.teamDetectionPresent,
-      jiraSecretAvailable: diagnostic.jiraSecretAvailable,
-      bambooSecretAvailable: diagnostic.bambooSecretAvailable,
-      failedStage: diagnostic.failedStage,
-      sanitizedReason: diagnostic.sanitizedReason,
-      hasPreferencesWarning: Boolean(diagnostic.preferencesWarning),
-    });
-  }
+  bootLog(
+    "WB",
+    [
+      `marker=${diagnostic.connectionMarkerPresent}`,
+      `prefsLoaded=${diagnostic.preferencesLoaded}`,
+      diagnostic.preferencesSource
+        ? `source=${diagnostic.preferencesSource}`
+        : null,
+      diagnostic.setupCompleted !== undefined
+        ? `setupCompleted=${diagnostic.setupCompleted}`
+        : null,
+      diagnostic.teamDetectionPresent !== undefined
+        ? `teamDetection=${diagnostic.teamDetectionPresent}`
+        : null,
+      diagnostic.jiraSecretAvailable !== undefined
+        ? `jiraSecret=${diagnostic.jiraSecretAvailable}`
+        : null,
+      diagnostic.bambooSecretAvailable !== undefined
+        ? `bambooSecret=${diagnostic.bambooSecretAvailable}`
+        : null,
+      diagnostic.failedStage ? `failedStage=${diagnostic.failedStage}` : null,
+      diagnostic.sanitizedReason
+        ? `reason=${diagnostic.sanitizedReason.slice(0, 120)}`
+        : null,
+    ]
+      .filter(Boolean)
+      .join(" "),
+  );
 }
 
 export async function bootstrapProductionSession(): Promise<SessionBootstrapResult> {
@@ -79,6 +94,7 @@ export async function bootstrapProductionSession(): Promise<SessionBootstrapResu
 
   if (!connectionMarkerPresent) {
     diagnostic.failedStage = "connection_marker";
+    bootLog("07", "connection marker=false");
     return {
       kind: "connection_required",
       reason: "no_marker",
@@ -86,11 +102,24 @@ export async function bootstrapProductionSession(): Promise<SessionBootstrapResu
     };
   }
 
+  bootLog("07", "connection marker=true");
+  bootLog("08", "saved connection read started");
   const saved = await readSavedConnection();
+  bootLog(
+    "08",
+    `saved connection read finished hasConfig=${Boolean(saved)} jiraSecret=${Boolean(saved?.hasJiraToken)} bambooSecret=${Boolean(saved?.hasBambooApiKey)}`,
+  );
   diagnostic.jiraSecretAvailable = saved?.hasJiraToken ?? false;
   diagnostic.bambooSecretAvailable = saved?.hasBambooApiKey ?? false;
 
+  bootLog("09", "preferences invoke started");
   const outcome = await loadPreferencesOutcome();
+  bootLog(
+    "10",
+    outcome.ok
+      ? `preferences invoke finished source=${outcome.source} setupCompleted=${outcome.prefs.setup?.completed ?? false}`
+      : `preferences invoke failed stage=${outcome.stage}`,
+  );
   if (!outcome.ok) {
     diagnostic.failedStage = "preferences_load";
     diagnostic.sanitizedReason = outcome.reason;

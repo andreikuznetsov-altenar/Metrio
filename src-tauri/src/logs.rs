@@ -80,6 +80,19 @@ pub fn log_write(app: AppHandle, params: LogWriteParams) -> Result<(), String> {
     Ok(())
 }
 
+pub fn write_setup_log(app: &AppHandle, message: &str) {
+    let _ = log_write(
+        app.clone(),
+        LogWriteParams {
+            level: "info".to_string(),
+            domain: "app".to_string(),
+            operation: "native_boot".to_string(),
+            correlation_id: None,
+            message: message.to_string(),
+        },
+    );
+}
+
 #[tauri::command]
 pub fn logs_get_path(app: AppHandle) -> Result<LogsPathResult, String> {
     let path = log_file_path(&app)?;

@@ -15,11 +15,12 @@ import {
 } from "../platform/preferences";
 import {
   invalidateAuthenticatedSession,
-} from "./ConnectionContext";
+} from "./sessionInvalidation";
 import {
   SESSION_STORAGE_ERROR_MESSAGE,
   logWorkspaceBootstrap,
 } from "./appSession";
+import { bootLog } from "./bootDiagnostics";
 import {
   type WorkspaceStatus,
 } from "./workspaceSession";
@@ -80,6 +81,7 @@ export function CurrentUserProvider({ children }: { children: ReactNode }) {
 
     setWorkspaceStatus("initializing");
     setWorkspaceError(null);
+    bootLog("15", "initializeWorkspace started");
 
     const outcome = await loadPreferencesOutcome();
     if (!outcome.ok) {
@@ -111,6 +113,7 @@ export function CurrentUserProvider({ children }: { children: ReactNode }) {
     setProductionUser(applyProductionUser(outcome.prefs));
     setWorkspaceStatus("ready");
     setBootstrapGeneration((value) => value + 1);
+    bootLog("16", "initializeWorkspace finished status=ready");
   }, []);
 
   const setDevFixture = useCallback((fixtureId: DevFixtureId) => {

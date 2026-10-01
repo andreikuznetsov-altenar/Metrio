@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { AppShell } from "../components/AppShell/AppShell";
+import { bootLog } from "./bootDiagnostics";
 import { ScrollArea } from "../components/ScrollArea/ScrollArea";
 import type {
   DateRangeKey,
@@ -48,6 +49,10 @@ export function AppLayout() {
   );
   const [refreshToken, setRefreshToken] = useState(0);
   const [refreshing, setRefreshing] = useState(false);
+
+  useEffect(() => {
+    bootLog("17M", "AppLayout mounted");
+  }, []);
 
   useEffect(() => {
     setReviewTarget(defaultReviewTarget(currentUser.person.role));

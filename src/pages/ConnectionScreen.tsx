@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { ConnectError } from "../app/connectAndContinue";
+import { bootLog } from "../app/bootDiagnostics";
 import { useConnectionGate, type ConnectionStatus } from "../app/ConnectionContext";
 import {
   performConnection,
@@ -24,6 +25,10 @@ export function ConnectionScreen() {
   const [jiraError, setJiraError] = useState<string | null>(null);
   const [bambooError, setBambooError] = useState<string | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
+
+  useEffect(() => {
+    bootLog("13", "ConnectionScreen mounted");
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
