@@ -4,6 +4,7 @@ import { createElement } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createDefaultSurveyData } from '../../domain/survey/defaults';
+import { ToastProvider } from '../../components/Toast/ToastContext';
 import { FeedbackPage } from './FeedbackPage';
 import { DEFAULT_PREFERENCES } from '../../platform/preferences';
 
@@ -69,7 +70,9 @@ function renderPage() {
   document.body.appendChild(container);
   const root = createRoot(container);
   act(() => {
-    root.render(createElement(FeedbackPage));
+    root.render(
+      createElement(ToastProvider, null, createElement(FeedbackPage)),
+    );
   });
   return { container, root };
 }
@@ -85,6 +88,7 @@ describe('FeedbackPage', () => {
     surveyStoreState.loading = false;
     surveyStoreState.error = null;
     surveyStoreState.prepareIssues = [];
+    init.mockResolvedValue(undefined);
     const rendered = renderPage();
     container = rendered.container;
     root = rendered.root;
@@ -95,22 +99,28 @@ describe('FeedbackPage', () => {
     container.remove();
   });
 
-  it('shows connect state when Google is not linked', () => {
+  it('shows connect state when Google is not linked', async () => {
+    await act(async () => {
+      await Promise.resolve();
+    });
     expect(container.textContent).toContain(
-      'Create and send team feedback surveys through your connected Google',
+      'Create and send team feedback surveys using Google Forms and Gmail',
     );
     expect(container.querySelector('.performance-subnav')).toBeFalsy();
   });
 
-  it('shows personal empty state outside team mode', () => {
+  it('shows team-only message outside team mode', async () => {
     appStoreState.teamDetection = { mode: 'personal', ok: true, employee: null, fullTeam: [], directReports: [] };
     act(() => {
-      root.render(createElement(FeedbackPage));
+      root.render(createElement(ToastProvider, null, createElement(FeedbackPage)));
     });
-    expect(container.textContent).toContain('No personal feedback is available yet');
+    await act(async () => {
+      await Promise.resolve();
+    });
+    expect(container.textContent).toContain('Feedback is available to team leads');
   });
 
-  it('shows survey tabs when Google forms are connected', () => {
+  it('shows survey tabs when Google forms are connected', async () => {
     appStoreState.prefs = {
       ...DEFAULT_PREFERENCES,
       google: {
@@ -121,14 +131,18 @@ describe('FeedbackPage', () => {
       },
     };
     act(() => {
-      root.render(createElement(FeedbackPage));
+      root.render(createElement(ToastProvider, null, createElement(FeedbackPage)));
+    });
+    await act(async () => {
+      await Promise.resolve();
     });
     expect(container.querySelector('.performance-subnav')).toBeTruthy();
     expect(container.textContent).toContain('Survey');
     expect(container.textContent).toContain('Delivery');
+    expect(container.textContent).toContain('Google Workspace');
   });
 
-  it('shows partial Google connection states', () => {
+  it('shows compact strip when Google is linked', async () => {
     appStoreState.prefs = {
       ...DEFAULT_PREFERENCES,
       google: {
@@ -139,8 +153,12 @@ describe('FeedbackPage', () => {
       },
     };
     act(() => {
-      root.render(createElement(FeedbackPage));
+      root.render(createElement(ToastProvider, null, createElement(FeedbackPage)));
     });
-    expect(container.textContent).toContain('Needs attention');
+    await act(async () => {
+      await Promise.resolve();
+    });
+    expect(container.textContent).toContain('lead@company.com');
+    expect(container.querySelector('.feedback-google-strip')).toBeTruthy();
   });
 });

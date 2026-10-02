@@ -1,5 +1,24 @@
 import { test, expect, type Page } from "@playwright/test";
 import { serializeNotificationFixtureForPlaywright } from "../../src/fixtures/notificationCenterVisualFixture";
+import { serializeFeedbackVisualPrefsForPlaywright } from "../../src/fixtures/feedbackWorkflowFixture";
+
+async function bootMetrioFeedback(page: Page, theme: "light" | "dark" = "light") {
+  const prefsJson = serializeFeedbackVisualPrefsForPlaywright();
+  await page.addInitScript(
+    ({ fixtureId, themeId, prefs }: { fixtureId: string; themeId: string; prefs: string }) => {
+      localStorage.setItem("metrio-connection-connected", "true");
+      localStorage.setItem("metrio-dev-fixture", fixtureId);
+      localStorage.setItem("metrio-theme", themeId);
+      localStorage.setItem("metrio-visual-preferences", prefs);
+    },
+    { fixtureId: "lead", themeId: theme, prefs: prefsJson },
+  );
+  await page.goto("/");
+  await expect(page.getByTestId("app-shell")).toBeVisible({ timeout: 30_000 });
+  await expect(page.getByTestId("performance-dashboard-ready")).toBeVisible({
+    timeout: 30_000,
+  });
+}
 
 async function bootMetrio(page: Page, fixture: "lead" | "employee" = "lead") {
   await page.addInitScript((fixtureId: string) => {
@@ -177,13 +196,22 @@ test.describe("Metrio visual regression", () => {
     });
   });
 
-  test("feedback page", async ({ page }) => {
-    await bootMetrio(page, "lead");
+  test("feedback survey connected", async ({ page }) => {
+    await bootMetrioFeedback(page, "light");
     await page.getByRole("button", { name: /^feedback$/i }).click();
-    await expect(
-      page.getByRole("main").getByRole("heading", { name: /^feedback$/i }),
-    ).toBeVisible();
-    await expect(page).toHaveScreenshot("feedback.png", {
+    await expect(page.locator(".feedback-google-strip")).toBeVisible({ timeout: 15_000 });
+    await expect(page.locator(".performance-subnav")).toBeVisible({ timeout: 15_000 });
+    await expect(page).toHaveScreenshot("feedback-survey-connected.png", {
+      fullPage: true,
+      maxDiffPixelRatio: 0.02,
+    });
+  });
+
+  test("feedback dark theme", async ({ page }) => {
+    await bootMetrioFeedback(page, "dark");
+    await page.getByRole("button", { name: /^feedback$/i }).click();
+    await expect(page.getByText("Google Workspace")).toBeVisible({ timeout: 15_000 });
+    await expect(page).toHaveScreenshot("feedback-dark.png", {
       fullPage: true,
       maxDiffPixelRatio: 0.02,
     });

@@ -1,6 +1,7 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
+import { ToastProvider } from "../components/Toast/ToastContext";
 import { DEFAULT_PREFERENCES } from "../platform/preferences";
 import { FeedbackPage } from "./FeedbackPage";
 
@@ -39,7 +40,7 @@ vi.mock("../app/feedbackSurveyStore", () => ({
     showRegenerateConfirm: false,
     recipientSearch: "",
     recipientStatusFilter: "all",
-    init: vi.fn(),
+    init: vi.fn().mockResolvedValue(undefined),
     saveDefaults: vi.fn(),
     prepareSurvey: vi.fn(),
     regenerateGoogleForm: vi.fn(),
@@ -69,9 +70,15 @@ vi.mock("../app/feedbackSurveyStore", () => ({
 describe("FeedbackPage", () => {
   it("renders survey delivery results and history navigation", async () => {
     const user = userEvent.setup();
-    render(<FeedbackPage />);
+    render(
+      <ToastProvider>
+        <FeedbackPage />
+      </ToastProvider>,
+    );
 
-    expect(screen.getByRole("button", { name: "Survey" })).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: "Survey" })).toBeInTheDocument();
+    });
     expect(screen.getByRole("button", { name: "Delivery" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Results" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "History" })).toBeInTheDocument();
