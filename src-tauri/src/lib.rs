@@ -397,6 +397,19 @@ fn spawn_background_emitter(app: AppHandle, event_name: &'static str, every_secs
     });
 }
 
+/// Autostart passes `--minimized` via tauri-plugin-autostart (see `MacosLauncher::LaunchAgent`).
+pub fn args_include_minimized<I, S>(args: I) -> bool
+where
+    I: IntoIterator<Item = S>,
+    S: AsRef<str>,
+{
+    args.into_iter().any(|arg| arg.as_ref() == "--minimized")
+}
+
+pub fn startup_launched_minimized() -> bool {
+    args_include_minimized(std::env::args())
+}
+
 fn hide_main_window(app: &AppHandle) {
     if let Some(window) = app.get_webview_window("main") {
         let _ = window.hide();
@@ -553,6 +566,10 @@ pub fn run() {
                     }
                 });
             }
+            if startup_launched_minimized() {
+                hide_main_window(app.handle());
+                write_setup_log(app.handle(), "NATIVE 05 autostart minimized — main window hidden");
+            }
             write_setup_log(app.handle(), "NATIVE 04 setup finished");
             Ok(())
         })
@@ -563,6 +580,20 @@ pub fn run() {
                 show_main_window(app_handle);
             }
         });
+}
+
+#[cfg(test)]
+mod startup_arg_tests {
+    use super::args_include_minimized;
+
+    #[test]
+    fn minimized_flag_is_detected() {
+        assert!(args_include_minimized([
+            "/Applications/Metrio.app/Contents/MacOS/metrio",
+            "--minimized",
+        ]));
+        assert!(!args_include_minimized(["/Applications/Metrio.app/Contents/MacOS/metrio"]));
+    }
 }
 
 #[cfg(test)]
