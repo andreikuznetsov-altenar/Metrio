@@ -4,6 +4,7 @@ import type { AuditReportData } from "../jira/types";
 import {
   formatKpiReconciliationReport,
   reconcileAnalyticsKpiEvidence,
+  reconcilePerformanceAnalytics,
 } from "./kpiReconciliation";
 
 function statusEvent(changedAt: string, fromValue: string, toValue: string, isBackflow = false) {
@@ -84,6 +85,10 @@ describe("reconcileAnalyticsKpiEvidence", () => {
     expect(report.results.find((row) => row.metric === "Backflows")?.semantic).toMatch(
       /cycles with hasBackflow/i,
     );
+
+    const structured = reconcilePerformanceAnalytics(reportData, "team");
+    expect(structured.allMatch).toBe(true);
+    expect(structured.firstPass.reworkSumMatches).toBe(true);
   });
 
   it("fails completed reconciliation when dashboard KPI is stale", () => {

@@ -2,9 +2,12 @@ import type { PerformanceReviewTarget } from "../performance";
 import type { PerformanceFetchResult } from "../../services/performance/performanceTypes";
 import {
   formatKpiReconciliationReport,
+  formatPerformanceAnalyticsReconciliation,
   reconcileAnalyticsKpiEvidence,
+  reconcilePerformanceAnalytics,
   type KpiReconciliationReport,
 } from "./kpiReconciliation";
+import { writeLog } from "../../platform/logger";
 
 declare global {
   interface Window {
@@ -25,7 +28,6 @@ export function registerKpiReconciliationDataSource(
   lastFetchResult = data;
   lastReviewTarget = reviewTarget;
   if (
-    import.meta.env.DEV &&
     typeof window !== "undefined" &&
     data?.reportData &&
     new URLSearchParams(window.location.search).get("kpiReconcile") === "1"
@@ -55,13 +57,20 @@ export function logKpiReconciliation(
     console.warn("[KPI RECONCILIATION] No performance report data loaded.");
     return null;
   }
+  if (data?.reportData) {
+    const structured = reconcilePerformanceAnalytics(data.reportData, reviewTarget);
+    const formatted = formatPerformanceAnalyticsReconciliation(structured);
+    console.info(formatted);
+    void writeLog("info", "app", "kpi_reconciliation", formatted);
+    return report;
+  }
   console.info(formatKpiReconciliationReport(report));
   return report;
 }
 
-/** DEV-only: expose console helper and optional query-param auto-run. */
+/** Internal diagnostic helper (console + optional ?kpiReconcile=1 auto-run). */
 export function installKpiReconciliationDevTools(): void {
-  if (!import.meta.env.DEV || typeof window === "undefined") return;
+  if (typeof window === "undefined") return;
 
   window.__metrioRunKpiReconciliation = (reviewTarget) =>
     logKpiReconciliation(lastFetchResult, reviewTarget ?? lastReviewTarget);
