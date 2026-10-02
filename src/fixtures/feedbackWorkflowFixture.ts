@@ -41,7 +41,12 @@ export function serializeFeedbackVisualPrefsForPlaywright(): string {
       employee: null,
       fullTeam: [],
       directReports: [],
-    } as AppPreferences['teamDetection'],
+      missingFields: [],
+      restrictedFields: [],
+      diagnostics: [],
+      reportingSource: 'bamboo',
+      ambiguousSupervisorNames: [],
+    } as unknown as AppPreferences['teamDetection'],
     google: {
       ...DEFAULT_PREFERENCES.google,
       accountEmail: FEEDBACK_WORKFLOW_FIXTURE.google.accountEmail,
