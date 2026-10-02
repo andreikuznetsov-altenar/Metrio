@@ -14,11 +14,13 @@
 | Indirect reports | Explicitly excluded via `findIndirectReportsExcludedFromScope()` tests |
 | Job title | **Must not** grant access; only `resolveTeamScope` / existing role model |
 
-## Director in Phase 21
+## Director in Phase 21–22
 
 - **Organization actions** reuse the **same dataset and member list** as team managers until Security approves broader scope.
 - No automatic expansion to `fullTeam`.
-- Pending product/security decision documented here; do not enable indirect-report Performance or Confluence context without an explicit scope change.
+- Phase 22 adds `AuthorizedPeopleScope` (`self` / `direct_reports` / `organization`) with **organization** only when `VITE_ORGANIZATION_SCOPE_PERSON_IDS` lists explicit Bamboo person ids.
+- `jobTitle` / director presentation role does **not** grant organization scope.
+- Pending product/security decision documented here; do not enable indirect-report Performance without an explicit scope change.
 
 ## Bamboo fields used
 

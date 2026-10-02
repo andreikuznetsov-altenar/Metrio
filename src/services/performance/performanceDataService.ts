@@ -32,6 +32,11 @@ import { writeLog } from "../../platform/logger";
 import type { OrgResolutionResult } from "../bamboo/orgResolver";
 import { BambooClient } from "../bamboo/bambooClient";
 import { resolveTeamScope } from "../bamboo/teamScope";
+import {
+  membersForAuthorizedScope,
+  presentationRoleFromOrg,
+  resolveAuthorizedPeopleScope,
+} from "../../domain/organization/authorizedPeopleScope";
 import { JiraClient } from "../jira/jiraClient";
 import {
   buildTeamSnapshot,
@@ -86,6 +91,13 @@ function membersForJiraScope(
   scopedOrg: OrgResolutionResult,
   teamScope: "direct" | "full",
 ): ResolvedEmployee[] {
+  const presentationRole = presentationRoleFromOrg(teamDetection);
+  const authScope = resolveAuthorizedPeopleScope(teamDetection, presentationRole);
+  const authorized = membersForAuthorizedScope(teamDetection, authScope);
+  if (authorized.length > 0) {
+    return authorized;
+  }
+
   const scope = resolveTeamScope(scopedOrg);
   if (!scope) {
     return [];
