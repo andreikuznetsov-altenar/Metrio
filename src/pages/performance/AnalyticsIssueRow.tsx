@@ -1,6 +1,6 @@
 import { ExternalLink } from "lucide-react";
 import { Badge } from "../../components/Badge/Badge";
-import { IconButton } from "../../components/IconButton/IconButton";
+import { PersonAvatar } from "../../components/PersonAvatar/PersonAvatar";
 import { Tooltip } from "../../components/Tooltip/Tooltip";
 import type { AnalyticsEvidenceIssue } from "../../domain/analytics/analyticsEvidenceTypes";
 import { formatPerformanceDateDisplay } from "../../domain/performance/performanceDateRange";
@@ -8,6 +8,10 @@ import { resolveJiraBaseUrl } from "../../config/product";
 import { loadPreferences } from "../../platform/preferences";
 import { buildJiraIssueBrowseUrl } from "../../platform/jiraIssueUrl";
 import { openExternalUrl } from "../../platform/openExternal";
+import {
+  displayPersonName,
+  formatCycleDurationShort,
+} from "./analyticsDrawerPresentation";
 import "./analytics-issue-row.css";
 
 function outcomeBadge(outcome: AnalyticsEvidenceIssue["outcome"]) {
@@ -17,18 +21,11 @@ function outcomeBadge(outcome: AnalyticsEvidenceIssue["outcome"]) {
   return null;
 }
 
-function formatDuration(ms: number | null | undefined): string | null {
-  if (ms == null || ms < 0) return null;
-  const days = ms / 86400000;
-  if (days >= 1) return `${days.toFixed(1)}d cycle`;
-  const hours = ms / 3600000;
-  return `${hours.toFixed(1)}h cycle`;
-}
-
 export interface AnalyticsIssueRowProps {
   issue: AnalyticsEvidenceIssue;
   onOpenPerson?: (personId: string) => void;
   showOutcome?: boolean;
+  showBackflowSummary?: boolean;
   expanded?: boolean;
   onToggleExpand?: () => void;
 }
@@ -37,69 +34,92 @@ export function AnalyticsIssueRow({
   issue,
   onOpenPerson,
   showOutcome = true,
+  showBackflowSummary = false,
   expanded = false,
   onToggleExpand,
 }: AnalyticsIssueRowProps) {
   const badge = showOutcome ? outcomeBadge(issue.outcome) : null;
+  const personLabel = displayPersonName(issue.personName);
   const completedLabel = issue.completedAt
     ? formatPerformanceDateDisplay(issue.completedAt.slice(0, 10))
     : null;
-  const durationLabel = formatDuration(issue.cycleDurationMs);
+  const durationLabel = formatCycleDurationShort(issue.cycleDurationMs);
   const hasBackflowDetails = (issue.backflowEvents?.length ?? 0) > 0;
+  const metaParts = [
+    completedLabel,
+    durationLabel ? `${durationLabel} cycle` : null,
+    showBackflowSummary && (issue.backflowCount ?? 0) > 0
+      ? `${issue.backflowCount} backflow${(issue.backflowCount ?? 0) === 1 ? "" : "s"}`
+      : null,
+  ].filter(Boolean) as string[];
 
   return (
-    <div className="analytics-issue-row">
-      <div className="analytics-issue-row__main">
-        <div className="analytics-issue-row__text">
-          <div className="analytics-issue-row__key-line">
-            <span className="analytics-issue-row__key">{issue.issueKey}</span>
-            {issue.cycleLabel ? (
-              <span className="analytics-issue-row__cycle">{issue.cycleLabel}</span>
-            ) : null}
-          </div>
-          <div className="analytics-issue-row__title" title={issue.title}>
-            {issue.title}
-          </div>
-          <div className="analytics-issue-row__meta">
-            {issue.personId && issue.personName ? (
-              <button
-                type="button"
-                className="analytics-issue-row__person"
-                onClick={() => onOpenPerson?.(issue.personId!)}
-              >
-                {issue.personName}
-              </button>
-            ) : (
-              <span>{issue.personName || "—"}</span>
-            )}
-            {completedLabel ? <span> · {completedLabel}</span> : null}
-            {durationLabel ? <span> · {durationLabel}</span> : null}
-            {(issue.backflowCount ?? 0) > 0 ? (
-              <span> · {issue.backflowCount} backflow{(issue.backflowCount ?? 0) === 1 ? "" : "s"}</span>
-            ) : null}
-          </div>
+    <article className="analytics-issue-row">
+      <div className="analytics-issue-row__top">
+        <div className="analytics-issue-row__key-line">
+          <span className="analytics-issue-row__key">{issue.issueKey}</span>
+          {issue.cycleLabel ? (
+            <span className="analytics-issue-row__cycle">{issue.cycleLabel}</span>
+          ) : null}
         </div>
-        <div className="analytics-issue-row__actions">
-          {badge ? <Badge variant={badge.variant}>{badge.label}</Badge> : null}
-          <Tooltip content="Open in Jira">
-            <IconButton
-              label={`Open ${issue.issueKey} in Jira`}
-              onClick={() => {
-                void (async () => {
-                  const prefs = await loadPreferences();
-                  const url = buildJiraIssueBrowseUrl(
-                    resolveJiraBaseUrl(prefs),
-                    issue.issueKey,
-                  );
-                  await openExternalUrl(url);
-                })();
-              }}
-            >
-              <ExternalLink size={14} strokeWidth={1.75} />
-            </IconButton>
-          </Tooltip>
-        </div>
+        {badge ? (
+          <Badge variant={badge.variant} className="analytics-issue-row__badge">
+            {badge.label}
+          </Badge>
+        ) : null}
       </div>
+
+      <h4 className="analytics-issue-row__title" title={issue.title}>
+        {issue.title}
+      </h4>
+
+      <div className="analytics-issue-row__footer">
+        <div className="analytics-issue-row__person-line">
+          {issue.personId ? (
+            <PersonAvatar
+              employeeId={issue.personId}
+              displayName={personLabel}
+              size="sm"
+            />
+          ) : null}
+          {issue.personId && onOpenPerson ? (
+            <button
+              type="button"
+              className="analytics-issue-row__person"
+              onClick={() => onOpenPerson(issue.personId!)}
+              aria-label={`Open ${personLabel} details`}
+            >
+              {personLabel}
+            </button>
+          ) : (
+            <span className="analytics-issue-row__person-static">{personLabel}</span>
+          )}
+          {metaParts.length ? (
+            <span className="analytics-issue-row__meta">{metaParts.join(" · ")}</span>
+          ) : null}
+        </div>
+
+        <Tooltip content="Open in Jira">
+          <button
+            type="button"
+            className="analytics-issue-row__jira"
+            aria-label={`Open ${issue.issueKey} in Jira`}
+            onClick={() => {
+              void (async () => {
+                const prefs = await loadPreferences();
+                const url = buildJiraIssueBrowseUrl(
+                  resolveJiraBaseUrl(prefs),
+                  issue.issueKey,
+                );
+                await openExternalUrl(url);
+              })();
+            }}
+          >
+            <ExternalLink size={15} strokeWidth={1.75} aria-hidden />
+          </button>
+        </Tooltip>
+      </div>
+
       {hasBackflowDetails && onToggleExpand ? (
         <button
           type="button"
@@ -110,16 +130,17 @@ export function AnalyticsIssueRow({
           {expanded ? "Hide transitions" : "Show transitions"}
         </button>
       ) : null}
+
       {expanded && issue.backflowEvents?.length ? (
         <ul className="analytics-issue-row__transitions">
           {issue.backflowEvents.map((event) => (
             <li key={`${event.changedAt}-${event.transitionLabel}`}>
-              {formatPerformanceDateDisplay(event.changedAt.slice(0, 10))}{" "}
-              {event.transitionLabel}
+              {formatPerformanceDateDisplay(event.changedAt.slice(0, 10))} ·{" "}
+              {event.transitionLabel.replace(" → ", " → ")}
             </li>
           ))}
         </ul>
       ) : null}
-    </div>
+    </article>
   );
 }
