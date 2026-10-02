@@ -223,9 +223,11 @@ export function PersonDetailDrawer({
       ariaLabel={`Person detail for ${displayName}`}
       header={
         <div className="person-detail-drawer__identity">
-          <span className="performance-avatar" aria-hidden>
-            {personInitials(displayName)}
-          </span>
+          <PersonAvatar
+            employeeId={personId}
+            displayName={displayName}
+            size="md"
+          />
           <div>
             <div className="person-detail-drawer__name">{displayName}</div>
             <div className="person-detail-drawer__role">{jobTitle}</div>
