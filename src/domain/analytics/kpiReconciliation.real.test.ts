@@ -42,7 +42,7 @@ describe.skipIf(!runReal)("real Jira KPI reconciliation", () => {
       }> = [
         { label: "7d team", range: createPerformanceDateRange("7d"), target: "team" },
         { label: "30d team", range: createPerformanceDateRange("30d"), target: "team" },
-        { label: "quarter team", range: createPerformanceDateRange("quarter"), target: "team" },
+        { label: "3m team", range: createPerformanceDateRange("3m"), target: "team" },
         { label: "custom team", range: customRange, target: "team" },
       ];
 

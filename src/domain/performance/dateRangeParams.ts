@@ -1,4 +1,4 @@
-import { format, startOfQuarter } from "date-fns";
+import { format, subMonths, subYears } from "date-fns";
 import type { DateRangeKey } from "../performance";
 import { getLastNDaysRange } from "../periods/dateRange";
 
@@ -15,6 +15,11 @@ export function dateRangeKeyToBounds(
     const { start } = getLastNDaysRange(30, now);
     return { dateFrom: format(start, "yyyy-MM-dd"), dateTo };
   }
-  const quarterStart = startOfQuarter(now);
-  return { dateFrom: format(quarterStart, "yyyy-MM-dd"), dateTo };
+  if (key === "3m") {
+    return { dateFrom: format(subMonths(now, 3), "yyyy-MM-dd"), dateTo };
+  }
+  if (key === "6m") {
+    return { dateFrom: format(subMonths(now, 6), "yyyy-MM-dd"), dateTo };
+  }
+  return { dateFrom: format(subYears(now, 1), "yyyy-MM-dd"), dateTo };
 }

@@ -8,7 +8,10 @@ import {
   splitWhosOutRange,
 } from "../../domain/people/plannedTimeOff";
 import type { PerformanceDateRange } from "../../domain/performance/performanceDateRange";
-import type { DateRangeKey, PerformanceReviewTarget } from "../../domain/performance";
+import {
+  dateRangeKeyFromPerformanceRange,
+} from "../../domain/performance/performanceDateRange";
+import type { PerformanceReviewTarget } from "../../domain/performance";
 import type { PerformanceAudience } from "../../domain/performance/reportParams";
 import {
   resolvePerformanceReportRanges,
@@ -112,8 +115,7 @@ export async function fetchPerformanceData(
     const { buildVisualPerformanceFetchResult } = await import(
       "../../fixtures/performanceFetchFixture"
     );
-    const presetKey =
-      dateRange.preset === "custom" ? "30d" : (dateRange.preset as DateRangeKey);
+    const presetKey = dateRangeKeyFromPerformanceRange(dateRange);
     return buildVisualPerformanceFetchResult(
       presetKey,
       reviewTarget,

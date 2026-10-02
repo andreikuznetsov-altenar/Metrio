@@ -6,16 +6,12 @@ import { Select } from "../components/Select/Select";
 import type { DateRangeKey, PerformanceReviewTarget } from "../domain/performance";
 import {
   createPerformanceDateRange,
+  DATE_RANGE_PRESET_OPTIONS,
+  isKnownDateRangePreset,
   validatePerformanceDateRange,
   type PerformanceDateRange,
 } from "../domain/performance/performanceDateRange";
 import "./PerformanceToolbar.css";
-
-const DATE_RANGE_OPTIONS = [
-  { value: "7d", label: "Last 7 days" },
-  { value: "30d", label: "Last 30 days" },
-  { value: "quarter", label: "Quarter" },
-];
 
 const TEAM_REVIEW_TARGET_OPTIONS = [
   { value: "team", label: "Team target" },
@@ -66,9 +62,11 @@ export function PerformanceToolbar({
       : TEAM_REVIEW_TARGET_OPTIONS;
 
   const rangeValidation = validatePerformanceDateRange(dateRange);
-  const inputsDisabled = controlsDisabled || !rangeValidation.valid;
-  const presetValue =
-    dateRange.preset === "custom" ? "30d" : (dateRange.preset as DateRangeKey);
+  const datesEditable = !controlsDisabled;
+  const actionsDisabled = controlsDisabled || !rangeValidation.valid;
+  const presetSelectValue = isKnownDateRangePreset(dateRange.preset)
+    ? dateRange.preset
+    : "";
 
   return (
     <div className="performance-toolbar">
@@ -78,7 +76,7 @@ export function PerformanceToolbar({
             id="perf-from"
             label="From"
             value={dateRange.from}
-            disabled={inputsDisabled}
+            disabled={!datesEditable}
             onChange={(from) =>
               onDateRangeChange({
                 ...dateRange,
@@ -94,7 +92,7 @@ export function PerformanceToolbar({
             id="perf-to"
             label="To"
             value={dateRange.to}
-            disabled={inputsDisabled}
+            disabled={!datesEditable}
             onChange={(to) =>
               onDateRangeChange({
                 ...dateRange,
@@ -107,16 +105,13 @@ export function PerformanceToolbar({
         <div className="performance-toolbar__field performance-toolbar__field--preset">
           <Select
             aria-label="Date range preset"
-            value={dateRange.preset === "custom" ? "custom" : presetValue}
+            value={presetSelectValue}
+            allowEmpty
+            placeholder=" "
             disabled={controlsDisabled}
-            options={[
-              ...DATE_RANGE_OPTIONS,
-              { value: "custom", label: "Custom" },
-            ]}
+            options={DATE_RANGE_PRESET_OPTIONS}
             onChange={(event) => {
-              const value = event.target.value;
-              if (value === "custom") return;
-              onDateRangeChange(applyPreset(value as DateRangeKey));
+              onDateRangeChange(applyPreset(event.target.value as DateRangeKey));
             }}
           />
         </div>
@@ -143,7 +138,7 @@ export function PerformanceToolbar({
           <IconButton
             label="Refresh"
             onClick={onRefresh}
-            disabled={inputsDisabled}
+            disabled={actionsDisabled}
           >
             <RefreshCw size={16} strokeWidth={1.75} aria-hidden />
           </IconButton>
@@ -153,7 +148,7 @@ export function PerformanceToolbar({
             <Button
               type="button"
               variant="primary"
-              disabled={exportDisabled || exportBusy || inputsDisabled}
+              disabled={exportDisabled || exportBusy || actionsDisabled}
               loading={exportBusy}
               onClick={onExportPdf}
             >

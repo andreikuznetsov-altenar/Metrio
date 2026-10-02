@@ -26,7 +26,14 @@
 }
 
 .performance-toolbar__group--dates {
-  flex: 1.4 1 280px;
+  flex: 1.4 1 480px;
+  max-width: 520px;
+}
+
+.performance-toolbar__group--dates .field {
+  flex: 1 1 220px;
+  min-width: 200px;
+  max-width: 240px;
 }
 
 .performance-toolbar__date-sep {
@@ -41,15 +48,19 @@
 }
 
 .performance-toolbar__field--preset {
-  flex: 1 1 120px;
+  flex: 0 1 168px;
+  min-width: 150px;
+  max-width: 170px;
 }
 
 .performance-toolbar__field--target {
-  flex: 1 1 140px;
+  flex: 0 1 168px;
+  min-width: 150px;
+  max-width: 170px;
 }
 
 .performance-toolbar__refresh {
-  flex: 0 0 42px;
+  flex: 0 0 36px;
   display: flex;
   justify-content: center;
 }

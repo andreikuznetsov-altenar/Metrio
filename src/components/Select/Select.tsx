@@ -18,6 +18,9 @@ export interface SelectProps {
   disabled?: boolean;
   id?: string;
   className?: string;
+  /** When true, an empty string value shows placeholder with no selected item. */
+  allowEmpty?: boolean;
+  placeholder?: string;
   "aria-label"?: string;
   "aria-invalid"?: boolean;
   onChange?: (event: { target: { value: string } }) => void;
@@ -33,6 +36,8 @@ export function Select({
   defaultValue,
   disabled,
   onChange,
+  allowEmpty = false,
+  placeholder = "Select…",
   "aria-label": ariaLabel,
   "aria-invalid": ariaInvalid,
 }: SelectProps) {
@@ -42,13 +47,15 @@ export function Select({
     .filter(Boolean)
     .join(" ");
 
-  const resolvedValue = value || defaultValue || "";
+  const resolvedValue = value ?? defaultValue ?? "";
+  const rootValue =
+    allowEmpty && resolvedValue === "" ? undefined : resolvedValue || undefined;
 
   const selected = options.find((option) => option.value === resolvedValue);
 
   const control = (
     <SelectPrimitive.Root
-      value={resolvedValue}
+      value={rootValue}
       disabled={disabled}
       onValueChange={(next) => onChange?.({ target: { value: next } })}
     >
@@ -59,7 +66,7 @@ export function Select({
         aria-invalid={ariaInvalid ?? error ?? undefined}
       >
         <span className="select-trigger__value">
-          <SelectPrimitive.Value placeholder="Select…">
+          <SelectPrimitive.Value placeholder={placeholder}>
             {selected?.label}
           </SelectPrimitive.Value>
         </span>

@@ -2,7 +2,7 @@ import type { BadgeVariant } from "../components/Badge/Badge";
 import type { RadarSeverity } from "./radar/types";
 import type { TrendDirection } from "./trends/trendEngine";
 
-export type DateRangeKey = "7d" | "30d" | "quarter";
+export type DateRangeKey = "7d" | "30d" | "3m" | "6m" | "1y";
 export type ReviewTargetKey = "team" | "sprint" | "org";
 export type EmployeeReviewTargetKey = "personal" | "sprint" | "quarter";
 
@@ -19,6 +19,7 @@ export interface MetricCardData {
   contextLabel?: string;
   contextSemantic?: MetricContextSemantic;
   contextCaption?: string;
+  cycleSegments?: { label: string; value: string }[];
 }
 
 export interface AttentionPerson {

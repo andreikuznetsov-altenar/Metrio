@@ -16,7 +16,7 @@ export function getEmployeePerformanceSnapshot(
   refreshToken: number,
 ): EmployeePerformanceSnapshot {
   const seed = hash(personId) + refreshToken;
-  const rangeBias = dateRange === "7d" ? -1 : dateRange === "quarter" ? 2 : 0;
+  const rangeBias = dateRange === "7d" ? -1 : dateRange === "3m" ? 2 : 0;
   const targetBias =
     reviewTarget === "personal" ? 1 : reviewTarget === "quarter" ? -1 : 0;
 

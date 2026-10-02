@@ -113,7 +113,7 @@ export function getTeamPerformanceSnapshot(
 ): TeamPerformanceSnapshot {
   const modifier = refreshToken % 3;
   const targetBias = reviewTarget === "sprint" ? 2 : reviewTarget === "org" ? -1 : 0;
-  const rangeBias = dateRange === "7d" ? -2 : dateRange === "quarter" ? 3 : 0;
+  const rangeBias = dateRange === "7d" ? -2 : dateRange === "3m" ? 3 : 0;
   const efficiency = 84 + modifier + targetBias;
   const firstPass = 76 + modifier;
   const completed = directReportIds.length * 4 + rangeBias + modifier;
