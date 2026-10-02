@@ -28,6 +28,24 @@ test.describe("Metrio visual regression", () => {
     });
   });
 
+  test("performance overview loading overlay", async ({ page }) => {
+    await page.addInitScript((fixtureId: string) => {
+      localStorage.setItem("metrio-connection-connected", "true");
+      localStorage.setItem("metrio-dev-fixture", fixtureId);
+      localStorage.setItem("metrio-theme", "light");
+    }, "lead");
+
+    await page.goto("/?visualOverlay=1");
+    await expect(page.getByTestId("app-shell")).toBeVisible({ timeout: 30_000 });
+    await expect(page.getByTestId("performance-content-overlay")).toBeVisible({
+      timeout: 30_000,
+    });
+    await expect(page).toHaveScreenshot("performance-overview-loading-overlay.png", {
+      fullPage: true,
+      maxDiffPixelRatio: 0.02,
+    });
+  });
+
   test("team overview dark", async ({ page }) => {
     await page.addInitScript(() => {
       localStorage.setItem("metrio-connection-connected", "true");

@@ -79,6 +79,7 @@ export interface PerformanceToolbarProps {
   reviewTarget: PerformanceReviewTarget;
   audience: "team" | "employee";
   refreshing?: boolean;
+  controlsDisabled?: boolean;
   onDateRangeChange: (value: PerformanceDateRange) => void;
   onReviewTargetChange: (value: PerformanceReviewTarget) => void;
   onRefresh: () => void;
@@ -97,6 +98,7 @@ export function PerformanceToolbar({
   reviewTarget,
   audience,
   refreshing = false,
+  controlsDisabled = false,
   onDateRangeChange,
   onReviewTargetChange,
   onRefresh,
@@ -111,6 +113,7 @@ export function PerformanceToolbar({
       : TEAM_REVIEW_TARGET_OPTIONS;
 
   const rangeValidation = validatePerformanceDateRange(dateRange);
+  const inputsDisabled = controlsDisabled || !rangeValidation.valid;
   const presetValue =
     dateRange.preset === "custom" ? "30d" : (dateRange.preset as DateRangeKey);
 
@@ -129,6 +132,7 @@ export function PerformanceToolbar({
             type="date"
             className="performance-toolbar__date-input"
             value={dateRange.from}
+            disabled={inputsDisabled}
             onChange={(event) =>
               onDateRangeChange({
                 ...dateRange,
@@ -147,6 +151,7 @@ export function PerformanceToolbar({
             type="date"
             className="performance-toolbar__date-input"
             value={dateRange.to}
+            disabled={inputsDisabled}
             onChange={(event) =>
               onDateRangeChange({
                 ...dateRange,
@@ -160,6 +165,7 @@ export function PerformanceToolbar({
           <Select
             aria-label="Date range preset"
             value={dateRange.preset === "custom" ? "custom" : presetValue}
+            disabled={controlsDisabled}
             options={[
               ...DATE_RANGE_OPTIONS,
               { value: "custom", label: "Custom" },
@@ -175,6 +181,7 @@ export function PerformanceToolbar({
           <Select
             aria-label="Review target"
             value={reviewTarget}
+            disabled={controlsDisabled}
             options={reviewOptions}
             onChange={(event) =>
               onReviewTargetChange(
@@ -193,7 +200,7 @@ export function PerformanceToolbar({
           <IconButton
             label="Refresh"
             onClick={onRefresh}
-            disabled={refreshing || !rangeValidation.valid}
+            disabled={inputsDisabled}
           >
             <RefreshIcon />
           </IconButton>
@@ -203,7 +210,7 @@ export function PerformanceToolbar({
             <Button
               type="button"
               variant="secondary"
-              disabled={exportDisabled || exportBusy || !rangeValidation.valid}
+              disabled={exportDisabled || exportBusy || inputsDisabled}
               onClick={onExportPdf}
             >
               <ExportIcon />

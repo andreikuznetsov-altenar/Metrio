@@ -1,4 +1,5 @@
 import { useCallback, useState } from "react";
+import { usePerformanceData } from "../app/PerformanceDataContext";
 import { useCurrentUser } from "../app/CurrentUserContext";
 import {
   isManagerRole,
@@ -10,6 +11,7 @@ import { canOpenPersonDetail } from "../domain/personAccess";
 import { EmployeePerformanceOverview } from "./performance/EmployeePerformanceOverview";
 import { PersonDetailDrawer } from "./performance/PersonDetailDrawer";
 import { TeamPerformanceOverview } from "./performance/TeamPerformanceOverview";
+import { PerformanceContentShell } from "./performance/PerformanceContentShell";
 
 export interface PerformancePageProps {
   reviewTarget: PerformanceReviewTarget;
@@ -35,6 +37,7 @@ function asEmployeeReviewTarget(
 
 export function PerformancePage({ reviewTarget }: PerformancePageProps) {
   const { currentUser } = useCurrentUser();
+  const { performanceControlsDisabled } = usePerformanceData();
   const [personDetailId, setPersonDetailId] = useState<string | null>(null);
   const canViewTeamDashboard =
     isManagerRole(currentUser.person.role) && currentUser.team;
@@ -44,11 +47,12 @@ export function PerformancePage({ reviewTarget }: PerformancePageProps) {
 
   const openPersonDetail = useCallback(
     (personId: string) => {
+      if (performanceControlsDisabled) return;
       if (canOpenPersonDetail(currentUser, personId)) {
         setPersonDetailId(personId);
       }
     },
-    [currentUser],
+    [currentUser, performanceControlsDisabled],
   );
 
   const closePersonDetail = useCallback(() => {
@@ -83,7 +87,7 @@ export function PerformancePage({ reviewTarget }: PerformancePageProps) {
 
   return (
     <>
-      {content}
+      <PerformanceContentShell>{content}</PerformanceContentShell>
       {drawerOpen && personDetailId ? (
         <PersonDetailDrawer
           personId={personDetailId}

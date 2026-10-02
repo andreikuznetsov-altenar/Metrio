@@ -14,6 +14,11 @@ import {
   type PerformanceDateRange,
 } from "../domain/performance/performanceDateRange";
 import type { PerformanceAudience } from "../domain/performance/reportParams";
+import {
+  isLatestPerformanceRequest,
+  PERFORMANCE_OVERLAY_MIN_MS,
+} from "./performanceLoadGuard";
+import { useMinimumVisibleDuration } from "./useMinimumVisibleDuration";
 import { fetchPerformanceData } from "../services/performance/performanceDataService";
 import {
   applyPerformanceRefreshSideEffects,
@@ -44,6 +49,9 @@ export interface PerformanceDataContextValue {
   stale: boolean;
   refresh: () => Promise<void>;
   refreshing: boolean;
+  contentLoadingActive: boolean;
+  contentOverlayVisible: boolean;
+  performanceControlsDisabled: boolean;
 }
 
 const PerformanceDataContext =
@@ -89,15 +97,26 @@ export function PerformanceDataProvider({
   const dataRef = useRef(data);
   const viewModelsRef = useRef(viewModels);
   const managerTeamTrayRef = useRef(managerTeamTray);
+  const requestSeqRef = useRef(0);
   dataRef.current = data;
   viewModelsRef.current = viewModels;
   managerTeamTrayRef.current = managerTeamTray;
+
+  const contentLoadingActive =
+    enabled && (status === "loading" || status === "refreshing");
+  const contentOverlayVisible = useMinimumVisibleDuration(
+    contentLoadingActive,
+    PERFORMANCE_OVERLAY_MIN_MS,
+  );
+  const performanceControlsDisabled =
+    contentLoadingActive || contentOverlayVisible;
 
   const load = useCallback(
     async (mode: "initial" | "refresh") => {
       if (!enabled) {
         return;
       }
+      const requestId = ++requestSeqRef.current;
       const hasData = dataRef.current != null;
       setStatus(hasData ? "refreshing" : "loading");
       if (mode === "refresh" && hasData) {
@@ -106,7 +125,14 @@ export function PerformanceDataProvider({
       setErrorMessage(null);
 
       try {
-        const next = await fetchPerformanceData(dateRange, reviewTarget, audience);
+        const next = await fetchPerformanceData(
+          dateRange,
+          reviewTarget,
+          audience,
+        );
+        if (!isLatestPerformanceRequest(requestId, requestSeqRef.current)) {
+          return;
+        }
         const models = buildPerformanceViewModels(
           next,
           selfPersonId,
@@ -124,6 +150,9 @@ export function PerformanceDataProvider({
           managerTeamTray: managerTeamTrayRef.current,
         });
       } catch (error) {
+        if (!isLatestPerformanceRequest(requestId, requestSeqRef.current)) {
+          return;
+        }
         const message = errorMessageFromError(error);
         setErrorMessage(message);
         if (dataRef.current) {
@@ -206,6 +235,9 @@ export function PerformanceDataProvider({
       stale,
       refresh,
       refreshing,
+      contentLoadingActive,
+      contentOverlayVisible,
+      performanceControlsDisabled,
     }),
     [
       status,
@@ -216,6 +248,9 @@ export function PerformanceDataProvider({
       stale,
       refresh,
       refreshing,
+      contentLoadingActive,
+      contentOverlayVisible,
+      performanceControlsDisabled,
     ],
   );
 

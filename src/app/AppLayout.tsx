@@ -149,7 +149,7 @@ function AppLayoutShell({
 }: AppLayoutShellProps) {
   const feedbackEnabled = isFeedbackEnabled();
   const { resetConnection, invalidateSession } = useConnectionGate();
-  const { refresh, refreshing } = usePerformanceData();
+  const { refresh, performanceControlsDisabled } = usePerformanceData();
   const performanceExport = usePerformanceExport();
 
   useEffect(() => {
@@ -212,7 +212,12 @@ function AppLayoutShell({
           audience={showEmployeePerformance ? "employee" : "team"}
           dateRange={dateRange}
           reviewTarget={reviewTarget}
-          refreshing={performanceDataEnabled ? refreshing : false}
+          controlsDisabled={
+            performanceDataEnabled ? performanceControlsDisabled : false
+          }
+          refreshing={
+            performanceDataEnabled ? performanceControlsDisabled : false
+          }
           onDateRangeChange={setDateRange}
           onReviewTargetChange={setReviewTarget}
           onRefresh={onRefresh}
@@ -246,7 +251,7 @@ function AppLayoutShell({
     dateRange,
     reviewTarget,
     performanceDataEnabled,
-    refreshing,
+    performanceControlsDisabled,
     onRefresh,
     performanceExport.canExport,
     performanceExport.exporting,

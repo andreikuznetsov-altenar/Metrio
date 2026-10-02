@@ -16,7 +16,7 @@ vi.mock("../performance/performanceRefreshSideEffects", () => ({
 }));
 
 vi.mock("../refresh/backgroundRefresh", () => ({
-  registerBackgroundRefreshListeners: vi.fn(async () => () => {}),
+  registerCoalescedBackgroundRefresh: vi.fn(async () => () => {}),
 }));
 
 import { fetchPerformanceData } from "../performance/performanceDataService";

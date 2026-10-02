@@ -1,0 +1,8 @@
+.performance-content-area {
+  position: relative;
+  min-height: 240px;
+}
+
+.performance-content-area .performance-dashboard {
+  min-height: inherit;
+}
