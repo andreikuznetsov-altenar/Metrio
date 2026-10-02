@@ -1,7 +1,7 @@
 import type { Survey } from '../../domain/survey/types';
 import { computeDeliveryCounts } from '../../domain/survey/deliveryMetrics';
 import { surveyStatusLabel } from '../../domain/survey/status';
-import { Section, Status } from './design-system';
+import { Badge, Section } from './design-system';
 
 export function FeedbackHistoryView({
   surveys,
@@ -14,15 +14,15 @@ export function FeedbackHistoryView({
 }) {
   if (surveys.length === 0) {
     return (
-      <Section title="History">
-        <p className="ds-feedback-empty-inline">No feedback surveys yet.</p>
-        <p className="ds-feedback-connect__hint">Prepare your first survey to get started.</p>
+      <Section title="History" variant="plain">
+        <p className="ds-feedback-empty-inline">No surveys yet</p>
+        <p className="ds-feedback-connect__hint">Prepared and sent surveys will appear here.</p>
       </Section>
     );
   }
 
   return (
-    <Section title="History" subtitle="Select a survey to view delivery and results">
+    <Section title="History" variant="plain">
       <div className="ds-feedback-history">
         {surveys.map((survey) => {
           const counts = computeDeliveryCounts(survey.recipients);
@@ -35,16 +35,19 @@ export function FeedbackHistoryView({
               onClick={() => onSelectSurvey(survey.id)}
             >
               <div className="ds-feedback-history__primary">
-                <span>{survey.dateFrom} – {survey.dateTo}</span>
                 <span className="ds-feedback-history__title">{survey.title}</span>
+                <span className="ds-feedback-history__range">
+                  {survey.dateFrom} – {survey.dateTo}
+                </span>
               </div>
               <div className="ds-feedback-history__meta">
-                <span>{counts.recipients} recipients</span>
+                <span>{counts.recipients} sent</span>
                 <span>{counts.responded} responses</span>
                 <span>{counts.responseRatePercent}% rate</span>
-                <Status tone={survey.status === 'active' ? 'blue' : 'grey'}>
+                {active && <Badge variant="accent">Active</Badge>}
+                <Badge variant={survey.status === 'active' ? 'info' : 'neutral'}>
                   {surveyStatusLabel(survey.status)}
-                </Status>
+                </Badge>
               </div>
             </button>
           );

@@ -1,16 +1,37 @@
 import type { SurveyMetricsSummary } from '../../domain/survey/metrics';
-import { MetricCard, Section, Tag } from './design-system';
-import { surveyIndexTagVariant } from './feedbackUi';
+import { Badge, MetricCard, Section } from './design-system';
+import { FEEDBACK_HELP } from './feedbackHelp';
+import { surveyIndexBadgeVariant } from './feedbackUi';
 
-export function FeedbackResultsView({ metrics }: { metrics: SurveyMetricsSummary }) {
+export function FeedbackResultsView({
+  metrics,
+  sentCount,
+}: {
+  metrics: SurveyMetricsSummary;
+  sentCount: number;
+}) {
+  const responseRate =
+    sentCount > 0 ? Math.round((metrics.respondentCount / sentCount) * 10000) / 100 : 0;
+
   return (
-    <Section title="Results" subtitle="Aggregate survey metrics only — individual responses stay private">
+    <Section title="Results" variant="plain">
       <div className="ds-metric-grid ds-metric-grid--four">
+        <MetricCard label="Sent" value={sentCount} />
         <MetricCard label="Responses" value={metrics.respondentCount} />
         <MetricCard
-          label="Overall effectiveness"
-          value={metrics.overallEffectivenessIndex}
-          status={<Tag variant={surveyIndexTagVariant(metrics.overallStatus)}>{metrics.overallStatus}</Tag>}
+          label="Response rate"
+          value={`${responseRate}%`}
+          hint={FEEDBACK_HELP.responseRate}
+        />
+        <MetricCard
+          label="Survey index"
+          value={metrics.overallStatus}
+          hint={FEEDBACK_HELP.surveyIndex}
+          status={
+            <Badge variant={surveyIndexBadgeVariant(metrics.overallStatus)}>
+              {metrics.overallStatus}
+            </Badge>
+          }
         />
       </div>
 
@@ -21,8 +42,7 @@ export function FeedbackResultsView({ metrics }: { metrics: SurveyMetricsSummary
               <div className="ds-feedback-result-row__title">{q.title}</div>
               <div className="ds-feedback-result-row__metrics">
                 <span>Average: {q.average} / {q.max}</span>
-                <span>Normalized: {q.normalizedIndex} / 100</span>
-                <Tag variant={surveyIndexTagVariant(q.status)}>{q.status}</Tag>
+                <Badge variant={surveyIndexBadgeVariant(q.status)}>{q.status}</Badge>
                 <span className="ds-feedback-result-row__muted">{q.responseCount} responses</span>
               </div>
             </div>
@@ -37,16 +57,12 @@ export function FeedbackResultsView({ metrics }: { metrics: SurveyMetricsSummary
               <div className="ds-feedback-result-row__title">{q.title}</div>
               <div className="ds-feedback-result-row__metrics">
                 <span>Yes rate: {q.yesRatePercent}%</span>
-                <Tag variant={surveyIndexTagVariant(q.status)}>{q.status}</Tag>
+                <Badge variant={surveyIndexBadgeVariant(q.status)}>{q.status}</Badge>
                 <span className="ds-feedback-result-row__muted">{q.responseCount} responses</span>
               </div>
             </div>
           ))}
         </div>
-      )}
-
-      {metrics.respondentCount === 0 && (
-        <p className="ds-feedback-empty-inline">No responses yet. Send the survey and refresh responses.</p>
       )}
     </Section>
   );
