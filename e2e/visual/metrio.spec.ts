@@ -1,4 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
+import { serializeNotificationFixtureForPlaywright } from "../../src/fixtures/notificationCenterVisualFixture";
 
 async function bootMetrio(page: Page, fixture: "lead" | "employee" = "lead") {
   await page.addInitScript((fixtureId: string) => {
@@ -11,6 +12,35 @@ async function bootMetrio(page: Page, fixture: "lead" | "employee" = "lead") {
   await expect(page.getByTestId("app-shell")).toBeVisible({ timeout: 30_000 });
   await expect(page.getByTestId("performance-dashboard-ready")).toBeVisible({
     timeout: 30_000,
+  });
+}
+
+async function bootMetrioWithNotificationFixture(
+  page: Page,
+  expectedUnread = 2,
+) {
+  const eventsJson = serializeNotificationFixtureForPlaywright();
+  await page.addInitScript((payload: string) => {
+    localStorage.setItem("metrio-connection-connected", "true");
+    localStorage.setItem("metrio-dev-fixture", "lead");
+    localStorage.setItem("metrio-theme", "light");
+    localStorage.setItem("metrio-notification-events", payload);
+  }, eventsJson);
+  await page.goto("/");
+  await expect(page.getByTestId("app-shell")).toBeVisible({ timeout: 30_000 });
+  await expect(page.getByTestId("performance-dashboard-ready")).toBeVisible({
+    timeout: 30_000,
+  });
+  await page.evaluate((payload: string) => {
+    localStorage.setItem("metrio-notification-events", payload);
+    window.dispatchEvent(new CustomEvent("metrio-notification-events-changed"));
+  }, eventsJson);
+  const bellLabel =
+    expectedUnread > 0
+      ? new RegExp(`Notifications, ${expectedUnread} unread`, "i")
+      : /^Notifications$/i;
+  await expect(page.getByRole("button", { name: bellLabel })).toBeVisible({
+    timeout: 15_000,
   });
 }
 
@@ -281,42 +311,78 @@ test.describe("Metrio visual regression", () => {
   });
 
   test("notification sidebar", async ({ page }) => {
-    await page.addInitScript(() => {
-      localStorage.setItem("metrio-connection-connected", "true");
-      localStorage.setItem("metrio-dev-fixture", "lead");
-      localStorage.setItem("metrio-theme", "light");
-      localStorage.setItem(
-        "metrio-notification-events",
-        JSON.stringify([
-          {
-            id: "n1",
-            type: "task_attention",
-            createdAt: new Date().toISOString(),
-            title: "Task needs attention",
-            message: "UX-5446 · Daria Chernowa",
-            issueKey: "UX-5446",
-            dedupeKey: "visual:1",
-          },
-          {
-            id: "n2",
-            type: "upcoming_time_off",
-            createdAt: new Date(Date.now() - 720_000).toISOString(),
-            title: "Upcoming time off",
-            message: "Valeriia Pavlova · 12–18 Oct",
-            readAt: new Date().toISOString(),
-            dedupeKey: "visual:2",
-          },
-        ]),
-      );
-    });
-    await page.goto("/");
-    await expect(page.getByTestId("app-shell")).toBeVisible({ timeout: 30_000 });
-    await page.getByRole("button", { name: "Notifications", exact: true }).click();
+    await bootMetrioWithNotificationFixture(page, 2);
+    await page.getByRole("button", { name: /Notifications, 2 unread/i }).click();
     await expect(page.locator(".drawer--notifications")).toBeVisible();
     await expect(page).toHaveScreenshot("notification-sidebar.png", {
       fullPage: true,
       maxDiffPixelRatio: 0.02,
     });
+  });
+
+  test("notification workload opens person drawer", async ({ page }) => {
+    await bootMetrio(page, "lead");
+    await page.evaluate(() => {
+      localStorage.setItem(
+        "metrio-notification-events",
+        JSON.stringify([
+          {
+            id: "e-workload",
+            type: "workload_change",
+            createdAt: new Date().toISOString(),
+            title: "Workload changed",
+            message: "Mia Chen is overloaded",
+            personId: "person-01",
+            personName: "Mia Chen",
+            target: { kind: "person", personId: "person-01" },
+            severity: "warning",
+          },
+        ]),
+      );
+      window.dispatchEvent(new CustomEvent("metrio-notification-events-changed"));
+    });
+    await page.getByRole("button", { name: /Notifications, 1 unread/i }).click();
+    await page.getByRole("button", { name: /Workload changed/i }).click();
+    await expect(page.locator(".drawer--notifications")).toHaveCount(0);
+    await expect(page.locator(".person-detail-drawer__name")).toContainText("Mia");
+  });
+
+  test("notification task opens Jira issue", async ({ page }) => {
+    await bootMetrio(page, "lead");
+    await page.evaluate(() => {
+      localStorage.setItem(
+        "metrio-notification-events",
+        JSON.stringify([
+          {
+            id: "e-task",
+            type: "task_attention",
+            createdAt: new Date().toISOString(),
+            title: "Task needs attention",
+            message: "UX-5446 · Alex Morgan",
+            issueKey: "UX-5446",
+            target: { kind: "jira", issueKey: "UX-5446" },
+            severity: "warning",
+          },
+        ]),
+      );
+      window.dispatchEvent(new CustomEvent("metrio-notification-events-changed"));
+    });
+    await page.getByRole("button", { name: /Notifications, 1 unread/i }).click();
+    await page.getByRole("button", { name: /Task needs attention/i }).click();
+    const opened = await page.evaluate(
+      () => (window as unknown as { __metrioLastOpenedUrl?: string }).__metrioLastOpenedUrl,
+    );
+    expect(opened).toContain("/browse/UX-5446");
+  });
+
+  test("notification clear history", async ({ page }) => {
+    await bootMetrioWithNotificationFixture(page, 2);
+    await page.getByRole("button", { name: /Notifications, 2 unread/i }).click();
+    await page.getByRole("button", { name: "Notification options" }).click();
+    await page.getByRole("menuitem", { name: "Clear notifications" }).click();
+    await page.getByRole("button", { name: "Clear" }).click();
+    await expect(page.getByText("No notifications yet")).toBeVisible();
+    await expect(page.getByRole("button", { name: /^Notifications$/i })).toBeVisible();
   });
 
   test("settings general theme picker", async ({ page }) => {
