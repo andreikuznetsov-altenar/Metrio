@@ -1,3 +1,6 @@
+import { matchOnboardingResources } from "../domain/onboarding/matchOnboardingResources";
+
+/** @deprecated Use onboarding resource directory — kept for legacy imports. */
 export interface OnboardingLink {
   id: string;
   label: string;
@@ -6,31 +9,25 @@ export interface OnboardingLink {
   department?: string;
 }
 
-/** Curated company-wide links — maintain here, not per employee. */
-export const COMPANY_ONBOARDING_LINKS: OnboardingLink[] = [
-  {
-    id: "company-handbook",
-    label: "Company Handbook",
-    kind: "external",
-    url: "https://www.bamboohr.com/",
-  },
-  {
-    id: "bamboo-home",
-    label: "Time off & policies",
-    kind: "bamboo",
-    url: "https://www.bamboohr.com/",
-  },
-];
-
+/** @deprecated */
 export function onboardingLinksForDepartment(
   department: string | undefined,
   max = 7,
 ): OnboardingLink[] {
-  const dept = department?.trim().toLowerCase();
-  const company = COMPANY_ONBOARDING_LINKS.slice(0, 3);
-  if (!dept) return company.slice(0, max);
-  const deptLinks = COMPANY_ONBOARDING_LINKS.filter(
-    (link) => link.department?.toLowerCase() === dept,
+  const matched = matchOnboardingResources(
+    { department, projects: [], confluenceLinks: [] },
+    "https://jira.atlassian.net",
   );
-  return [...company, ...deptLinks].slice(0, max);
+  return matched.preview.slice(0, max).map((resource) => ({
+    id: resource.id,
+    label: resource.title,
+    kind: resource.source === "bamboo" ? "bamboo" : "external",
+    url:
+      resource.target.kind === "external" ||
+      resource.target.kind === "jira_project" ||
+      resource.target.kind === "confluence_page" ||
+      resource.target.kind === "confluence_space"
+        ? resource.target.url
+        : "https://www.bamboohr.com/",
+  }));
 }

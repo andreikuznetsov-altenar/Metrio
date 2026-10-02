@@ -1,48 +1,23 @@
-import { onboardingLinksForDepartment } from "../../config/onboardingLinks";
-import {
-  formatHireDateLabel,
-  formatNewStarterHeadline,
-  isNewStarter,
-} from "../../domain/onboarding/newStarter";
+import type { MatchedOnboardingResources } from "../../domain/onboarding/resourceTypes";
 import type { ResolvedEmployee } from "../../services/bamboo/orgResolver";
-import { openExternalUrl } from "../../platform/openExternal";
+import { GettingStartedResources } from "../onboarding/GettingStartedResources";
 
 export interface GettingStartedSectionProps {
   bamboo: ResolvedEmployee;
+  matched: MatchedOnboardingResources;
+  onViewAllResources: () => void;
 }
 
-export function GettingStartedSection({ bamboo }: GettingStartedSectionProps) {
-  const hireDate = bamboo.hireDate;
-  if (!hireDate || !isNewStarter(hireDate)) {
-    return null;
-  }
-
-  const links = onboardingLinksForDepartment(bamboo.department);
-  if (!links.length) {
-    return null;
-  }
-
+export function GettingStartedSection({
+  bamboo,
+  matched,
+  onViewAllResources,
+}: GettingStartedSectionProps) {
   return (
-    <section className="performance-getting-started" aria-label="Getting started">
-      <h3 className="performance-section__title">{formatNewStarterHeadline(hireDate)}</h3>
-      <p className="performance-employee-context">
-        {bamboo.jobTitle || bamboo.department || "Team member"}
-        <br />
-        {formatHireDateLabel(hireDate)}
-      </p>
-      <ul className="performance-getting-started__links">
-        {links.map((link) => (
-          <li key={link.id}>
-            <button
-              type="button"
-              className="performance-link-button"
-              onClick={() => void openExternalUrl(link.url)}
-            >
-              {link.label}
-            </button>
-          </li>
-        ))}
-      </ul>
-    </section>
+    <GettingStartedResources
+      bamboo={bamboo}
+      matched={matched}
+      onViewAll={onViewAllResources}
+    />
   );
 }
