@@ -23,3 +23,9 @@ test-results/
 *.njsproj
 *.sln
 *.sw?
+
+# Apple signing (never commit)
+*.certSigningRequest
+CertificateSigningRequest.*
+*.p12
+*.p8

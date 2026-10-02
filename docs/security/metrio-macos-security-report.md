@@ -4,126 +4,137 @@
 |-------|--------|
 | Product | Metrio |
 | Version | 0.1.0 |
-| Git SHA (Phase 18 worktree) | `c378b42` (local; **not pushed** — signing gate) |
+| Git SHA | `b4836d8` (+ final security doc commit) |
 | Bundle ID | `com.altenar.metrio` |
 | Baseline | `1dd603826edab6f5d4dc1b61b966ed7245c24aa8` |
 
 ## Executive summary
 
-Corporate Security (SentinelOne) reported **persistence_deception** on an **unsigned** local build with parent **launchd** and **Launch at login** disabled in defaults but potentially enabled in testing.
+Corporate Security (SentinelOne) reported **persistence_deception** on an **unsigned** development build (`Signature Verification: Not signed`, parent **launchd**).
 
-This phase:
+Phase 18 delivered:
 
-1. Audited persistence — **only Tauri `LaunchAgent` autostart** (no duplicate mechanisms).
-2. Fixed **`--minimized`** handling so login startup hides the main window.
-3. Prepared **Hardened Runtime + entitlements + Tauri macOS bundle** config for **Developer ID** signing via environment variables.
-4. **Did not** complete Developer ID signing, notarization, stapling, or Gatekeeper acceptance — **Developer ID Application certificate not installed** on the build host (see below).
-5. **Did not** claim SentinelOne remediation — EDR retest on signed/notarized `/Applications` install is **pending**.
+1. Persistence audit — **Tauri LaunchAgent only**, user-controlled, default **Launch at login OFF**.
+2. **`--minimized`** honored at startup (tray/background without main window).
+3. **Developer ID** signed + **notarized** distributable (Team **V36L7T43H8**).
+4. **Installed** security candidate: **`/Applications/Metrio.app`** (from stapled DMG).
+5. Autostart plist targets **`/Applications/Metrio.app/Contents/MacOS/metrio`** with **`--minimized`** when enabled from Settings.
 
-Detailed persistence notes: [`metrio-macos-persistence-audit.md`](./metrio-macos-persistence-audit.md)  
-Build runbook: [`developer-id-build.md`](./developer-id-build.md)
+**SentinelOne retest on the installed build is not available from automated CI** — Corporate Security must record new console events (see matrix below). Do **not** treat unsigned dev detections as equivalent to the notarized `/Applications` build.
 
-## Autostart mechanism
+Related: [`metrio-macos-persistence-audit.md`](./metrio-macos-persistence-audit.md), [`developer-id-build.md`](./developer-id-build.md)
 
-| Item | Detail |
+---
+
+## Signing & notarization
+
+| Item | Value |
 |------|--------|
-| API | `@tauri-apps/plugin-autostart` + `tauri-plugin-autostart` |
-| macOS mode | `MacosLauncher::LaunchAgent` |
-| Plist | `~/Library/LaunchAgents/Metrio.plist` |
-| Label | `Metrio` |
-| Args | `<path-to-metrio-binary>`, `--minimized` |
-| RunAtLoad | `true` |
-| KeepAlive | not set |
-| User default | `launchAtLogin: false` |
-| Enable path | Settings → General → Launch at login only |
+| Developer ID | Developer ID Application: Andrei Kuznetsov (V36L7T43H8) |
+| Team ID | **V36L7T43H8** |
+| Bundle ID | **com.altenar.metrio** |
+| Hardened Runtime | **Enabled** (`flags=0x10000(runtime)`) |
+| Secure timestamp | **Present** (e.g. 02 Oct 2026 at 18:01:41 on build) |
+| Notarization submission | **290eb6bf-0216-44a6-ac7f-140e39401709** |
+| Notarization status | **Accepted** |
+| Stapler (DMG in `target/release/bundle/dmg/`) | **The validate action worked!** |
+| Stapler (build-tree `.app`) | **The validate action worked!** |
+| Stapler (`/Applications/Metrio.app`) | **The validate action worked!** after `xcrun stapler staple` post-copy |
 
-## Signing identity (audit host)
+### Gatekeeper (installed app)
 
 ```text
-security find-identity -v -p codesigning
-
-1) Apple Development: Andrei Kuznetsov (5NKWG6S8R4)
-0) Developer ID Application identities
+/Applications/Metrio.app: accepted
+source=Notarized Developer ID
 ```
 
-**Developer ID Application certificate not installed.**
+*(On some developer Macs `spctl` may also show `override=security disabled` if assessment policy is relaxed locally — corporate endpoints should use standard policy.)*
 
-Do **not** ship with Apple Development or ad-hoc `-` for internal corporate distribution.
+### Installed app codesign
 
-| Attribute | Status |
-|-----------|--------|
-| Developer ID subject | _Not available — cert missing_ |
-| Apple Team ID (10-char) | _Obtain from Developer ID cert or Apple Developer membership after install_ |
-| Personal vs org signing | Bundle ID remains `com.altenar.metrio`; Security decides acceptability |
+```text
+codesign --verify --deep --strict --verbose=2 /Applications/Metrio.app
+→ valid on disk; satisfies its Designated Requirement
 
-## Hardened Runtime & entitlements
-
-| Item | Status |
-|------|--------|
-| Hardened Runtime | Enabled in `tauri.conf.json` (`bundle.macOS.hardenedRuntime`) |
-| App Sandbox | **Not** enabled (intentional) |
-| Entitlements file | `src-tauri/Entitlements.plist` — JIT, network client/server for Tauri/WebView and API calls |
-
-## codesign / notarization / Gatekeeper
-
-| Step | Result (Phase 18) |
-|------|-------------------|
-| `codesign --verify --deep --strict` | **Not run on Developer ID build** — no cert |
-| Notarization | **Not submitted** |
-| `stapler validate` | **N/A** |
-| `spctl --assess` | **N/A** on notarized bundle |
-
-Unsigned release bundle (if built locally) remains **Signature Verification: Not signed** — consistent with SentinelOne observation.
-
-## SHA256 (Security artifacts)
-
-Generate after **signed** DMG is produced:
-
-```bash
-shasum -a 256 /path/to/Metrio.dmg
-shasum -a 256 "/Applications/Metrio.app/Contents/MacOS/metrio"
+Authority=Developer ID Application: Andrei Kuznetsov (V36L7T43H8)
+TeamIdentifier=V36L7T43H8
+Identifier=com.altenar.metrio
 ```
 
-Record exact values in this section when available. Do not substitute development `target/` paths for allowlisting.
+---
 
-## Security test matrix (SentinelOne)
+## SHA256 (allowlist artifacts)
 
-| State | Launch at login | Expected observation |
-|-------|-----------------|----------------------|
-| A | OFF | Unsigned dev build — baseline detection reported by Security |
-| B | ON | Unsigned dev build + LaunchAgent — higher persistence signal |
-| C | OFF | Signed/notarized `/Applications` — _retest pending_ |
-| D | ON | Signed/notarized + LaunchAgent — _retest pending_ |
+| Artifact | SHA256 |
+|----------|--------|
+| `Metrio_0.1.0_aarch64.dmg` (release bundle) | `1cb5d586deb7415711ec9e0406f69eb9d88d778e7c56de9b770744f22013670e` |
+| `/Applications/Metrio.app/Contents/MacOS/metrio` | `0a7e1918c3a5af8063759cf8cab26818813a243522c248ce1b9ab0e02082e299` |
 
-**Do not** disable SentinelOne. Record actual alerts per cell when tested.
+---
 
-Interpretation guide (non-causal):
+## Autostart (installed build)
 
-- Only A/B fire → signing/trust likely primary factor.
-- C clean, D fires → LaunchAgent may still be flagged; evaluate SMAppService with Security.
-- C and D clean → signing + clean install likely sufficient.
+| Item | Observed |
+|------|----------|
+| Mechanism | Tauri `@tauri-apps/plugin-autostart` → **LaunchAgent** |
+| Plist path | `~/Library/LaunchAgents/Metrio.plist` |
+| Label | `Metrio` |
+| RunAtLoad | `true` |
+| KeepAlive | **not set** |
+| ProgramArguments | `["/Applications/Metrio.app/Contents/MacOS/metrio", "--minimized"]` |
+| User default | `launchAtLogin: false` |
+| Enable path | Settings → General → Launch at login |
+| Disable cleanup | Plist **removed** when toggled OFF (verified) |
+| Stale `target/` paths | **None** in plist when installed from `/Applications` |
 
-## Allowlist support (for Security team)
+**Keep running in tray** does not register LaunchAgent (separate preference).
 
-When Developer ID build exists, provide:
+---
 
-- Developer ID certificate subject (CN)
-- Apple Team ID
-- Bundle ID `com.altenar.metrio`
-- Notarization ticket / staple status
-- SHA256 of DMG and main executable
-- Git release SHA
+## Installed QA (automated)
 
-Metrio does **not** modify SentinelOne policy.
+| Check | Result |
+|-------|--------|
+| Install source | DMG `Metrio_0.1.0_aarch64.dmg` → `/Applications/Metrio.app` |
+| Process path | `/Applications/Metrio.app/Contents/MacOS/metrio` |
+| Single instance (manual launch) | One process observed |
+| `--minimized` argv | Process line includes `--minimized`; main window hidden at startup (Phase 18b) |
+| Jira / Bamboo / UI smoke | **Manual** — app launches; connections depend on user credentials in prefs |
 
-## Background behavior summary
+---
 
-See persistence audit for emitter intervals (Jira 30m, Bamboo 60m, survey 15m). Tray close hides window when **Keep running in tray** is on; distinct from Launch at login.
+## SentinelOne test matrix
+
+| Case | Build | Launch at login | Automated observation |
+|------|-------|-----------------|------------------------|
+| A (historical) | Unsigned dev | OFF/ON | Prior **persistence_deception** (Security report) |
+| C | Signed + notarized `/Applications` | OFF | **Corporate console required** — no new events recorded in this automation |
+| D | Signed + notarized `/Applications` | ON | **Corporate console required** — no new events recorded in this automation |
+
+**Interpretation:** Pending Corporate Security confirmation. If **C and D are clean**, the prior detection likely related to **unsigned / non-notarized** or **non-`/Applications`** binaries — not a guarantee of zero future EDR alerts. If **D alone fires**, evaluate **SMAppService** with Security.
+
+**Do not claim “SentinelOne fixed” without corporate retest.**
+
+---
+
+## Security handoff (allowlist)
+
+| Field | Value |
+|-------|--------|
+| Product | Metrio 0.1.0 |
+| Signer | Developer ID Application: Andrei Kuznetsov (V36L7T43H8) |
+| Team ID | V36L7T43H8 |
+| Bundle ID | com.altenar.metrio |
+| Notarization | Accepted (submission `290eb6bf-0216-44a6-ac7f-140e39401709`) |
+| Gatekeeper | Notarized Developer ID |
+| DMG SHA256 | `1cb5d586deb7415711ec9e0406f69eb9d88d778e7c56de9b770744f22013670e` |
+| Executable SHA256 | `0a7e1918c3a5af8063759cf8cab26818813a243522c248ce1b9ab0e02082e299` |
+| Autostart | LaunchAgent, **default OFF**, user opt-in |
+
+Security may allowlist by signer, Team ID, bundle ID, and/or hash — Metrio does not change SentinelOne policy.
+
+---
 
 ## Secret audit
 
-No Apple passwords, `.p12`, `.p8`, or notary secrets committed. Signing uses environment variables at build time only.
-
-## SentinelOne
-
-**Issue not verified as fixed.** Retest required on signed, notarized app installed under `/Applications` with matrix above.
+No Apple passwords, app-specific passwords, `.p12`, `.p8`, or notary secrets in git. CSR files should stay **untracked** (see `.gitignore`).
