@@ -1,6 +1,7 @@
 import React, { useEffect } from "react";
 import ReactDOM from "react-dom/client";
 import App from "./App";
+import { TooltipProvider } from "./components/Tooltip/Tooltip";
 import { CurrentUserProvider } from "./app/CurrentUserContext";
 import { RootErrorBoundary } from "./app/RootErrorBoundary";
 import { bootLog, bootLogBuildIdentity } from "./app/bootDiagnostics";
@@ -32,7 +33,9 @@ ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
     <RootErrorBoundary>
       <ThemeProviderMount>
         <CurrentUserProviderMount>
-          <App />
+          <TooltipProvider>
+            <App />
+          </TooltipProvider>
         </CurrentUserProviderMount>
       </ThemeProviderMount>
     </RootErrorBoundary>

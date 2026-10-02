@@ -6,7 +6,8 @@ export type BadgeVariant =
   | "accent"
   | "success"
   | "warning"
-  | "danger";
+  | "danger"
+  | "info";
 
 export interface BadgeProps extends HTMLAttributes<HTMLSpanElement> {
   variant?: BadgeVariant;

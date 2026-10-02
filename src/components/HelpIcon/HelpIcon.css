@@ -1,0 +1,30 @@
+.help-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  margin: 0;
+  border: none;
+  border-radius: var(--radius-round);
+  background: transparent;
+  color: var(--color-text-tertiary);
+  cursor: help;
+  vertical-align: middle;
+}
+
+.help-icon:hover:not(:disabled),
+.help-icon:focus-visible {
+  color: var(--color-text-secondary);
+}
+
+.help-icon:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 1px;
+}
+
+.help-icon:disabled {
+  opacity: var(--control-disabled-opacity);
+  cursor: not-allowed;
+}

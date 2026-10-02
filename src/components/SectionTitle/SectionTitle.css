@@ -1,0 +1,9 @@
+.section-title__heading {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.section-title__help {
+  margin-left: 2px;
+}
