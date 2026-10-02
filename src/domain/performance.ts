@@ -35,7 +35,11 @@ export interface TrendCardData {
   label: string;
   value: string;
   sparkline?: number[];
+  chartSeries?: { date: string; value: number }[];
   insufficientHistory?: boolean;
+  historyRecordedDays?: number;
+  historyRecommendedDays?: number;
+  trendMetricKind?: "count" | "percent" | "duration";
   /** Numeric movement (arrow), not favorable direction. */
   trendMovementDirection?: TrendDirection;
   trendSemantic?: MetricContextSemantic;
@@ -46,7 +50,7 @@ export interface WorkloadRow {
   personName?: string;
   activeWork: number;
   atRisk: number;
-  workload: "Light" | "Balanced" | "Heavy";
+  workload: "Light" | "Balanced" | "Heavy" | "Overloaded";
   availability: string;
 }
 

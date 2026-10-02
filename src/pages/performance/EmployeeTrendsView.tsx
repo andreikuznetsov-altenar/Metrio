@@ -1,6 +1,6 @@
 import { Card } from "../../components/Card/Card";
 import type { TrendCardData } from "../../domain/performance";
-import { Sparkline } from "./Sparkline";
+import { TrendInsufficientHistory, TrendMiniChart } from "./TrendMiniChart";
 import { TrendValue } from "./TrendValue";
 
 export function EmployeeTrendsView({ trends }: { trends: TrendCardData[] }) {
@@ -11,12 +11,13 @@ export function EmployeeTrendsView({ trends }: { trends: TrendCardData[] }) {
           <Card key={trend.label} className="performance-trend-card">
             <div className="performance-trend-card__label">{trend.label}</div>
             <TrendValue trend={trend} />
-            {trend.sparkline ? (
-              <Sparkline values={trend.sparkline} />
+            {trend.chartSeries && trend.chartSeries.length >= 2 ? (
+              <TrendMiniChart trend={trend} />
             ) : trend.insufficientHistory ? (
-              <div className="performance-trend-card__sparkline-empty">
-                Not enough history
-              </div>
+              <TrendInsufficientHistory
+                recorded={trend.historyRecordedDays}
+                recommended={trend.historyRecommendedDays}
+              />
             ) : (
               <div className="performance-trend-card__sparkline-empty" aria-hidden />
             )}

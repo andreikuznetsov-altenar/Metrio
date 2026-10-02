@@ -1,12 +1,19 @@
 import { Badge } from "../../components/Badge/Badge";
 import { Button } from "../../components/Button/Button";
 import { Card } from "../../components/Card/Card";
+import { HelpIcon } from "../../components/HelpIcon/HelpIcon";
+import { SectionTitle } from "../../components/SectionTitle/SectionTitle";
 import { Tooltip } from "../../components/Tooltip/Tooltip";
 import type { TeamPerformanceSnapshot } from "../../domain/performance";
+import { performanceHelp } from "../../domain/performance/performanceHelp";
 import { personInitials } from "../../domain/types";
-import { Sparkline } from "./Sparkline";
+import {
+  TrendInsufficientHistory,
+  TrendMiniChart,
+} from "./TrendMiniChart";
 import { TrendValue } from "./TrendValue";
 import { severityAttentionLabel } from "./trendPresentation";
+import { CalendarDays } from "lucide-react";
 
 export interface TeamOverviewViewProps {
   snapshot: TeamPerformanceSnapshot;
@@ -14,11 +21,27 @@ export interface TeamOverviewViewProps {
   onViewAllRadar?: () => void;
 }
 
+const METRIC_HELP: Record<string, string> = {
+  Efficiency: performanceHelp.efficiency,
+  "First pass": performanceHelp.firstPass,
+  Completed: performanceHelp.completed,
+  Backflows: performanceHelp.backflows,
+};
+
 function severityBadgeVariant(
   severity: import("../../domain/radar/types").RadarSeverity,
 ): import("../../components/Badge/Badge").BadgeVariant {
   if (severity === "critical") return "danger";
   if (severity === "warning") return "warning";
+  return "neutral";
+}
+
+function workloadBadgeVariant(
+  workload: TeamPerformanceSnapshot["workload"][number]["workload"],
+): import("../../components/Badge/Badge").BadgeVariant {
+  if (workload === "Overloaded") return "danger";
+  if (workload === "Heavy") return "warning";
+  if (workload === "Light") return "success";
   return "neutral";
 }
 
@@ -33,7 +56,12 @@ export function TeamOverviewView({
         <div className="performance-metrics">
           {snapshot.summary.map((metric) => (
             <Card key={metric.label} className="performance-metric-card">
-              <div className="performance-metric-card__label">{metric.label}</div>
+              <div className="performance-metric-card__label">
+                {metric.label}
+                {METRIC_HELP[metric.label] ? (
+                  <HelpIcon label={METRIC_HELP[metric.label]} />
+                ) : null}
+              </div>
               <div className="performance-metric-card__value">{metric.value}</div>
               {metric.status ? (
                 <div className="performance-metric-card__status">
@@ -48,7 +76,15 @@ export function TeamOverviewView({
                 <div
                   className={`performance-metric-card__context performance-metric-card__context--${metric.contextSemantic || "neutral"}`}
                 >
-                  <span>{metric.contextLabel}</span>
+                  <Tooltip
+                    content={
+                      metric.contextCaption
+                        ? `${metric.contextCaption}`
+                        : metric.contextLabel
+                    }
+                  >
+                    <span>{metric.contextLabel}</span>
+                  </Tooltip>
                   {metric.contextCaption ? (
                     <span className="performance-metric-card__context-caption">
                       {metric.contextCaption}
@@ -62,17 +98,19 @@ export function TeamOverviewView({
       </section>
 
       <section aria-label="Team attention" className="performance-section">
-        <div className="performance-section-head">
-          <h3 className="performance-section__title performance-section__title--inline">
-            Team attention
-          </h3>
-          {snapshot.attentionTotalCount > snapshot.attention.length &&
-          onViewAllRadar ? (
-            <Button type="button" variant="ghost" onClick={onViewAllRadar}>
-              View all in Radar ({snapshot.attentionTotalCount})
-            </Button>
-          ) : null}
-        </div>
+        <SectionTitle
+          inline
+          title="Team attention"
+          help={performanceHelp.teamAttention}
+          actions={
+            snapshot.attentionTotalCount > snapshot.attention.length &&
+            onViewAllRadar ? (
+              <Button type="button" variant="ghost" onClick={onViewAllRadar}>
+                View all in Radar ({snapshot.attentionTotalCount})
+              </Button>
+            ) : null
+          }
+        />
         {snapshot.attention.length === 0 ? (
           <div className="performance-empty performance-empty--compact">
             No direct reports need attention right now.
@@ -125,18 +163,19 @@ export function TeamOverviewView({
       </section>
 
       <section aria-label="Team trends" className="performance-section">
-        <h3 className="performance-section__title">Team trends</h3>
+        <SectionTitle title="Team trends" help={performanceHelp.teamTrends} />
         <div className="performance-trends">
           {snapshot.trends.map((trend) => (
             <Card key={trend.label} className="performance-trend-card">
               <div className="performance-trend-card__label">{trend.label}</div>
               <TrendValue trend={trend} />
-              {trend.sparkline ? (
-                <Sparkline values={trend.sparkline} />
+              {trend.chartSeries && trend.chartSeries.length >= 2 ? (
+                <TrendMiniChart trend={trend} />
               ) : trend.insufficientHistory ? (
-                <div className="performance-trend-card__sparkline-empty">
-                  Not enough history
-                </div>
+                <TrendInsufficientHistory
+                  recorded={trend.historyRecordedDays}
+                  recommended={trend.historyRecommendedDays}
+                />
               ) : (
                 <div className="performance-trend-card__sparkline-empty" aria-hidden />
               )}
@@ -146,7 +185,7 @@ export function TeamOverviewView({
       </section>
 
       <section aria-label="Team workload" className="performance-section">
-        <h3 className="performance-section__title">Team workload</h3>
+        <SectionTitle title="Team workload" help={performanceHelp.teamWorkload} />
         <div className="performance-table-wrap">
           <table className="performance-table performance-table--interactive">
             <thead>
@@ -154,7 +193,7 @@ export function TeamOverviewView({
                 <th>Person</th>
                 <th className="performance-table__num">Active</th>
                 <th className="performance-table__num">
-                  <Tooltip content="Active tasks flagged at risk by cycle-time rules (not the same as Radar signals).">
+                  <Tooltip content={performanceHelp.atRiskTasks}>
                     <span>At-risk tasks</span>
                   </Tooltip>
                 </th>
@@ -177,15 +216,7 @@ export function TeamOverviewView({
                   <td className="performance-table__num">{row.activeWork}</td>
                   <td className="performance-table__num">{row.atRisk}</td>
                   <td>
-                    <Badge
-                      variant={
-                        row.workload === "Heavy"
-                          ? "warning"
-                          : row.workload === "Light"
-                            ? "success"
-                            : "neutral"
-                      }
-                    >
+                    <Badge variant={workloadBadgeVariant(row.workload)}>
                       {row.workload}
                     </Badge>
                   </td>
@@ -200,12 +231,10 @@ export function TeamOverviewView({
       </section>
 
       <section aria-label="Time off" className="performance-section">
-        <h3 className="performance-section__title">Time off</h3>
+        <SectionTitle title="Time off" help={performanceHelp.timeOff} />
         {snapshot.timeOff.length === 0 ? (
           <div className="performance-empty performance-empty--compact performance-empty--timeoff">
-            <span className="performance-empty__icon" aria-hidden>
-              ◷
-            </span>
+            <CalendarDays size={18} strokeWidth={1.75} aria-hidden className="performance-empty__icon" />
             <span>No upcoming time off for direct reports.</span>
           </div>
         ) : (

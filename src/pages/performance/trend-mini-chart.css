@@ -1,0 +1,61 @@
+.trend-mini-chart {
+  width: 100%;
+  margin-top: var(--space-2);
+}
+
+.trend-mini-chart .recharts-cartesian-grid-horizontal line:last-child {
+  stroke-opacity: 0.5;
+}
+
+.trend-chart-tooltip {
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-control);
+  border: 1px solid color-mix(in srgb, var(--color-border) 80%, transparent);
+  background: var(--color-surface);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.1);
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.trend-chart-tooltip__date {
+  color: var(--color-text-secondary);
+  margin-bottom: 2px;
+}
+
+.trend-chart-tooltip__value {
+  color: var(--color-text-primary);
+  font-weight: 600;
+}
+
+.performance-trend-card__history-state {
+  margin-top: var(--space-3);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.performance-trend-card__history-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+}
+
+.performance-trend-card__history-meta {
+  font-size: 11px;
+  color: var(--color-text-tertiary);
+}
+
+.performance-trend-card__history-progress {
+  margin-top: var(--space-1);
+  height: 4px;
+  border-radius: var(--radius-round);
+  background: var(--color-surface-secondary);
+  overflow: hidden;
+}
+
+.performance-trend-card__history-progress > span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: color-mix(in srgb, var(--color-accent) 55%, var(--color-surface-secondary));
+}

@@ -3,7 +3,11 @@ import type {
   MetricContextSemantic,
   TrendCardData,
 } from "../../domain/performance";
-import type { TrendComparison, TrendDirection } from "../../domain/trends/trendEngine";
+import type {
+  TrendComparison,
+  TrendDirection,
+  TrendSufficiency,
+} from "../../domain/trends/trendEngine";
 
 export function trendSemanticFromComparison(
   comparison: TrendComparison,
@@ -37,18 +41,34 @@ export function trendComparisonCaption(dateRangeKey: DateRangeKey): string {
 export function buildTrendCardData(
   label: string,
   comparison: TrendComparison,
-  sparkline?: number[],
+  options?: {
+    sparkline?: number[];
+    chartSeries?: { date: string; value: number }[];
+    trendMetricKind?: TrendCardData["trendMetricKind"];
+    sufficiency?: TrendSufficiency;
+  },
 ): TrendCardData {
   const sufficient = comparison.sufficient;
+  const sparkline = options?.sparkline;
   return {
     label,
-    value: sufficient
-      ? comparison.label
-      : comparison.sufficiencyMessage || "Not enough history yet",
-    sparkline: sufficient && sparkline && sparkline.length >= 2 ? sparkline : undefined,
+    value: sufficient ? comparison.label : "Not enough history",
+    sparkline:
+      sufficient && sparkline && sparkline.length >= 2 ? sparkline : undefined,
+    chartSeries:
+      sufficient && options?.chartSeries && options.chartSeries.length >= 2
+        ? options.chartSeries
+        : undefined,
     insufficientHistory: !sufficient,
-    trendMovementDirection: movementDirectionFromDelta(comparison.absoluteDelta),
-    trendSemantic: trendSemanticFromComparison(comparison),
+    historyRecordedDays: options?.sufficiency?.daysRecorded,
+    historyRecommendedDays: options?.sufficiency?.recommended,
+    trendMetricKind: options?.trendMetricKind,
+    trendMovementDirection: sufficient
+      ? movementDirectionFromDelta(comparison.absoluteDelta)
+      : "unknown",
+    trendSemantic: sufficient
+      ? trendSemanticFromComparison(comparison)
+      : "unknown",
   };
 }
 

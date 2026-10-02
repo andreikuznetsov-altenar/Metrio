@@ -10,6 +10,14 @@ function arrowForDirection(
 }
 
 export function TrendValue({ trend }: { trend: TrendCardData }) {
+  if (trend.insufficientHistory) {
+    return (
+      <div className="performance-trend-card__value performance-trend-card__value--unknown">
+        <span>{trend.value}</span>
+      </div>
+    );
+  }
+
   const semantic = trend.trendSemantic || "unknown";
   const movement = trend.trendMovementDirection;
   return (

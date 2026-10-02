@@ -47,6 +47,7 @@ import {
   compareTrendPeriods,
   compareWeightedAvgCycleTrend,
   compareWeightedFirstPassTrend,
+  trendSufficiency,
 } from "../../domain/trends/trendEngine";
 import {
   teamSparklinePoints,
@@ -66,6 +67,9 @@ import {
 } from "../../pages/performance/trendPresentation";
 import type { KpiSnapshotFile } from "../../domain/snapshots/types";
 import { buildWorkloadBalance } from "../../domain/workload/workloadBalance";
+import {
+  workloadDisplayLabel,
+} from "../../domain/workload/workloadDisplay";
 import { personRouteKey } from "../../domain/people/personDisplay";
 import type { PerformanceFetchResult } from "./performanceTypes";
 import { getOperationalIssues } from "../../domain/people/ownedIssues";
@@ -121,10 +125,12 @@ function severityToBadge(severity: RadarSeverity): BadgeVariant {
   return "neutral";
 }
 
-function mapWorkloadUi(level: string | undefined): WorkloadRow["workload"] {
-  if (level === "low") return "Light";
-  if (level === "high" || level === "overloaded") return "Heavy";
-  return "Balanced";
+function chartSeriesInRange(
+  points: { date: string; value: number }[],
+  range?: PerformanceDateRange,
+): { date: string; value: number }[] {
+  if (!range) return points;
+  return points.filter((point) => point.date >= range.from && point.date <= range.to);
 }
 
 function findPerson(snapshot: PerformanceFetchResult["teamSnapshot"], id: string): Person | undefined {
@@ -232,11 +238,55 @@ export function buildPerformanceViewModels(
     teamSparklinePoints(kpiSnapshots, "backflowsOnDate"),
   );
 
+  const completedChartPoints = teamSparklinePoints(
+    kpiSnapshots,
+    "completedOnDate",
+    Math.max(trendDays, 56),
+  );
+  const firstPassChartPoints = teamFirstPassRateSparklinePoints(
+    kpiSnapshots,
+    Math.max(trendDays, 56),
+  );
+  const avgCycleChartPoints = teamAvgCycleDaysSparklinePoints(
+    kpiSnapshots,
+    Math.max(trendDays, 56),
+  );
+  const backflowChartPoints = teamSparklinePoints(
+    kpiSnapshots,
+    "backflowsOnDate",
+    Math.max(trendDays, 56),
+  );
+
+  const completedSufficiency = trendSufficiency(
+    teamTrendPoints(kpiSnapshots, "completedOnDate"),
+    trendDays,
+  );
+
   const trends: TrendCardData[] = [
-    buildTrendCardData("Completed", completedTrend, sparkCompleted),
-    buildTrendCardData("First pass", firstPassTrend, sparkFirstPass),
-    buildTrendCardData("Avg cycle", avgCycleTrend, sparkAvgCycle),
-    buildTrendCardData("Backflows", backflowTrend, sparkBackflows),
+    buildTrendCardData("Completed", completedTrend, {
+      sparkline: sparkCompleted,
+      chartSeries: chartSeriesInRange(completedChartPoints, displayRange),
+      trendMetricKind: "count",
+      sufficiency: completedSufficiency,
+    }),
+    buildTrendCardData("First pass", firstPassTrend, {
+      sparkline: sparkFirstPass,
+      chartSeries: chartSeriesInRange(firstPassChartPoints, displayRange),
+      trendMetricKind: "percent",
+      sufficiency: completedSufficiency,
+    }),
+    buildTrendCardData("Avg cycle", avgCycleTrend, {
+      sparkline: sparkAvgCycle,
+      chartSeries: chartSeriesInRange(avgCycleChartPoints, displayRange),
+      trendMetricKind: "duration",
+      sufficiency: completedSufficiency,
+    }),
+    buildTrendCardData("Backflows", backflowTrend, {
+      sparkline: sparkBackflows,
+      chartSeries: chartSeriesInRange(backflowChartPoints, displayRange),
+      trendMetricKind: "count",
+      sufficiency: completedSufficiency,
+    }),
   ];
 
   const workloadBalance = buildWorkloadBalance(teamSnapshot, personRouteKey, {
@@ -252,7 +302,7 @@ export function buildPerformanceViewModels(
       personName: row.personName,
       activeWork: row.activeCount,
       atRisk: row.atRiskCount,
-      workload: mapWorkloadUi(person?.workload?.level),
+      workload: workloadDisplayLabel(person?.workload?.level),
       availability: person?.availability.label || "—",
     };
   });
@@ -471,10 +521,20 @@ function buildPersonalTrendCards(
   );
 
   return [
-    buildTrendCardData("Completed", completedTrend, sparkCompleted),
-    buildTrendCardData("First pass", firstPassTrend),
-    buildTrendCardData("Avg cycle", avgCycleTrend),
-    buildTrendCardData("Backflows", backflowTrend, sparkBackflows),
+    buildTrendCardData("Completed", completedTrend, {
+      sparkline: sparkCompleted,
+      trendMetricKind: "count",
+    }),
+    buildTrendCardData("First pass", firstPassTrend, {
+      trendMetricKind: "percent",
+    }),
+    buildTrendCardData("Avg cycle", avgCycleTrend, {
+      trendMetricKind: "duration",
+    }),
+    buildTrendCardData("Backflows", backflowTrend, {
+      sparkline: sparkBackflows,
+      trendMetricKind: "count",
+    }),
   ];
 }
 
