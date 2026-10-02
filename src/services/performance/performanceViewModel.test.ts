@@ -177,13 +177,34 @@ describe("buildPerformanceViewModels", () => {
     expect(vm.teamSecondary.radar).toHaveLength(0);
   });
 
+  it("aligns employee overview KPIs with person analytics workspace", () => {
+    const person = bambooPerson("914", "Sam Dev", [
+      activeIssue("MET-142", "Real active task"),
+    ]);
+    const data = buildResult([person]);
+    const vm = buildPerformanceViewModels(data, "914");
+    const workspace = vm.getPersonAnalytics("914");
+    expect(workspace).not.toBeNull();
+    expect(vm.employee?.metrics.map((m) => m.label)).toEqual(
+      workspace!.summary
+        .filter((m) =>
+          ["Efficiency", "First pass", "Completed", "Backflows", "Avg cycle"].includes(
+            m.label,
+          ),
+        )
+        .map((m) => m.label),
+    );
+    expect(vm.employee?.attention).toEqual(workspace!.attention);
+    expect(vm.employee?.trends).toEqual(workspace!.trends);
+  });
+
   it("builds employee my week and grouped work history from real issues", () => {
     const person = bambooPerson("914", "Sam Dev", [
       activeIssue("MET-142", "Real active task"),
     ]);
     const data = buildResult([person]);
     const vm = buildPerformanceViewModels(data, "914");
-    expect(vm.employee?.myWeek.summary.length).toBe(5);
+    expect(vm.employee?.myWeek.summary.length).toBe(4);
     expect(vm.employee?.myWeek.inProgress.some((w) => w.key === "MET-142")).toBe(
       true,
     );

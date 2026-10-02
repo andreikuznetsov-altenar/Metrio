@@ -196,6 +196,62 @@ test.describe("Metrio visual regression", () => {
     });
   });
 
+  test("employee my week", async ({ page }) => {
+    await bootMetrio(page, "employee");
+    await page.getByRole("button", { name: "My Week" }).click();
+    await expect(page.getByLabel("My week summary")).toBeVisible();
+    await expect(page).toHaveScreenshot("employee-my-week.png", {
+      fullPage: true,
+      maxDiffPixelRatio: 0.02,
+    });
+  });
+
+  test("employee trends", async ({ page }) => {
+    await bootMetrio(page, "employee");
+    await page.getByRole("button", { name: "Trends" }).click();
+    await expect(page.getByLabel("Trends")).toBeVisible();
+    await expect(page).toHaveScreenshot("employee-trends.png", {
+      fullPage: true,
+      maxDiffPixelRatio: 0.02,
+    });
+  });
+
+  test("employee work history", async ({ page }) => {
+    await bootMetrio(page, "employee");
+    await page.getByRole("button", { name: "Work History" }).click();
+    await expect(page.getByLabel("Work history")).toBeVisible();
+    await expect(page).toHaveScreenshot("employee-work-history.png", {
+      fullPage: true,
+      maxDiffPixelRatio: 0.02,
+    });
+  });
+
+  test("employee self drill-down", async ({ page }) => {
+    await bootMetrio(page, "employee");
+    await page.getByRole("button", { name: /View Completed details/i }).click();
+    await expect(page.locator(".drawer--analytics")).toBeVisible({ timeout: 15_000 });
+    await expect(page).toHaveScreenshot("employee-drilldown-completed.png", {
+      fullPage: true,
+      maxDiffPixelRatio: 0.02,
+    });
+  });
+
+  test("employee dark", async ({ page }) => {
+    await page.addInitScript((fixtureId: string) => {
+      localStorage.setItem("metrio-connection-connected", "true");
+      localStorage.setItem("metrio-dev-fixture", fixtureId);
+      localStorage.setItem("metrio-theme", "dark");
+    }, "employee");
+    await page.goto("/");
+    await expect(page.getByTestId("performance-dashboard-ready")).toBeVisible({
+      timeout: 30_000,
+    });
+    await expect(page).toHaveScreenshot("employee-dark.png", {
+      fullPage: true,
+      maxDiffPixelRatio: 0.02,
+    });
+  });
+
   test("feedback survey connected", async ({ page }) => {
     await bootMetrioFeedback(page, "light");
     await page.getByRole("button", { name: /^feedback$/i }).click();

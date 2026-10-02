@@ -110,8 +110,7 @@ export function getEmployeePerformanceSnapshot(
         { label: "Active", value: "3" },
         { label: "In review", value: "1" },
         { label: "Completed", value: "2" },
-        { label: "At risk", value: "0" },
-        { label: "Backflows", value: "1" },
+        { label: "Needs attention", value: "0" },
       ],
       needsAttention: [],
       inProgress: [
@@ -119,6 +118,8 @@ export function getEmployeePerformanceSnapshot(
           key: "MET-142",
           title: "Improve onboarding checklist flow",
           status: "In progress",
+          stageAge: "2d",
+          healthVariant: "neutral",
         },
       ],
       inReview: [
@@ -126,6 +127,8 @@ export function getEmployeePerformanceSnapshot(
           key: "MET-139",
           title: "Resolve flaky integration test",
           status: "In review",
+          stageAge: "1d",
+          healthVariant: "warning",
         },
       ],
       completedThisWeek: [],
