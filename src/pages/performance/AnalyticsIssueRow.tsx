@@ -26,6 +26,7 @@ export interface AnalyticsIssueRowProps {
   onOpenPerson?: (personId: string) => void;
   showOutcome?: boolean;
   showBackflowSummary?: boolean;
+  hidePerson?: boolean;
   expanded?: boolean;
   onToggleExpand?: () => void;
 }
@@ -35,6 +36,7 @@ export function AnalyticsIssueRow({
   onOpenPerson,
   showOutcome = true,
   showBackflowSummary = false,
+  hidePerson = false,
   expanded = false,
   onToggleExpand,
 }: AnalyticsIssueRowProps) {
@@ -73,14 +75,14 @@ export function AnalyticsIssueRow({
 
       <div className="analytics-issue-row__footer">
         <div className="analytics-issue-row__person-line">
-          {issue.personId ? (
+          {!hidePerson && issue.personId ? (
             <PersonAvatar
               employeeId={issue.personId}
               displayName={personLabel}
               size="sm"
             />
           ) : null}
-          {issue.personId && onOpenPerson ? (
+          {!hidePerson && issue.personId && onOpenPerson ? (
             <button
               type="button"
               className="analytics-issue-row__person"
@@ -89,9 +91,9 @@ export function AnalyticsIssueRow({
             >
               {personLabel}
             </button>
-          ) : (
+          ) : !hidePerson ? (
             <span className="analytics-issue-row__person-static">{personLabel}</span>
-          )}
+          ) : null}
           {metaParts.length ? (
             <span className="analytics-issue-row__meta">{metaParts.join(" · ")}</span>
           ) : null}
