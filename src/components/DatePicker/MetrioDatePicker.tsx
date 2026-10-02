@@ -1,7 +1,7 @@
 import * as Popover from "@radix-ui/react-popover";
-import { CalendarDays } from "lucide-react";
+import { CalendarDays, ChevronLeft, ChevronRight } from "lucide-react";
 import { useMemo, useState } from "react";
-import { DayPicker } from "react-day-picker";
+import { DayPicker, type ChevronProps } from "react-day-picker";
 import { formatPerformanceDateDisplay } from "../../domain/performance/performanceDateRange";
 import { parseIsoDateOnly, toIsoDateOnly } from "./datePickerValue";
 import "./MetrioDatePicker.css";
@@ -13,6 +13,19 @@ export interface MetrioDatePickerProps {
   value: string;
   disabled?: boolean;
   onChange: (isoDate: string) => void;
+}
+
+function DatePickerChevron({ orientation, className, ...props }: ChevronProps) {
+  const Icon = orientation === "left" ? ChevronLeft : ChevronRight;
+  return (
+    <button
+      type="button"
+      className={["metrio-date-picker__nav", className].filter(Boolean).join(" ")}
+      {...props}
+    >
+      <Icon size={15} strokeWidth={1.75} aria-hidden />
+    </button>
+  );
 }
 
 export function MetrioDatePicker({
@@ -66,6 +79,7 @@ export function MetrioDatePicker({
               setOpen(false);
             }}
             defaultMonth={selected ?? undefined}
+            components={{ Chevron: DatePickerChevron }}
           />
         </Popover.Content>
       </Popover.Portal>

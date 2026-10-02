@@ -59,9 +59,23 @@
   background: var(--color-surface-secondary);
 }
 
+.select-trigger__value {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .select-trigger__icon {
   color: var(--color-text-tertiary);
   flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 0;
+  width: 16px;
+  height: 16px;
 }
 
 .select-content {

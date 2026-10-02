@@ -58,9 +58,11 @@ export function Select({
         aria-label={ariaLabel}
         aria-invalid={ariaInvalid ?? error ?? undefined}
       >
-        <SelectPrimitive.Value placeholder="Select…">
-          {selected?.label}
-        </SelectPrimitive.Value>
+        <span className="select-trigger__value">
+          <SelectPrimitive.Value placeholder="Select…">
+            {selected?.label}
+          </SelectPrimitive.Value>
+        </span>
         <SelectPrimitive.Icon className="select-trigger__icon">
           <ChevronDown size={16} strokeWidth={1.75} aria-hidden />
         </SelectPrimitive.Icon>

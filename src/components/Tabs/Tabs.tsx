@@ -1,5 +1,7 @@
 import {
   useId,
+  useLayoutEffect,
+  useRef,
   useState,
   type KeyboardEvent,
   type ReactNode,
@@ -20,9 +22,30 @@ export interface TabsProps {
 
 export function Tabs({ items, defaultValue }: TabsProps) {
   const baseId = useId();
+  const listRef = useRef<HTMLDivElement>(null);
   const initial = defaultValue ?? items[0]?.value ?? "";
   const [active, setActive] = useState(initial);
+  const [indicator, setIndicator] = useState({ left: 0, width: 0 });
   const activeItem = items.find((item) => item.value === active) ?? items[0];
+
+  useLayoutEffect(() => {
+    const list = listRef.current;
+    if (!list) return;
+    const selected = list.querySelector<HTMLElement>('[aria-selected="true"]');
+    if (!selected) {
+      setIndicator({ left: 0, width: 0 });
+      return;
+    }
+    setIndicator({ left: selected.offsetLeft, width: selected.offsetWidth });
+    if (typeof ResizeObserver === "undefined") return;
+    const observer = new ResizeObserver(() => {
+      const next = list.querySelector<HTMLElement>('[aria-selected="true"]');
+      if (!next) return;
+      setIndicator({ left: next.offsetLeft, width: next.offsetWidth });
+    });
+    observer.observe(list);
+    return () => observer.disconnect();
+  }, [active, items]);
 
   const onKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
     const enabled = items.filter((item) => !item.disabled);
@@ -47,11 +70,20 @@ export function Tabs({ items, defaultValue }: TabsProps) {
   return (
     <div className="tabs">
       <div
+        ref={listRef}
         className="tabs__list"
         role="tablist"
         aria-orientation="horizontal"
         onKeyDown={onKeyDown}
       >
+        <span
+          className="tabs__indicator"
+          aria-hidden
+          style={{
+            width: indicator.width,
+            transform: `translateX(${indicator.left}px)`,
+          }}
+        />
         {items.map((item) => {
           const selected = item.value === active;
           return (

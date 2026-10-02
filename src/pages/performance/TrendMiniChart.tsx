@@ -60,12 +60,16 @@ export function TrendMiniChart({ trend }: TrendMiniChartProps) {
   const min = Math.min(...values);
   const max = Math.max(...values);
   const pad = max === min ? (max === 0 ? 1 : max * 0.1) : (max - min) * 0.12;
-  const domain: [number, number] = [Math.max(0, min - pad), max + pad];
+  const strokeHalf = 0.75;
+  const domain: [number, number] = [
+    Math.max(0, min - pad),
+    max + pad + strokeHalf,
+  ];
 
   return (
     <div className="trend-mini-chart" data-testid="trend-mini-chart">
       <ResponsiveContainer width="100%" height={56}>
-        <AreaChart data={data} margin={{ top: 4, right: 0, left: 0, bottom: 0 }}>
+        <AreaChart data={data} margin={{ top: 6, right: 0, left: 0, bottom: 6 }}>
           <CartesianGrid vertical={false} stroke="var(--color-border)" strokeOpacity={0.35} />
           <XAxis dataKey="date" hide />
           <YAxis domain={domain} hide />

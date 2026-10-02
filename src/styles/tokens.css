@@ -29,7 +29,7 @@
   --motion-hover: 120ms;
   --motion-control: 140ms;
   --motion-popover: 160ms;
-  --motion-drawer: 220ms;
+  --motion-drawer: 240ms;
   --motion-backdrop: 200ms;
   --motion-tab: 200ms;
   --transition-easing: cubic-bezier(0.4, 0, 0.2, 1);
@@ -67,6 +67,19 @@
   --color-success: #15803d;
   --color-warning: #b45309;
   --color-danger: #dc2626;
+
+  --connection-status-connected-bg: color-mix(in srgb, var(--color-success) 14%, var(--color-surface));
+  --connection-status-connected-border: color-mix(in srgb, var(--color-success) 42%, var(--color-border));
+  --connection-status-connected-text: color-mix(in srgb, var(--color-success) 78%, var(--color-text-primary));
+  --connection-status-connected-dot: var(--color-success);
+  --connection-status-attention-bg: color-mix(in srgb, var(--color-warning) 14%, var(--color-surface));
+  --connection-status-attention-border: color-mix(in srgb, var(--color-warning) 45%, var(--color-border));
+  --connection-status-attention-text: color-mix(in srgb, var(--color-warning) 78%, var(--color-text-primary));
+  --connection-status-attention-dot: var(--color-warning);
+  --connection-status-offline-bg: color-mix(in srgb, var(--color-danger) 12%, var(--color-surface));
+  --connection-status-offline-border: color-mix(in srgb, var(--color-danger) 42%, var(--color-border));
+  --connection-status-offline-text: color-mix(in srgb, var(--color-danger) 78%, var(--color-text-primary));
+  --connection-status-offline-dot: var(--color-danger);
 }
 
 [data-theme="dark"] {
@@ -82,6 +95,20 @@
   --color-success: #22c55e;
   --color-warning: #f59e0b;
   --color-danger: #ef4444;
+
+  /* Connection status badges */
+  --connection-status-connected-bg: color-mix(in srgb, var(--color-success) 14%, var(--color-surface));
+  --connection-status-connected-border: color-mix(in srgb, var(--color-success) 42%, var(--color-border));
+  --connection-status-connected-text: color-mix(in srgb, var(--color-success) 78%, var(--color-text-primary));
+  --connection-status-connected-dot: var(--color-success);
+  --connection-status-attention-bg: color-mix(in srgb, var(--color-warning) 14%, var(--color-surface));
+  --connection-status-attention-border: color-mix(in srgb, var(--color-warning) 45%, var(--color-border));
+  --connection-status-attention-text: color-mix(in srgb, var(--color-warning) 78%, var(--color-text-primary));
+  --connection-status-attention-dot: var(--color-warning);
+  --connection-status-offline-bg: color-mix(in srgb, var(--color-danger) 12%, var(--color-surface));
+  --connection-status-offline-border: color-mix(in srgb, var(--color-danger) 42%, var(--color-border));
+  --connection-status-offline-text: color-mix(in srgb, var(--color-danger) 78%, var(--color-text-primary));
+  --connection-status-offline-dot: var(--color-danger);
 }
 
 @media (prefers-reduced-motion: reduce) {

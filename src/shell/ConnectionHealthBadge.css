@@ -2,15 +2,15 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  border: 1px solid var(--color-border);
+  border: 1px solid var(--connection-status-border, var(--color-border));
   border-radius: var(--radius-round);
   height: 22px;
   padding: 0 8px;
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 500;
   line-height: 1;
-  background: var(--color-surface-secondary);
-  color: var(--color-text-secondary);
+  background: var(--connection-status-bg, var(--color-surface-secondary));
+  color: var(--connection-status-text, var(--color-text-secondary));
   cursor: pointer;
   transition:
     border-color var(--motion-hover) var(--transition-easing),
@@ -18,24 +18,64 @@
     background var(--motion-hover) var(--transition-easing);
 }
 
-.connection-health-badge--ok::before {
+.connection-health-badge::before {
   content: "";
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: var(--color-success);
+  background: var(--connection-status-dot, var(--color-text-tertiary));
   flex-shrink: 0;
 }
 
 .connection-health-badge--ok {
-  border-color: color-mix(in srgb, var(--color-success) 35%, var(--color-border));
-  color: var(--color-text-secondary);
+  --connection-status-bg: var(--connection-status-connected-bg);
+  --connection-status-border: var(--connection-status-connected-border);
+  --connection-status-text: var(--connection-status-connected-text);
+  --connection-status-dot: var(--connection-status-connected-dot);
 }
 
 .connection-health-badge--attention {
-  border-color: color-mix(in srgb, var(--color-warning) 45%, var(--color-border));
+  --connection-status-bg: var(--connection-status-attention-bg);
+  --connection-status-border: var(--connection-status-attention-border);
+  --connection-status-text: var(--connection-status-attention-text);
+  --connection-status-dot: var(--connection-status-attention-dot);
 }
 
 .connection-health-badge--offline {
-  border-color: color-mix(in srgb, var(--color-danger) 40%, var(--color-border));
+  --connection-status-bg: var(--connection-status-offline-bg);
+  --connection-status-border: var(--connection-status-offline-border);
+  --connection-status-text: var(--connection-status-offline-text);
+  --connection-status-dot: var(--connection-status-offline-dot);
+}
+
+.settings-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 22px;
+  padding: 0 8px;
+  border-radius: var(--radius-round);
+  border: 1px solid var(--connection-status-border, var(--color-border));
+  background: var(--connection-status-bg, var(--color-surface-secondary));
+  color: var(--connection-status-text, var(--color-text-secondary));
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.settings-status-badge--ok {
+  --connection-status-bg: var(--connection-status-connected-bg);
+  --connection-status-border: var(--connection-status-connected-border);
+  --connection-status-text: var(--connection-status-connected-text);
+}
+
+.settings-status-badge--warn {
+  --connection-status-bg: var(--connection-status-attention-bg);
+  --connection-status-border: var(--connection-status-attention-border);
+  --connection-status-text: var(--connection-status-attention-text);
+}
+
+.settings-status-badge--offline {
+  --connection-status-bg: var(--connection-status-offline-bg);
+  --connection-status-border: var(--connection-status-offline-border);
+  --connection-status-text: var(--connection-status-offline-text);
 }

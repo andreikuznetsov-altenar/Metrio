@@ -161,16 +161,18 @@ export function TeamOverviewView({
                       </td>
                       <td className="performance-table__reason">{item.reason}</td>
                       <td>
-                        {item.issueKeys.map((key) => (
-                          <Badge key={key} variant="neutral">
-                            {key}
-                          </Badge>
-                        ))}
-                        {item.issueCount > item.issueKeys.length ? (
-                          <span className="performance-attention-row__more">
-                            +{item.issueCount - item.issueKeys.length} more
-                          </span>
-                        ) : null}
+                        <div className="issue-chip-list">
+                          {item.issueKeys.map((key) => (
+                            <Badge key={key} variant="neutral">
+                              {key}
+                            </Badge>
+                          ))}
+                          {item.issueCount > item.issueKeys.length ? (
+                            <span className="issue-chip-list__more">
+                              +{item.issueCount - item.issueKeys.length} more
+                            </span>
+                          ) : null}
+                        </div>
                       </td>
                       <td>
                         <Badge variant={severityBadgeVariant(item.severity)}>
