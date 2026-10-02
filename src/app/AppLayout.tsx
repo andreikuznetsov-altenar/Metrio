@@ -237,7 +237,6 @@ function AppLayoutShell({
           }
           exportDisabled={!performanceExport.canExport}
           exportBusy={performanceExport.exporting}
-          exportStatusMessage={performanceExport.exportMessage}
         />
       );
     }
@@ -262,7 +261,6 @@ function AppLayoutShell({
     onRefresh,
     performanceExport.canExport,
     performanceExport.exporting,
-    performanceExport.exportMessage,
     performanceExport.exportCurrentView,
     activeRoute,
     feedbackToolbar,

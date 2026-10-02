@@ -2,7 +2,6 @@ import {
   createContext,
   useCallback,
   useContext,
-  useEffect,
   useMemo,
   useState,
   type ReactNode,
@@ -12,6 +11,7 @@ import type {
   TeamPerformanceView,
 } from "../domain/performance";
 import { usePerformanceData } from "./PerformanceDataContext";
+import { useToast } from "../components/Toast/ToastContext";
 import { buildPerformanceExportPayloadFromFetch } from "../services/export/performanceExportBridge";
 import {
   exportPerformancePdf,
@@ -32,8 +32,6 @@ export interface PerformanceExportContextValue {
   exportCurrentView: () => Promise<PdfExportResult | null>;
   canExport: boolean;
   exporting: boolean;
-  exportMessage: string | null;
-  clearExportMessage: () => void;
 }
 
 const PerformanceExportContext =
@@ -49,6 +47,7 @@ export function PerformanceExportProvider({
   children: ReactNode;
 }) {
   const { data, status, refreshing } = usePerformanceData();
+  const toast = useToast();
   const [teamView, setTeamView] = useState<TeamPerformanceView>("overview");
   const [employeeView, setEmployeeView] =
     useState<EmployeePerformanceView>("overview");
@@ -56,17 +55,6 @@ export function PerformanceExportProvider({
     "week" | "month" | "quarter"
   >("month");
   const [exporting, setExporting] = useState(false);
-  const [exportMessage, setExportMessage] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (!exportMessage) return;
-    const transient =
-      exportMessage === "PDF exported." ||
-      exportMessage === PDF_EXPORT_CANCELLED_MESSAGE;
-    if (!transient) return;
-    const timer = window.setTimeout(() => setExportMessage(null), 3500);
-    return () => window.clearTimeout(timer);
-  }, [exportMessage]);
 
   const activeTab = audience === "team" ? teamView : employeeView;
   const exportView = resolveExportView(activeTab, audience === "team");
@@ -84,7 +72,6 @@ export function PerformanceExportProvider({
       return null;
     }
     setExporting(true);
-    setExportMessage(null);
     try {
       const payload = await buildPerformanceExportPayloadFromFetch({
         data,
@@ -96,24 +83,24 @@ export function PerformanceExportProvider({
       });
       const result = await exportPerformancePdf(payload);
       if (result.status === "saved") {
-        setExportMessage("PDF exported.");
+        toast.success("PDF exported");
         const openResult = await openExportedPdf(result.path);
         if (openResult.status === "error") {
-          setExportMessage(openResult.userMessage);
+          toast.error(openResult.userMessage);
         }
       } else if (result.status === "cancelled") {
-        setExportMessage(PDF_EXPORT_CANCELLED_MESSAGE);
+        toast.info(PDF_EXPORT_CANCELLED_MESSAGE.replace(/\.$/, ""));
       } else {
-        setExportMessage(result.userMessage);
+        toast.error(result.userMessage);
       }
       return result;
     } catch {
-      setExportMessage("Couldn't export the PDF. Try again.");
+      toast.error("Couldn't export PDF");
       return null;
     } finally {
       setExporting(false);
     }
-  }, [audience, data, exportView, selfPersonId, workHistoryPeriod]);
+  }, [audience, data, exportView, selfPersonId, toast, workHistoryPeriod]);
 
   const value = useMemo(
     (): PerformanceExportContextValue => ({
@@ -123,15 +110,8 @@ export function PerformanceExportProvider({
       exportCurrentView,
       canExport,
       exporting,
-      exportMessage,
-      clearExportMessage: () => setExportMessage(null),
     }),
-    [
-      canExport,
-      exportCurrentView,
-      exporting,
-      exportMessage,
-    ],
+    [canExport, exportCurrentView, exporting],
   );
 
   return (

@@ -25,6 +25,14 @@ async function openFirstAttentionPerson(page: Page) {
   await row.click();
 }
 
+async function clickSettingsSection(page: Page, label: RegExp) {
+  await page
+    .locator('.settings-layout nav[aria-label="Settings sections"]')
+    .getByRole("button", { name: label })
+    .click();
+  await page.waitForTimeout(150);
+}
+
 test.describe("Metrio visual regression", () => {
   test("team overview light", async ({ page }) => {
     await bootMetrio(page, "lead");
@@ -120,7 +128,9 @@ test.describe("Metrio visual regression", () => {
   test("feedback page", async ({ page }) => {
     await bootMetrio(page, "lead");
     await page.getByRole("button", { name: /^feedback$/i }).click();
-    await expect(page.getByRole("heading", { name: /feedback/i })).toBeVisible();
+    await expect(
+      page.getByRole("main").getByRole("heading", { name: /^feedback$/i }),
+    ).toBeVisible();
     await expect(page).toHaveScreenshot("feedback.png", {
       fullPage: true,
       maxDiffPixelRatio: 0.02,
@@ -301,21 +311,62 @@ test.describe("Metrio visual regression", () => {
     });
     await page.goto("/");
     await expect(page.getByTestId("app-shell")).toBeVisible({ timeout: 30_000 });
-    await page.getByRole("button", { name: /^notifications$/i }).click();
-    await expect(page.getByRole("dialog", { name: "Notifications" })).toBeVisible();
+    await page.getByRole("button", { name: "Notifications", exact: true }).click();
+    await expect(page.locator(".drawer--notifications")).toBeVisible();
     await expect(page).toHaveScreenshot("notification-sidebar.png", {
       fullPage: true,
       maxDiffPixelRatio: 0.02,
     });
   });
 
-  test("settings advanced", async ({ page }) => {
+  test("settings general theme picker", async ({ page }) => {
     await bootMetrio(page, "lead");
     await page.getByRole("button", { name: /^settings$/i }).click();
-    await page.getByRole("button", { name: /^advanced$/i }).click();
-    await expect(page).toHaveScreenshot("settings-advanced.png", {
+    await expect(page.getByRole("button", { name: /^general$/i })).toBeVisible();
+    await expect(page).toHaveScreenshot("settings-general.png", {
       fullPage: true,
       maxDiffPixelRatio: 0.02,
     });
+  });
+
+  test("settings connections credentials", async ({ page }) => {
+    await bootMetrio(page, "lead");
+    await page.getByRole("button", { name: /^settings$/i }).click();
+    await clickSettingsSection(page, /^connections$/i);
+    await expect(page.getByText(/^Token$/i)).toBeVisible();
+    await expect(page).toHaveScreenshot("settings-connections.png", {
+      fullPage: true,
+      maxDiffPixelRatio: 0.02,
+    });
+  });
+
+  test("settings notifications switches", async ({ page }) => {
+    await bootMetrio(page, "lead");
+    await page.getByRole("button", { name: /^settings$/i }).click();
+    await clickSettingsSection(page, /^notifications$/i);
+    await expect(page.getByRole("switch", { name: /Vacation starting soon/i })).toBeVisible();
+    await expect(page).toHaveScreenshot("settings-notifications.png", {
+      fullPage: true,
+      maxDiffPixelRatio: 0.02,
+    });
+  });
+
+  test("settings saved toast", async ({ page }) => {
+    await bootMetrio(page, "lead");
+    await page.getByRole("button", { name: /^settings$/i }).click();
+    await page.getByRole("switch", { name: /Launch Metrio at login/i }).click();
+    await expect(page.getByText("Settings saved")).toBeVisible({ timeout: 5000 });
+    await expect(page.locator(".metrio-toast-host")).toHaveScreenshot("toast-settings-saved.png", {
+      maxDiffPixelRatio: 0.02,
+    });
+  });
+
+  test("drawer close keeps dialog during exit", async ({ page }) => {
+    await bootMetrio(page, "lead");
+    await openFirstAttentionPerson(page);
+    await expect(page.locator(".drawer-root.is-open")).toBeVisible();
+    await page.locator(".drawer__header .icon-btn").click();
+    await expect(page.locator(".drawer-root.is-visible:not(.is-open)")).toBeVisible();
+    await expect(page.locator(".drawer-root.is-open")).toHaveCount(0);
   });
 });

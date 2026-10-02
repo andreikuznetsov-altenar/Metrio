@@ -41,7 +41,6 @@ export interface PerformanceToolbarProps {
   onExportPdf?: () => void;
   exportDisabled?: boolean;
   exportBusy?: boolean;
-  exportStatusMessage?: string | null;
 }
 
 function applyPreset(preset: DateRangeKey): PerformanceDateRange {
@@ -60,7 +59,6 @@ export function PerformanceToolbar({
   onExportPdf,
   exportDisabled = false,
   exportBusy = false,
-  exportStatusMessage,
 }: PerformanceToolbarProps) {
   const reviewOptions =
     audience === "employee"
@@ -170,11 +168,6 @@ export function PerformanceToolbar({
           </div>
         ) : null}
       </div>
-      {exportStatusMessage ? (
-        <p className="performance-toolbar__status" role="status" aria-live="polite">
-          {exportStatusMessage}
-        </p>
-      ) : null}
       {!rangeValidation.valid && rangeValidation.message ? (
         <p className="performance-toolbar__status performance-toolbar__status--error" role="status">
           {rangeValidation.message}

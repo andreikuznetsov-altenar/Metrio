@@ -1,6 +1,7 @@
 import React, { useEffect } from "react";
 import ReactDOM from "react-dom/client";
 import App from "./App";
+import { ToastProvider } from "./components/Toast/ToastContext";
 import { TooltipProvider } from "./components/Tooltip/Tooltip";
 import { CurrentUserProvider } from "./app/CurrentUserContext";
 import { RootErrorBoundary } from "./app/RootErrorBoundary";
@@ -34,7 +35,9 @@ ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
       <ThemeProviderMount>
         <CurrentUserProviderMount>
           <TooltipProvider>
-            <App />
+            <ToastProvider>
+              <App />
+            </ToastProvider>
           </TooltipProvider>
         </CurrentUserProviderMount>
       </ThemeProviderMount>
