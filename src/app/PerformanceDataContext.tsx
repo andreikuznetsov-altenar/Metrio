@@ -35,6 +35,10 @@ import {
 } from "../services/performance/performanceViewModel";
 import { registerCoalescedBackgroundRefresh } from "../services/refresh/backgroundRefresh";
 import { createCoalescedRefresh } from "../services/refresh/refreshCoordinator";
+import {
+  installKpiReconciliationDevTools,
+  registerKpiReconciliationDataSource,
+} from "../domain/analytics/kpiReconciliationDev";
 
 export type PerformanceLoadStatus =
   | "idle"
@@ -111,6 +115,10 @@ export function PerformanceDataProvider({
   viewModelsRef.current = viewModels;
   managerTeamTrayRef.current = managerTeamTray;
 
+  useEffect(() => {
+    installKpiReconciliationDevTools();
+  }, []);
+
   const contentLoadingActive =
     enabled && (status === "loading" || status === "refreshing");
   const contentOverlayVisible = useMinimumVisibleDuration(
@@ -164,6 +172,7 @@ export function PerformanceDataProvider({
         );
         setData(next);
         setViewModels(models);
+        registerKpiReconciliationDataSource(next, reviewTarget);
         const partial =
           next.partialWarnings.length > 0 || Boolean(models.statusMessage);
         setStatus(partial ? "partial" : "ready");
