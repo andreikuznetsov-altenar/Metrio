@@ -92,6 +92,15 @@ export function FeedbackPage() {
   const [scope, setScope] = useState<'full' | 'direct'>(prefs.reportFilters.teamScope);
   const [projectsText, setProjectsText] = useState(prefs.reportFilters.projects.join(', '));
   const [tab, setTab] = useState<FeedbackTab>('survey');
+
+  useEffect(() => {
+    const handler = (event: Event) => {
+      const next = (event as CustomEvent<FeedbackTab>).detail;
+      if (next) setTab(next);
+    };
+    window.addEventListener('metrio-open-feedback-tab', handler);
+    return () => window.removeEventListener('metrio-open-feedback-tab', handler);
+  }, []);
   const [editingDefaults, setEditingDefaults] = useState(true);
   const [formDetailsOpen, setFormDetailsOpen] = useState(false);
   const [initializing, setInitializing] = useState(true);

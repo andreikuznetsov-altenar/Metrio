@@ -175,6 +175,18 @@ function AppLayoutShell({
   }, []);
 
   useEffect(() => {
+    const onRoute = (event: Event) => {
+      const route = (event as CustomEvent<AppRoute>).detail;
+      if (route === "performance" || route === "feedback") {
+        setSettingsOpen(false);
+        setActiveRoute(route);
+      }
+    };
+    window.addEventListener("metrio-navigate-route", onRoute);
+    return () => window.removeEventListener("metrio-navigate-route", onRoute);
+  }, [setActiveRoute, setSettingsOpen]);
+
+  useEffect(() => {
     if (!feedbackEnabled && activeRoute === "feedback") {
       setActiveRoute("performance");
     }
