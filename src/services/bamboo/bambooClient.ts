@@ -20,6 +20,8 @@ export interface BambooEmployeeRecord {
   supervisorEmail?: string | null;
   supervisor?: string | null;
   jobTitle?: string;
+  department?: string;
+  hireDate?: string;
   status?: string;
   _restrictedFields?: string[];
 }

@@ -19,6 +19,7 @@ import {
   navigateActionTarget,
 } from "../../app/actionNavigation";
 import { ActionQueueSection } from "./ActionQueueSection";
+import { GettingStartedSection } from "./GettingStartedSection";
 import { PersonPerformanceMetrics } from "./PersonPerformanceMetrics";
 import { PersonWorkRow } from "./PersonWorkRow";
 import { PerformanceStatusBanner } from "./PerformanceStatusBanner";
@@ -44,8 +45,12 @@ export function EmployeePerformanceOverview({ personId }: EmployeePerformanceOve
   const [activeView, setActiveView] = useState<EmployeePerformanceView>(
     () => readPersistedEmployeePerformanceView(),
   );
-  const { viewModels, status } = usePerformanceData();
+  const { viewModels, status, data } = usePerformanceData();
   const analytics = useOptionalPerformanceAnalytics();
+  const selfBamboo = useMemo(
+    () => data?.teamSnapshot.persons.find((person) => person.id === personId)?.bamboo,
+    [data, personId],
+  );
   const { registerEmployeeView } = usePerformanceExport();
 
   const workspace = viewModels?.getPersonAnalytics(personId);
@@ -145,6 +150,8 @@ export function EmployeePerformanceOverview({ personId }: EmployeePerformanceOve
       {activeView === "overview" ? (
         <section aria-label="Performance overview">
           <p className="performance-employee-context">{workspace.contextLine}</p>
+
+          {selfBamboo ? <GettingStartedSection bamboo={selfBamboo} /> : null}
 
           <ActionQueueSection
             title="My focus"

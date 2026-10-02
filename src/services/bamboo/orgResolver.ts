@@ -12,6 +12,8 @@ export interface ResolvedEmployee {
   lastName: string;
   workEmail: string;
   jobTitle: string;
+  department?: string;
+  hireDate?: string;
   supervisorId?: string;
   supervisorEmail?: string;
   status: string;
@@ -40,6 +42,8 @@ const EMPLOYEE_FIELDS = [
   'firstName',
   'lastName',
   'status',
+  'hireDate',
+  'department',
 ];
 
 function isActive(status: string | undefined): boolean {
@@ -67,6 +71,8 @@ function toResolved(emp: BambooEmployeeRecord, details?: Record<string, string>)
     lastName: details?.lastName || emp.lastName || emp.surname || '',
     workEmail: details?.workEmail || resolveEmail(emp),
     jobTitle: details?.jobTitle || emp.jobTitle || '',
+    department: details?.department || emp.department || undefined,
+    hireDate: details?.hireDate || emp.hireDate || undefined,
     supervisorId: details?.supervisorEId || (emp.supervisorEId ?? undefined) || undefined,
     supervisorEmail: details?.supervisorEmail || emp.supervisorEmail || undefined,
     status: details?.status || emp.status || 'active',
