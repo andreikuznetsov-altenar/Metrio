@@ -1,13 +1,11 @@
 import { Badge } from "../../components/Badge/Badge";
+import { SectionTitle } from "../../components/SectionTitle/SectionTitle";
 import type { TeamPeopleRow } from "../../domain/performance";
-
-function workloadVariant(
-  workload: TeamPeopleRow["workload"],
-): "success" | "warning" | "neutral" {
-  if (workload === "Heavy") return "warning";
-  if (workload === "Light") return "success";
-  return "neutral";
-}
+import { performanceHelp } from "../../domain/performance/performanceHelp";
+import {
+  availabilityBadgeVariant,
+  workloadBadgeVariantFromLabel,
+} from "../../domain/performance/performanceStatusBadges";
 
 export interface TeamPeopleViewProps {
   rows: TeamPeopleRow[];
@@ -17,6 +15,7 @@ export interface TeamPeopleViewProps {
 export function TeamPeopleView({ rows, onOpenPerson }: TeamPeopleViewProps) {
   return (
     <section aria-label="People">
+      <SectionTitle title="People" help={performanceHelp.people} />
       <div className="performance-table-wrap">
         <table className="performance-table performance-table--interactive">
           <thead>
@@ -47,12 +46,14 @@ export function TeamPeopleView({ rows, onOpenPerson }: TeamPeopleViewProps) {
                 </td>
                 <td className="performance-table__num">{row.efficiency}</td>
                 <td>
-                  <Badge variant={workloadVariant(row.workload)}>
+                  <Badge variant={workloadBadgeVariantFromLabel(row.workload)}>
                     {row.workload}
                   </Badge>
                 </td>
                 <td>
-                  <Badge variant="neutral">{row.availability}</Badge>
+                  <Badge variant={availabilityBadgeVariant(row.availability)}>
+                    {row.availability}
+                  </Badge>
                 </td>
                 <td>
                   {row.attentionSeverityLabel === "Stable" ? (

@@ -5,6 +5,7 @@ import { Select } from "../components/Select/Select";
 import type { DateRangeKey, PerformanceReviewTarget } from "../domain/performance";
 import {
   createPerformanceDateRange,
+  formatPerformanceDateDisplay,
   validatePerformanceDateRange,
   type PerformanceDateRange,
 } from "../domain/performance/performanceDateRange";
@@ -55,6 +56,48 @@ function applyPreset(preset: DateRangeKey): PerformanceDateRange {
   return createPerformanceDateRange(preset);
 }
 
+function PerformanceDateField({
+  id,
+  label,
+  value,
+  disabled,
+  onChange,
+}: {
+  id: string;
+  label: string;
+  value: string;
+  disabled?: boolean;
+  onChange: (iso: string) => void;
+}) {
+  return (
+    <div className="performance-toolbar__field performance-toolbar__field--date">
+      <label className="performance-toolbar__date-label" htmlFor={id}>
+        {label}
+      </label>
+      <div className="performance-toolbar__date-control">
+        <CalendarDays
+          size={16}
+          strokeWidth={1.75}
+          aria-hidden
+          className="performance-toolbar__date-icon"
+        />
+        <span className="performance-toolbar__date-display" aria-hidden="true">
+          {formatPerformanceDateDisplay(value) || "Select date"}
+        </span>
+        <input
+          id={id}
+          type="date"
+          className="performance-toolbar__date-input"
+          value={value}
+          disabled={disabled}
+          aria-label={`${label} date`}
+          onChange={(event) => onChange(event.target.value)}
+        />
+      </div>
+    </div>
+  );
+}
+
 export function PerformanceToolbar({
   dateRange,
   reviewTarget,
@@ -86,50 +129,32 @@ export function PerformanceToolbar({
       </h2>
       <div className="performance-toolbar__controls">
         <div className="performance-toolbar__group performance-toolbar__group--dates">
-        <div className="performance-toolbar__field performance-toolbar__field--date">
-          <label className="performance-toolbar__date-label" htmlFor="perf-from">
-            From
-          </label>
-          <span className="performance-toolbar__date-wrap">
-            <CalendarDays size={16} strokeWidth={1.75} aria-hidden className="performance-toolbar__date-icon" />
-          <input
+          <PerformanceDateField
             id="perf-from"
-            type="date"
-            className="performance-toolbar__date-input"
+            label="From"
             value={dateRange.from}
             disabled={inputsDisabled}
-            onChange={(event) =>
+            onChange={(from) =>
               onDateRangeChange({
                 ...dateRange,
-                from: event.target.value,
+                from,
                 preset: "custom",
               })
             }
           />
-          </span>
-        </div>
-        <div className="performance-toolbar__field performance-toolbar__field--date">
-          <label className="performance-toolbar__date-label" htmlFor="perf-to">
-            To
-          </label>
-          <span className="performance-toolbar__date-wrap">
-            <CalendarDays size={16} strokeWidth={1.75} aria-hidden className="performance-toolbar__date-icon" />
-          <input
+          <PerformanceDateField
             id="perf-to"
-            type="date"
-            className="performance-toolbar__date-input"
+            label="To"
             value={dateRange.to}
             disabled={inputsDisabled}
-            onChange={(event) =>
+            onChange={(to) =>
               onDateRangeChange({
                 ...dateRange,
-                to: event.target.value,
+                to,
                 preset: "custom",
               })
             }
           />
-          </span>
-        </div>
         <div className="performance-toolbar__field">
           <Select
             aria-label="Date range preset"

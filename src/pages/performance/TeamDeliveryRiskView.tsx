@@ -1,5 +1,7 @@
 import { Badge } from "../../components/Badge/Badge";
+import { SectionTitle } from "../../components/SectionTitle/SectionTitle";
 import type { DeliveryRiskRow } from "../../domain/performance";
+import { performanceHelp } from "../../domain/performance/performanceHelp";
 
 function statusVariant(status: string): "danger" | "warning" | "neutral" {
   const normalized = status.toLowerCase();
@@ -18,6 +20,7 @@ export function TeamDeliveryRiskView({ rows }: TeamDeliveryRiskViewProps) {
   if (rows.length === 0) {
     return (
       <section aria-label="Delivery risk">
+        <SectionTitle title="Delivery risk" help={performanceHelp.deliveryRisk} />
         <div className="performance-empty performance-empty--compact">
           <span className="performance-empty__icon" aria-hidden>
             ◎
@@ -30,6 +33,7 @@ export function TeamDeliveryRiskView({ rows }: TeamDeliveryRiskViewProps) {
 
   return (
     <section aria-label="Delivery risk">
+      <SectionTitle title="Delivery risk" help={performanceHelp.deliveryRisk} />
       <div className="performance-table-wrap">
         <table className="performance-table performance-table--interactive">
           <thead>

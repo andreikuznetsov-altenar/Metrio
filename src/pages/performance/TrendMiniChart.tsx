@@ -11,6 +11,10 @@ import {
 import type { TrendCardData } from "../../domain/performance";
 import "./trend-mini-chart.css";
 
+/** Recharts/SVG gradient ids cannot contain spaces — invalid ids break fill and show gray. */
+export const TREND_CHART_ACCENT = "var(--color-accent)";
+export const TREND_CHART_FILL_OPACITY = 0.1;
+
 export interface TrendMiniChartProps {
   trend: TrendCardData;
 }
@@ -56,26 +60,17 @@ export function TrendMiniChart({ trend }: TrendMiniChartProps) {
   const min = Math.min(...values);
   const max = Math.max(...values);
   const pad = max === min ? (max === 0 ? 1 : max * 0.1) : (max - min) * 0.12;
-  const domain: [number, number] = [
-    trend.trendMetricKind === "percent" ? Math.max(0, min - pad) : Math.max(0, min - pad),
-    max + pad,
-  ];
+  const domain: [number, number] = [Math.max(0, min - pad), max + pad];
 
   return (
     <div className="trend-mini-chart" data-testid="trend-mini-chart">
       <ResponsiveContainer width="100%" height={56}>
         <AreaChart data={data} margin={{ top: 4, right: 0, left: 0, bottom: 0 }}>
-          <defs>
-            <linearGradient id={`trend-fill-${trend.label}`} x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="var(--color-accent)" stopOpacity={0.12} />
-              <stop offset="100%" stopColor="var(--color-accent)" stopOpacity={0.02} />
-            </linearGradient>
-          </defs>
           <CartesianGrid vertical={false} stroke="var(--color-border)" strokeOpacity={0.35} />
           <XAxis dataKey="date" hide />
           <YAxis domain={domain} hide />
           <Tooltip
-            cursor={{ stroke: "var(--color-accent)", strokeOpacity: 0.35 }}
+            cursor={{ stroke: TREND_CHART_ACCENT, strokeOpacity: 0.35, strokeWidth: 1 }}
             content={(props) => (
               <ChartTooltip
                 active={props.active}
@@ -91,11 +86,12 @@ export function TrendMiniChart({ trend }: TrendMiniChartProps) {
           <Area
             type="monotone"
             dataKey="value"
-            stroke="var(--color-accent)"
+            stroke={TREND_CHART_ACCENT}
             strokeWidth={1.5}
-            fill={`url(#trend-fill-${trend.label})`}
+            fill={TREND_CHART_ACCENT}
+            fillOpacity={TREND_CHART_FILL_OPACITY}
             dot={false}
-            activeDot={{ r: 3, strokeWidth: 0, fill: "var(--color-accent)" }}
+            activeDot={{ r: 3, strokeWidth: 0, fill: TREND_CHART_ACCENT }}
             isAnimationActive={false}
           />
         </AreaChart>

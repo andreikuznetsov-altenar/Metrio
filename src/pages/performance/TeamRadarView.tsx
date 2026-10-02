@@ -1,5 +1,7 @@
 import { Badge } from "../../components/Badge/Badge";
+import { SectionTitle } from "../../components/SectionTitle/SectionTitle";
 import type { TeamRadarRow } from "../../domain/performance";
+import { performanceHelp } from "../../domain/performance/performanceHelp";
 
 export interface TeamRadarViewProps {
   rows: TeamRadarRow[];
@@ -9,6 +11,7 @@ export function TeamRadarView({ rows }: TeamRadarViewProps) {
   if (rows.length === 0) {
     return (
       <section aria-label="Radar">
+        <SectionTitle title="Radar" help={performanceHelp.radar} />
         <div className="performance-empty performance-empty--compact">
           <span className="performance-empty__icon" aria-hidden>
             ◎
@@ -21,6 +24,7 @@ export function TeamRadarView({ rows }: TeamRadarViewProps) {
 
   return (
     <section aria-label="Radar">
+      <SectionTitle title="Radar" help={performanceHelp.radar} />
       <div className="performance-table-wrap">
         <table className="performance-table performance-table--interactive">
           <thead>
@@ -41,9 +45,7 @@ export function TeamRadarView({ rows }: TeamRadarViewProps) {
                 </td>
                 <td className="performance-table__reason">{row.reason}</td>
                 <td className="performance-table__num">{row.tasksAffected}</td>
-                <td>
-                  <span className="performance-table__action">{row.action}</span>
-                </td>
+                <td>{row.action}</td>
               </tr>
             ))}
           </tbody>

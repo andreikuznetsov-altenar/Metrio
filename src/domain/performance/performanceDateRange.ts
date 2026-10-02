@@ -96,6 +96,12 @@ export function comparisonPeriodExactLabel(range: PerformanceDateRange): string 
   return `vs ${prev.from} – ${prev.to}`;
 }
 
+/** Unambiguous display for toolbar (value remains ISO yyyy-MM-dd in state). */
+export function formatPerformanceDateDisplay(iso: string): string {
+  if (!iso) return "";
+  return format(parseISO(iso), "dd MMM yyyy");
+}
+
 export function trendComparisonDayCount(range: PerformanceDateRange): number {
   if (range.preset === '7d') return 7;
   if (range.preset === '30d') return 30;

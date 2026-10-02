@@ -184,6 +184,67 @@ test.describe("Metrio visual regression", () => {
     });
   });
 
+  test("performance select open", async ({ page }) => {
+    await bootMetrio(page, "lead");
+    await page.getByLabel("Date range preset").click();
+    await page.waitForTimeout(250);
+    await expect(page).toHaveScreenshot("performance-select-open.png", {
+      fullPage: true,
+      maxDiffPixelRatio: 0.02,
+    });
+  });
+
+  test("performance kpi help tooltip", async ({ page }) => {
+    await bootMetrio(page, "lead");
+    await page
+      .getByRole("button", {
+        name: /Overall performance score based on completion/i,
+      })
+      .hover();
+    await page.waitForTimeout(300);
+    await expect(page).toHaveScreenshot("performance-kpi-tooltip.png", {
+      fullPage: true,
+      maxDiffPixelRatio: 0.02,
+    });
+  });
+
+  test("performance people badges", async ({ page }) => {
+    await bootMetrio(page, "lead");
+    await clickSubnav(page, /^people$/i);
+    await expect(page).toHaveScreenshot("performance-people-badges.png", {
+      fullPage: true,
+      maxDiffPixelRatio: 0.02,
+    });
+  });
+
+  test("performance trend charts", async ({ page }) => {
+    await bootMetrio(page, "lead");
+    await expect(page.getByTestId("trend-mini-chart").first()).toBeVisible();
+    await expect(page).toHaveScreenshot("performance-trend-charts.png", {
+      fullPage: true,
+      maxDiffPixelRatio: 0.02,
+    });
+  });
+
+  test("performance insufficient history card", async ({ page }) => {
+    await page.addInitScript((fixtureId: string) => {
+      localStorage.setItem("metrio-connection-connected", "true");
+      localStorage.setItem("metrio-dev-fixture", fixtureId);
+      localStorage.setItem("metrio-theme", "light");
+    }, "lead");
+
+    await page.goto("/?visualInsufficientHistory=1");
+    await expect(page.getByTestId("app-shell")).toBeVisible({ timeout: 30_000 });
+    await expect(page.getByTestId("performance-dashboard-ready")).toBeVisible({
+      timeout: 30_000,
+    });
+    await expect(page.getByTestId("visual-insufficient-history-card")).toBeVisible();
+    await expect(page).toHaveScreenshot("performance-insufficient-history.png", {
+      fullPage: true,
+      maxDiffPixelRatio: 0.02,
+    });
+  });
+
   test("settings advanced", async ({ page }) => {
     await bootMetrio(page, "lead");
     await page.getByRole("button", { name: /^settings$/i }).click();

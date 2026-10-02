@@ -76,6 +76,11 @@
   border-color: var(--color-accent);
 }
 
+.settings-panel .card {
+  border-color: color-mix(in srgb, var(--color-border) 55%, transparent);
+  box-shadow: none;
+}
+
 .settings-toggle input[type="checkbox"]:focus-visible {
   box-shadow: var(--focus-ring);
 }

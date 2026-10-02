@@ -6,6 +6,10 @@ import { SectionTitle } from "../../components/SectionTitle/SectionTitle";
 import { Tooltip } from "../../components/Tooltip/Tooltip";
 import type { TeamPerformanceSnapshot } from "../../domain/performance";
 import { performanceHelp } from "../../domain/performance/performanceHelp";
+import {
+  availabilityBadgeVariant,
+  workloadBadgeVariantFromLabel,
+} from "../../domain/performance/performanceStatusBadges";
 import { personInitials } from "../../domain/types";
 import {
   TrendInsufficientHistory,
@@ -38,12 +42,14 @@ function severityBadgeVariant(
 
 function workloadBadgeVariant(
   workload: TeamPerformanceSnapshot["workload"][number]["workload"],
-): import("../../components/Badge/Badge").BadgeVariant {
-  if (workload === "Overloaded") return "danger";
-  if (workload === "Heavy") return "warning";
-  if (workload === "Light") return "success";
-  return "neutral";
+) {
+  return workloadBadgeVariantFromLabel(workload);
 }
+
+const visualInsufficientHistoryFixture =
+  import.meta.env.VITE_VISUAL_FIXTURE === "1" &&
+  typeof window !== "undefined" &&
+  new URLSearchParams(window.location.search).get("visualInsufficientHistory") === "1";
 
 export function TeamOverviewView({
   snapshot,
@@ -221,7 +227,9 @@ export function TeamOverviewView({
                     </Badge>
                   </td>
                   <td>
-                    <Badge variant="neutral">{row.availability}</Badge>
+                    <Badge variant={availabilityBadgeVariant(row.availability)}>
+                      {row.availability}
+                    </Badge>
                   </td>
                 </tr>
               ))}
@@ -259,6 +267,28 @@ export function TeamOverviewView({
           </ul>
         )}
       </section>
+
+      {visualInsufficientHistoryFixture ? (
+        <section
+          aria-label="Visual insufficient history fixture"
+          className="performance-section"
+          data-testid="visual-insufficient-history-card"
+        >
+          <div className="performance-trends">
+            <Card className="performance-trend-card">
+              <div className="performance-trend-card__label">Completed</div>
+              <TrendValue
+                trend={{
+                  label: "Completed",
+                  value: "Not enough history",
+                  insufficientHistory: true,
+                }}
+              />
+              <TrendInsufficientHistory recorded={63} recommended={155} />
+            </Card>
+          </div>
+        </section>
+      ) : null}
     </>
   );
 }

@@ -29,8 +29,9 @@
 
 .feedback-ds__metric {
   padding: 0.75rem;
-  border: 1px solid var(--color-border-subtle, #e4e4e7);
+  border: 1px solid color-mix(in srgb, var(--color-border) 50%, transparent);
   border-radius: 8px;
+  background: var(--color-surface);
 }
 
 .feedback-ds__metric-label {
@@ -73,6 +74,10 @@
 .ds-feedback-connect-panel {
   width: 100%;
   max-width: 520px;
+  padding: var(--space-4);
+  border-radius: var(--radius-card);
+  background: var(--color-surface);
+  border: 1px solid color-mix(in srgb, var(--color-border) 50%, transparent);
 }
 
 .ds-feedback-connect__lead {

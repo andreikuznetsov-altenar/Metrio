@@ -88,8 +88,17 @@
   outline: none;
 }
 
+.select-item[data-state="checked"] {
+  background: color-mix(in srgb, var(--color-accent) 8%, var(--color-surface-secondary));
+}
+
 .select-item[data-highlighted] {
   background: color-mix(in srgb, var(--color-accent) 10%, var(--color-surface-secondary));
+  outline: none;
+}
+
+.select-item[data-state="checked"][data-highlighted] {
+  background: color-mix(in srgb, var(--color-accent) 12%, var(--color-surface-secondary));
 }
 
 .select-item[data-disabled] {
