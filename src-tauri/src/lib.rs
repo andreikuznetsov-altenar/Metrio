@@ -15,8 +15,9 @@ use api::bamboo::{
 use std::time::Duration;
 use api::confluence::{confluence_search_pages, confluence_test_connection};
 use api::jira::{
-    jira_fetch_changelog, jira_fetch_changelogs_batch, jira_get_issue, jira_search_issues,
-    jira_search_users, jira_test_connection,
+    jira_fetch_changelog, jira_fetch_changelogs_batch, jira_fetch_remotelinks_batch,
+    jira_get_issue, jira_list_projects, jira_search_issues, jira_search_users,
+    jira_test_connection,
 };
 use api::kpi_snapshot_store::{kpi_snapshot_load, kpi_snapshot_save};
 use api::pdf_export::write_user_selected_pdf;
@@ -503,6 +504,8 @@ pub fn run() {
             jira_get_issue,
             jira_search_users,
             jira_fetch_changelogs_batch,
+            jira_list_projects,
+            jira_fetch_remotelinks_batch,
             confluence_test_connection,
             confluence_search_pages,
             bamboo_test_connection,

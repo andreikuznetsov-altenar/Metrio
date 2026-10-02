@@ -352,6 +352,131 @@ pub async fn jira_fetch_changelogs_batch(
     Ok(results)
 }
 
+#[derive(Debug, Serialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct JiraProjectSummary {
+    pub id: String,
+    pub key: String,
+    pub name: String,
+}
+
+#[tauri::command]
+pub async fn jira_list_projects(
+    config: JiraConfig,
+    max_results: u32,
+) -> Result<Vec<JiraProjectSummary>, ApiError> {
+    let limit = max_results.clamp(1, 50);
+    let endpoint = format!("/rest/api/3/project/search?maxResults={}", limit);
+    let value = jira_request(&config, &endpoint, reqwest::Method::GET, None).await?;
+    let values = value
+        .get("values")
+        .and_then(|v| v.as_array())
+        .cloned()
+        .unwrap_or_default();
+    let mut projects = Vec::new();
+    for item in values {
+        let id = item.get("id").and_then(|v| v.as_str()).unwrap_or_default();
+        let key = item.get("key").and_then(|v| v.as_str()).unwrap_or_default();
+        let name = item
+            .get("name")
+            .and_then(|v| v.as_str())
+            .unwrap_or(key)
+            .to_string();
+        if id.is_empty() || key.is_empty() {
+            continue;
+        }
+        projects.push(JiraProjectSummary {
+            id: id.to_string(),
+            key: key.to_string(),
+            name,
+        });
+    }
+    Ok(projects)
+}
+
+#[derive(Debug, Serialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct JiraRemoteLinkDto {
+    pub url: String,
+    pub title: Option<String>,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct RemoteLinkBatchItem {
+    pub issue_key: String,
+    pub links: Vec<JiraRemoteLinkDto>,
+    pub error: Option<ApiError>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct RemoteLinkBatchParams {
+    pub issue_keys: Vec<String>,
+    #[serde(default = "default_concurrency")]
+    pub concurrency: usize,
+}
+
+#[tauri::command]
+pub async fn jira_fetch_remotelinks_batch(
+    config: JiraConfig,
+    params: RemoteLinkBatchParams,
+) -> Result<Vec<RemoteLinkBatchItem>, ApiError> {
+    use futures_util::stream::{self, StreamExt};
+
+    let concurrency = params.concurrency.clamp(1, 8);
+    let config = config.clone();
+
+    let results = stream::iter(params.issue_keys.into_iter())
+        .map(|issue_key| {
+            let cfg = config.clone();
+            async move {
+                let endpoint = format!(
+                    "/rest/api/3/issue/{}/remotelink",
+                    urlencoding::encode(&issue_key)
+                );
+                match jira_request(&cfg, &endpoint, reqwest::Method::GET, None).await {
+                    Ok(value) => {
+                        let arr = value.as_array().cloned().unwrap_or_default();
+                        let mut links = Vec::new();
+                        for item in arr {
+                            let obj = item.get("object").and_then(|v| v.as_object());
+                            let url = obj
+                                .and_then(|o| o.get("url"))
+                                .and_then(|v| v.as_str())
+                                .unwrap_or_default();
+                            if url.is_empty() {
+                                continue;
+                            }
+                            let title = obj
+                                .and_then(|o| o.get("title"))
+                                .and_then(|v| v.as_str())
+                                .map(str::to_string);
+                            links.push(JiraRemoteLinkDto {
+                                url: url.to_string(),
+                                title,
+                            });
+                        }
+                        RemoteLinkBatchItem {
+                            issue_key,
+                            links,
+                            error: None,
+                        }
+                    }
+                    Err(err) => RemoteLinkBatchItem {
+                        issue_key,
+                        links: vec![],
+                        error: Some(err),
+                    },
+                }
+            }
+        })
+        .buffer_unordered(concurrency)
+        .collect::<Vec<_>>()
+        .await;
+
+    Ok(results)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

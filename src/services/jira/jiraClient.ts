@@ -212,4 +212,40 @@ export class JiraClient {
       }),
     );
   }
+
+  async listProjects(maxResults = 50): Promise<
+    Array<{ id: string; key: string; name: string }>
+  > {
+    return invokeJira('jira_list_projects', {
+      config: this.nativeConfig,
+      maxResults,
+    });
+  }
+
+  async fetchRemoteLinksBatch(
+    issueKeys: string[],
+    concurrency = 4,
+  ): Promise<
+    Array<{
+      issueKey: string;
+      links: Array<{ url: string; title?: string }>;
+      error?: { code: string; message: string };
+    }>
+  > {
+    const raw = await invokeJira<
+      Array<{
+        issue_key: string;
+        links: Array<{ url: string; title?: string }>;
+        error?: { code: string; message: string };
+      }>
+    >('jira_fetch_remotelinks_batch', {
+      config: this.nativeConfig,
+      params: { issueKeys, concurrency },
+    });
+    return raw.map((item) => ({
+      issueKey: item.issue_key,
+      links: item.links,
+      error: item.error,
+    }));
+  }
 }

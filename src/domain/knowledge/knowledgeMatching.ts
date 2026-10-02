@@ -1,4 +1,6 @@
 import type { ConfluencePageSummary } from "../../services/confluence/confluenceClient";
+import type { LinkConfidence } from "../workGraph/workGraphTypes";
+import { confidenceLabel } from "../workGraph/workGraphTypes";
 
 export type KnowledgeConfidence = "related" | "suggested";
 
@@ -13,6 +15,24 @@ const ISSUE_KEY = /\b[A-Z][A-Z0-9]+-\d+\b/;
 export function cqlForIssueKey(issueKey: string): string {
   const safe = issueKey.replace(/"/g, '\\"');
   return `type=page AND text ~ "\\"${safe}\\""`;
+}
+
+export function cqlForProjectInSpace(spaceKey: string, projectKey: string): string {
+  const space = spaceKey.replace(/"/g, '\\"');
+  const project = projectKey.replace(/"/g, '\\"');
+  return `type=page AND space = "${space}" AND (title ~ "${project}" OR text ~ "${project}")`;
+}
+
+export function knowledgeRelationLabel(
+  confidence: LinkConfidence,
+  relatedIssueKey?: string,
+): string {
+  if (confidence === "explicit_link") return confidenceLabel(confidence);
+  if (relatedIssueKey && confidence === "exact_issue_key") {
+    return `Related to ${relatedIssueKey}`;
+  }
+  if (confidence === "contextual_search") return "Suggested documentation";
+  return confidenceLabel(confidence);
 }
 
 export function matchPagesToIssue(
