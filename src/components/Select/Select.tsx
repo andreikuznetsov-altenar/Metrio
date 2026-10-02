@@ -1,4 +1,6 @@
-import type { SelectHTMLAttributes } from "react";
+import * as SelectPrimitive from "@radix-ui/react-select";
+import { Check, ChevronDown } from "lucide-react";
+import type { ReactNode } from "react";
 import "./Select.css";
 
 export interface SelectOption {
@@ -7,10 +9,18 @@ export interface SelectOption {
   disabled?: boolean;
 }
 
-export interface SelectProps extends SelectHTMLAttributes<HTMLSelectElement> {
+export interface SelectProps {
   label?: string;
   options: SelectOption[];
   error?: boolean;
+  value?: string;
+  defaultValue?: string;
+  disabled?: boolean;
+  id?: string;
+  className?: string;
+  "aria-label"?: string;
+  "aria-invalid"?: boolean;
+  onChange?: (event: { target: { value: string } }) => void;
 }
 
 export function Select({
@@ -19,30 +29,73 @@ export function Select({
   id,
   className,
   error = false,
-  ...props
+  value = "",
+  defaultValue,
+  disabled,
+  onChange,
+  "aria-label": ariaLabel,
+  "aria-invalid": ariaInvalid,
 }: SelectProps) {
   const selectId =
     id ?? (label ? `select-${label.replace(/\s+/g, "-").toLowerCase()}` : undefined);
-  const selectClass = ["select", error ? "select--error" : "", className]
+  const triggerClass = ["select-trigger", error ? "select-trigger--error" : "", className]
     .filter(Boolean)
     .join(" ");
 
-  const select = (
-    <select id={selectId} className={selectClass} aria-invalid={error || undefined} {...props}>
-      {options.map((option) => (
-        <option
-          key={option.value}
-          value={option.value}
-          disabled={option.disabled}
+  const resolvedValue = value || defaultValue || "";
+
+  const selected = options.find((option) => option.value === resolvedValue);
+
+  const control = (
+    <SelectPrimitive.Root
+      value={resolvedValue}
+      disabled={disabled}
+      onValueChange={(next) => onChange?.({ target: { value: next } })}
+    >
+      <SelectPrimitive.Trigger
+        id={selectId}
+        className={triggerClass}
+        aria-label={ariaLabel}
+        aria-invalid={ariaInvalid ?? error ?? undefined}
+      >
+        <SelectPrimitive.Value placeholder="Select…">
+          {selected?.label}
+        </SelectPrimitive.Value>
+        <SelectPrimitive.Icon className="select-trigger__icon">
+          <ChevronDown size={16} strokeWidth={1.75} aria-hidden />
+        </SelectPrimitive.Icon>
+      </SelectPrimitive.Trigger>
+      <SelectPrimitive.Portal>
+        <SelectPrimitive.Content
+          className="select-content"
+          position="popper"
+          side="bottom"
+          align="start"
+          sideOffset={4}
+          collisionPadding={8}
         >
-          {option.label}
-        </option>
-      ))}
-    </select>
+          <SelectPrimitive.Viewport className="select-content__viewport">
+            {options.map((option) => (
+              <SelectPrimitive.Item
+                key={option.value}
+                value={option.value}
+                disabled={option.disabled}
+                className="select-item"
+              >
+                <SelectPrimitive.ItemText>{option.label}</SelectPrimitive.ItemText>
+                <SelectPrimitive.ItemIndicator className="select-item__indicator">
+                  <Check size={14} strokeWidth={2} aria-hidden />
+                </SelectPrimitive.ItemIndicator>
+              </SelectPrimitive.Item>
+            ))}
+          </SelectPrimitive.Viewport>
+        </SelectPrimitive.Content>
+      </SelectPrimitive.Portal>
+    </SelectPrimitive.Root>
   );
 
   if (!label) {
-    return select;
+    return control;
   }
 
   return (
@@ -50,7 +103,11 @@ export function Select({
       <label className="select-wrap__label" htmlFor={selectId}>
         {label}
       </label>
-      {select}
+      {control}
     </div>
   );
+}
+
+export function SelectItemIndicator({ children }: { children: ReactNode }) {
+  return <SelectPrimitive.ItemIndicator>{children}</SelectPrimitive.ItemIndicator>;
 }

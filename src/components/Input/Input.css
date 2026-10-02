@@ -37,8 +37,10 @@
 }
 
 .input:focus-visible {
-  border-color: var(--color-accent);
-  box-shadow: var(--focus-ring);
+  outline: var(--focus-outline);
+  outline-offset: var(--focus-outline-offset);
+  border-color: var(--color-border);
+  box-shadow: none;
 }
 
 .input--error,

@@ -166,6 +166,24 @@ test.describe("Metrio visual regression", () => {
     });
   });
 
+  test("performance overview initial skeleton", async ({ page }) => {
+    await page.addInitScript((fixtureId: string) => {
+      localStorage.setItem("metrio-connection-connected", "true");
+      localStorage.setItem("metrio-dev-fixture", fixtureId);
+      localStorage.setItem("metrio-theme", "light");
+    }, "lead");
+
+    await page.goto("/?visualSkeleton=1");
+    await expect(page.getByTestId("app-shell")).toBeVisible({ timeout: 30_000 });
+    await expect(page.getByTestId("performance-overview-skeleton")).toBeVisible({
+      timeout: 30_000,
+    });
+    await expect(page).toHaveScreenshot("performance-overview-skeleton.png", {
+      fullPage: true,
+      maxDiffPixelRatio: 0.02,
+    });
+  });
+
   test("settings advanced", async ({ page }) => {
     await bootMetrio(page, "lead");
     await page.getByRole("button", { name: /^settings$/i }).click();

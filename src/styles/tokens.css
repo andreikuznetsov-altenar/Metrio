@@ -42,13 +42,14 @@
   --bottom-action-height: 56px;
 
   /* Focus */
-  --focus-ring: 0 0 0 2px var(--color-background), 0 0 0 4px var(--color-accent);
+  --focus-ring: 0 0 0 2px var(--color-accent);
+  --focus-outline: 2px solid var(--color-accent);
+  --focus-outline-offset: 1px;
 
   /* Control states */
   --control-disabled-opacity: 0.45;
   --control-error-border: var(--color-danger);
-  --control-error-ring: 0 0 0 2px var(--color-background),
-    0 0 0 4px color-mix(in srgb, var(--color-danger) 55%, var(--color-accent));
+  --control-error-ring: 0 0 0 2px var(--color-danger);
 }
 
 [data-theme="light"] {

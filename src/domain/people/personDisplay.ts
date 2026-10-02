@@ -4,6 +4,7 @@ import { getOperationalIssues } from './ownedIssues';
 import { countActiveIssues } from '../workload/workloadEngine';
 import { classifyTaskHealth } from '../task-health/taskHealthEngine';
 import { formatDuration } from '../jira/dates';
+import { workloadDisplayLabel } from '../workload/workloadDisplay';
 
 export function personRouteKey(person: Person): string {
   return person.jira?.canonicalKey || person.bamboo.workEmail || person.id;
@@ -60,8 +61,5 @@ export function workloadTagVariant(level: string | undefined): 'success' | 'warn
 }
 
 export function formatWorkloadLabel(level: string | undefined): string {
-  if (level === 'overloaded') return 'Overloaded';
-  if (level === 'high') return 'High';
-  if (level === 'low') return 'Low';
-  return 'Normal';
+  return workloadDisplayLabel(level);
 }

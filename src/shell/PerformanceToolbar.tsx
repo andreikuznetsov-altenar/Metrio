@@ -1,3 +1,4 @@
+import { CalendarDays, Download, RefreshCw } from "lucide-react";
 import { Button } from "../components/Button/Button";
 import { IconButton } from "../components/IconButton/IconButton";
 import { Select } from "../components/Select/Select";
@@ -28,50 +29,11 @@ const EMPLOYEE_REVIEW_TARGET_OPTIONS = [
 ];
 
 function ExportIcon() {
-  return (
-    <svg viewBox="0 0 16 16" fill="none" aria-hidden className="performance-toolbar__export-icon">
-      <path
-        d="M8 2.5v7M5 7l3 3 3-3M3.5 12.5h9"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
+  return <Download size={16} strokeWidth={1.75} aria-hidden className="performance-toolbar__export-icon" />;
 }
 
 function RefreshIcon() {
-  return (
-    <svg viewBox="0 0 16 16" fill="none" aria-hidden>
-      <path
-        d="M2.5 8a5.5 5.5 0 0 1 9.2-4"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-      />
-      <path
-        d="M13.5 8A5.5 5.5 0 0 1 4.3 12"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-      />
-      <path
-        d="M11.5 2.5H13V4"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      <path
-        d="M4.5 13.5H3V12"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
+  return <RefreshCw size={16} strokeWidth={1.75} aria-hidden />;
 }
 
 export interface PerformanceToolbarProps {
@@ -123,10 +85,13 @@ export function PerformanceToolbar({
         Filters
       </h2>
       <div className="performance-toolbar__controls">
+        <div className="performance-toolbar__group performance-toolbar__group--dates">
         <div className="performance-toolbar__field performance-toolbar__field--date">
           <label className="performance-toolbar__date-label" htmlFor="perf-from">
             From
           </label>
+          <span className="performance-toolbar__date-wrap">
+            <CalendarDays size={16} strokeWidth={1.75} aria-hidden className="performance-toolbar__date-icon" />
           <input
             id="perf-from"
             type="date"
@@ -141,11 +106,14 @@ export function PerformanceToolbar({
               })
             }
           />
+          </span>
         </div>
         <div className="performance-toolbar__field performance-toolbar__field--date">
           <label className="performance-toolbar__date-label" htmlFor="perf-to">
             To
           </label>
+          <span className="performance-toolbar__date-wrap">
+            <CalendarDays size={16} strokeWidth={1.75} aria-hidden className="performance-toolbar__date-icon" />
           <input
             id="perf-to"
             type="date"
@@ -160,6 +128,7 @@ export function PerformanceToolbar({
               })
             }
           />
+          </span>
         </div>
         <div className="performance-toolbar__field">
           <Select
@@ -177,6 +146,8 @@ export function PerformanceToolbar({
             }}
           />
         </div>
+        </div>
+        <div className="performance-toolbar__group performance-toolbar__group--analysis">
         <div className="performance-toolbar__field performance-toolbar__field--wide">
           <Select
             aria-label="Review target"
@@ -190,6 +161,8 @@ export function PerformanceToolbar({
             }
           />
         </div>
+        </div>
+        <div className="performance-toolbar__group performance-toolbar__group--actions">
         <div
           className={
             refreshing
@@ -218,6 +191,7 @@ export function PerformanceToolbar({
             </Button>
           </div>
         ) : null}
+        </div>
       </div>
       {exportStatusMessage ? (
         <p className="performance-toolbar__status" role="status" aria-live="polite">

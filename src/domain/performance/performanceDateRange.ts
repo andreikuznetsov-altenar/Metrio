@@ -1,4 +1,10 @@
-import { addDays, differenceInCalendarDays, format, parseISO, startOfQuarter } from 'date-fns';
+import {
+  addDays,
+  differenceInCalendarDays,
+  format,
+  parseISO,
+  startOfQuarter,
+} from 'date-fns';
 import type { DateRangeKey } from '../performance';
 import { getLastNDaysRange } from '../periods/dateRange';
 
@@ -77,6 +83,15 @@ export function comparisonPeriodLabel(range: PerformanceDateRange): string {
   if (range.preset === '7d') return 'vs previous 7 days';
   if (range.preset === '30d') return 'vs previous 30 days';
   if (range.preset === 'quarter') return 'vs previous quarter';
+  const prev = previousComparableRange(range);
+  return `vs ${format(parseISO(prev.from), 'd MMM')} – ${format(parseISO(prev.to), 'd MMM')}`;
+}
+
+/** Exact ISO comparison range for tooltips. */
+export function comparisonPeriodExactLabel(range: PerformanceDateRange): string {
+  if (range.preset !== 'custom') {
+    return comparisonPeriodLabel(range);
+  }
   const prev = previousComparableRange(range);
   return `vs ${prev.from} – ${prev.to}`;
 }
