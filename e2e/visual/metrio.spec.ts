@@ -64,7 +64,10 @@ async function bootMetrioWithNotificationFixture(
 }
 
 async function clickSubnav(page: Page, label: RegExp) {
-  await page.getByRole("button", { name: label }).click();
+  await page
+    .locator(".performance-subnav")
+    .getByRole("button", { name: label })
+    .click();
   await page.waitForTimeout(150);
 }
 
