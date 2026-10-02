@@ -20,7 +20,10 @@ async function bootMetrioFeedback(page: Page, theme: "light" | "dark" = "light")
   });
 }
 
-async function bootMetrio(page: Page, fixture: "lead" | "employee" = "lead") {
+async function bootMetrio(
+  page: Page,
+  fixture: "lead" | "employee" | "director" = "lead",
+) {
   await page.addInitScript((fixtureId: string) => {
     localStorage.setItem("metrio-connection-connected", "true");
     localStorage.setItem("metrio-dev-fixture", fixtureId);
@@ -546,5 +549,44 @@ test.describe("Metrio visual regression", () => {
     await page.locator(".drawer__header .icon-btn").click();
     await expect(page.locator(".drawer-root.is-visible:not(.is-open)")).toBeVisible();
     await expect(page.locator(".drawer-root.is-open")).toHaveCount(0);
+  });
+
+  test("director overview limited scope", async ({ page }) => {
+    await bootMetrio(page, "director");
+    await expect(page.getByTestId("director-overview")).toBeVisible();
+    await expect(page).toHaveScreenshot("director-overview-limited.png", {
+      fullPage: true,
+      maxDiffPixelRatio: 0.02,
+    });
+  });
+
+  test("director teams view", async ({ page }) => {
+    await bootMetrio(page, "director");
+    await clickSubnav(page, /^teams$/i);
+    await expect(page.getByTestId("director-teams")).toBeVisible();
+    await expect(page).toHaveScreenshot("director-teams.png", {
+      fullPage: true,
+      maxDiffPixelRatio: 0.02,
+    });
+  });
+
+  test("director signals view", async ({ page }) => {
+    await bootMetrio(page, "director");
+    await clickSubnav(page, /^signals$/i);
+    await expect(page.getByTestId("director-signals")).toBeVisible();
+    await expect(page).toHaveScreenshot("director-signals.png", {
+      fullPage: true,
+      maxDiffPixelRatio: 0.02,
+    });
+  });
+
+  test("director delivery view", async ({ page }) => {
+    await bootMetrio(page, "director");
+    await clickSubnav(page, /^delivery$/i);
+    await expect(page.getByTestId("director-delivery")).toBeVisible();
+    await expect(page).toHaveScreenshot("director-delivery.png", {
+      fullPage: true,
+      maxDiffPixelRatio: 0.02,
+    });
   });
 });

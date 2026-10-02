@@ -70,6 +70,7 @@ function visualPerson(
   fixtureId: (typeof VISUAL_TEAM_IDS)[number],
   options: {
     jobTitle?: string;
+    department?: string;
     workload?: ReturnType<typeof testWorkload>;
     performance?: ReturnType<typeof testKpi>;
     issues?: AuditIssue[];
@@ -92,6 +93,7 @@ function visualPerson(
       lastName: fixture.name.split(" ").slice(1).join(" "),
       workEmail: `${fixtureId}@visual.metrio`,
       jobTitle: options.jobTitle ?? "Product Designer",
+      department: options.department,
       status: "Active",
     },
     jira: {
@@ -128,6 +130,7 @@ function buildTeamPersons(): Person[] {
   return [
     visualPerson("person-sam", {
       jobTitle: "Design Lead",
+      department: "Design",
       performance: testKpi({
         efficiencyIndex: 88,
         completedCount: 4,
