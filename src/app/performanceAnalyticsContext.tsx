@@ -80,15 +80,29 @@ export function useOptionalPerformanceAnalytics(): PerformanceAnalyticsContextVa
   return useContext(PerformanceAnalyticsContext);
 }
 
+export function canOpenAnalyticsDrilldown(
+  request: Pick<AnalyticsDrilldownRequest, "personId">,
+  canOpenPerson: (personId: string) => boolean,
+  allowTeamAnalytics: boolean,
+): boolean {
+  if (request.personId) {
+    return canOpenPerson(request.personId);
+  }
+  return allowTeamAnalytics;
+}
+
 export interface PerformanceAnalyticsProviderProps {
   reviewTarget: PerformanceReviewTarget;
   canOpenPerson: (personId: string) => boolean;
+  /** Team-scoped metric/trend drill-down (managers with team dashboard). */
+  allowTeamAnalytics?: boolean;
   children: ReactNode;
 }
 
 export function PerformanceAnalyticsProvider({
   reviewTarget,
   canOpenPerson,
+  allowTeamAnalytics = false,
   children,
 }: PerformanceAnalyticsProviderProps) {
   const { data } = usePerformanceData();
@@ -143,13 +157,16 @@ export function PerformanceAnalyticsProvider({
       source: HTMLElement | null,
       metric?: MetricCardData,
     ) => {
+      if (!canOpenAnalyticsDrilldown(request, canOpenPerson, allowTeamAnalytics)) {
+        return;
+      }
       setPersonDrawerOpen(false);
       returnFocusRef.current = source;
       setSummaryMetric(metric);
       setDrilldownRequest(request);
       setDrilldownOpen(true);
     },
-    [],
+    [allowTeamAnalytics, canOpenPerson],
   );
 
   const openPersonAnalyticsDrilldown = useCallback(
@@ -159,6 +176,7 @@ export function PerformanceAnalyticsProvider({
       source: HTMLElement | null = null,
       metric?: MetricCardData,
     ) => {
+      if (!canOpenPerson(scopedPersonId)) return;
       openDrilldown(
         {
           ...request,
@@ -169,7 +187,7 @@ export function PerformanceAnalyticsProvider({
         metric,
       );
     },
-    [openDrilldown],
+    [canOpenPerson, openDrilldown],
   );
 
   const openTeamMetricDrilldown = useCallback(

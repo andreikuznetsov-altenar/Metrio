@@ -89,19 +89,9 @@ function PerformancePageBody({ reviewTarget }: PerformancePageProps) {
   let content;
 
   if (currentUser.person.role === "employee") {
-    content = (
-      <EmployeePerformanceOverview
-        personId={currentUser.person.id}
-        onOpenPerson={handleOpenPerson}
-      />
-    );
+    content = <EmployeePerformanceOverview personId={currentUser.person.id} />;
   } else if (!canViewTeamDashboard) {
-    content = (
-      <EmployeePerformanceOverview
-        personId={currentUser.person.id}
-        onOpenPerson={handleOpenPerson}
-      />
-    );
+    content = <EmployeePerformanceOverview personId={currentUser.person.id} />;
   } else {
     content = (
       <TeamPerformanceOverview
@@ -124,15 +114,13 @@ function PerformancePageBody({ reviewTarget }: PerformancePageProps) {
           onClosed={clearPersonDrawer}
         />
       ) : null}
-      {canViewTeamDashboard ? (
-        <AnalyticsDrilldownDrawer
-          open={drilldownOpen}
-          evidence={drilldownEvidence}
-          onClose={closeDrilldown}
-          onOpenPerson={handleOpenPerson}
-          returnFocusRef={returnFocusRef}
-        />
-      ) : null}
+      <AnalyticsDrilldownDrawer
+        open={drilldownOpen}
+        evidence={drilldownEvidence}
+        onClose={closeDrilldown}
+        onOpenPerson={handleOpenPerson}
+        returnFocusRef={returnFocusRef}
+      />
     </>
   );
 }
@@ -149,10 +137,14 @@ export function PerformancePage({ reviewTarget }: PerformancePageProps) {
     [currentUser, performanceControlsDisabled],
   );
 
+  const canViewTeamDashboard =
+    isManagerRole(currentUser.person.role) && Boolean(currentUser.team);
+
   return (
     <PerformanceAnalyticsProvider
       reviewTarget={reviewTarget}
       canOpenPerson={canOpenPerson}
+      allowTeamAnalytics={canViewTeamDashboard}
     >
       <PerformancePageBody reviewTarget={reviewTarget} />
     </PerformanceAnalyticsProvider>
