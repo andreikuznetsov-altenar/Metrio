@@ -257,6 +257,71 @@ pub async fn bamboo_get_whos_out(
     .await
 }
 
+async fn bamboo_binary_request(
+    config: &BambooConfig,
+    path: &str,
+) -> Result<(String, Vec<u8>), ApiError> {
+    use reqwest::header::CONTENT_TYPE;
+
+    let token = read_secret(BAMBOO_TOKEN_KEY).map_err(|e| ApiError::new(e.code, e.message))?;
+    let normalized = validate_bamboo_request_url(&config.subdomain, path)?;
+    let client = http_client().map_err(|e| ApiError::new("client_error", e))?;
+
+    let response = client
+        .get(&normalized)
+        .header(AUTHORIZATION, bamboo_auth_header(&token))
+        .send()
+        .await
+        .map_err(|e| ApiError::new("network_error", e.to_string()).with_url(normalized.clone()))?;
+
+    let status = response.status().as_u16();
+    if status < 200 || status >= 300 {
+        let text = response.text().await.unwrap_or_default();
+        return Err(
+            ApiError::new("bamboo_api_error", sanitize_body(&text))
+                .with_status(status)
+                .with_url(normalized),
+        );
+    }
+
+    let content_type = response
+        .headers()
+        .get(CONTENT_TYPE)
+        .and_then(|v| v.to_str().ok())
+        .unwrap_or("image/jpeg")
+        .to_string();
+    let bytes = response
+        .bytes()
+        .await
+        .map_err(|e| ApiError::new("read_error", e.to_string()).with_url(normalized.clone()))?
+        .to_vec();
+
+    Ok((content_type, bytes))
+}
+
+#[derive(Debug, Serialize)]
+pub struct BambooPhotoPayload {
+    pub content_type: String,
+    pub data_base64: String,
+}
+
+#[tauri::command]
+pub async fn bamboo_get_employee_photo(
+    config: BambooConfig,
+    employee_id: String,
+) -> Result<BambooPhotoPayload, ApiError> {
+    use base64::Engine;
+    let path = format!(
+        "/employees/{}/photo/small",
+        urlencoding::encode(employee_id.trim())
+    );
+    let (content_type, bytes) = bamboo_binary_request(&config, &path).await?;
+    Ok(BambooPhotoPayload {
+        content_type,
+        data_base64: base64::engine::general_purpose::STANDARD.encode(bytes),
+    })
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

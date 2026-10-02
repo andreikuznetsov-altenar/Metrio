@@ -4,6 +4,7 @@ import { getEfficiencyStatus } from "../../domain/jira/kpi";
 import { formatDuration } from "../../domain/jira/dates";
 import type { AuditReportData } from "../../domain/jira/types";
 import type { Person } from "../../domain/people/types";
+import { buildPlannedTimeOffRows } from "../../domain/people/plannedTimeOff";
 import {
   avgCycleLabel,
   firstPassPercent,
@@ -110,6 +111,7 @@ function mapAttentionPerson(
     severity: item.severity,
     issueKeys: item.relatedIssueKeys.slice(0, 2),
     issueCount: item.relatedIssueKeys.length || item.signalCount,
+    workload: workloadDisplayLabel(person?.workload?.level),
   };
 }
 
@@ -166,7 +168,7 @@ export function buildPerformanceViewModels(
   const trendContextLabel = displayRange
     ? comparisonPeriodLabel(displayRange)
     : undefined;
-  const { teamSnapshot, historyTeamSnapshot, reportData, historyReportData, kpiSnapshots, partialWarnings } =
+  const { teamSnapshot, historyTeamSnapshot, reportData, historyReportData, kpiSnapshots, partialWarnings, timeOffEntries } =
     data;
   const params = reportData.params;
   const historyParams = historyReportData.params;
@@ -307,21 +309,17 @@ export function buildPerformanceViewModels(
     };
   });
 
-  const timeOff: UiTimeOffEntry[] = teamSnapshot.persons
-    .filter(
-      (person) =>
-        person.availability.state === "on_vacation" ||
-        person.availability.state === "vacation_soon" ||
-        person.availability.state === "vacation_tomorrow",
-    )
-    .map((person) => ({
-      personId: person.id,
-      personName: person.bamboo.displayName,
-      rangeLabel: person.availability.label,
-      note: person.availability.returnDate
-        ? `Returns ${person.availability.returnDate}`
-        : person.bamboo.jobTitle || "",
-    }));
+  const teamEmployeeIds = new Set(teamSnapshot.persons.map((person) => person.id));
+  const plannedTimeOff = buildPlannedTimeOffRows(timeOffEntries, teamEmployeeIds);
+  const timeOff: UiTimeOffEntry[] = plannedTimeOff.slice(0, 5).map((row) => {
+    const person = findPerson(teamSnapshot, row.employeeId);
+    return {
+      personId: row.employeeId,
+      personName: person?.bamboo.displayName || row.personName,
+      rangeLabel: row.rangeLabel,
+      note: row.typeLabel,
+    };
+  });
 
   const personDetails: Record<string, PersonPerformanceDetail> = {};
   for (const person of teamSnapshot.persons) {

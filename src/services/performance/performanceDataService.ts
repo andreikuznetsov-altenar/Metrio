@@ -3,6 +3,10 @@ import { buildJql, normalizeReportParams } from "../../domain/jira/jql";
 import { buildEnhancedJiraAuditReport } from "../../domain/jira/report";
 import { buildTeamIdentityIndex } from "../../domain/jira/users";
 import type { TimeOffEntry } from "../../domain/people/availability";
+import {
+  getWhosOutHorizonRange,
+  splitWhosOutRange,
+} from "../../domain/people/plannedTimeOff";
 import type { PerformanceDateRange } from "../../domain/performance/performanceDateRange";
 import type { DateRangeKey, PerformanceReviewTarget } from "../../domain/performance";
 import type { PerformanceAudience } from "../../domain/performance/reportParams";
@@ -28,7 +32,6 @@ import { resolveTeamScope } from "../bamboo/teamScope";
 import { JiraClient } from "../jira/jiraClient";
 import {
   buildTeamSnapshot,
-  getWhosOutDateRange,
 } from "../people/personService";
 import {
   loadKpiSnapshots,
@@ -229,9 +232,20 @@ export async function fetchPerformanceData(
 
   let timeOffEntries: TimeOffEntry[] = [];
   try {
-    const range = getWhosOutDateRange();
-    const raw = await bamboo.getWhosOut(range.start, range.end);
-    timeOffEntries = raw as TimeOffEntry[];
+    const range = getWhosOutHorizonRange();
+    const seen = new Set<string>();
+    for (const chunk of splitWhosOutRange(range.start, range.end)) {
+      const raw = await bamboo.getWhosOut(chunk.start, chunk.end);
+      for (const entry of raw as TimeOffEntry[]) {
+        const id = String(entry.employeeId || "");
+        const start = (entry.start || entry.startDate || "").slice(0, 10);
+        const end = (entry.end || entry.endDate || "").slice(0, 10);
+        const dedupe = `${id}:${start}:${end}`;
+        if (!id || !start || !end || seen.has(dedupe)) continue;
+        seen.add(dedupe);
+        timeOffEntries.push(entry);
+      }
+    }
   } catch {
     partialWarnings.push("bamboo_time_off_unavailable");
     void writeLog(

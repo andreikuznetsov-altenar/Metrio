@@ -8,7 +8,7 @@ use api::credentials::{
 };
 use api::local_credentials::{delete_secret, init_store_path, set_secret};
 use api::bamboo::{
-    bamboo_get_directory, bamboo_get_employee, bamboo_get_whos_out, bamboo_list_employees,
+    bamboo_get_directory, bamboo_get_employee, bamboo_get_employee_photo, bamboo_get_whos_out, bamboo_list_employees,
     bamboo_list_employees_all, bamboo_test_connection,
 };
 use std::time::Duration;
@@ -485,6 +485,7 @@ pub fn run() {
             bamboo_list_employees_all,
             bamboo_get_employee,
             bamboo_get_whos_out,
+            bamboo_get_employee_photo,
             apps_script_connect,
             apps_script_disconnect,
             apps_script_get_status,
