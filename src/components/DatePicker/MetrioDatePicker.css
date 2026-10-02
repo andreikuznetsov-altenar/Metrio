@@ -1,0 +1,123 @@
+.metrio-date-picker {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.metrio-date-picker__label {
+  flex-shrink: 0;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+}
+
+.metrio-date-picker__trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+  flex: 1;
+  height: 34px;
+  padding: 0 var(--space-2) 0 32px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-control);
+  background: var(--color-surface);
+  color: var(--color-text-primary);
+  font-size: 13px;
+  cursor: pointer;
+  position: relative;
+  transition:
+    border-color var(--motion-hover) var(--transition-easing),
+    background var(--motion-hover) var(--transition-easing);
+}
+
+.metrio-date-picker__trigger:hover:not(:disabled) {
+  border-color: color-mix(in srgb, var(--color-border) 70%, var(--color-text-tertiary));
+}
+
+.metrio-date-picker__trigger:focus-visible {
+  outline: var(--focus-outline);
+  outline-offset: var(--focus-outline-offset);
+}
+
+.metrio-date-picker__trigger:focus:not(:focus-visible) {
+  outline: none;
+  box-shadow: none;
+}
+
+.metrio-date-picker__trigger:disabled {
+  opacity: var(--control-disabled-opacity);
+  cursor: not-allowed;
+  background: var(--color-surface-secondary);
+}
+
+.metrio-date-picker__icon {
+  position: absolute;
+  left: 10px;
+  color: var(--color-text-tertiary);
+  pointer-events: none;
+}
+
+.metrio-date-picker__value {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.metrio-date-picker__popover {
+  z-index: 70;
+  width: min(310px, calc(100vw - 24px));
+  padding: var(--space-2);
+  border-radius: var(--radius-control);
+  border: 1px solid color-mix(in srgb, var(--color-border) 85%, transparent);
+  background: var(--color-surface);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.18);
+  animation: metrio-date-picker-in var(--motion-popover) var(--transition-easing);
+}
+
+.metrio-date-picker__popover .rdp-root {
+  --rdp-accent-color: var(--color-accent);
+  --rdp-accent-background-color: color-mix(
+    in srgb,
+    var(--color-accent) 14%,
+    var(--color-surface-secondary)
+  );
+  --rdp-day-height: 34px;
+  --rdp-day-width: 34px;
+  --rdp-day_button-height: 32px;
+  --rdp-day_button-width: 32px;
+  --rdp-selected-border: none;
+  color: var(--color-text-primary);
+  font-size: 13px;
+}
+
+.metrio-date-picker__popover .rdp-day_button:hover:not([disabled]) {
+  background: color-mix(in srgb, var(--color-accent) 10%, var(--color-surface-secondary));
+}
+
+.metrio-date-picker__popover .rdp-day_button:focus-visible {
+  outline: var(--focus-outline);
+  outline-offset: 0;
+}
+
+.metrio-date-picker__popover .rdp-today:not(.rdp-selected) .rdp-day_button {
+  border: 1px solid color-mix(in srgb, var(--color-accent) 45%, var(--color-border));
+}
+
+@keyframes metrio-date-picker-in {
+  from {
+    opacity: 0;
+    transform: translateY(-2px) scale(0.99);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .metrio-date-picker__popover {
+    animation: none;
+  }
+}

@@ -1,91 +1,57 @@
 .performance-toolbar {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: var(--space-4);
+  justify-content: stretch;
+  gap: var(--space-3);
   min-height: var(--page-toolbar-height);
   padding: 0 var(--space-4);
   position: relative;
-}
-
-.performance-toolbar__title {
-  margin: 0;
-  font-size: 14px;
-  font-weight: 600;
-  letter-spacing: -0.02em;
-  color: var(--color-text-primary);
-  white-space: nowrap;
+  width: 100%;
 }
 
 .performance-toolbar__controls {
   display: flex;
-  align-items: flex-end;
-  gap: var(--space-4);
+  align-items: center;
+  gap: var(--space-2);
   flex-wrap: wrap;
-  justify-content: flex-end;
+  width: 100%;
+  min-width: 0;
 }
 
 .performance-toolbar__group {
   display: flex;
-  align-items: flex-end;
-  gap: var(--space-2);
-  flex-wrap: wrap;
-}
-
-.performance-toolbar__date-control {
-  position: relative;
-  display: flex;
   align-items: center;
-  height: 34px;
-  min-width: 132px;
-  padding: 0 var(--space-2) 0 32px;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-control);
-  background: var(--color-surface);
+  gap: var(--space-2);
+  min-width: 0;
 }
 
-.performance-toolbar__date-display {
-  font-size: 13px;
-  color: var(--color-text-primary);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  pointer-events: none;
+.performance-toolbar__group--dates {
+  flex: 1.4 1 280px;
 }
 
-.performance-toolbar__date-input {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  margin: 0;
-  padding: 0;
-  border: none;
-  opacity: 0;
-  cursor: pointer;
-}
-
-.performance-toolbar__date-input:disabled {
-  cursor: not-allowed;
-}
-
-.performance-toolbar__date-icon {
-  position: absolute;
-  left: 10px;
+.performance-toolbar__date-sep {
+  flex-shrink: 0;
   color: var(--color-text-tertiary);
-  pointer-events: none;
+  font-size: 13px;
+  line-height: 34px;
 }
 
 .performance-toolbar__field {
-  width: 148px;
+  min-width: 0;
 }
 
-.performance-toolbar__field--wide {
-  width: 168px;
+.performance-toolbar__field--preset {
+  flex: 1 1 120px;
+}
+
+.performance-toolbar__field--target {
+  flex: 1 1 140px;
 }
 
 .performance-toolbar__refresh {
-  margin-bottom: 1px;
+  flex: 0 0 42px;
+  display: flex;
+  justify-content: center;
 }
 
 .performance-toolbar__refresh .icon-button__icon {
@@ -96,8 +62,19 @@
   animation: performance-spin 0.9s linear infinite;
 }
 
+.performance-toolbar__export {
+  flex: 0 1 150px;
+}
+
 .performance-toolbar__export .btn {
-  min-width: 7.5rem;
+  width: 100%;
+  min-width: 9rem;
+  justify-content: center;
+  gap: var(--space-2);
+}
+
+.performance-toolbar__export-icon {
+  color: var(--color-accent-foreground);
 }
 
 @keyframes performance-spin {
@@ -109,6 +86,12 @@
 @media (prefers-reduced-motion: reduce) {
   .performance-toolbar__refresh.is-refreshing .icon-button__icon {
     animation: none;
+  }
+}
+
+@media (max-width: 1280px) {
+  .performance-toolbar__controls {
+    row-gap: var(--space-2);
   }
 }
 
@@ -124,4 +107,8 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.performance-toolbar__status--error {
+  color: var(--color-danger);
 }

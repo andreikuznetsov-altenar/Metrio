@@ -39,6 +39,11 @@
   border-color: color-mix(in srgb, var(--color-border) 70%, var(--color-text-tertiary));
 }
 
+.select-trigger:focus:not(:focus-visible) {
+  outline: none;
+  box-shadow: none;
+}
+
 .select-trigger:focus-visible {
   outline: var(--focus-outline);
   outline-offset: var(--focus-outline-offset);

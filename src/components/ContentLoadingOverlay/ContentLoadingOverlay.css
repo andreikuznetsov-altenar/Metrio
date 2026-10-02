@@ -1,6 +1,9 @@
 .content-loading-overlay {
-  position: absolute;
-  inset: 0;
+  position: fixed;
+  top: calc(var(--app-header-height) + var(--page-toolbar-height));
+  left: 0;
+  right: 0;
+  bottom: 0;
   z-index: 20;
   display: flex;
   align-items: center;

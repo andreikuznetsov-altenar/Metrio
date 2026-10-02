@@ -1,11 +1,11 @@
-import { CalendarDays, Download, RefreshCw } from "lucide-react";
+import { Download, RefreshCw } from "lucide-react";
+import { MetrioDatePicker } from "../components/DatePicker/MetrioDatePicker";
 import { Button } from "../components/Button/Button";
 import { IconButton } from "../components/IconButton/IconButton";
 import { Select } from "../components/Select/Select";
 import type { DateRangeKey, PerformanceReviewTarget } from "../domain/performance";
 import {
   createPerformanceDateRange,
-  formatPerformanceDateDisplay,
   validatePerformanceDateRange,
   type PerformanceDateRange,
 } from "../domain/performance/performanceDateRange";
@@ -29,14 +29,6 @@ const EMPLOYEE_REVIEW_TARGET_OPTIONS = [
   { value: "quarter", label: "Quarter goal" },
 ];
 
-function ExportIcon() {
-  return <Download size={16} strokeWidth={1.75} aria-hidden className="performance-toolbar__export-icon" />;
-}
-
-function RefreshIcon() {
-  return <RefreshCw size={16} strokeWidth={1.75} aria-hidden />;
-}
-
 export interface PerformanceToolbarProps {
   dateRange: PerformanceDateRange;
   reviewTarget: PerformanceReviewTarget;
@@ -54,48 +46,6 @@ export interface PerformanceToolbarProps {
 
 function applyPreset(preset: DateRangeKey): PerformanceDateRange {
   return createPerformanceDateRange(preset);
-}
-
-function PerformanceDateField({
-  id,
-  label,
-  value,
-  disabled,
-  onChange,
-}: {
-  id: string;
-  label: string;
-  value: string;
-  disabled?: boolean;
-  onChange: (iso: string) => void;
-}) {
-  return (
-    <div className="performance-toolbar__field performance-toolbar__field--date">
-      <label className="performance-toolbar__date-label" htmlFor={id}>
-        {label}
-      </label>
-      <div className="performance-toolbar__date-control">
-        <CalendarDays
-          size={16}
-          strokeWidth={1.75}
-          aria-hidden
-          className="performance-toolbar__date-icon"
-        />
-        <span className="performance-toolbar__date-display" aria-hidden="true">
-          {formatPerformanceDateDisplay(value) || "Select date"}
-        </span>
-        <input
-          id={id}
-          type="date"
-          className="performance-toolbar__date-input"
-          value={value}
-          disabled={disabled}
-          aria-label={`${label} date`}
-          onChange={(event) => onChange(event.target.value)}
-        />
-      </div>
-    </div>
-  );
 }
 
 export function PerformanceToolbar({
@@ -124,12 +74,9 @@ export function PerformanceToolbar({
 
   return (
     <div className="performance-toolbar">
-      <h2 className="performance-toolbar__title" aria-hidden>
-        Filters
-      </h2>
       <div className="performance-toolbar__controls">
         <div className="performance-toolbar__group performance-toolbar__group--dates">
-          <PerformanceDateField
+          <MetrioDatePicker
             id="perf-from"
             label="From"
             value={dateRange.from}
@@ -142,7 +89,10 @@ export function PerformanceToolbar({
               })
             }
           />
-          <PerformanceDateField
+          <span className="performance-toolbar__date-sep" aria-hidden>
+            –
+          </span>
+          <MetrioDatePicker
             id="perf-to"
             label="To"
             value={dateRange.to}
@@ -155,7 +105,8 @@ export function PerformanceToolbar({
               })
             }
           />
-        <div className="performance-toolbar__field">
+        </div>
+        <div className="performance-toolbar__field performance-toolbar__field--preset">
           <Select
             aria-label="Date range preset"
             value={dateRange.preset === "custom" ? "custom" : presetValue}
@@ -171,9 +122,7 @@ export function PerformanceToolbar({
             }}
           />
         </div>
-        </div>
-        <div className="performance-toolbar__group performance-toolbar__group--analysis">
-        <div className="performance-toolbar__field performance-toolbar__field--wide">
+        <div className="performance-toolbar__field performance-toolbar__field--target">
           <Select
             aria-label="Review target"
             value={reviewTarget}
@@ -186,8 +135,6 @@ export function PerformanceToolbar({
             }
           />
         </div>
-        </div>
-        <div className="performance-toolbar__group performance-toolbar__group--actions">
         <div
           className={
             refreshing
@@ -200,23 +147,28 @@ export function PerformanceToolbar({
             onClick={onRefresh}
             disabled={inputsDisabled}
           >
-            <RefreshIcon />
+            <RefreshCw size={16} strokeWidth={1.75} aria-hidden />
           </IconButton>
         </div>
         {onExportPdf ? (
           <div className="performance-toolbar__export">
             <Button
               type="button"
-              variant="secondary"
+              variant="primary"
               disabled={exportDisabled || exportBusy || inputsDisabled}
+              loading={exportBusy}
               onClick={onExportPdf}
             >
-              <ExportIcon />
+              <Download
+                size={16}
+                strokeWidth={1.75}
+                aria-hidden
+                className="performance-toolbar__export-icon"
+              />
               {exportBusy ? "Exporting…" : "Export PDF"}
             </Button>
           </div>
         ) : null}
-        </div>
       </div>
       {exportStatusMessage ? (
         <p className="performance-toolbar__status" role="status" aria-live="polite">

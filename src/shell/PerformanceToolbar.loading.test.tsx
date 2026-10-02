@@ -18,8 +18,8 @@ describe("PerformanceToolbar loading state", () => {
       />,
     );
 
-    expect(screen.getByLabelText("From")).toBeDisabled();
-    expect(screen.getByLabelText("To")).toBeDisabled();
+    expect(screen.getByRole("button", { name: /^From date,/ })).toBeDisabled();
+    expect(screen.getByRole("button", { name: /^To date,/ })).toBeDisabled();
     expect(screen.getByLabelText("Date range preset")).toBeDisabled();
     expect(screen.getByLabelText("Review target")).toBeDisabled();
     expect(screen.getByRole("button", { name: "Refresh" })).toBeDisabled();
