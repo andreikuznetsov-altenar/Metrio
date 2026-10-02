@@ -2,6 +2,10 @@ import { useEffect, useState } from "react";
 import type { TeamPerformanceView } from "../../domain/performance";
 import type { PerformanceReviewTarget } from "../../domain/performance";
 import { usePerformanceData } from "../../app/PerformanceDataContext";
+import {
+  readPersistedTeamPerformanceView,
+  writePersistedTeamPerformanceView,
+} from "../../app/performanceViewPersistence";
 import { usePerformanceExport } from "../../app/PerformanceExportContext";
 import { usePerformanceAnalytics } from "../../app/performanceAnalyticsContext";
 import { TeamDeliveryRiskView } from "./TeamDeliveryRiskView";
@@ -26,7 +30,9 @@ export function TeamPerformanceOverview({
   onOpenPerson,
   reviewTarget,
 }: TeamPerformanceOverviewProps) {
-  const [activeView, setActiveView] = useState<TeamPerformanceView>("overview");
+  const [activeView, setActiveView] = useState<TeamPerformanceView>(
+    () => readPersistedTeamPerformanceView(),
+  );
   const { viewModels, uiState } = usePerformanceData();
   const { registerTeamView } = usePerformanceExport();
   const { openTeamMetricDrilldown, openTeamTrendDrilldown } = usePerformanceAnalytics();
@@ -68,7 +74,13 @@ export function TeamPerformanceOverview({
   if (visualForceSkeleton || uiState === "initial-loading") {
     return (
       <div className="performance-dashboard" data-testid="performance-dashboard-skeleton">
-        <TeamPerformanceSubnav activeView={activeView} onChange={setActiveView} />
+        <TeamPerformanceSubnav
+          activeView={activeView}
+          onChange={(view) => {
+            writePersistedTeamPerformanceView(view);
+            setActiveView(view);
+          }}
+        />
         {activeView === "overview" ? <PerformanceOverviewSkeleton /> : null}
         {activeView === "people" ? <PerformanceTableSkeleton rows={6} columns={5} /> : null}
         {activeView === "radar" ? <PerformanceTableSkeleton rows={6} columns={4} /> : null}
@@ -104,7 +116,13 @@ export function TeamPerformanceOverview({
       data-testid="performance-dashboard-ready"
     >
       <PerformanceStatusBanner />
-      <TeamPerformanceSubnav activeView={activeView} onChange={setActiveView} />
+      <TeamPerformanceSubnav
+        activeView={activeView}
+        onChange={(view) => {
+          writePersistedTeamPerformanceView(view);
+          setActiveView(view);
+        }}
+      />
 
       {activeView === "overview" ? (
         <TeamOverviewView

@@ -31,8 +31,12 @@ export function trendComparisonCaption(dateRangeKey: DateRangeKey): string {
       return "vs previous 7 days";
     case "30d":
       return "vs previous 30 days";
-    case "quarter":
-      return "vs previous quarter";
+    case "3m":
+      return "vs previous 3 months";
+    case "6m":
+      return "vs previous 6 months";
+    case "1y":
+      return "vs previous year";
     default:
       return "vs previous period";
   }

@@ -99,6 +99,6 @@ describe("trendPresentation", () => {
       contextSemantic: "positive",
       contextCaption: "vs previous 30 days",
     });
-    expect(trendComparisonCaption("quarter")).toBe("vs previous quarter");
+    expect(trendComparisonCaption("3m")).toBe("vs previous 3 months");
   });
 });

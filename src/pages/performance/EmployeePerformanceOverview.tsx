@@ -2,6 +2,10 @@ import { useEffect, useMemo, useState } from "react";
 import { usePerformanceData } from "../../app/PerformanceDataContext";
 import { useOptionalPerformanceAnalytics } from "../../app/performanceAnalyticsContext";
 import { usePerformanceExport } from "../../app/PerformanceExportContext";
+import {
+  readPersistedEmployeePerformanceView,
+  writePersistedEmployeePerformanceView,
+} from "../../app/performanceViewPersistence";
 import type { PersonWorkRowData } from "../../domain/analytics/personAnalyticsWorkspace";
 import type { EmployeePerformanceView, MetricCardData } from "../../domain/performance";
 import { EmployeeMyWeekView } from "./EmployeeMyWeekView";
@@ -31,8 +35,9 @@ function sortCurrentWorkRows(rows: PersonWorkRowData[]): PersonWorkRowData[] {
 }
 
 export function EmployeePerformanceOverview({ personId }: EmployeePerformanceOverviewProps) {
-  const [activeView, setActiveView] =
-    useState<EmployeePerformanceView>("overview");
+  const [activeView, setActiveView] = useState<EmployeePerformanceView>(
+    () => readPersistedEmployeePerformanceView(),
+  );
   const { viewModels, status } = usePerformanceData();
   const analytics = useOptionalPerformanceAnalytics();
   const { registerEmployeeView } = usePerformanceExport();
@@ -97,7 +102,13 @@ export function EmployeePerformanceOverview({ personId }: EmployeePerformanceOve
       data-testid="performance-dashboard-ready"
     >
       <PerformanceStatusBanner />
-      <EmployeePerformanceSubnav activeView={activeView} onChange={setActiveView} />
+      <EmployeePerformanceSubnav
+        activeView={activeView}
+        onChange={(view) => {
+          writePersistedEmployeePerformanceView(view);
+          setActiveView(view);
+        }}
+      />
 
       {activeView === "overview" ? (
         <section aria-label="Performance overview">
