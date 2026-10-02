@@ -138,3 +138,30 @@ Security may allowlist by signer, Team ID, bundle ID, and/or hash — Metrio doe
 ## Secret audit
 
 No Apple passwords, app-specific passwords, `.p12`, `.p8`, or notary secrets in git. CSR files should stay **untracked** (see `.gitignore`).
+
+---
+
+## Phase 20.1 release (icon refresh + Phase 20 app bundle)
+
+Phase 20 updated application icon assets and frontend bundle content. **Phase 18 DMG / executable hashes below remain historical**; Security must allowlist the **Phase 20.1** artifacts for the current release.
+
+| Field | Value |
+|-------|--------|
+| Git SHA | `a6535933490ef3079f1140971bc6d4a2ede5bc80` |
+| Notarization submission | **7cd5c275-c7f9-4fc7-b639-ef15a1865107** |
+| Notarization status | **Accepted** |
+| Stapler (release DMG) | **The validate action worked!** |
+| Stapler (release-tree `.app`) | **The validate action worked!** |
+| Stapler (`/Applications/Metrio.app`) | **The validate action worked!** after install + staple |
+| Gatekeeper (installed) | **accepted**, `source=Notarized Developer ID` |
+| Bundle `icon.icns` (Phase 20) | SHA256 `a48449e6e4bb5e6c3f4e6e926c892dfd87a520e4abde54fd6fd4e1b8e88e7b85` (matches repo `src-tauri/icons/icon.icns`) |
+| Tray icons | Unchanged (`tray-icon.png` / `tray-icon@2x.png`) |
+
+### Phase 20.1 SHA256 (current allowlist)
+
+| Artifact | SHA256 |
+|----------|--------|
+| `Metrio_0.1.0_aarch64.dmg` (release bundle, stapled) | `0ca577ae665bf8aaf59ed15abe4feb62c6561ff1d9a8182fc40e4b3a8d61f3ab` |
+| `/Applications/Metrio.app/Contents/MacOS/metrio` (Phase 20.1 install) | `c2f64401fe7fd8cfd116066392faa793e35d2d28a1d61603c055fac46bd6bb30` |
+
+Build signed with **Developer ID Application: Andrei Kuznetsov (V36L7T43H8)**, Team **V36L7T43H8**, Hardened Runtime enabled, secure timestamp present (02 Oct 2026).
