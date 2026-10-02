@@ -28,8 +28,23 @@ describe("MetrioAppHeader", () => {
     expect(screen.getByRole("button", { name: "Feedback" })).toBeInTheDocument();
   });
 
-  it("hides Feedback when performance is not approved", () => {
-    renderHeader(false);
-    expect(screen.queryByRole("button", { name: "Feedback" })).not.toBeInTheDocument();
+  it("marks no main nav item active when activeRoute is null", () => {
+    render(
+      <ThemeProvider>
+        <CurrentUserProvider>
+          <MetrioAppHeader
+            activeRoute={null}
+            feedbackEnabled
+            onNavigate={() => undefined}
+          />
+        </CurrentUserProvider>
+      </ThemeProvider>,
+    );
+    expect(screen.getByRole("button", { name: "Performance" })).not.toHaveClass(
+      "is-active",
+    );
+    expect(screen.getByRole("button", { name: "Feedback" })).not.toHaveClass(
+      "is-active",
+    );
   });
 });

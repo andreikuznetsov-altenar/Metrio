@@ -2,6 +2,7 @@ import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
   useState,
   type ReactNode,
@@ -56,6 +57,16 @@ export function PerformanceExportProvider({
   >("month");
   const [exporting, setExporting] = useState(false);
   const [exportMessage, setExportMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!exportMessage) return;
+    const transient =
+      exportMessage === "PDF exported." ||
+      exportMessage === PDF_EXPORT_CANCELLED_MESSAGE;
+    if (!transient) return;
+    const timer = window.setTimeout(() => setExportMessage(null), 3500);
+    return () => window.clearTimeout(timer);
+  }, [exportMessage]);
 
   const activeTab = audience === "team" ? teamView : employeeView;
   const exportView = resolveExportView(activeTab, audience === "team");

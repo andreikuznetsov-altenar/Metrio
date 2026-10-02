@@ -7,6 +7,7 @@ import { Button } from "../../components/Button/Button";
 import { Card } from "../../components/Card/Card";
 import { Input } from "../../components/Input/Input";
 import { Select } from "../../components/Select/Select";
+import { formatPreferenceSyncTimestamp } from "../../platform/formatPreferenceSync";
 import { syncGeneralPreferencesToNative } from "../../platform/generalPreferencesSync";
 import {
   testBambooConnectionSaved,
@@ -234,7 +235,7 @@ export function SettingsPage({
             <div className="settings-row">
               <span className="settings-row__label">Theme</span>
               <Select
-                label="Theme"
+                aria-label="Theme"
                 value={preference}
                 options={THEME_OPTIONS}
                 onChange={(event) =>
@@ -289,26 +290,17 @@ export function SettingsPage({
             <div className="settings-row">
               <span className="settings-row__label">Work email</span>
               <Input
-                label="Work email"
                 readOnly
                 value={connection?.workEmail || prefs.workEmail || "—"}
               />
             </div>
             <div className="settings-row">
               <span className="settings-row__label">Jira</span>
-              <Input
-                label="Jira site"
-                readOnly
-                value={COMPANY_CONFIG.jiraBaseUrl}
-              />
+              <Input readOnly value={COMPANY_CONFIG.jiraBaseUrl} />
             </div>
             <div className="settings-row">
               <span className="settings-row__label">BambooHR</span>
-              <Input
-                label="BambooHR portal"
-                readOnly
-                value={COMPANY_CONFIG.bambooPortalUrl}
-              />
+              <Input readOnly value={COMPANY_CONFIG.bambooPortalUrl} />
             </div>
             <p className="settings-row__hint">
               Jira token:{" "}
@@ -401,7 +393,7 @@ export function SettingsPage({
               </Button>
               <Button
                 type="button"
-                variant="secondary"
+                variant="danger"
                 disabled={busy}
                 onClick={() => void onResetData()}
               >
@@ -412,9 +404,10 @@ export function SettingsPage({
 
           <Card title="Connection debugging" description="Quick integration checks.">
             <p className="settings-row__hint">
-              Last Jira sync: {prefs.sync.lastJiraSync ?? "Never"}
+              Last Jira sync: {formatPreferenceSyncTimestamp(prefs.sync.lastJiraSync)}
               {" · "}
-              Last Bamboo sync: {prefs.sync.lastBambooSync ?? "Never"}
+              Last Bamboo sync:{" "}
+              {formatPreferenceSyncTimestamp(prefs.sync.lastBambooSync)}
             </p>
             <p
               className={

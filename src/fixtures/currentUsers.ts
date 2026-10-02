@@ -7,6 +7,7 @@ const employeeUser: CurrentUser = {
 
 const leadUser: CurrentUser = {
   person: getPerson("person-sam"),
+  jobTitle: "Design Lead",
   team: {
     leadId: "person-sam",
     directReportIds: [

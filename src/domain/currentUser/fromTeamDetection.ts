@@ -34,7 +34,10 @@ export function buildCurrentUserFromTeamDetection(
   };
 
   if (scope.mode !== 'manager') {
-    return { person };
+    return {
+      person,
+      jobTitle: scope.self.jobTitle?.trim() || undefined,
+    };
   }
 
   const directReportIds = scope.members
@@ -43,6 +46,7 @@ export function buildCurrentUserFromTeamDetection(
 
   return {
     person,
+    jobTitle: scope.self.jobTitle?.trim() || undefined,
     team: {
       leadId: scope.self.id,
       directReportIds,

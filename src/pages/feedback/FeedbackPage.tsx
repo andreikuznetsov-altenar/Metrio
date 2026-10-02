@@ -243,8 +243,9 @@ export function FeedbackPage() {
     return (
       <div className="ds-feedback-page-shell">
         <MetrioScrollArea className="ds-feedback-scroll">
-          <div className="metrio-canvas ds-feedback-canvas">
-            <GoogleConnectionPanel
+          <div className="metrio-canvas ds-feedback-canvas ds-feedback-canvas--connect">
+            <div className="ds-feedback-connect-panel">
+              <GoogleConnectionPanel
               prefs={prefs}
               loading={loading}
               message={googleMessage}
@@ -253,6 +254,7 @@ export function FeedbackPage() {
               onDisconnect={handleGoogleDisconnect}
               onUpdatePrefs={async (patch) => updatePrefs({ google: { ...prefs.google, ...patch } })}
             />
+            </div>
           </div>
         </MetrioScrollArea>
       </div>

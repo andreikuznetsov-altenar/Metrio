@@ -264,7 +264,7 @@ function AppLayoutShell({
     <AppShell
       header={
         <MetrioAppHeader
-          activeRoute={settingsOpen ? activeRoute : activeRoute}
+          activeRoute={settingsOpen ? null : activeRoute}
           feedbackEnabled={feedbackEnabled}
           onNavigate={onNavigate}
           onOpenSettings={() => onOpenSettings("general")}

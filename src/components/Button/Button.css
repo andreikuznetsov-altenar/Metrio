@@ -64,6 +64,17 @@
   background: color-mix(in srgb, var(--color-surface-secondary) 90%, var(--color-border));
 }
 
+.btn--danger {
+  background: var(--color-surface);
+  color: var(--color-danger, #b42318);
+  border-color: color-mix(in srgb, var(--color-danger, #b42318) 35%, var(--color-border));
+}
+
+.btn--danger:hover:not(:disabled):not(.btn--loading) {
+  background: color-mix(in srgb, var(--color-danger, #b42318) 8%, var(--color-surface));
+  border-color: color-mix(in srgb, var(--color-danger, #b42318) 55%, var(--color-border));
+}
+
 .btn:focus-visible {
   box-shadow: var(--focus-ring);
 }

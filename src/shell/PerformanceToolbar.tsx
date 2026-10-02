@@ -162,7 +162,7 @@ export function PerformanceToolbar({
         ) : null}
       </div>
       {exportStatusMessage ? (
-        <p className="performance-toolbar__status" role="status">
+        <p className="performance-toolbar__status" role="status" aria-live="polite">
           {exportStatusMessage}
         </p>
       ) : null}

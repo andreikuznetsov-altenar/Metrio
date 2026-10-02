@@ -1,6 +1,7 @@
 import { formatDuration } from '../jira/dates';
 import type { AuditIssue, ReportParams } from '../jira/types';
 import { isCompletionStatus } from '../periods/issueCompletion';
+import { isActiveWorkStatus } from '../periods/issueTerminalStatus';
 import {
   classifyTaskHealth,
   getCurrentStageAgeMs,
@@ -43,9 +44,10 @@ export function getActiveIssues(person: Person, params?: ReportParams): AuditIss
     const status = (issue.currentStatus || '').trim();
     if (!status) return false;
     if (params) {
-      return !classifyTaskHealth({ issue, params }).isCompleted;
+      const health = classifyTaskHealth({ issue, params });
+      return isActiveWorkStatus(status, health.isCompleted);
     }
-    return !isCompletionStatus(status);
+    return isActiveWorkStatus(status, isCompletionStatus(status));
   });
 }
 

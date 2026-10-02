@@ -96,7 +96,9 @@ describe('FeedbackPage', () => {
   });
 
   it('shows connect state when Google is not linked', () => {
-    expect(container.textContent).toContain('Connect Google to create and send feedback surveys');
+    expect(container.textContent).toContain(
+      'Create and send team feedback surveys through your connected Google',
+    );
     expect(container.querySelector('.performance-subnav')).toBeFalsy();
   });
 

@@ -103,7 +103,7 @@ export function PerformanceDataProvider({
 
       try {
         const next = await fetchPerformanceData(dateRange, reviewTarget, audience);
-        const models = buildPerformanceViewModels(next, selfPersonId);
+        const models = buildPerformanceViewModels(next, selfPersonId, dateRange);
         setData(next);
         setViewModels(models);
         const partial =

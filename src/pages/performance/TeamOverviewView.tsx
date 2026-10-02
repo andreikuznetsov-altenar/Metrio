@@ -48,7 +48,12 @@ export function TeamOverviewView({
                 <div
                   className={`performance-metric-card__context performance-metric-card__context--${metric.contextSemantic || "neutral"}`}
                 >
-                  {metric.contextLabel}
+                  <span>{metric.contextLabel}</span>
+                  {metric.contextCaption ? (
+                    <span className="performance-metric-card__context-caption">
+                      {metric.contextCaption}
+                    </span>
+                  ) : null}
                 </div>
               ) : null}
             </Card>
@@ -108,7 +113,7 @@ export function TeamOverviewView({
                     ))}
                     {item.issueCount > item.issueKeys.length ? (
                       <span className="performance-attention-row__more">
-                        +{item.issueCount - item.issueKeys.length}
+                        +{item.issueCount - item.issueKeys.length} more
                       </span>
                     ) : null}
                   </span>
@@ -150,7 +155,7 @@ export function TeamOverviewView({
                 <th className="performance-table__num">Active</th>
                 <th className="performance-table__num">
                   <Tooltip content="Active tasks flagged at risk by cycle-time rules (not the same as Radar signals).">
-                    <span>At risk</span>
+                    <span>At-risk tasks</span>
                   </Tooltip>
                 </th>
                 <th>Workload</th>

@@ -1,7 +1,8 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { useCurrentUser } from "../app/CurrentUserContext";
 import type { DevFixtureId } from "../domain/types";
-import { personInitials, roleLabel } from "../domain/types";
+import { personInitials } from "../domain/types";
+import { profileSubtitle } from "../domain/types/profileSubtitle";
 import { useTheme } from "../theme/ThemeProvider";
 import type { ThemePreference } from "../theme/theme";
 import "./ProfileMenu.css";
@@ -80,9 +81,7 @@ export function ProfileMenu({
         >
           <div className="profile-menu__identity">
             <p className="profile-menu__name">{currentUser.person.name}</p>
-            <p className="profile-menu__role">
-              {roleLabel(currentUser.person.role)}
-            </p>
+            <p className="profile-menu__role">{profileSubtitle(currentUser)}</p>
           </div>
 
           <div className="profile-menu__divider" />

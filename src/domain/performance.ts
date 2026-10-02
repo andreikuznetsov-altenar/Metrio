@@ -18,6 +18,7 @@ export interface MetricCardData {
   tooltip?: string;
   contextLabel?: string;
   contextSemantic?: MetricContextSemantic;
+  contextCaption?: string;
 }
 
 export interface AttentionPerson {
@@ -35,7 +36,8 @@ export interface TrendCardData {
   value: string;
   sparkline?: number[];
   insufficientHistory?: boolean;
-  trendDirection?: TrendDirection;
+  /** Numeric movement (arrow), not favorable direction. */
+  trendMovementDirection?: TrendDirection;
   trendSemantic?: MetricContextSemantic;
 }
 
@@ -100,6 +102,7 @@ export interface PersonalAttentionItem {
   label: string;
   variant: BadgeVariant;
   reason: string;
+  issueKey?: string;
 }
 
 export interface WorkHistoryRow {

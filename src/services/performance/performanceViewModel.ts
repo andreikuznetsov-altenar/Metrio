@@ -17,6 +17,7 @@ import { buildWorkHistory } from "../../domain/personal/workHistory";
 import type {
   ActiveWorkItem,
   AttentionPerson,
+  DateRangeKey,
   DeliveryRiskRow,
   EmployeeMyWeekSnapshot,
   EmployeePerformanceSnapshot,
@@ -56,6 +57,7 @@ import {
 } from "../../domain/snapshots/sparklineSeries";
 import {
   buildTrendCardData,
+  formatAttentionHealthLabel,
   metricContextFromComparison,
 } from "../../pages/performance/trendPresentation";
 import type { KpiSnapshotFile } from "../../domain/snapshots/types";
@@ -130,6 +132,7 @@ export interface PerformanceViewModels {
 export function buildPerformanceViewModels(
   data: PerformanceFetchResult,
   selfPersonId: string,
+  dateRangeKey: DateRangeKey = "30d",
 ): PerformanceViewModels {
   const { teamSnapshot, historyTeamSnapshot, reportData, historyReportData, kpiSnapshots, partialWarnings } =
     data;
@@ -175,17 +178,17 @@ export function buildPerformanceViewModels(
     {
       label: "First pass",
       value: `${firstPassRate}%`,
-      ...metricContextFromComparison(firstPassTrend),
+      ...metricContextFromComparison(firstPassTrend, dateRangeKey),
     },
     {
       label: "Completed",
       value: String(teamKpi.completedCount),
-      ...metricContextFromComparison(completedTrend),
+      ...metricContextFromComparison(completedTrend, dateRangeKey),
     },
     {
       label: "Backflows",
       value: String(teamKpi.backflowCount),
-      ...metricContextFromComparison(backflowTrend),
+      ...metricContextFromComparison(backflowTrend, dateRangeKey),
     },
   ];
 
@@ -552,14 +555,18 @@ function buildPersonDetailSnapshot(
     completed: perf ? String(perf.completedCount) : "0",
     backflows: perf ? String(perf.backflowCount) : "0",
     attention: activeIssues
-      .map((issue) => classifyIssueAttention(issue, params, now))
-      .filter(Boolean)
-      .slice(0, 5)
-      .map((item) => ({
-        label: item!.health.status.replace(/_/g, " "),
-        variant: severityToBadge(item!.severity),
-        reason: item!.reason,
-      })),
+      .map((issue) => {
+        const item = classifyIssueAttention(issue, params, now);
+        if (!item) return null;
+        return {
+          label: formatAttentionHealthLabel(item.health.status),
+          variant: severityToBadge(item.severity),
+          reason: item.reason,
+          issueKey: issue.issueKey,
+        };
+      })
+      .filter((item): item is NonNullable<typeof item> => item != null)
+      .slice(0, 24),
     activeWork: activeIssues.slice(0, 10).map(issueToActiveWork),
     problematicWork,
     history: buildWorkHistory(historyPerson, historyParams, "month")

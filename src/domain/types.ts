@@ -15,6 +15,8 @@ export interface Team {
 
 export interface CurrentUser {
   person: Person;
+  /** Bamboo job title when available in production. */
+  jobTitle?: string;
   /** Present when the user manages direct reports (lead or director). */
   team?: Team;
 }

@@ -10,7 +10,7 @@ const NAV_ITEMS: { route: AppRoute; label: string }[] = [
 ];
 
 export interface MetrioAppHeaderProps {
-  activeRoute: AppRoute;
+  activeRoute: AppRoute | null;
   onNavigate: (route: AppRoute) => void;
   feedbackEnabled?: boolean;
   onOpenSettings?: () => void;
@@ -74,7 +74,8 @@ export function MetrioAppHeader({
       <div className="app-header__start">
         <nav className="app-header__nav" aria-label="Main">
           {navItems.map((item) => {
-            const active = item.route === activeRoute;
+            const active =
+              activeRoute != null && item.route === activeRoute;
             return (
               <button
                 key={item.route}

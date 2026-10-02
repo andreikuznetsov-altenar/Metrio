@@ -85,12 +85,13 @@ export function GoogleConnectionPanel({
           {mode === 'feedback' && (
             <>
               <p className="ds-feedback-connect__lead">
-                Connect Google to create and send feedback surveys.
+                Create and send team feedback surveys through your connected Google
+                account.
               </p>
               <p className="ds-feedback-connect__body">
                 {oauthMode
-                  ? 'Metrio connects to your Google account to create Forms, sync responses, and send survey emails.'
-                  : 'Metrio uses a private Google Apps Script companion to create Forms and send emails from your Google account.'}
+                  ? "Metrio connects to your Google account to create Forms, sync responses, and send survey emails."
+                  : "Metrio uses a private Google Apps Script companion to create Forms and send emails from your Google account."}
               </p>
             </>
           )}

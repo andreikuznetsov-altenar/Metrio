@@ -216,6 +216,15 @@
   color: var(--color-text-secondary);
   margin-top: auto;
   padding-top: var(--space-1);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-1);
+}
+
+.performance-metric-card__context-caption {
+  color: var(--color-text-tertiary);
+  font-size: 10px;
 }
 
 .performance-metric-card__context--positive {

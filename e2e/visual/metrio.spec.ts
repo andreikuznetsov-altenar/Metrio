@@ -103,11 +103,56 @@ test.describe("Metrio visual regression", () => {
     });
   });
 
-  test("settings", async ({ page }) => {
+  test("settings nav inactive while settings open", async ({ page }) => {
     await bootMetrio(page, "lead");
     await page.getByRole("button", { name: /^settings$/i }).click();
-    await expect(page.getByRole("heading", { name: /settings/i })).toBeVisible();
-    await expect(page).toHaveScreenshot("settings.png", {
+    await expect(page.getByRole("button", { name: /^performance$/i })).not.toHaveClass(
+      /is-active/,
+    );
+    await expect(page.getByRole("button", { name: /^feedback$/i })).not.toHaveClass(
+      /is-active/,
+    );
+    await expect(page).toHaveScreenshot("settings-nav-inactive.png", {
+      fullPage: true,
+      maxDiffPixelRatio: 0.02,
+    });
+  });
+
+  test("person drawer overview grouped", async ({ page }) => {
+    await bootMetrio(page, "lead");
+    await page.locator(".performance-attention-row").first().click();
+    await expect(page.locator(".drawer")).toBeVisible();
+    await expect(page).toHaveScreenshot("person-drawer-overview.png", {
+      fullPage: true,
+      maxDiffPixelRatio: 0.02,
+    });
+  });
+
+  test("person drawer work tab", async ({ page }) => {
+    await bootMetrio(page, "lead");
+    await page.locator(".performance-attention-row").first().click();
+    await page.locator(".drawer").getByRole("tab", { name: "Work" }).click();
+    await expect(page).toHaveScreenshot("person-drawer-work.png", {
+      fullPage: true,
+      maxDiffPixelRatio: 0.02,
+    });
+  });
+
+  test("person drawer history tab", async ({ page }) => {
+    await bootMetrio(page, "lead");
+    await page.locator(".performance-attention-row").first().click();
+    await page.locator(".drawer").getByRole("tab", { name: "History" }).click();
+    await expect(page).toHaveScreenshot("person-drawer-history.png", {
+      fullPage: true,
+      maxDiffPixelRatio: 0.02,
+    });
+  });
+
+  test("settings advanced", async ({ page }) => {
+    await bootMetrio(page, "lead");
+    await page.getByRole("button", { name: /^settings$/i }).click();
+    await page.getByRole("button", { name: /^advanced$/i }).click();
+    await expect(page).toHaveScreenshot("settings-advanced.png", {
       fullPage: true,
       maxDiffPixelRatio: 0.02,
     });
