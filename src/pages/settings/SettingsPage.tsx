@@ -385,7 +385,10 @@ export function SettingsPage({
 
       {section === "notifications" ? (
         <div className="settings-panel">
-          <p className="settings-intro">Choose which alerts Metrio may show.</p>
+          <p className="settings-intro">
+            Choose which notifications Metrio may send to macOS. In-app activity
+            history stays available in the Notification Center.
+          </p>
           <div className="settings-notification-list">
             {NOTIFICATION_ROWS.map((row) => (
               <div key={row.key} className="settings-notification-row">

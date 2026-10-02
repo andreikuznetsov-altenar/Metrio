@@ -34,6 +34,17 @@ export function TeamPerformanceOverview({
     registerTeamView(activeView);
   }, [activeView, registerTeamView]);
 
+  useEffect(() => {
+    const handler = (event: Event) => {
+      const tab = (event as CustomEvent<TeamPerformanceView>).detail;
+      if (tab) {
+        setActiveView(tab);
+      }
+    };
+    window.addEventListener("metrio-open-performance-tab", handler);
+    return () => window.removeEventListener("metrio-open-performance-tab", handler);
+  }, []);
+
   if (visualForceSkeleton || uiState === "initial-loading") {
     return (
       <div className="performance-dashboard" data-testid="performance-dashboard-skeleton">

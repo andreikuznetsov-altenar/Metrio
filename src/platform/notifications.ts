@@ -1,114 +1,131 @@
+import type { AppPreferences } from "./preferences";
+import type { Person } from "../domain/people/types";
+import type { ReportParams } from "../domain/jira/types";
+import { classifyTaskHealth } from "../domain/task-health/taskHealthEngine";
+import { getOperationalIssues } from "../domain/people/ownedIssues";
 import {
-  isPermissionGranted,
-  requestPermission,
-  sendNotification,
-} from '@tauri-apps/plugin-notification';
-import type { AppPreferences } from './preferences';
-import type { Person } from '../domain/people/types';
-import type { ReportParams } from '../domain/jira/types';
-import { classifyTaskHealth } from '../domain/task-health/taskHealthEngine';
-import { getOperationalIssues } from '../domain/people/ownedIssues';
-import { recordNotificationEvent } from './notificationEvents';
+  recordNotificationEvent,
+  type RecordNotificationEventInput,
+} from "./notificationEvents";
+import type { NotificationEventType } from "./notificationTypes";
+import {
+  dispatchNativeNotification,
+  type NativeNotificationDescriptor,
+} from "./notificationNativeDispatch";
 
-async function ensurePermission(): Promise<boolean> {
-  let granted = await isPermissionGranted();
-  if (!granted) {
-    const perm = await requestPermission();
-    granted = perm === 'granted';
-  }
-  return granted;
+export interface NotificationTransitionDescriptor
+  extends RecordNotificationEventInput {
+  native?: NativeNotificationDescriptor;
+  toggleKey?: keyof AppPreferences["notifications"];
 }
 
-function recordInAppEvent(
-  input: Parameters<typeof recordNotificationEvent>[0],
-): void {
-  recordNotificationEvent(input);
+function workloadTransition(
+  person: Person,
+  prevLevel: string | undefined,
+  nextLevel: string,
+): NotificationTransitionDescriptor | null {
+  if (prevLevel === nextLevel) return null;
+  if (nextLevel !== "high" && nextLevel !== "overloaded") return null;
+  if (!prevLevel) return null;
+
+  const title = "Workload changed";
+  const message = `${person.bamboo.displayName} is ${nextLevel}`;
+  return {
+    type: "workload_change",
+    title,
+    message,
+    personId: person.id,
+    personName: person.bamboo.displayName,
+    target: { kind: "person", personId: person.id },
+    dedupeKey: `workload:${person.id}:${nextLevel}`,
+    toggleKey: "workloadAlerts",
+    native: { title, body: message },
+  };
 }
 
-export async function processNotificationTransitions(
+export function collectPersonNotificationTransitions(
   persons: Person[],
   prefs: AppPreferences,
   params?: ReportParams,
-  onNavigate?: (path: string) => void,
-): Promise<AppPreferences> {
-  if (!(await ensurePermission())) return prefs;
-
-  const state = { ...prefs.notificationState };
-  const toggles = prefs.notifications;
+): { descriptors: NotificationTransitionDescriptor[]; nextState: AppPreferences["notificationState"] } {
+  const state = {
+    workloadLevels: { ...prefs.notificationState.workloadLevels },
+    vacationNotified: { ...prefs.notificationState.vacationNotified },
+    problematicCounts: { ...prefs.notificationState.problematicCounts },
+    integrationHealth: {
+      ...prefs.notificationState.integrationHealth,
+    },
+  };
+  const descriptors: NotificationTransitionDescriptor[] = [];
 
   for (const person of persons) {
     const key = person.id;
-    const workloadLevel = person.workload?.level || 'normal';
+    const workloadLevel = person.workload?.level || "normal";
     const prevWorkload = state.workloadLevels[key];
 
-    if (
-      toggles.workloadAlerts &&
-      prevWorkload &&
-      prevWorkload !== workloadLevel &&
-      (workloadLevel === 'high' || workloadLevel === 'overloaded')
-    ) {
-      const title = 'Workload change';
-      const body = `${person.bamboo.displayName}: ${workloadLevel} workload`;
-      await sendNotification({ title, body });
-      recordInAppEvent({
-        type: 'workload_change',
-        title,
-        message: body,
-        personId: person.id,
-        navigationTarget: `person:${person.id}`,
-        dedupeKey: `workload:${key}:${workloadLevel}`,
-      });
+    const workloadEvent = workloadTransition(person, prevWorkload, workloadLevel);
+    if (workloadEvent) {
+      descriptors.push(workloadEvent);
     }
     state.workloadLevels[key] = workloadLevel;
 
     const availKey = `${key}:${person.availability.state}`;
-    if (toggles.vacationStarts && person.availability.state === 'on_vacation') {
+
+    if (person.availability.state === "on_vacation") {
       if (state.vacationNotified[key] !== availKey) {
-        const title = 'Team member on vacation';
-        const body = `${person.bamboo.displayName} · ${person.availability.label}`;
-        await sendNotification({ title, body });
-        recordInAppEvent({
-          type: 'upcoming_time_off',
+        const title = "Vacation started";
+        const message = `${person.bamboo.displayName} · ${person.availability.label}`;
+        descriptors.push({
+          type: "vacation_upcoming",
           title,
-          message: body,
+          message,
           personId: person.id,
+          personName: person.bamboo.displayName,
+          target: { kind: "person", personId: person.id },
           dedupeKey: `vacation-start:${availKey}`,
+          toggleKey: "vacationStarts",
+          native: { title, body: message },
         });
         state.vacationNotified[key] = availKey;
       }
     }
 
-    if (toggles.returns && person.availability.state === 'returns_today') {
-      if (state.vacationNotified[key] !== 'returns_today') {
-        const title = 'Team member returns';
-        const body = `${person.bamboo.displayName} returns today`;
-        await sendNotification({ title, body });
-        recordInAppEvent({
-          type: 'returns',
+    if (person.availability.state === "returns_today") {
+      if (state.vacationNotified[key] !== "returns_today") {
+        const title = "Return from time off";
+        const message = `${person.bamboo.displayName} returns today`;
+        descriptors.push({
+          type: "vacation_return",
           title,
-          message: body,
+          message,
           personId: person.id,
-          dedupeKey: `returns:${key}:${person.availability.returnDate || 'today'}`,
+          personName: person.bamboo.displayName,
+          target: { kind: "person", personId: person.id },
+          dedupeKey: `returns:${key}:${person.availability.returnDate || "today"}`,
+          toggleKey: "returns",
+          native: { title, body: message },
         });
-        state.vacationNotified[key] = 'returns_today';
+        state.vacationNotified[key] = "returns_today";
       }
     }
 
     if (
-      toggles.vacationReminder &&
-      (person.availability.state === 'vacation_soon' ||
-        person.availability.state === 'vacation_tomorrow')
+      person.availability.state === "vacation_soon" ||
+      person.availability.state === "vacation_tomorrow"
     ) {
       if (state.vacationNotified[key] !== availKey) {
-        const title = 'Upcoming time off';
-        const body = `${person.bamboo.displayName} · ${person.availability.label}`;
-        await sendNotification({ title, body });
-        recordInAppEvent({
-          type: 'upcoming_time_off',
+        const title = "Vacation starting soon";
+        const message = `${person.bamboo.displayName} · ${person.availability.label}`;
+        descriptors.push({
+          type: "vacation_reminder",
           title,
-          message: body,
+          message,
           personId: person.id,
+          personName: person.bamboo.displayName,
+          target: { kind: "person", personId: person.id },
           dedupeKey: `vacation-reminder:${availKey}`,
+          toggleKey: "vacationReminder",
+          native: { title, body: message },
         });
         state.vacationNotified[key] = availKey;
       }
@@ -116,45 +133,91 @@ export async function processNotificationTransitions(
 
     const problematic = person.workload?.problematicCount || 0;
     const prevProb = state.problematicCounts[key] || 0;
-    if (toggles.problematicTaskAlerts && problematic > prevProb) {
-      const title = 'Problematic task';
-      const body = `${person.bamboo.displayName}: ${problematic} problematic task${problematic === 1 ? '' : 's'}`;
-      await sendNotification({ title, body });
-      recordInAppEvent({
-        type: 'problematic_task',
+    if (problematic > prevProb) {
+      const title = "Problematic tasks";
+      const message = `${person.bamboo.displayName}: ${problematic} problematic task${problematic === 1 ? "" : "s"}`;
+      descriptors.push({
+        type: "task_attention",
         title,
-        message: body,
+        message,
         personId: person.id,
-        navigationTarget: `person:${person.id}`,
+        personName: person.bamboo.displayName,
+        target: { kind: "person", personId: person.id },
         dedupeKey: `problematic:${key}:${problematic}`,
+        toggleKey: "problematicTaskAlerts",
+        native: { title, body: message },
       });
-      onNavigate?.(`/person/${encodeURIComponent(person.jira?.canonicalKey || person.bamboo.workEmail)}`);
     }
     state.problematicCounts[key] = problematic;
 
-    if (params && toggles.problematicTaskAlerts) {
+    if (params) {
       for (const issue of getOperationalIssues(person)) {
         const health = classifyTaskHealth({ issue, params });
-        const issueKey = `${key}:${issue.issueKey}`;
-        const prevHealth = state.workloadLevels[issueKey];
-        if (prevHealth !== health.status && health.status === 'problematic') {
-          const title = 'Task needs attention';
-          const body = `${issue.issueKey} became problematic`;
-          await sendNotification({ title, body });
-          recordInAppEvent({
-            type: 'task_attention',
+        const issueStateKey = `${key}:${issue.issueKey}`;
+        const prevHealth = state.workloadLevels[issueStateKey];
+        if (prevHealth !== health.status && health.status === "problematic") {
+          const title = "Task needs attention";
+          const message = `${issue.issueKey} · ${person.bamboo.displayName}`;
+          descriptors.push({
+            type: "task_attention",
             title,
-            message: `${issue.issueKey} · ${person.bamboo.displayName}`,
+            message,
             personId: person.id,
+            personName: person.bamboo.displayName,
             issueKey: issue.issueKey,
-            navigationTarget: `person:${person.id}`,
-            dedupeKey: `task-attention:${issueKey}:problematic`,
+            target: { kind: "jira", issueKey: issue.issueKey },
+            dedupeKey: `task-attention:${issueStateKey}:problematic`,
+            toggleKey: "problematicTaskAlerts",
+            native: {
+              title,
+              body: `${issue.issueKey} became problematic`,
+            },
           });
         }
-        state.workloadLevels[issueKey] = health.status;
+        state.workloadLevels[issueStateKey] = health.status;
       }
     }
   }
 
-  return { ...prefs, notificationState: state };
+  return { descriptors, nextState: state };
+}
+
+export async function processNotificationTransitions(
+  persons: Person[],
+  prefs: AppPreferences,
+  params?: ReportParams,
+): Promise<AppPreferences> {
+  const { descriptors, nextState } = collectPersonNotificationTransitions(
+    persons,
+    prefs,
+    params,
+  );
+
+  for (const descriptor of descriptors) {
+    recordNotificationEvent(descriptor);
+    if (descriptor.native && descriptor.toggleKey && prefs.notifications[descriptor.toggleKey]) {
+      await dispatchNativeNotification(descriptor.native);
+    }
+  }
+
+  return { ...prefs, notificationState: nextState };
+}
+
+export function nativeToggleForType(
+  type: NotificationEventType,
+): keyof AppPreferences["notifications"] | null {
+  switch (type) {
+    case "workload_change":
+      return "workloadAlerts";
+    case "vacation_upcoming":
+      return "vacationStarts";
+    case "vacation_reminder":
+      return "vacationReminder";
+    case "vacation_return":
+      return "returns";
+    case "task_attention":
+      return "problematicTaskAlerts";
+    default:
+      return null;
+  }
 }

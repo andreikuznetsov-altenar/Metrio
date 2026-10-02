@@ -1,5 +1,6 @@
 import { updateTrayFromSnapshot } from "../../platform/tray";
 import { processNotificationTransitions } from "../../platform/notifications";
+import { processIntegrationNotificationTransitions } from "../../platform/integrationNotificationTransitions";
 import { loadPreferences, savePreferences } from "../../platform/preferences";
 import type { TeamSnapshot } from "../../domain/people/types";
 import type { PerformanceFetchResult } from "./performanceTypes";
@@ -62,6 +63,11 @@ export async function applyPerformanceRefreshSideEffects(
     // Notification plugin unavailable (web dev).
   }
 
+  nextPrefs = processIntegrationNotificationTransitions(nextPrefs, {
+    jiraStale: false,
+    bambooStale: false,
+  });
+
   await savePreferences({
     ...nextPrefs,
     sync: {
@@ -79,12 +85,17 @@ export async function markPerformanceIntegrationsStale(
   partial: { jira?: boolean; bamboo?: boolean } = { jira: true, bamboo: true },
 ): Promise<void> {
   const prefs = await loadPreferences();
-  await savePreferences({
+  const withStale = {
     ...prefs,
     sync: {
       ...prefs.sync,
       jiraStale: partial.jira ? true : prefs.sync.jiraStale,
       bambooStale: partial.bamboo ? true : prefs.sync.bambooStale,
     },
+  };
+  const nextPrefs = processIntegrationNotificationTransitions(withStale, {
+    jiraStale: withStale.sync.jiraStale,
+    bambooStale: withStale.sync.bambooStale,
   });
+  await savePreferences(nextPrefs);
 }
