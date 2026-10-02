@@ -197,6 +197,13 @@ function buildPeopleRows(
           ? "High"
           : "Watch"
         : "Clear",
+      attentionSeverityLabel: attentionItem
+        ? attentionItem.severity === "critical"
+          ? "High"
+          : "Medium"
+        : "Stable",
+      attentionIssueKey: attentionItem?.issueKeys[0],
+      attentionReason: attentionItem?.reason ?? "—",
       attentionVariant: attentionItem
         ? attentionItem.severity === "critical"
           ? "danger"

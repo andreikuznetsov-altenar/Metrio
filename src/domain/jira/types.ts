@@ -70,6 +70,10 @@ export interface AuditIssue {
   events: IssueEvent[];
   rangeEvents: IssueEvent[];
   currentStatus?: string;
+  /** Canonical team member key for current Jira assignee (fields.assignee). */
+  currentAssigneeCanonical?: string;
+  currentAssigneeAccountId?: string;
+  currentAssigneeDisplayName?: string;
 }
 
 export interface KpiData {

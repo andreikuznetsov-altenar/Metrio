@@ -17,6 +17,7 @@ import {
 } from "../domain/snapshots/snapshotEngine";
 import type { KpiSnapshotFile } from "../domain/snapshots/types";
 import { testKpi, testWorkload } from "../domain/testFixtures";
+import { filterOwnedIssues } from "../domain/people/ownedIssues";
 import { getPerson } from "./people";
 import type { PerformanceFetchResult } from "../services/performance/performanceTypes";
 
@@ -42,6 +43,7 @@ function activeIssue(
   key: string,
   summary: string,
   status = "In Progress",
+  ownerCanonical?: string,
 ): AuditIssue {
   return {
     issueKey: key,
@@ -59,6 +61,7 @@ function activeIssue(
     events: [],
     rangeEvents: [],
     currentStatus: status,
+    ...(ownerCanonical ? { currentAssigneeCanonical: ownerCanonical } : {}),
   };
 }
 
@@ -73,6 +76,12 @@ function visualPerson(
   } = {},
 ): Person {
   const fixture = getPerson(fixtureId);
+  const canonical = `jira-${fixtureId}`;
+  const issues = (options.issues ?? []).map((issue) => ({
+    ...issue,
+    currentAssigneeCanonical:
+      issue.currentAssigneeCanonical ?? canonical,
+  }));
   return {
     id: fixtureId,
     bamboo: {
@@ -109,7 +118,8 @@ function visualPerson(
         backflowCount: 1,
         avgProgressToReviewMs: 2.5 * 24 * 60 * 60 * 1000,
       }),
-    issues: options.issues ?? [],
+    issues,
+    ownedIssues: filterOwnedIssues(issues, canonical),
   };
 }
 
@@ -126,7 +136,14 @@ function buildTeamPersons(): Person[] {
     }),
     visualPerson("person-alex", {
       jobTitle: "Product Designer",
-      issues: [activeIssue("UX-401", "Component audit", "In Progress")],
+      issues: [
+        activeIssue(
+          "UX-401",
+          "Component audit",
+          "In Progress",
+          "jira-person-alex",
+        ),
+      ],
     }),
     visualPerson("person-01", {
       workload: testWorkload({
@@ -136,14 +153,41 @@ function buildTeamPersons(): Person[] {
         problematicCount: 1,
       }),
       issues: [
-        activeIssue("UX-2962", "Checkout flow regression", "In Progress"),
-        activeIssue("UX-5203", "Mobile nav polish", "In Review"),
+        activeIssue(
+          "UX-2962",
+          "Checkout flow regression",
+          "In Progress",
+          "jira-person-01",
+        ),
+        activeIssue(
+          "UX-5203",
+          "Mobile nav polish",
+          "In Review",
+          "jira-person-01",
+        ),
       ],
     }),
     visualPerson("person-02", {
       issues: [
-        activeIssue("UX-1201", "Settings IA refresh", "On Hold"),
-        activeIssue("MET-204", "Payment gateway timeout handling", "Blocked"),
+        activeIssue(
+          "UX-1201",
+          "Settings IA refresh",
+          "On Hold",
+          "jira-person-02",
+        ),
+        activeIssue(
+          "MET-204",
+          "Payment gateway timeout handling",
+          "Blocked",
+          "jira-person-02",
+        ),
+        // Historical attribution only — current owner is person-01
+        activeIssue(
+          "UX-2962",
+          "Checkout flow regression",
+          "In Progress",
+          "jira-person-01",
+        ),
       ],
     }),
     visualPerson("person-03"),

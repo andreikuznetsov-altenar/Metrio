@@ -55,9 +55,23 @@ export function TeamPeopleView({ rows, onOpenPerson }: TeamPeopleViewProps) {
                   <Badge variant="neutral">{row.availability}</Badge>
                 </td>
                 <td>
-                  <Badge variant={row.attentionVariant}>
-                    {row.attentionState}
-                  </Badge>
+                  {row.attentionSeverityLabel === "Stable" ? (
+                    <Badge variant="success">Stable</Badge>
+                  ) : (
+                    <div className="performance-people-attention">
+                      <Badge variant={row.attentionVariant}>
+                        {row.attentionSeverityLabel}
+                      </Badge>
+                      {row.attentionIssueKey ? (
+                        <span className="performance-people-attention__key">
+                          {row.attentionIssueKey}
+                        </span>
+                      ) : null}
+                      <span className="performance-people-attention__reason">
+                        {row.attentionReason}
+                      </span>
+                    </div>
+                  )}
                 </td>
               </tr>
             ))}

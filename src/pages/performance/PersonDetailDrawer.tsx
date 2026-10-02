@@ -4,7 +4,7 @@ import { Drawer } from "../../components/Drawer/Drawer";
 import { Tabs } from "../../components/Tabs/Tabs";
 import { usePerformanceData } from "../../app/PerformanceDataContext";
 import { personInitials } from "../../domain/types";
-import { groupAttentionSignals } from "./groupAttentionSignals";
+import { groupAttentionSignals, hiddenAttentionKeyCount } from "./groupAttentionSignals";
 import "./person-detail-drawer.css";
 import "./performance-dashboard.css";
 
@@ -110,11 +110,11 @@ export function PersonDetailDrawer({
             ) : (
               <div className="performance-work-list">
                 {groupedAttention.map((group) => {
-                  const extraKeys = Math.max(
-                    0,
-                    group.taskCount - group.issueKeys.length,
-                  );
                   const visibleKeys = group.issueKeys.slice(0, 2);
+                  const extraKeys = hiddenAttentionKeyCount(
+                    group.taskCount,
+                    visibleKeys,
+                  );
                   return (
                     <div
                       key={`${group.label}-${group.reason}`}

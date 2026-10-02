@@ -1,5 +1,6 @@
 import type { Person } from './types';
 import type { ReportParams } from '../jira/types';
+import { getOperationalIssues } from './ownedIssues';
 import { countActiveIssues } from '../workload/workloadEngine';
 import { classifyTaskHealth } from '../task-health/taskHealthEngine';
 import { formatDuration } from '../jira/dates';
@@ -16,19 +17,19 @@ export function firstPassPercent(person: Person): number {
 
 export function personActiveCount(person: Person, params: ReportParams | null): number {
   if (!params) return person.workload?.activeCount ?? 0;
-  return countActiveIssues(person.issues, params);
+  return countActiveIssues(getOperationalIssues(person), params);
 }
 
 export function personProblematicCount(person: Person, params: ReportParams | null): number {
   if (!params) return person.workload?.problematicCount ?? 0;
-  return person.issues.filter(
+  return getOperationalIssues(person).filter(
     (i) => classifyTaskHealth({ issue: i, params }).status === 'problematic',
   ).length;
 }
 
 export function personAtRiskCount(person: Person, params: ReportParams | null): number {
   if (!params) return person.workload?.atRiskCount ?? 0;
-  return person.issues.filter(
+  return getOperationalIssues(person).filter(
     (i) => classifyTaskHealth({ issue: i, params }).status === 'at_risk',
   ).length;
 }

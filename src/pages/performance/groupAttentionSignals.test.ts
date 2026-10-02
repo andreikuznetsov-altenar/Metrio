@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { groupAttentionSignals } from "./groupAttentionSignals";
+import {
+  groupAttentionSignals,
+  hiddenAttentionKeyCount,
+} from "./groupAttentionSignals";
 
 describe("groupAttentionSignals", () => {
   it("groups identical reasons and counts tasks", () => {
@@ -20,5 +23,10 @@ describe("groupAttentionSignals", () => {
     expect(grouped).toHaveLength(1);
     expect(grouped[0].taskCount).toBe(2);
     expect(grouped[0].issueKeys).toEqual(["UX-1", "UX-2"]);
+  });
+
+  it("hiddenAttentionKeyCount uses visible slice length", () => {
+    const visible = ["UX-2962", "UX-5243"];
+    expect(hiddenAttentionKeyCount(12, visible)).toBe(10);
   });
 });

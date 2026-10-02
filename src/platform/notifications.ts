@@ -7,6 +7,7 @@ import type { AppPreferences } from './preferences';
 import type { Person } from '../domain/people/types';
 import type { ReportParams } from '../domain/jira/types';
 import { classifyTaskHealth } from '../domain/task-health/taskHealthEngine';
+import { getOperationalIssues } from '../domain/people/ownedIssues';
 
 async function ensurePermission(): Promise<boolean> {
   let granted = await isPermissionGranted();
@@ -93,7 +94,7 @@ export async function processNotificationTransitions(
     state.problematicCounts[key] = problematic;
 
     if (params && toggles.problematicTaskAlerts) {
-      for (const issue of person.issues) {
+      for (const issue of getOperationalIssues(person)) {
         const health = classifyTaskHealth({ issue, params });
         const issueKey = `${key}:${issue.issueKey}`;
         const prevHealth = state.workloadLevels[issueKey];

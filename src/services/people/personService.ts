@@ -8,6 +8,7 @@ import type { TeamUser } from '../../domain/jira/types';
 // TeamUser used for identity resolution
 import { calculateWorkload } from '../../domain/workload/workloadEngine';
 import { classifyTaskHealth } from '../../domain/task-health/taskHealthEngine';
+import { filterOwnedIssues } from '../../domain/people/ownedIssues';
 import type { WorkloadThresholds } from '../../domain/workload/workloadEngine';
 
 function collectScopeEmployees(org: OrgResolutionResult): ResolvedEmployee[] {
@@ -36,6 +37,7 @@ export function buildTeamSnapshot(
     const canonicalKey = jira?.canonicalKey || employee.workEmail || employee.id;
     const block = reportData?.grouped[canonicalKey];
     const issues = block?.issues || [];
+    const ownedIssues = filterOwnedIssues(issues, jira?.canonicalKey || undefined);
     const params = reportData?.params;
 
     const timeOff = pickRelevantTimeOff(timeOffEntries, employee.id);
@@ -43,8 +45,8 @@ export function buildTeamSnapshot(
 
     const performance = reportData?.perUserKpi[canonicalKey] || null;
     const workload =
-      params && issues.length
-        ? calculateWorkload(issues, params, workloadThresholds, availability)
+      params
+        ? calculateWorkload(ownedIssues, params, workloadThresholds, availability)
         : null;
 
     return {
@@ -56,6 +58,7 @@ export function buildTeamSnapshot(
       workload,
       performance,
       issues,
+      ownedIssues,
     };
   });
 
@@ -74,7 +77,7 @@ export function buildTeamSnapshot(
       if (!reportData?.params) return sum;
       return (
         sum +
-        p.issues.filter(
+        p.ownedIssues.filter(
           (i) => classifyTaskHealth({ issue: i, params: reportData.params }).status === 'problematic',
         ).length
       );

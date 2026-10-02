@@ -9,6 +9,7 @@ import type { AuditReportData } from "../../domain/jira/types";
 import { EMPTY_KPI_SNAPSHOT_FILE } from "../../domain/snapshots/snapshotEngine";
 import { testKpi, testWorkload } from "../../domain/testFixtures";
 import type { AuditIssue } from "../../domain/jira/types";
+import { filterOwnedIssues } from "../../domain/people/ownedIssues";
 
 const params: AuditReportData["params"] = {
   dateFrom: "2026-01-01",
@@ -23,6 +24,12 @@ function bambooPerson(
   displayName: string,
   issues: AuditIssue[] = [],
 ): Person {
+  const canonical = `jira-${id}`;
+  const normalizedIssues = issues.map((issue) => ({
+    ...issue,
+    currentAssigneeCanonical:
+      issue.currentAssigneeCanonical ?? canonical,
+  }));
   return {
     id,
     bamboo: {
@@ -49,11 +56,17 @@ function bambooPerson(
       backflowCount: 0,
       firstPassAcceptedCount: 4,
     }),
-    issues,
+    issues: normalizedIssues,
+    ownedIssues: filterOwnedIssues(normalizedIssues, canonical),
   };
 }
 
-function activeIssue(key: string, summary: string, status = "In Progress"): AuditIssue {
+function activeIssue(
+  key: string,
+  summary: string,
+  status = "In Progress",
+  ownerCanonical?: string,
+): AuditIssue {
   return {
     issueKey: key,
     issueSummary: summary,
@@ -70,6 +83,7 @@ function activeIssue(key: string, summary: string, status = "In Progress"): Audi
     events: [],
     rangeEvents: [],
     currentStatus: status,
+    ...(ownerCanonical ? { currentAssigneeCanonical: ownerCanonical } : {}),
   };
 }
 

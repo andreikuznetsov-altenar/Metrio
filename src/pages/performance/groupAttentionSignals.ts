@@ -39,3 +39,11 @@ export function groupAttentionSignals(
 
   return [...groups.values()];
 }
+
+/** Hidden "+N more" count for drawer attention keys row (relative to visible keys). */
+export function hiddenAttentionKeyCount(
+  taskCount: number,
+  visibleKeys: string[],
+): number {
+  return Math.max(0, taskCount - visibleKeys.length);
+}

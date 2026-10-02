@@ -136,6 +136,10 @@
   flex-wrap: wrap;
 }
 
+.performance-attention-group__head .badge {
+  white-space: nowrap;
+}
+
 .performance-attention-group__count {
   font-size: 11px;
   color: var(--color-text-tertiary);

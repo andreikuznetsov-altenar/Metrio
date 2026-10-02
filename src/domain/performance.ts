@@ -171,8 +171,12 @@ export interface TeamPeopleRow {
   efficiency: string;
   workload: string;
   availability: string;
+  /** @deprecated use attentionSeverityLabel + attentionIssueKey + attentionReason */
   attentionState: string;
   attentionVariant: BadgeVariant;
+  attentionSeverityLabel: string;
+  attentionIssueKey?: string;
+  attentionReason: string;
 }
 
 export interface TeamRadarRow {

@@ -8,6 +8,7 @@ import {
   type TaskHealthResult,
 } from '../task-health/taskHealthEngine';
 import type { Person } from '../people/types';
+import { getOperationalIssues } from '../people/ownedIssues';
 import type { RadarSeverity } from './types';
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
@@ -40,7 +41,7 @@ export function formatStageAgeLabel(issue: AuditIssue, now: Date): string {
 }
 
 export function getActiveIssues(person: Person, params?: ReportParams): AuditIssue[] {
-  return person.issues.filter((issue) => {
+  return getOperationalIssues(person).filter((issue) => {
     const status = (issue.currentStatus || '').trim();
     if (!status) return false;
     if (params) {

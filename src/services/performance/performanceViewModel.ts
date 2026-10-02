@@ -40,6 +40,10 @@ import { buildDeliveryRiskItems } from "../../domain/radar/deliveryRisk";
 import { buildTeamRadar } from "../../domain/radar/teamRadar";
 import type { RadarSeverity } from "../../domain/radar/types";
 import {
+  classifyIssueAttention,
+  getActiveIssues,
+} from "../../domain/radar/taskSignals";
+import {
   compareTrendPeriods,
   compareWeightedAvgCycleTrend,
   compareWeightedFirstPassTrend,
@@ -64,7 +68,7 @@ import type { KpiSnapshotFile } from "../../domain/snapshots/types";
 import { buildWorkloadBalance } from "../../domain/workload/workloadBalance";
 import { personRouteKey } from "../../domain/people/personDisplay";
 import type { PerformanceFetchResult } from "./performanceTypes";
-import { getActiveIssues, classifyIssueAttention } from "../../domain/radar/taskSignals";
+import { getOperationalIssues } from "../../domain/people/ownedIssues";
 function efficiencyStatusVariant(score: number): BadgeVariant {
   const status = getEfficiencyStatus(score);
   if (status === "Excellent" || status === "Healthy") return "success";
@@ -98,6 +102,12 @@ function mapAttentionPerson(
     issueKeys: item.relatedIssueKeys.slice(0, 2),
     issueCount: item.relatedIssueKeys.length || item.signalCount,
   };
+}
+
+function radarSeverityLabel(severity: RadarSeverity): string {
+  if (severity === "critical") return "High";
+  if (severity === "warning") return "Medium";
+  return "Low";
 }
 
 function severityToBadge(severity: RadarSeverity): BadgeVariant {
@@ -280,8 +290,16 @@ export function buildPerformanceViewModels(
 
   const people: TeamPeopleRow[] = teamSnapshot.persons.map((person) => {
     const radarItem = radar.find((item) => item.personId === person.id);
-    const attentionState = radarItem
-      ? radarItem.signals[0]?.label || "Needs attention"
+    const primary = radarItem?.signals[0];
+    const attentionIssueKey = primary?.issueKey;
+    const attentionReason = primary
+      ? attentionReasonFromSignal(primary.label)
+      : "No attention signals";
+    const attentionSeverityLabel = radarItem
+      ? radarSeverityLabel(radarItem.severity)
+      : "Stable";
+    const attentionState = primary
+      ? `${primary.issueKey ? `${primary.issueKey} — ` : ""}${attentionReasonFromSignal(primary.label)}`
       : "Stable";
     return {
       personId: person.id,
@@ -293,6 +311,9 @@ export function buildPerformanceViewModels(
       workload: formatWorkloadLabel(person.workload?.level),
       availability: person.availability.label,
       attentionState,
+      attentionSeverityLabel,
+      attentionIssueKey,
+      attentionReason: radarItem ? attentionReason : "—",
       attentionVariant: radarItem
         ? severityToBadge(radarItem.severity)
         : "success",
@@ -537,7 +558,7 @@ function buildPersonDetailSnapshot(
   const perf = person.performance;
   const activeIssues = getActiveIssues(person, params);
   const now = new Date();
-  const problematicWork = person.issues
+  const problematicWork = getOperationalIssues(person)
     .filter(
       (issue) =>
         classifyTaskHealth({ issue, params, now }).status === "problematic",

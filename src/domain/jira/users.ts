@@ -34,6 +34,35 @@ export function getCanonicalTeamMember(
   return teamIdentityIndex.identifierToCanonical[normalizeTeamIdentity(value)] || '';
 }
 
+export function resolveCurrentAssigneeFromFields(
+  assignee: {
+    accountId?: string;
+    emailAddress?: string;
+    displayName?: string;
+  } | null,
+  teamIdentityIndex: TeamIdentityIndex,
+): Pick<
+  import('./types').AuditIssue,
+  'currentAssigneeCanonical' | 'currentAssigneeAccountId' | 'currentAssigneeDisplayName'
+> {
+  if (!assignee) {
+    return {};
+  }
+  const candidates = [assignee.accountId, assignee.emailAddress, assignee.displayName];
+  for (const candidate of candidates) {
+    if (!candidate) continue;
+    const canonical = getCanonicalTeamMember(candidate, teamIdentityIndex);
+    if (canonical) {
+      return {
+        currentAssigneeCanonical: canonical,
+        currentAssigneeAccountId: assignee.accountId,
+        currentAssigneeDisplayName: assignee.displayName,
+      };
+    }
+  }
+  return {};
+}
+
 export function findMatchingTeamMembersForIssue(
   assignee: { accountId?: string; emailAddress?: string; displayName?: string } | null,
   events: Array<{ eventType: string; fromValue?: string; toValue?: string }>,

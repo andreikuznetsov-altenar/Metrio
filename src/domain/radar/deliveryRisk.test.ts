@@ -11,7 +11,7 @@ const params: ReportParams = {
   projects: [],
 };
 
-function issue(key: string, status: string) {
+function issue(key: string, status: string, ownerCanonical = '1') {
   return {
     issueKey: key,
     issueSummary: 'Summary',
@@ -28,6 +28,7 @@ function issue(key: string, status: string) {
     events: [],
     rangeEvents: [],
     currentStatus: status,
+    currentAssigneeCanonical: ownerCanonical,
   };
 }
 
@@ -54,6 +55,7 @@ describe('buildDeliveryRiskItems', () => {
           workload: null,
           performance: null,
           issues: [issue('PROJ-1', 'On Hold')],
+          ownedIssues: [issue('PROJ-1', 'On Hold')],
         },
       ],
     };

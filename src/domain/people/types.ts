@@ -39,7 +39,10 @@ export interface Person {
   availability: PersonAvailability;
   workload: WorkloadResult | null;
   performance: KpiData | null;
+  /** Historically attributed issues for KPI / work history. */
   issues: AuditIssue[];
+  /** Subset currently assigned to this person in Jira. */
+  ownedIssues: AuditIssue[];
 }
 
 export interface TeamSnapshot {

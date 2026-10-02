@@ -57,10 +57,29 @@ export function buildDeliveryRiskItems(
     }
   }
 
-  return items.sort((a, b) => {
-    const order = { critical: 0, warning: 1, info: 2 };
+  return dedupeDeliveryRiskByIssueKey(items);
+}
+
+function dedupeDeliveryRiskByIssueKey(items: DeliveryRiskItem[]): DeliveryRiskItem[] {
+  const order = { critical: 0, warning: 1, info: 2 };
+  const byKey = new Map<string, DeliveryRiskItem>();
+  for (const item of items) {
+    const existing = byKey.get(item.issueKey);
+    if (!existing || order[item.severity] < order[existing.severity]) {
+      byKey.set(item.issueKey, item);
+    }
+  }
+  return [...byKey.values()].sort((a, b) => {
     const diff = order[a.severity] - order[b.severity];
     if (diff !== 0) return diff;
     return a.issueKey.localeCompare(b.issueKey);
   });
+}
+
+export function buildDeliveryRiskItemsDeduped(
+  snapshot: TeamSnapshot,
+  params: ReportParams,
+  now = new Date(),
+): DeliveryRiskItem[] {
+  return buildDeliveryRiskItems(snapshot, params, now);
 }

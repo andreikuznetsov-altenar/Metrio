@@ -5,6 +5,7 @@ import { JIRA_CONFIG } from './config';
 import {
   buildTeamIdentityIndex,
   findMatchingTeamMembersForIssue,
+  resolveCurrentAssigneeFromFields,
 } from './users';
 import type {
   AuditIssue,
@@ -287,6 +288,8 @@ export async function buildEnhancedJiraAuditReport(
     const matchedUsers = findMatchingTeamMembersForIssue(assignee, fullEvents, teamIdentityIndex);
     if (!matchedUsers.length) continue;
 
+    const currentAssignee = resolveCurrentAssigneeFromFields(assignee, teamIdentityIndex);
+
     const statusEventsInRange = rangeEvents.filter((e) => e.eventType === 'Status');
     totalTransitions += statusEventsInRange.length;
 
@@ -309,6 +312,7 @@ export async function buildEnhancedJiraAuditReport(
         events: fullEvents,
         rangeEvents,
         currentStatus,
+        ...currentAssignee,
       });
 
       statusEventsInRange.forEach((e) => {
