@@ -1,0 +1,140 @@
+export type NotificationEventType =
+  | "task_attention"
+  | "workload_change"
+  | "vacation_upcoming"
+  | "vacation_reminder"
+  | "vacation_return"
+  | "availability_change"
+  | "integration_problem";
+
+export type NotificationTarget =
+  | { kind: "person"; personId: string }
+  | { kind: "jira"; issueKey: string }
+  | { kind: "settings"; section: "connections" }
+  | { kind: "performance"; tab: "radar" | "people" | "delivery-risk" | "overview" };
+
+export type NotificationSeverity = "info" | "warning" | "danger" | "success";
+
+export interface NotificationEvent {
+  id: string;
+  type: NotificationEventType;
+  createdAt: string;
+  readAt?: string;
+  title: string;
+  message: string;
+  personId?: string;
+  personName?: string;
+  issueKey?: string;
+  issueTitle?: string;
+  severity?: NotificationSeverity;
+  target?: NotificationTarget;
+  dedupeKey?: string;
+}
+
+export type NotificationFilterId =
+  | "all"
+  | "tasks"
+  | "people"
+  | "time_off"
+  | "system";
+
+const TASK_TYPES: NotificationEventType[] = ["task_attention"];
+const PEOPLE_TYPES: NotificationEventType[] = [
+  "workload_change",
+  "availability_change",
+];
+const TIME_OFF_TYPES: NotificationEventType[] = [
+  "vacation_upcoming",
+  "vacation_reminder",
+  "vacation_return",
+];
+const SYSTEM_TYPES: NotificationEventType[] = ["integration_problem"];
+
+export function notificationMatchesFilter(
+  event: NotificationEvent,
+  filter: NotificationFilterId,
+): boolean {
+  if (filter === "all") return true;
+  if (filter === "tasks") return TASK_TYPES.includes(event.type);
+  if (filter === "people") return PEOPLE_TYPES.includes(event.type);
+  if (filter === "time_off") return TIME_OFF_TYPES.includes(event.type);
+  return SYSTEM_TYPES.includes(event.type);
+}
+
+export function severityForNotificationType(
+  type: NotificationEventType,
+): NotificationSeverity {
+  switch (type) {
+    case "task_attention":
+    case "workload_change":
+    case "integration_problem":
+      return "warning";
+    case "vacation_return":
+      return "success";
+    case "vacation_upcoming":
+    case "vacation_reminder":
+    case "availability_change":
+      return "info";
+    default:
+      return "info";
+  }
+}
+
+type LegacyNotificationEvent = NotificationEvent & {
+  navigationTarget?: string;
+  type: NotificationEventType | string;
+};
+
+function parseLegacyTarget(
+  navigationTarget?: string,
+  personId?: string,
+  issueKey?: string,
+): NotificationTarget | undefined {
+  if (navigationTarget?.startsWith("person:")) {
+    return { kind: "person", personId: navigationTarget.slice("person:".length) };
+  }
+  if (issueKey) {
+    return { kind: "jira", issueKey };
+  }
+  if (personId) {
+    return { kind: "person", personId };
+  }
+  return undefined;
+}
+
+function migrateLegacyType(type: string): NotificationEventType {
+  switch (type) {
+    case "upcoming_time_off":
+      return "vacation_upcoming";
+    case "returns":
+      return "vacation_return";
+    case "problematic_task":
+      return "task_attention";
+    default:
+      return type as NotificationEventType;
+  }
+}
+
+export function normalizeStoredNotificationEvent(
+  raw: LegacyNotificationEvent,
+): NotificationEvent {
+  const type = migrateLegacyType(raw.type);
+  const target =
+    raw.target ??
+    parseLegacyTarget(raw.navigationTarget, raw.personId, raw.issueKey);
+  return {
+    id: raw.id,
+    type,
+    createdAt: raw.createdAt,
+    readAt: raw.readAt,
+    title: raw.title,
+    message: raw.message,
+    personId: raw.personId,
+    personName: raw.personName,
+    issueKey: raw.issueKey,
+    issueTitle: raw.issueTitle,
+    severity: raw.severity ?? severityForNotificationType(type),
+    target,
+    dedupeKey: raw.dedupeKey,
+  };
+}

@@ -29,6 +29,10 @@ export interface NotificationState {
   workloadLevels: Record<string, string>;
   vacationNotified: Record<string, string>;
   problematicCounts: Record<string, number>;
+  integrationHealth?: {
+    jira?: "healthy" | "unhealthy";
+    bamboo?: "healthy" | "unhealthy";
+  };
 }
 
 export interface AppPreferences {
