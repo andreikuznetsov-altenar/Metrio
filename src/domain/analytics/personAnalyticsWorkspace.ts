@@ -125,11 +125,18 @@ function mapWorkHistoryGroups(
         : "—",
       cycle: entry.cycleMs != null ? formatDuration(entry.cycleMs) : "—",
       outcome: entry.firstPass ? "First pass" : "Rework",
+      completedAtIso: entry.completedAt,
+      cycleMs: entry.cycleMs,
+      firstPass: entry.firstPass,
     })),
   }));
 }
 
-function issueToWorkRow(issue: AuditIssue, params: ReportParams, now: Date): PersonWorkRowData {
+export function auditIssueToPersonWorkRow(
+  issue: AuditIssue,
+  params: ReportParams,
+  now: Date,
+): PersonWorkRowData {
   const health = classifyTaskHealth({ issue, params, now });
   return {
     key: issue.issueKey,
@@ -313,13 +320,13 @@ export function buildPersonAnalyticsWorkspace(
     .filter((item) => item != null)
     .slice(0, 24);
 
-  const workRows = activeIssues.slice(0, 24).map((issue) => issueToWorkRow(issue, params, now));
+  const workRows = activeIssues.slice(0, 24).map((issue) => auditIssueToPersonWorkRow(issue, params, now));
   const problematicWork = getOperationalIssues(person)
     .filter(
       (issue) => classifyTaskHealth({ issue, params, now }).status === "problematic",
     )
     .slice(0, 12)
-    .map((issue) => issueToWorkRow(issue, params, now));
+    .map((issue) => auditIssueToPersonWorkRow(issue, params, now));
 
   const plannedTimeOff = buildPlannedTimeOffRows(timeOffEntries, teamEmployeeIds);
   const personTimeOff = plannedTimeOff.find((row) => row.employeeId === person.id);

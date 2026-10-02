@@ -103,6 +103,22 @@ export interface ActiveWorkItem {
   status: string;
 }
 
+export interface EmployeeWorkRowView {
+  key: string;
+  title: string;
+  status: string;
+  stageAge: string;
+  healthVariant: BadgeVariant;
+}
+
+export interface EmployeeCompletedRowView {
+  key: string;
+  title: string;
+  completedOn?: string;
+  cycle?: string;
+  outcome?: string;
+}
+
 export interface PersonalAttentionItem {
   label: string;
   variant: BadgeVariant;
@@ -117,6 +133,9 @@ export interface WorkHistoryRow {
   completedOn: string;
   cycle: string;
   outcome: string;
+  completedAtIso?: string;
+  cycleMs?: number | null;
+  firstPass?: boolean | null;
 }
 
 export type EmployeePerformanceView =
@@ -133,9 +152,9 @@ export interface MyWeekMetricCard {
 export interface EmployeeMyWeekSnapshot {
   summary: MyWeekMetricCard[];
   needsAttention: PersonalAttentionItem[];
-  inProgress: ActiveWorkItem[];
-  inReview: ActiveWorkItem[];
-  completedThisWeek: ActiveWorkItem[];
+  inProgress: EmployeeWorkRowView[];
+  inReview: EmployeeWorkRowView[];
+  completedThisWeek: EmployeeCompletedRowView[];
 }
 
 export interface WorkHistoryGroupView {
