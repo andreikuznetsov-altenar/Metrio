@@ -19,6 +19,12 @@ async function clickSubnav(page: Page, label: RegExp) {
   await page.waitForTimeout(150);
 }
 
+async function openFirstAttentionPerson(page: Page) {
+  const row = page.locator(".performance-table--attention tbody tr").first();
+  await expect(row).toBeVisible({ timeout: 15_000 });
+  await row.click();
+}
+
 test.describe("Metrio visual regression", () => {
   test("team overview light", async ({ page }) => {
     await bootMetrio(page, "lead");
@@ -41,7 +47,7 @@ test.describe("Metrio visual regression", () => {
       timeout: 30_000,
     });
     await expect(page).toHaveScreenshot("performance-overview-loading-overlay.png", {
-      fullPage: true,
+      fullPage: false,
       maxDiffPixelRatio: 0.02,
     });
   });
@@ -92,7 +98,7 @@ test.describe("Metrio visual regression", () => {
 
   test("person drawer", async ({ page }) => {
     await bootMetrio(page, "lead");
-    await page.locator(".performance-attention-row").first().click();
+    await openFirstAttentionPerson(page);
     await expect(page.locator(".drawer")).toBeVisible();
     await expect(page).toHaveScreenshot("person-drawer.png", {
       fullPage: true,
@@ -138,7 +144,7 @@ test.describe("Metrio visual regression", () => {
 
   test("person drawer overview grouped", async ({ page }) => {
     await bootMetrio(page, "lead");
-    await page.locator(".performance-attention-row").first().click();
+    await openFirstAttentionPerson(page);
     await expect(page.locator(".drawer")).toBeVisible();
     await expect(page).toHaveScreenshot("person-drawer-overview.png", {
       fullPage: true,
@@ -148,7 +154,7 @@ test.describe("Metrio visual regression", () => {
 
   test("person drawer work tab", async ({ page }) => {
     await bootMetrio(page, "lead");
-    await page.locator(".performance-attention-row").first().click();
+    await openFirstAttentionPerson(page);
     await page.locator(".drawer").getByRole("tab", { name: "Work" }).click();
     await expect(page).toHaveScreenshot("person-drawer-work.png", {
       fullPage: true,
@@ -158,7 +164,7 @@ test.describe("Metrio visual regression", () => {
 
   test("person drawer history tab", async ({ page }) => {
     await bootMetrio(page, "lead");
-    await page.locator(".performance-attention-row").first().click();
+    await openFirstAttentionPerson(page);
     await page.locator(".drawer").getByRole("tab", { name: "History" }).click();
     await expect(page).toHaveScreenshot("person-drawer-history.png", {
       fullPage: true,

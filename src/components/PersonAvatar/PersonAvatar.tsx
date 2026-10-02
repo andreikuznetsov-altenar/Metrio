@@ -28,7 +28,9 @@ export function PersonAvatar({
 }: PersonAvatarProps) {
   const [src, setSrc] = useState<string | null>(null);
   const initials = getInitials(displayName);
-  const skipRemoteAvatar = import.meta.env.MODE === "test";
+  const skipRemoteAvatar =
+    import.meta.env.MODE === "test" ||
+    import.meta.env.VITE_VISUAL_FIXTURE === "1";
 
   useEffect(() => {
     if (skipRemoteAvatar) return;
