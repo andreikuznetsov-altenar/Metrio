@@ -49,6 +49,10 @@
   color: var(--color-text-primary);
 }
 
+.segmented-control__option.is-active:hover {
+  color: var(--color-text-primary);
+}
+
 .segmented-control__option:focus-visible {
   outline: var(--focus-outline);
   outline-offset: 0;
