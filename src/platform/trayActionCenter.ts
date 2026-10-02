@@ -12,7 +12,8 @@ import {
   markJiraAssignmentRead,
   type JiraAssignmentState,
 } from "../domain/jira/jiraAssignmentTracking";
-import { resolveBambooSubdomain } from "../config/product";
+import { bambooEmployeePortalUrl } from "../config/bambooPortal";
+import { JIRA_ASSIGNMENT_CHANGED } from "./jiraAssignmentEvents";
 import { loadPreferences, savePreferences } from "./preferences";
 
 export interface TrayBuildContext {
@@ -23,13 +24,6 @@ export interface TrayBuildContext {
 }
 
 let lastTrayContext: TrayBuildContext | null = null;
-
-function bambooHomeUrl(): string {
-  const subdomain = resolveBambooSubdomain();
-  return subdomain
-    ? `https://${subdomain}.bamboohr.com/`
-    : "https://www.bamboohr.com/";
-}
 
 export function trayContextFromSelfPerson(
   person: Person,
@@ -46,7 +40,7 @@ export function trayContextFromSelfPerson(
       ? {
           id: person.id,
           label: vacationLabel,
-          url: bambooHomeUrl(),
+          url: bambooEmployeePortalUrl(),
         }
       : undefined,
   };
@@ -94,6 +88,7 @@ export async function acknowledgeTrayJiraIssue(issueKey: string): Promise<void> 
       assignmentState: nextState,
     });
   }
+  window.dispatchEvent(new CustomEvent(JIRA_ASSIGNMENT_CHANGED));
 }
 
 export async function clearTrayUserContext(): Promise<void> {

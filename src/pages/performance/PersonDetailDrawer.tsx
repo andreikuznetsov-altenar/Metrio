@@ -6,6 +6,9 @@ import { Select } from "../../components/Select/Select";
 import { Tabs } from "../../components/Tabs/Tabs";
 import { PersonAvatar } from "../../components/PersonAvatar/PersonAvatar";
 import { usePerformanceData } from "../../app/PerformanceDataContext";
+import { useCurrentUser } from "../../app/CurrentUserContext";
+import { useOnboardingResources } from "../../hooks/useOnboardingResources";
+import { ManagerNewStarterContext } from "../onboarding/ManagerNewStarterContext";
 import {
   useOptionalPerformanceAnalytics,
   type PersonDrawerTab,
@@ -68,9 +71,20 @@ export function PersonDetailDrawer({
   onClosed,
 }: PersonDetailDrawerProps) {
   const { viewModels } = usePerformanceData();
+  const { currentUser } = useCurrentUser();
   const analytics = useOptionalPerformanceAnalytics();
   const person = viewModels?.getPerson(personId);
   const workspace = viewModels?.getPersonAnalytics(personId);
+  const isDirectReport = Boolean(
+    currentUser.team?.directReportIds.includes(personId) &&
+      personId !== currentUser.person.id,
+  );
+  const managerOnboarding = useOnboardingResources({
+    department: person?.bamboo.department,
+    jobTitle: person?.bamboo.jobTitle,
+    projects: [],
+    knowledgeLinks: [],
+  });
   const [historyPeriod, setHistoryPeriod] = useState<HistoryPeriod>("month");
   const [historyVisibleCount, setHistoryVisibleCount] = useState(HISTORY_PAGE_SIZE);
 
@@ -205,7 +219,7 @@ export function PersonDetailDrawer({
 
             {workspace.timeOff ? (
               <>
-                <h3 className="person-detail-drawer__section-title">Time off</h3>
+                <h3 className="person-detail-drawer__section-title">Availability</h3>
                 <div className="person-detail-drawer__time-off">
                   <div>{workspace.timeOff.rangeLabel}</div>
                   {workspace.timeOff.note ? (
@@ -215,6 +229,14 @@ export function PersonDetailDrawer({
                   ) : null}
                 </div>
               </>
+            ) : null}
+
+            {isDirectReport && person?.bamboo ? (
+              <ManagerNewStarterContext
+                bamboo={person.bamboo}
+                matched={managerOnboarding}
+                activeWorkCount={workspace.activeWorkCount}
+              />
             ) : null}
 
             <h3 className="person-detail-drawer__section-title">Attention signals</h3>

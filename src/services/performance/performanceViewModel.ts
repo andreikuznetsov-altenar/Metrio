@@ -325,6 +325,7 @@ export function buildPerformanceViewModels(
       rangeLabel: row.rangeLabel,
       note: row.typeLabel,
       startDate: row.start,
+      endDate: row.end,
     };
   });
 

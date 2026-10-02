@@ -28,6 +28,7 @@ import {
 import { TrendValue } from "./TrendValue";
 import { severityAttentionLabel } from "./trendPresentation";
 import { CalendarDays } from "lucide-react";
+import { TeamUpcomingAvailabilitySection } from "./TeamUpcomingAvailabilitySection";
 
 export interface TeamOverviewViewProps {
   snapshot: TeamPerformanceSnapshot;
@@ -395,6 +396,12 @@ export function TeamOverviewView({
           </table>
         </div>
       </section>
+
+      <TeamUpcomingAvailabilitySection
+        snapshot={snapshot}
+        deliveryRisk={secondary.deliveryRisk}
+        onOpenPerson={onOpenPerson}
+      />
 
       <section aria-label="Time off" className="performance-section">
         <SectionTitle title="Time off" help={performanceHelp.timeOff} />

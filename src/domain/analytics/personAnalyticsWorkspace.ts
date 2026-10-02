@@ -4,7 +4,7 @@ import { getEfficiencyStatus } from "../jira/kpi";
 import { formatDuration } from "../jira/dates";
 import type { AuditIssue, ReportParams } from "../jira/types";
 import type { Person } from "../people/types";
-import { buildPlannedTimeOffRows } from "../people/plannedTimeOff";
+import { buildPlannedTimeOffRows, type PlannedTimeOffRow } from "../people/plannedTimeOff";
 import {
   avgCycleSegments,
   firstPassPercent,
@@ -33,6 +33,12 @@ import {
 } from "../radar/taskSignals";
 import { classifyTaskHealth } from "../task-health/taskHealthEngine";
 import { getOperationalIssues } from "../people/ownedIssues";
+import {
+  availabilityHeadline,
+  formatLeaveRangeLabel,
+  isUpcomingLeaveState,
+} from "../availability/leaveCalendar";
+import { personAvailabilityDrawerLine } from "../availability/personAvailabilityCopy";
 import type { TimeOffEntry } from "../people/availability";
 import type { KpiSnapshotFile } from "../snapshots/types";
 import {
@@ -78,7 +84,13 @@ export interface PersonAnalyticsWorkspace {
   attention: PersonalAttentionItem[];
   workRows: PersonWorkRowData[];
   problematicWork: PersonWorkRowData[];
-  timeOff?: { rangeLabel: string; note: string };
+  timeOff?: {
+    rangeLabel: string;
+    note: string;
+    startDate?: string;
+    endDate?: string;
+    headline?: string;
+  };
   historyWeek: WorkHistoryGroupView[];
   historyMonth: WorkHistoryGroupView[];
   historyQuarter: WorkHistoryGroupView[];
@@ -239,6 +251,48 @@ export function buildPersonAnalyticsContextLine(
     .join("  ·  ");
 }
 
+function buildPersonTimeOffContext(
+  person: Person,
+  personTimeOff: PlannedTimeOffRow | undefined,
+  now: Date,
+): PersonAnalyticsWorkspace["timeOff"] {
+  const avail = person.availability;
+  if (avail.state === "on_vacation") {
+    const range =
+      formatLeaveRangeLabel(avail.startDate, avail.endDate) || avail.label;
+    return {
+      rangeLabel: range,
+      note: avail.returnDate ? `Returns ${avail.returnDate}` : "",
+      startDate: avail.startDate,
+      endDate: avail.endDate,
+      headline: availabilityHeadline(avail, now),
+    };
+  }
+  if (isUpcomingLeaveState(avail.state) && avail.startDate) {
+    const range =
+      formatLeaveRangeLabel(avail.startDate, avail.endDate) ||
+      personTimeOff?.rangeLabel ||
+      avail.label;
+    return {
+      rangeLabel: range,
+      note: availabilityHeadline(avail, now),
+      startDate: avail.startDate,
+      endDate: avail.endDate,
+      headline: availabilityHeadline(avail, now),
+    };
+  }
+  if (personTimeOff) {
+    return {
+      rangeLabel: personTimeOff.rangeLabel,
+      note: personTimeOff.typeLabel,
+      startDate: personTimeOff.start,
+      endDate: personTimeOff.end,
+      headline: availabilityHeadline(avail, now),
+    };
+  }
+  return undefined;
+}
+
 export function buildPersonAnalyticsWorkspace(
   input: BuildPersonAnalyticsWorkspaceInput,
 ): PersonAnalyticsWorkspace {
@@ -330,26 +384,13 @@ export function buildPersonAnalyticsWorkspace(
 
   const plannedTimeOff = buildPlannedTimeOffRows(timeOffEntries, teamEmployeeIds);
   const personTimeOff = plannedTimeOff.find((row) => row.employeeId === person.id);
-  const timeOff =
-    person.availability.state !== "available"
-      ? {
-          rangeLabel: person.availability.label,
-          note: person.availability.returnDate
-            ? `Returns ${person.availability.returnDate}`
-            : personTimeOff?.typeLabel || "",
-        }
-      : personTimeOff
-        ? {
-            rangeLabel: personTimeOff.rangeLabel,
-            note: personTimeOff.typeLabel,
-          }
-        : undefined;
+  const timeOff = buildPersonTimeOffContext(person, personTimeOff, now);
 
   return {
     personId: person.id,
     personName: person.bamboo.displayName,
     role: person.bamboo.jobTitle || "—",
-    availability: person.availability.label,
+    availability: personAvailabilityDrawerLine(person.availability, now),
     workload: formatWorkloadLabel(person.workload?.level),
     contextLine: buildPersonAnalyticsContextLine(
       params,

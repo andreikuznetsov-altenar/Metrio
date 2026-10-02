@@ -14,6 +14,7 @@ import {
   newStarterAggregate,
 } from "./buildOrganizationSignals";
 import { groupPersonsByTeam, type TeamGroup } from "./teamGrouping";
+import { buildDirectorTeamCapacity } from "../availability/teamAvailabilityContext";
 import type {
   OrganizationOverviewModel,
   OrganizationTeamRow,
@@ -195,6 +196,14 @@ export function buildOrganizationModel(input: {
     feedback: input.feedback,
   });
 
+  const teamCapacity = buildDirectorTeamCapacity(
+    teams.map((team) => ({
+      teamId: team.teamId,
+      teamName: team.teamName,
+      persons: team.persons,
+    })),
+  );
+
   return {
     scope: input.scope,
     scopeLabel: scopeLabel(input.scope),
@@ -204,6 +213,7 @@ export function buildOrganizationModel(input: {
     signals,
     teams: teamRows.sort((a, b) => a.teamName.localeCompare(b.teamName)),
     deliveryRisk,
+    teamCapacity,
     newStarterSummary: newStarterAggregate(persons),
     feedbackSummary: {
       pendingRecipients: input.feedback.pendingResponseCount,

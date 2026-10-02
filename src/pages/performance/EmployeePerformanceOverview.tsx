@@ -20,10 +20,19 @@ import {
 } from "../../app/actionNavigation";
 import { ActionQueueSection } from "./ActionQueueSection";
 import { GettingStartedSection } from "./GettingStartedSection";
+import { useWorkGraph } from "../../app/WorkGraphContext";
+import { useOnboardingResources } from "../../hooks/useOnboardingResources";
+import { useResourceLibrary } from "../../hooks/useResourceLibrary";
+import { ResourceLibrary } from "../onboarding/ResourceLibrary";
+import { isNewStarter } from "../../domain/onboarding/newStarter";
+import { Button } from "../../components/Button/Button";
 import { ProjectContextSection } from "./ProjectContextSection";
-import { WorkGraphProvider } from "../../app/WorkGraphContext";
 import { PersonPerformanceMetrics } from "./PersonPerformanceMetrics";
 import { EmployeeCurrentWorkList } from "./EmployeeCurrentWorkList";
+import { UpcomingTimeOffSection } from "./UpcomingTimeOffSection";
+import { buildPreLeaveWorkSummary } from "../../domain/availability/preLeaveWork";
+import { summarizeChangesWhileAway } from "../../domain/availability/changedWhileAway";
+import { isUpcomingLeaveState } from "../../domain/availability/leaveCalendar";
 import { PerformanceStatusBanner } from "./PerformanceStatusBanner";
 import { buildMetricDrilldownRequest } from "./analyticsDrilldownModel";
 import "./performance-dashboard.css";
@@ -49,10 +58,23 @@ export function EmployeePerformanceOverview({ personId }: EmployeePerformanceOve
   );
   const { viewModels, status, data } = usePerformanceData();
   const analytics = useOptionalPerformanceAnalytics();
-  const selfBamboo = useMemo(
-    () => data?.teamSnapshot.persons.find((person) => person.id === personId)?.bamboo,
+  const selfPerson = useMemo(
+    () => data?.teamSnapshot.persons.find((person) => person.id === personId),
     [data, personId],
   );
+  const selfBamboo = selfPerson?.bamboo;
+  const graph = useWorkGraph();
+  const knowledgeLinks = useMemo(
+    () => [...graph.knowledgeByIssue.values()].flat().concat([...graph.knowledgeByProject.values()].flat()),
+    [graph.knowledgeByIssue, graph.knowledgeByProject],
+  );
+  const onboardingMatched = useOnboardingResources({
+    department: selfBamboo?.department,
+    jobTitle: selfBamboo?.jobTitle,
+    projects: graph.projects,
+    knowledgeLinks,
+  });
+  const resourceLibrary = useResourceLibrary();
   const { registerEmployeeView } = usePerformanceExport();
 
   const workspace = viewModels?.getPersonAnalytics(personId);
@@ -99,6 +121,23 @@ export function EmployeePerformanceOverview({ personId }: EmployeePerformanceOve
     return sortCurrentWorkRows(combined).slice(0, 16);
   }, [workspace]);
 
+  const preLeave = useMemo(() => {
+    if (!selfPerson || !data?.reportParams) return null;
+    if (!isUpcomingLeaveState(selfPerson.availability.state)) return null;
+    return buildPreLeaveWorkSummary(selfPerson, data.reportParams, 5);
+  }, [selfPerson, data?.reportParams]);
+
+  const returnSummary = useMemo(() => {
+    if (!selfPerson?.availability.startDate || !selfPerson.availability.endDate) {
+      return null;
+    }
+    return summarizeChangesWhileAway(
+      selfPerson,
+      selfPerson.availability.startDate,
+      selfPerson.availability.endDate,
+    );
+  }, [selfPerson]);
+
   const openMetricDrilldown = analytics
     ? (metric: MetricCardData, source: HTMLElement) => {
         if (!workspace) return;
@@ -135,16 +174,7 @@ export function EmployeePerformanceOverview({ personId }: EmployeePerformanceOve
     );
   }
 
-  const selfPerson = data?.teamSnapshot.persons.find((p) => p.id === personId);
-  const datasetKey = data?.lastUpdatedAt ?? personId;
-
   return (
-    <WorkGraphProvider
-      person={selfPerson ?? null}
-      params={data?.reportParams}
-      datasetKey={datasetKey}
-      department={selfBamboo?.department}
-    >
     <div
       className="performance-dashboard"
       data-testid="performance-dashboard-ready"
@@ -162,7 +192,24 @@ export function EmployeePerformanceOverview({ personId }: EmployeePerformanceOve
         <section aria-label="Performance overview">
           <p className="performance-employee-context">{workspace.contextLine}</p>
 
-          {selfBamboo ? <GettingStartedSection bamboo={selfBamboo} /> : null}
+          {selfBamboo && selfBamboo.hireDate && isNewStarter(selfBamboo.hireDate) ? (
+            <GettingStartedSection
+              bamboo={selfBamboo}
+              matched={onboardingMatched}
+              onViewAllResources={resourceLibrary.openLibrary}
+            />
+          ) : null}
+          {selfBamboo && (!selfBamboo.hireDate || !isNewStarter(selfBamboo.hireDate)) ? (
+            <section className="performance-section" aria-label="Resources">
+              <h3 className="performance-section__title">Resources</h3>
+              <p className="performance-inline-empty">
+                {onboardingMatched.preview.length} recommended links for your role
+              </p>
+              <Button variant="secondary" onClick={resourceLibrary.openLibrary}>
+                Open resource library
+              </Button>
+            </section>
+          ) : null}
 
           <ProjectContextSection />
 
@@ -198,21 +245,18 @@ export function EmployeePerformanceOverview({ personId }: EmployeePerformanceOve
           <h3 className="performance-section__title">Needs attention</h3>
           <GroupedAttentionList items={snapshot.attention} />
 
-          <h3 className="performance-section__title">Upcoming time off</h3>
-          {snapshot.timeOff ? (
-            <div className="performance-timeoff-compact">
-              <div className="performance-timeoff-compact__range">
-                {snapshot.timeOff.rangeLabel}
-              </div>
-              {snapshot.timeOff.note ? (
-                <div className="performance-timeoff-compact__note">
-                  {snapshot.timeOff.note}
-                </div>
-              ) : null}
-            </div>
-          ) : (
-            <p className="performance-inline-empty">No upcoming time off.</p>
-          )}
+          {selfPerson ? (
+            <UpcomingTimeOffSection
+              person={selfPerson}
+              timeOff={snapshot.timeOff}
+              preLeave={preLeave}
+              returnSummary={returnSummary}
+              onViewAllWork={() => {
+                writePersistedEmployeePerformanceView("my-week");
+                setActiveView("my-week");
+              }}
+            />
+          ) : null}
         </section>
       ) : null}
 
@@ -237,7 +281,12 @@ export function EmployeePerformanceOverview({ personId }: EmployeePerformanceOve
           historyQuarter={snapshot.historyQuarter}
         />
       ) : null}
+      <ResourceLibrary
+        open={resourceLibrary.open}
+        onClose={resourceLibrary.closeLibrary}
+        resources={onboardingMatched.all}
+        byGroup={onboardingMatched.byGroup}
+      />
     </div>
-    </WorkGraphProvider>
   );
 }

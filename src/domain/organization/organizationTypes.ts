@@ -54,6 +54,14 @@ export interface OrganizationTeamTrend {
   insufficientHistory?: boolean;
 }
 
+export interface OrganizationTeamCapacityRow {
+  teamId: string;
+  teamName: string;
+  peopleTotal: number;
+  awayNextWeek: number;
+  label: string;
+}
+
 export interface OrganizationOverviewModel {
   scope: AuthorizedPeopleScope;
   scopeLabel: string;
@@ -63,6 +71,7 @@ export interface OrganizationOverviewModel {
   signals: OrganizationSignal[];
   teams: OrganizationTeamRow[];
   deliveryRisk: DeliveryRiskItem[];
+  teamCapacity: OrganizationTeamCapacityRow[];
   newStarterSummary: { total: number; byTeam: { teamId: string; teamName: string; count: number }[] };
   feedbackSummary: {
     pendingRecipients: number;

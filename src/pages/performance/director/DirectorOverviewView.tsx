@@ -58,6 +58,22 @@ export function DirectorOverviewView({
         </div>
       )}
 
+      {model.teamCapacity.some((row) => row.awayNextWeek > 0) ? (
+        <>
+          <h3 className="performance-section__title">Upcoming team availability</h3>
+          <ul className="performance-director-capacity" data-testid="director-team-capacity">
+            {model.teamCapacity
+              .filter((row) => row.awayNextWeek > 0)
+              .map((row) => (
+                <li key={row.teamId}>
+                  <strong>{row.teamName}</strong>
+                  <span>{row.label}</span>
+                </li>
+              ))}
+          </ul>
+        </>
+      ) : null}
+
       <h3 className="performance-section__title">Team trends</h3>
       <ul className="performance-director-trends">
         {model.teamTrends.map((trend) => (

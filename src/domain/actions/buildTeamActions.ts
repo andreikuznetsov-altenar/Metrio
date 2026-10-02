@@ -49,13 +49,28 @@ export function buildTeamActions(input: BuildTeamActionsInput): ActionItem[] {
     if (daysUntil == null || daysUntil > 14 || daysUntil < 0) continue;
     const personWorkload = snapshot.workload.find((w) => w.personId === entry.personId);
     const active = personWorkload?.activeWork ?? 0;
-    if (active === 0) continue;
+    const inReview = deliveryRisk.filter(
+      (row) => row.ownerId === entry.personId && /review/i.test(row.status),
+    ).length;
+    if (active === 0 && inReview === 0) continue;
+    const startsLabel =
+      daysUntil === 0
+        ? "starts today"
+        : daysUntil === 1
+          ? "starts tomorrow"
+          : `starts in ${daysUntil} days`;
+    const reviewNote = inReview > 0 ? ` · ${inReview} in review` : "";
+    const severity =
+      daysUntil <= 5 && (inReview > 0 || active >= 4) ? "warning" : "info";
     items.push({
       id: `leave-${entry.personId}-${entry.startDate}`,
-      kind: daysUntil <= 5 ? "leave_delivery_risk" : "upcoming_leave",
-      severity: daysUntil <= 5 ? "warning" : "info",
-      title: "Upcoming leave with active work",
-      description: `${entry.personName} · leave starts in ${daysUntil} days · ${active} active`,
+      kind: severity === "warning" ? "leave_delivery_risk" : "upcoming_leave",
+      severity,
+      title:
+        inReview > 0
+          ? "Upcoming leave with active review work"
+          : "Upcoming leave with active work",
+      description: `${entry.personName ?? entry.personId} · ${startsLabel} · ${active} active${reviewNote}`,
       personId: entry.personId,
       personName: entry.personName,
       count: active,
