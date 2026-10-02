@@ -186,6 +186,16 @@ export function isManagerRole(role: string): boolean {
   return role === "lead" || role === "director";
 }
 
+export function isDirectorRole(role: string): boolean {
+  return role === "director";
+}
+
+export type DirectorPerformanceView =
+  | "overview"
+  | "teams"
+  | "signals"
+  | "delivery";
+
 export type TeamPerformanceView =
   | "overview"
   | "people"

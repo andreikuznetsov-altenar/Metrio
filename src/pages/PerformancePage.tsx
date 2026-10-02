@@ -7,6 +7,7 @@ import {
   type PersonDrawerTab,
 } from "../app/performanceAnalyticsContext";
 import {
+  isDirectorRole,
   isManagerRole,
   type EmployeeReviewTargetKey,
   type PerformanceReviewTarget,
@@ -16,6 +17,7 @@ import { canOpenPersonDetail } from "../domain/personAccess";
 import { EmployeePerformanceOverview } from "./performance/EmployeePerformanceOverview";
 import { PersonDetailDrawer } from "./performance/PersonDetailDrawer";
 import { TeamPerformanceOverview } from "./performance/TeamPerformanceOverview";
+import { DirectorPerformanceOverview } from "./performance/director/DirectorPerformanceOverview";
 import { PerformanceContentShell } from "./performance/PerformanceContentShell";
 import { AnalyticsDrilldownDrawer } from "./performance/AnalyticsDrilldownDrawer";
 
@@ -92,6 +94,8 @@ function PerformancePageBody({ reviewTarget }: PerformancePageProps) {
     content = <EmployeePerformanceOverview personId={currentUser.person.id} />;
   } else if (!canViewTeamDashboard) {
     content = <EmployeePerformanceOverview personId={currentUser.person.id} />;
+  } else if (isDirectorRole(currentUser.person.role)) {
+    content = <DirectorPerformanceOverview onOpenPerson={handleOpenPerson} />;
   } else {
     content = (
       <TeamPerformanceOverview
