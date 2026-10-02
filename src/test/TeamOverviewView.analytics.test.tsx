@@ -1,0 +1,50 @@
+import { describe, expect, it, vi } from "vitest";
+import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import type { TeamPerformanceSnapshot } from "../domain/performance";
+import { performanceHelp } from "../domain/performance/performanceHelp";
+import { TooltipProvider } from "../components/Tooltip/Tooltip";
+import { TeamOverviewView } from "../pages/performance/TeamOverviewView";
+
+function renderOverview(ui: React.ReactElement) {
+  return render(<TooltipProvider>{ui}</TooltipProvider>);
+}
+
+const snapshot: TeamPerformanceSnapshot = {
+  directReportIds: ["person-01"],
+  summary: [
+    { label: "Efficiency", value: "86%" },
+    { label: "First pass", value: "93%" },
+    { label: "Completed", value: "5" },
+    { label: "Backflows", value: "2" },
+  ],
+  attention: [],
+  attentionTotalCount: 0,
+  trends: [],
+  workload: [],
+  timeOff: [],
+  personDetails: {},
+};
+
+describe("TeamOverviewView analytics drill-down", () => {
+  it("opens Completed drill-down from KPI card without Help icon triggering it", async () => {
+    const user = userEvent.setup();
+    const onOpenMetricDrilldown = vi.fn();
+
+    renderOverview(
+      <TeamOverviewView
+        snapshot={snapshot}
+        onOpenPerson={() => {}}
+        onOpenMetricDrilldown={onOpenMetricDrilldown}
+      />,
+    );
+
+    await user.click(
+      screen.getByRole("button", { name: /View Completed details/i }),
+    );
+    expect(onOpenMetricDrilldown).toHaveBeenCalledTimes(1);
+
+    await user.click(screen.getByRole("button", { name: performanceHelp.completed }));
+    expect(onOpenMetricDrilldown).toHaveBeenCalledTimes(1);
+  });
+});

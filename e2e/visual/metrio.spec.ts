@@ -72,6 +72,17 @@ test.describe("Metrio visual regression", () => {
     });
   });
 
+  test("completed KPI analytics drawer", async ({ page }) => {
+    await bootMetrio(page, "lead");
+    await page.getByRole("button", { name: /View Completed details/i }).click();
+    await expect(page.locator(".drawer--analytics")).toBeVisible();
+    await expect(page.getByRole("dialog")).toContainText("Completed");
+    await expect(page).toHaveScreenshot("analytics-completed-drawer.png", {
+      fullPage: true,
+      maxDiffPixelRatio: 0.02,
+    });
+  });
+
   test("performance overview loading overlay", async ({ page }) => {
     await page.addInitScript((fixtureId: string) => {
       localStorage.setItem("metrio-connection-connected", "true");
