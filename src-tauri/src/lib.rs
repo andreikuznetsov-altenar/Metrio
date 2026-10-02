@@ -1,6 +1,7 @@
 mod api;
 mod logs;
 mod persistence;
+mod tray_action;
 
 use api::credentials::{
     cache_remove, cache_set, is_local_account, verify_secret_storage, SecureStoreVerify,
@@ -40,18 +41,12 @@ use std::path::PathBuf;
 use std::sync::Mutex;
 use std::time::{Instant, SystemTime, UNIX_EPOCH};
 use tauri::{
-    menu::{Menu, MenuItem},
     tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent},
     AppHandle, Emitter, Manager, RunEvent, State, WindowEvent,
 };
 
-struct TrayState {
-    lines: Vec<String>,
-    open_label: String,
-}
-
 struct AppState {
-    tray: Mutex<TrayState>,
+    tray: Mutex<tray_action::TrayActionState>,
     quitting: Mutex<bool>,
     keep_running_in_tray: Mutex<bool>,
     storage_warnings: Mutex<Vec<String>>,
@@ -237,50 +232,76 @@ fn diagnostics_export_file(app: AppHandle, content: String) -> Result<String, St
 }
 
 #[derive(Debug, Deserialize)]
-struct TraySnapshot {
-    title: String,
-    lines: Vec<String>,
+struct TraySnapshotPayload {
+    title: Option<String>,
+    lines: Option<Vec<String>>,
     open_label: Option<String>,
+    tray_title: Option<String>,
+    menu_items: Option<Vec<tray_action::TrayMenuItemDto>>,
 }
 
 #[tauri::command]
-fn update_tray_snapshot(state: State<AppState>, snapshot: TraySnapshot) -> Result<(), String> {
-    {
-        let mut tray = state.tray.lock().map_err(|_| "tray lock poisoned".to_string())?;
-        tray.lines = vec![snapshot.title.clone()];
-        tray.lines.extend(snapshot.lines);
-        tray.open_label = snapshot
-            .open_label
-            .filter(|s| !s.is_empty())
-            .unwrap_or_else(|| "Open Metrio".to_string());
+fn update_tray_snapshot(
+    state: State<AppState>,
+    snapshot: TraySnapshotPayload,
+) -> Result<(), String> {
+    let mut tray = state.tray.lock().map_err(|_| "tray lock poisoned".to_string())?;
+    if let Some(items) = snapshot.menu_items {
+        tray_action::apply_tray_action_snapshot(
+            &mut *tray,
+            tray_action::TrayActionSnapshotDto {
+                tray_title: snapshot.tray_title,
+                menu_items: items,
+            },
+        );
+    } else {
+        let mut menu_items = vec![tray_action::TrayMenuItemDto {
+            id: "open".to_string(),
+            label: snapshot
+                .open_label
+                .filter(|s| !s.is_empty())
+                .unwrap_or_else(|| "Open Metrio".to_string()),
+            enabled: Some(true),
+        }];
+        if let Some(lines) = snapshot.lines {
+            for line in lines {
+                if !line.is_empty() {
+                    menu_items.push(tray_action::TrayMenuItemDto {
+                        id: format!("info:{}", line),
+                        label: line,
+                        enabled: Some(false),
+                    });
+                }
+            }
+        }
+        menu_items.push(tray_action::TrayMenuItemDto {
+            id: "quit".to_string(),
+            label: "Quit".to_string(),
+            enabled: Some(true),
+        });
+        tray_action::apply_tray_action_snapshot(
+            &mut *tray,
+            tray_action::TrayActionSnapshotDto {
+                tray_title: None,
+                menu_items,
+            },
+        );
     }
     Ok(())
 }
 
-/// Reads tray text for menu rebuild. Must not call Tauri/AppKit while holding `AppState::tray`.
-fn read_tray_menu_snapshot(state: &AppState) -> Result<(Vec<String>, String), String> {
-    let tray_state = state.tray.lock().map_err(|_| "tray lock poisoned".to_string())?;
-    Ok((tray_state.lines.clone(), tray_state.open_label.clone()))
-}
-
-fn apply_tray_menu(app: &AppHandle) -> Result<(), String> {
-    let menu = build_tray_menu(app).map_err(|e| e.to_string())?;
+fn apply_tray_menu(app: &AppHandle, state: &AppState) -> Result<(), String> {
+    let tray_state = state
+        .tray
+        .lock()
+        .map_err(|_| "tray lock poisoned".to_string())?;
+    tray_action::apply_tray_title(app, &tray_state.tray_title)?;
+    let menu = tray_action::build_tray_menu(app, &tray_state.menu_items)
+        .map_err(|e| e.to_string())?;
     if let Some(tray) = app.tray_by_id("main") {
         tray.set_menu(Some(menu)).map_err(|e| e.to_string())?;
     }
     Ok(())
-}
-
-fn build_tray_menu(app: &AppHandle) -> Result<Menu<tauri::Wry>, Box<dyn std::error::Error>> {
-    let open_i = MenuItem::with_id(app, "open", "Open Metrio", true, None::<&str>)?;
-    let quit_i = MenuItem::with_id(app, "quit", "Quit", true, None::<&str>)?;
-    Ok(Menu::with_items(
-        app,
-        &[
-            &open_i as &dyn tauri::menu::IsMenuItem<tauri::Wry>,
-            &quit_i as &dyn tauri::menu::IsMenuItem<tauri::Wry>,
-        ],
-    )?)
 }
 
 #[cfg(target_os = "macos")]
@@ -328,7 +349,12 @@ fn tray_icon(_app: &AppHandle) -> tauri::image::Image<'static> {
 }
 
 fn install_tray(app: &AppHandle) -> Result<(), Box<dyn std::error::Error>> {
-    let menu = build_tray_menu(app)?;
+    let state = app.state::<AppState>();
+    let tray_state = state
+        .tray
+        .lock()
+        .map_err(|_| "tray lock poisoned".to_string())?;
+    let menu = tray_action::build_tray_menu(app, &tray_state.menu_items)?;
 
     let mut tray_builder = TrayIconBuilder::with_id("main")
         .icon(tray_icon(app))
@@ -347,21 +373,7 @@ fn install_tray(app: &AppHandle) -> Result<(), Box<dyn std::error::Error>> {
 
     let _tray = tray_builder
         .on_menu_event(|app, event| {
-            match event.id.as_ref() {
-                "open" => {
-                    show_main_window(app);
-                    let _ = app.emit("tray-open", ());
-                }
-                "quit" => {
-                    if let Some(state) = app.try_state::<AppState>() {
-                        if let Ok(mut q) = state.quitting.lock() {
-                            *q = true;
-                        }
-                    }
-                    app.exit(0);
-                }
-                _ => {}
-            }
+            tray_action::handle_tray_menu_event(app, event.id.as_ref());
         })
         .on_tray_icon_event(|tray, event| {
             if let TrayIconEvent::Click {
@@ -445,7 +457,8 @@ fn set_keep_running_in_tray(state: State<AppState>, enabled: bool) -> Result<(),
 
 #[tauri::command]
 async fn refresh_tray_menu(app: AppHandle) -> Result<(), String> {
-    apply_tray_menu(&app)
+    let state = app.state::<AppState>();
+    apply_tray_menu(&app, &state)
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -460,10 +473,7 @@ pub fn run() {
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_fs::init())
         .manage(AppState {
-            tray: Mutex::new(TrayState {
-                lines: vec!["Metrio".to_string()],
-                open_label: "Open Metrio".to_string(),
-            }),
+            tray: Mutex::new(tray_action::TrayActionState::default()),
             quitting: Mutex::new(false),
             keep_running_in_tray: Mutex::new(true),
             storage_warnings: Mutex::new(Vec::new()),
@@ -607,10 +617,7 @@ mod tray_lock_tests {
 
     fn test_app_state() -> AppState {
         AppState {
-            tray: Mutex::new(TrayState {
-                lines: vec!["Metrio".to_string()],
-                open_label: "Open Metrio".to_string(),
-            }),
+            tray: Mutex::new(tray_action::TrayActionState::default()),
             quitting: Mutex::new(false),
             keep_running_in_tray: Mutex::new(true),
             storage_warnings: Mutex::new(Vec::new()),
@@ -618,24 +625,42 @@ mod tray_lock_tests {
     }
 
     #[test]
-    fn read_tray_menu_snapshot_returns_cloned_strings() {
+    fn tray_action_state_defaults_to_open_and_quit() {
         let state = test_app_state();
-        let (lines, open_label) = read_tray_menu_snapshot(&state).expect("read");
-        assert_eq!(lines, vec!["Metrio"]);
-        assert_eq!(open_label, "Open Metrio");
+        let tray = state.tray.lock().expect("lock");
+        assert_eq!(tray.tray_title, None);
+        assert_eq!(tray.menu_items.len(), 2);
+        assert_eq!(tray.menu_items[0].id, "open");
+        assert_eq!(tray.menu_items[1].id, "quit");
     }
 
     #[test]
-    fn update_tray_data_then_read_does_not_overlap_locks() {
+    fn tray_action_state_update_does_not_overlap_locks() {
         let state = test_app_state();
         {
             let mut tray = state.tray.lock().expect("lock");
-            tray.lines = vec!["Title".into(), "Attention".into()];
-            tray.open_label = "Open Team Radar".into();
+            tray_action::apply_tray_action_snapshot(
+                &mut *tray,
+                tray_action::TrayActionSnapshotDto {
+                    tray_title: Some("2".to_string()),
+                    menu_items: vec![
+                        tray_action::TrayMenuItemDto {
+                            id: "open".to_string(),
+                            label: "Open Metrio".to_string(),
+                            enabled: Some(true),
+                        },
+                        tray_action::TrayMenuItemDto {
+                            id: "jira:UX-1".to_string(),
+                            label: "UX-1 · Example".to_string(),
+                            enabled: Some(true),
+                        },
+                    ],
+                },
+            );
         }
-        let (lines, open_label) = read_tray_menu_snapshot(&state).expect("read");
-        assert_eq!(lines, vec!["Title", "Attention"]);
-        assert_eq!(open_label, "Open Team Radar");
+        let tray = state.tray.lock().expect("lock");
+        assert_eq!(tray.tray_title.as_deref(), Some("2"));
+        assert_eq!(tray.menu_items.len(), 2);
     }
 
     #[test]
@@ -648,10 +673,10 @@ mod tray_lock_tests {
                 for step in 0..200 {
                     if worker % 2 == 0 {
                         let mut tray = state.tray.lock().expect("lock");
-                        tray.lines = vec![format!("worker-{worker}-step-{step}")];
+                        tray.tray_title = Some(format!("{worker}-{step}"));
                     } else {
-                        let (lines, _) = read_tray_menu_snapshot(&state).expect("read");
-                        assert!(!lines.is_empty());
+                        let tray = state.tray.lock().expect("lock");
+                        assert!(!tray.menu_items.is_empty());
                     }
                 }
             }));

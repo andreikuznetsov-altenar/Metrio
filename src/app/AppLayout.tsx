@@ -21,10 +21,12 @@ import { PerformanceToolbar } from "../shell/PerformanceToolbar";
 import { NotificationCenter } from "../shell/NotificationCenter";
 import { countUnreadNotificationEvents, NOTIFICATION_EVENTS_CHANGED } from "../platform/notificationEvents";
 import { RuntimeShellEffects } from "./RuntimeShellEffects";
+import { TrayMenuEffects } from "./TrayMenuEffects";
 import { useCurrentUser } from "./CurrentUserContext";
 import { clearConnection } from "./connectionStorage";
 import { useConnectionGate } from "./ConnectionContext";
 import { logoutSession } from "./logoutSession";
+import { clearTrayUserContext } from "../platform/trayActionCenter";
 import {
   PerformanceDataProvider,
   usePerformanceData,
@@ -218,6 +220,7 @@ function AppLayoutShell({
   );
 
   const onLogout = useCallback(() => {
+    void clearTrayUserContext();
     logoutSession();
     invalidateSession();
   }, [invalidateSession]);
@@ -303,6 +306,7 @@ function AppLayoutShell({
 
   return (
     <>
+      <TrayMenuEffects onRefresh={() => void refresh()} />
       <AppShell
         header={
           <MetrioAppHeader

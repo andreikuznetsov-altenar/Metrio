@@ -6,8 +6,29 @@ import { testKpi } from "../../domain/testFixtures";
 import { createPerformanceDateRange } from "../../domain/performance/performanceDateRange";
 import { resolvePerformanceReportRanges } from "../../domain/performance/reportParams";
 
-vi.mock("../../platform/tray", () => ({
-  updateTrayFromSnapshot: vi.fn(async () => undefined),
+vi.mock("../../platform/trayActionCenter", () => ({
+  pushTrayFromContext: vi.fn(async () => undefined),
+  trayContextFromSelfPerson: vi.fn(() => ({
+    assignmentState: {
+      baselineComplete: true,
+      knownAssignedIssueKeys: [],
+      records: {},
+    },
+    activeTaskCount: 0,
+    bambooActions: [],
+  })),
+}));
+
+vi.mock("../../platform/jiraAssignmentNotifications", () => ({
+  processJiraAssignmentNotifications: vi.fn((issues, prefs) => ({
+    nextPrefs: prefs,
+    newAssignmentCount: 0,
+  })),
+  readJiraAssignmentState: vi.fn(() => ({
+    baselineComplete: true,
+    knownAssignedIssueKeys: [],
+    records: {},
+  })),
 }));
 
 vi.mock("../../platform/notifications", () => ({
@@ -29,7 +50,7 @@ vi.mock("../../platform/preferences", () => ({
   savePreferences: vi.fn(async () => undefined),
 }));
 
-import { updateTrayFromSnapshot } from "../../platform/tray";
+import { pushTrayFromContext } from "../../platform/trayActionCenter";
 import { savePreferences } from "../../platform/preferences";
 
 const baseResult: PerformanceFetchResult = {
@@ -106,15 +127,15 @@ const baseResult: PerformanceFetchResult = {
 
 describe("applyPerformanceRefreshSideEffects", () => {
   beforeEach(() => {
-    vi.mocked(updateTrayFromSnapshot).mockClear();
+    vi.mocked(pushTrayFromContext).mockClear();
     vi.mocked(savePreferences).mockClear();
   });
 
-  it("updates tray and clears stale sync flags after refresh", async () => {
+  it("updates personal tray and clears stale sync flags after refresh", async () => {
     await applyPerformanceRefreshSideEffects(baseResult, {
-      managerTeamTray: true,
+      selfPersonId: "self-1",
     });
-    expect(updateTrayFromSnapshot).toHaveBeenCalledTimes(1);
+    expect(pushTrayFromContext).toHaveBeenCalledTimes(1);
     expect(savePreferences).toHaveBeenCalledWith(
       expect.objectContaining({
         sync: expect.objectContaining({
