@@ -1,16 +1,14 @@
 import type { SurveyRecipient } from '../../domain/survey/types';
-import {
-  Checkbox,
-  Drawer,
-  Input,
-  SelectDropdown,
-  Status,
-} from './design-system';
+import { Badge, Checkbox, Drawer, Input, SelectDropdown } from './design-system';
 import { computeDeliveryCounts } from '../../domain/survey/deliveryMetrics';
-import { recipientStatusDisplay, recipientStatusTone } from './feedbackUi';
+import {
+  recipientStatusBadgeVariant,
+  recipientStatusDisplay,
+} from './feedbackUi';
 
 export function FeedbackRecipientsDrawer({
   open,
+  recipientCount,
   recipients,
   search,
   statusFilter,
@@ -21,6 +19,7 @@ export function FeedbackRecipientsDrawer({
   onEmailChange,
 }: {
   open: boolean;
+  recipientCount: number;
   recipients: SurveyRecipient[];
   search: string;
   statusFilter: string;
@@ -42,12 +41,17 @@ export function FeedbackRecipientsDrawer({
   });
 
   return (
-    <Drawer open={open} title="Recipients" onClose={onClose}>
+    <Drawer
+      open={open}
+      size="analytics"
+      title={`Recipients · ${recipientCount}`}
+      onClose={onClose}
+    >
       <div className="ds-feedback-recipients-summary">
-        <Status tone="blue">{counts.selected} selected</Status>
-        <Status tone="green">{counts.ready} ready</Status>
+        <Badge variant="info">{counts.selected} selected</Badge>
+        <Badge variant="success">{counts.ready} ready</Badge>
         {counts.missingEmail > 0 && (
-          <Status tone="orange">{counts.missingEmail} missing email</Status>
+          <Badge variant="warning">{counts.missingEmail} missing email</Badge>
         )}
       </div>
       <div className="ds-filter-row ds-filter-row--embedded ds-feedback-recipients-filters">
@@ -59,7 +63,7 @@ export function FeedbackRecipientsDrawer({
             options={[
               { value: 'all', label: 'All' },
               { value: 'ready', label: 'Ready' },
-              { value: 'no_email', label: 'No email' },
+              { value: 'no_email', label: 'Missing email' },
               { value: 'sent', label: 'Sent' },
               { value: 'responded', label: 'Responded' },
               { value: 'failed', label: 'Failed' },
@@ -75,7 +79,6 @@ export function FeedbackRecipientsDrawer({
               <th aria-label="Select" />
               <th>Name</th>
               <th>Email</th>
-              <th>Source</th>
               <th>Tasks</th>
               <th>Status</th>
             </tr>
@@ -97,12 +100,11 @@ export function FeedbackRecipientsDrawer({
                     onChange={(e) => onEmailChange(r.id, e.target.value)}
                   />
                 </td>
-                <td>{r.emailSource}</td>
                 <td>{r.issueKeys.length}</td>
                 <td>
-                  <Status tone={recipientStatusTone(r.status)} variant="tag">
+                  <Badge variant={recipientStatusBadgeVariant(r.status)}>
                     {recipientStatusDisplay(r.status)}
-                  </Status>
+                  </Badge>
                 </td>
               </tr>
             ))}

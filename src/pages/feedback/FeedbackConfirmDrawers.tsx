@@ -5,7 +5,6 @@ export function FeedbackSendConfirmDrawer({
   selectedCount,
   missingEmailCount,
   alreadySentCount,
-  accountEmail,
   onClose,
   onConfirm,
 }: {
@@ -13,28 +12,36 @@ export function FeedbackSendConfirmDrawer({
   selectedCount: number;
   missingEmailCount: number;
   alreadySentCount: number;
-  accountEmail: string;
   onClose: () => void;
   onConfirm: () => void;
 }) {
+  const skipped = missingEmailCount + alreadySentCount;
   return (
     <Drawer
       open={open}
-      title="Send survey?"
+      size="notification"
+      title="Send surveys?"
       onClose={onClose}
       footer={
         <div className="ds-feedback-drawer-footer">
           <Button variant="secondary" onClick={onClose}>Cancel</Button>
-          <Button onClick={onConfirm}>Send survey</Button>
+          <Button onClick={onConfirm}>
+            {selectedCount === 1 ? 'Send 1 survey' : `Send ${selectedCount} surveys`}
+          </Button>
         </div>
       }
     >
-      <p>Recipients: {selectedCount}</p>
-      <p>Missing email: {missingEmailCount}</p>
-      <p>Already sent: {alreadySentCount}</p>
-      <p className="ds-feedback-connect__hint">
-        {selectedCount} emails will be sent from {accountEmail || 'your connected Google account'}.
+      <p>
+        {selectedCount} selected {selectedCount === 1 ? 'recipient will' : 'recipients will'} receive an email.
       </p>
+      {missingEmailCount > 0 && (
+        <p>{missingEmailCount} {missingEmailCount === 1 ? 'recipient' : 'recipients'} without email will be skipped.</p>
+      )}
+      {alreadySentCount > 0 && skipped > missingEmailCount && (
+        <p className="ds-feedback-connect__hint">
+          Already sent or responded recipients are not included in this batch.
+        </p>
+      )}
     </Drawer>
   );
 }
@@ -53,16 +60,19 @@ export function FeedbackReminderConfirmDrawer({
   return (
     <Drawer
       open={open}
+      size="notification"
       title="Send reminders?"
       onClose={onClose}
       footer={
         <div className="ds-feedback-drawer-footer">
           <Button variant="secondary" onClick={onClose}>Cancel</Button>
-          <Button onClick={onConfirm}>Send reminder</Button>
+          <Button onClick={onConfirm}>Send reminders</Button>
         </div>
       }
     >
-      <p>Send reminder to {reminderCount} recipients?</p>
+      <p>
+        {reminderCount} {reminderCount === 1 ? 'recipient has' : 'recipients have'} not responded yet.
+      </p>
     </Drawer>
   );
 }
@@ -79,6 +89,7 @@ export function FeedbackRegenerateConfirmDrawer({
   return (
     <Drawer
       open={open}
+      size="notification"
       title="Regenerate Google Form?"
       onClose={onClose}
       footer={
@@ -88,10 +99,7 @@ export function FeedbackRegenerateConfirmDrawer({
         </div>
       }
     >
-      <p>
-        Regenerating creates a new Google Form and may invalidate the current form link.
-        Previously sent links may remain valid.
-      </p>
+      <p>Creates a new Form for this survey. Previously sent links may still work.</p>
     </Drawer>
   );
 }

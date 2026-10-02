@@ -1,9 +1,12 @@
 import { useState } from 'react';
+import { Mail } from 'lucide-react';
 import type { AppPreferences } from '../../platform/preferences';
 import { isSurveyGoogleConfigured, usesAppsScriptGoogle } from '../../services/survey/surveyGoogleClient';
 import { formatAppsScriptError } from '../../services/survey/appsScriptSurveyClient';
 import { formatGoogleOAuthError } from './feedbackUi';
+import { FEEDBACK_HELP } from './feedbackHelp';
 import './feedback-ds.css';
+import { Badge } from '../../components/Badge/Badge';
 import {
   Button,
   Drawer,
@@ -11,10 +14,9 @@ import {
   InputPassword,
   Section,
   SelectDropdown,
-  Status,
   StatusBanner,
 } from './design-system';
-import { googleIntegrationTone, hasGoogleAccount } from './feedbackUi';
+import { hasGoogleAccount } from './feedbackUi';
 
 export function GoogleConnectionPanel({
   prefs,
@@ -78,28 +80,104 @@ export function GoogleConnectionPanel({
     }
   };
 
+  const appsScriptConnectDrawer = (
+    <Drawer
+      open={showConnectDrawer}
+      size="notification"
+      title={linked ? 'Manage Google connection' : 'Connect Google Apps Script'}
+      onClose={() => setShowConnectDrawer(false)}
+      footer={
+        <div className="ds-feedback-drawer-footer">
+          <Button variant="secondary" onClick={() => setShowConnectDrawer(false)}>Cancel</Button>
+          <Button
+            disabled={connecting || !webAppUrl.trim() || !bridgeSecret.trim()}
+            onClick={() => runConnect(linked ? onReconnect : onConnect)}
+          >
+            {connecting ? 'Connecting…' : linked ? 'Update connection' : 'Connect'}
+          </Button>
+        </div>
+      }
+    >
+      <p className="ds-feedback-connect__body">
+        Legacy Apps Script setup. Use only if directed by your administrator.
+      </p>
+      <Input
+        label="Web App URL"
+        value={webAppUrl}
+        onChange={(e) => setWebAppUrl(e.target.value)}
+        placeholder="https://script.google.com/macros/s/.../exec"
+      />
+      <InputPassword
+        label="Connection key"
+        value={bridgeSecret}
+        onChange={(e) => setBridgeSecret(e.target.value)}
+        placeholder="Paste the key from setupMetrio()"
+      />
+    </Drawer>
+  );
+
+  const disconnectDrawer = (
+    <Drawer
+      open={showDisconnectConfirm}
+      size="notification"
+      title="Disconnect Google?"
+      onClose={() => setShowDisconnectConfirm(false)}
+      footer={
+        <div className="ds-feedback-drawer-footer">
+          <Button variant="secondary" onClick={() => setShowDisconnectConfirm(false)}>Cancel</Button>
+          <Button
+            onClick={async () => {
+              setShowDisconnectConfirm(false);
+              await onDisconnect();
+            }}
+          >
+            Disconnect
+          </Button>
+        </div>
+      }
+    >
+      <p>
+        Disconnecting Google stops Metrio from creating Forms, sending survey emails and syncing responses.
+      </p>
+      <p className="ds-feedback-connect__hint">
+        Existing local survey history remains on this device. Remote Google Forms are not deleted automatically.
+      </p>
+    </Drawer>
+  );
+
   if (!linked) {
+    if (mode === 'feedback') {
+      return (
+        <>
+          <div className="ds-feedback-connect-panel ds-feedback-onboarding">
+            <p className="ds-feedback-connect__lead">
+              Create and send team feedback surveys using Google Forms and Gmail.
+            </p>
+            <div className="ds-feedback-connect__actions">
+              <Button
+                disabled={connecting || loading}
+                onClick={() => (oauthMode ? void runOAuthConnect() : setShowConnectDrawer(true))}
+              >
+                <Mail size={16} strokeWidth={1.75} aria-hidden className="feedback-btn-icon" />
+                Connect Google
+              </Button>
+            </div>
+            <p className="ds-feedback-connect__footnote">{FEEDBACK_HELP.permissionsFootnote}</p>
+            {displayMessage && (
+              <StatusBanner tone="danger">{displayMessage}</StatusBanner>
+            )}
+          </div>
+          {appsScriptConnectDrawer}
+        </>
+      );
+    }
+
     return (
       <>
-        <Section title={mode === 'feedback' ? 'Feedback' : 'Google'}>
-          {mode === 'feedback' && (
-            <>
-              <p className="ds-feedback-connect__lead">
-                Create and send team feedback surveys through your connected Google
-                account.
-              </p>
-              <p className="ds-feedback-connect__body">
-                {oauthMode
-                  ? "Metrio connects to your Google account to create Forms, sync responses, and send survey emails."
-                  : "Metrio uses a private Google Apps Script companion to create Forms and send emails from your Google account."}
-              </p>
-            </>
-          )}
-          {mode === 'settings' && (
-            <p className="ds-feedback-connect__hint">
-              Connect Google to create and send Feedback surveys.
-            </p>
-          )}
+        <Section title="Google">
+          <p className="ds-feedback-connect__hint">
+            Connect Google to create and send Feedback surveys.
+          </p>
           <div className="ds-feedback-connect__actions">
             <Button
               disabled={connecting || loading}
@@ -108,46 +186,49 @@ export function GoogleConnectionPanel({
               Connect Google
             </Button>
           </div>
-          {mode === 'feedback' && (
-            <p className="ds-feedback-connect__footnote">
-              Google connection is required only for Feedback.
-            </p>
-          )}
-          {displayMessage && <StatusBanner variant="error">{displayMessage}</StatusBanner>}
+          {displayMessage && <StatusBanner tone="danger">{displayMessage}</StatusBanner>}
         </Section>
+        {appsScriptConnectDrawer}
+      </>
+    );
+  }
 
-        <Drawer
-          open={showConnectDrawer}
-          title="Connect Google Apps Script"
-          onClose={() => setShowConnectDrawer(false)}
-          footer={
-            <div className="ds-feedback-drawer-footer">
-              <Button variant="secondary" onClick={() => setShowConnectDrawer(false)}>Cancel</Button>
-              <Button
-                disabled={connecting || !webAppUrl.trim() || !bridgeSecret.trim()}
-                onClick={() => runConnect(onConnect)}
-              >
-                {connecting ? 'Connecting…' : 'Connect'}
-              </Button>
-            </div>
-          }
-        >
-          <p className="ds-feedback-connect__body">
-            Paste the deployed Web App URL and the connection key from <code>setupMetrio()</code>.
-          </p>
-          <Input
-            label="Web App URL"
-            value={webAppUrl}
-            onChange={(e) => setWebAppUrl(e.target.value)}
-            placeholder="https://script.google.com/macros/s/.../exec"
-          />
-          <InputPassword
-            label="Connection key"
-            value={bridgeSecret}
-            onChange={(e) => setBridgeSecret(e.target.value)}
-            placeholder="Paste the key shown once by setupMetrio()"
-          />
-        </Drawer>
+  if (mode === 'feedback') {
+    return (
+      <>
+        <div className="feedback-google-strip">
+          <div className="feedback-google-strip__main">
+            <span className="feedback-google-strip__label">Google Workspace</span>
+            <Badge variant="success">Connected</Badge>
+            <span className="feedback-google-strip__email">{prefs.google.accountEmail}</span>
+          </div>
+          <div className="feedback-google-strip__actions">
+            <Button
+              variant="secondary"
+              size="small"
+              disabled={connecting || loading}
+              onClick={() => {
+                if (oauthMode) {
+                  void runOAuthConnect();
+                  return;
+                }
+                setWebAppUrl(prefs.google.appsScriptWebAppUrl);
+                setBridgeSecret('');
+                setShowConnectDrawer(true);
+              }}
+            >
+              Manage
+            </Button>
+            <Button variant="secondary" size="small" onClick={() => setShowDisconnectConfirm(true)}>
+              Disconnect
+            </Button>
+          </div>
+        </div>
+        {!prefs.google.formsConnected && displayMessage && (
+          <StatusBanner tone="danger">{displayMessage}</StatusBanner>
+        )}
+        {appsScriptConnectDrawer}
+        {disconnectDrawer}
       </>
     );
   }
@@ -179,24 +260,24 @@ export function GoogleConnectionPanel({
         <div className="ds-feedback-google__rows">
           <div className="ds-feedback-google__row">
             <span className="ds-feedback-google__label">Google account</span>
-            <Status tone="green" variant="tag">Connected</Status>
+            <Badge variant="success">Connected</Badge>
             <span className="ds-feedback-google__value">{prefs.google.accountEmail}</span>
           </div>
           <div className="ds-feedback-google__row">
             <span className="ds-feedback-google__label">Google Forms</span>
-            <Status tone={googleIntegrationTone(prefs.google.formsConnected)} variant="tag">
+            <Badge variant={prefs.google.formsConnected ? 'success' : 'warning'}>
               {prefs.google.formsConnected ? 'Connected' : 'Needs attention'}
-            </Status>
+            </Badge>
           </div>
           <div className="ds-feedback-google__row">
             <span className="ds-feedback-google__label">Google Mail</span>
-            <Status tone={googleIntegrationTone(prefs.google.gmailConnected)} variant="tag">
+            <Badge variant={prefs.google.gmailConnected ? 'success' : 'warning'}>
               {prefs.google.gmailConnected ? 'Connected' : 'Needs attention'}
-            </Status>
+            </Badge>
           </div>
         </div>
         {displayMessage && (
-          <StatusBanner variant={displayMessage.includes('Connected') ? 'success' : 'error'}>
+          <StatusBanner tone={displayMessage.includes('Connected') ? 'success' : 'danger'}>
             {displayMessage}
           </StatusBanner>
         )}
@@ -241,59 +322,8 @@ export function GoogleConnectionPanel({
         )}
       </Section>
 
-      <Drawer
-        open={showConnectDrawer}
-        title="Replace Google Apps Script connection"
-        onClose={() => setShowConnectDrawer(false)}
-        footer={
-          <div className="ds-feedback-drawer-footer">
-            <Button variant="secondary" onClick={() => setShowConnectDrawer(false)}>Cancel</Button>
-            <Button
-              disabled={connecting || !webAppUrl.trim() || !bridgeSecret.trim()}
-              onClick={() => runConnect(onReconnect)}
-            >
-              {connecting ? 'Connecting…' : 'Replace connection'}
-            </Button>
-          </div>
-        }
-      >
-        <Input
-          label="Web App URL"
-          value={webAppUrl}
-          onChange={(e) => setWebAppUrl(e.target.value)}
-        />
-        <InputPassword
-          label="Connection key"
-          value={bridgeSecret}
-          onChange={(e) => setBridgeSecret(e.target.value)}
-        />
-      </Drawer>
-
-      <Drawer
-        open={showDisconnectConfirm}
-        title="Disconnect Google?"
-        onClose={() => setShowDisconnectConfirm(false)}
-        footer={
-          <div className="ds-feedback-drawer-footer">
-            <Button variant="secondary" onClick={() => setShowDisconnectConfirm(false)}>Cancel</Button>
-            <Button
-              onClick={async () => {
-                setShowDisconnectConfirm(false);
-                await onDisconnect();
-              }}
-            >
-              Disconnect
-            </Button>
-          </div>
-        }
-      >
-        <p>
-          Disconnecting Google stops Metrio from creating Forms, sending survey emails and syncing responses.
-        </p>
-        <p className="ds-feedback-connect__hint">
-          Existing local survey history remains on this device. Remote Google Forms are not deleted automatically.
-        </p>
-      </Drawer>
+      {appsScriptConnectDrawer}
+      {disconnectDrawer}
     </>
   );
 }
