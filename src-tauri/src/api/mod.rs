@@ -7,5 +7,8 @@ pub mod error;
 pub mod google;
 pub mod jira;
 pub mod survey_store;
+pub mod goals_store;
+pub mod onboarding_checklist_store;
+pub mod company_config_store;
 pub mod kpi_snapshot_store;
 pub mod pdf_export;

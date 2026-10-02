@@ -18,7 +18,8 @@ export type ActionTarget =
   | { kind: "feedback"; tab: "survey" | "delivery" | "results" | "history" }
   | { kind: "confluence"; pageId: string; url: string }
   | { kind: "employee-work"; view: "my-week" | "overview" }
-  | { kind: "home" };
+  | { kind: "home" }
+  | { kind: "person_brief"; personId: string };
 
 export interface ActionItem {
   id: string;

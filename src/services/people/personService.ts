@@ -27,6 +27,7 @@ export function buildTeamSnapshot(
   timeOffEntries: TimeOffEntry[],
   workloadThresholds: WorkloadThresholds,
   teamUsers: TeamUser[] = [],
+  vacationSoonWithinDays = 7,
 ): TeamSnapshot {
   const employees = collectScopeEmployees(org);
 
@@ -41,7 +42,7 @@ export function buildTeamSnapshot(
     const params = reportData?.params;
 
     const timeOff = pickRelevantTimeOff(timeOffEntries, employee.id);
-    const availability = classifyAvailability(timeOff);
+    const availability = classifyAvailability(timeOff, undefined, vacationSoonWithinDays);
 
     const performance = reportData?.perUserKpi[canonicalKey] || null;
     const workload =

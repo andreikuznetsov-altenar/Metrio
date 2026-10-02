@@ -11,7 +11,9 @@
     "test:visual": "playwright test",
     "test:visual:update": "playwright test --update-snapshots",
     "reconcile:kpi": "METRIO_REAL_RECONCILE=1 vitest run src/domain/analytics/kpiReconciliation.real.test.ts",
-    "tauri": "tauri"
+    "tauri": "tauri",
+    "version:sync": "node scripts/sync-app-version.mjs",
+    "release:macos": "bash scripts/release-macos.sh"
   },
   "dependencies": {
     "@radix-ui/react-popover": "^1.1.23",
@@ -25,6 +27,8 @@
     "@tauri-apps/plugin-fs": "^2.5.2",
     "@tauri-apps/plugin-notification": "^2.4.0",
     "@tauri-apps/plugin-opener": "^2",
+    "@tauri-apps/plugin-process": "^2.3.1",
+    "@tauri-apps/plugin-updater": "^2.9.0",
     "date-fns": "^4.4.0",
     "lucide-react": "^0.544.0",
     "react": "^19.1.0",

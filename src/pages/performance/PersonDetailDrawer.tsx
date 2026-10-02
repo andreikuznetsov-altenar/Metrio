@@ -7,6 +7,7 @@ import { Tabs } from "../../components/Tabs/Tabs";
 import { PersonAvatar } from "../../components/PersonAvatar/PersonAvatar";
 import { usePerformanceData } from "../../app/PerformanceDataContext";
 import { useCurrentUser } from "../../app/CurrentUserContext";
+import { canOpenPersonBrief } from "../../domain/personAccess";
 import { useOnboardingResources } from "../../hooks/useOnboardingResources";
 import { ManagerNewStarterContext } from "../onboarding/ManagerNewStarterContext";
 import {
@@ -79,6 +80,7 @@ export function PersonDetailDrawer({
     currentUser.team?.directReportIds.includes(personId) &&
       personId !== currentUser.person.id,
   );
+  const showBriefAction = canOpenPersonBrief(currentUser, personId);
   const managerOnboarding = useOnboardingResources({
     department: person?.bamboo.department,
     jobTitle: person?.bamboo.jobTitle,
@@ -411,13 +413,29 @@ export function PersonDetailDrawer({
       header={
         <div className="person-detail-drawer__identity">
           <PersonAvatar employeeId={personId} displayName={displayName} size="md" />
-          <div>
+          <div className="person-detail-drawer__identity-text">
             <div className="person-detail-drawer__name">{displayName}</div>
             <div className="person-detail-drawer__role">{jobTitle}</div>
             <div className="person-detail-drawer__meta">
               {workspace.availability} · {workspace.workload} workload
             </div>
           </div>
+          {showBriefAction ? (
+            <Button
+              type="button"
+              variant="secondary"
+              className="person-detail-drawer__brief-btn"
+              onClick={() => {
+                window.dispatchEvent(
+                  new CustomEvent("metrio-open-person-brief", {
+                    detail: { personId },
+                  }),
+                );
+              }}
+            >
+              Brief
+            </Button>
+          ) : null}
         </div>
       }
     >

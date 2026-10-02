@@ -3,6 +3,17 @@
   align-items: flex-start;
   gap: var(--space-3);
   min-width: 0;
+  width: 100%;
+}
+
+.person-detail-drawer__identity-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.person-detail-drawer__brief-btn {
+  flex-shrink: 0;
+  margin-left: auto;
 }
 
 .person-detail-drawer__name {

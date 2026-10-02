@@ -1,5 +1,8 @@
 import type { AppPreferences } from "./preferences";
-import { recordNotificationEvent } from "./notificationEvents";
+import {
+  recordNotificationEvent,
+  resolveNotificationByDedupeKey,
+} from "./notificationEvents";
 import { dispatchNativeNotification } from "./notificationNativeDispatch";
 
 type IntegrationHealth = "healthy" | "unhealthy";
@@ -51,6 +54,7 @@ export function processIntegrationNotificationTransitions(
       });
       void dispatchNativeNotification({ title, body: message }).catch(() => undefined);
     } else if (prev === "unhealthy" && next === "healthy") {
+      resolveNotificationByDedupeKey(`integration:${key}:unhealthy`);
       const title = "Connection restored";
       const message = `${label} connection is healthy again.`;
       recordNotificationEvent({

@@ -3,6 +3,7 @@ import { useCurrentUser } from "../../app/CurrentUserContext";
 import { usePerformanceData } from "../../app/PerformanceDataContext";
 import { useFeedbackSurveyStore } from "../../app/feedbackSurveyStore";
 import { useWorkGraph } from "../../app/WorkGraphContext";
+import { useOperationalRules } from "../../app/OperationalRulesContext";
 import { useJiraAssignmentState } from "../../app/useJiraAssignmentState";
 import {
   actionOpenLabel,
@@ -22,12 +23,21 @@ import { collectHomeKnowledgeLinks } from "../../domain/home/knowledgeFromGraph"
 import { resolveAuthorizedPeopleScope } from "../../domain/organization/authorizedPeopleScope";
 import { buildOrganizationModel } from "../../domain/organization/buildOrganizationModel";
 import { summarizeFeedbackActions } from "../../domain/feedback/feedbackActionSummary";
+import { syncFeedbackInboxFromSummary } from "../../platform/feedbackInboxSync";
 import type { OrgResolutionResult } from "../../services/bamboo/orgResolver";
 import { loadPreferences } from "../../platform/preferences";
 import { openExternalUrl } from "../../platform/openExternal";
 import { resolveJiraBaseUrl } from "../../config/product";
 import { buildJiraIssueBrowseUrl } from "../../platform/jiraIssueUrl";
+import { openProjectCockpit } from "../../platform/projectCockpitNavigation";
+import { useDigestPreferences } from "../../hooks/useDigestPreferences";
+import { openDigest } from "../../platform/digestNavigation";
+import { useGoals } from "../../hooks/useGoals";
+import { useOptionalCompanyConfig } from "../../app/CompanyConfigContext";
+import { isGoalsEnabled } from "../../app/featureGates";
+import { summarizeGoalsForHome } from "../../domain/goals/goalReview";
 import { acknowledgeTrayJiraIssue } from "../../platform/trayActionCenter";
+import { canOpenPersonBrief } from "../../domain/personAccess";
 import { ActionQueueSection } from "../performance/ActionQueueSection";
 import { PerformanceStatusBanner } from "../performance/PerformanceStatusBanner";
 import { Button } from "../../components/Button/Button";
@@ -35,8 +45,17 @@ import { useEffect, useState } from "react";
 import { useOnboardingResources } from "../../hooks/useOnboardingResources";
 import { useResourceLibrary } from "../../hooks/useResourceLibrary";
 import { GettingStartedResources } from "../onboarding/GettingStartedResources";
+import { OnboardingChecklistCard } from "../onboarding/OnboardingChecklistCard";
+import { OnboardingChecklistDrawer } from "../onboarding/OnboardingChecklistDrawer";
 import { ResourceLibrary } from "../onboarding/ResourceLibrary";
 import { isNewStarter } from "../../domain/onboarding/newStarter";
+import { useOnboardingChecklist } from "../../hooks/useOnboardingChecklist";
+import { buildOnboardingChecklist } from "../../domain/onboardingChecklist/buildOnboardingChecklist";
+import { deriveBambooChecklistSignals } from "../../domain/onboardingChecklist/bambooChecklistSignals";
+import { getAccountState } from "../../domain/onboardingChecklist/normalizeOnboardingChecklistData";
+import { buildManagerOnboardingRow } from "../../domain/onboardingChecklist/managerChecklistView";
+import { syncOnboardingChecklistInbox } from "../../platform/onboardingChecklistNotifications";
+import { listNotificationEvents } from "../../platform/notificationEvents";
 import "../performance/performance-dashboard.css";
 import "./home.css";
 
@@ -45,6 +64,13 @@ export function HomePage() {
   const { data, viewModels, uiState } = usePerformanceData();
   const analytics = useOptionalPerformanceAnalytics();
   const surveyData = useFeedbackSurveyStore((state) => state.data);
+  const feedbackSummary = useMemo(
+    () => summarizeFeedbackActions(surveyData),
+    [surveyData],
+  );
+  useEffect(() => {
+    syncFeedbackInboxFromSummary(feedbackSummary);
+  }, [feedbackSummary]);
   const graph = useWorkGraph();
   const assignmentState = useJiraAssignmentState(data?.lastUpdatedAt);
   const resourceLibrary = useResourceLibrary();
@@ -109,12 +135,81 @@ export function HomePage() {
     data?.teamSnapshot.persons.find((p) => p.id === currentUser.person.id) ??
     data?.teamSnapshot.persons[0];
 
+  const { rules: operationalRules } = useOperationalRules();
+  const { digest: digestModel } = useDigestPreferences();
+  const companyConfig = useOptionalCompanyConfig();
+  const goalsFeatureOn = isGoalsEnabled(companyConfig?.effective.features);
+  const { goals: homeGoals } = useGoals();
+  const goalsHomeSummary = useMemo(
+    () => summarizeGoalsForHome(homeGoals),
+    [homeGoals],
+  );
+
   const onboardingMatched = useOnboardingResources({
     department: selfPerson?.bamboo.department,
     jobTitle: selfPerson?.bamboo.jobTitle,
     projects: graph.projects,
     knowledgeLinks,
   });
+
+  const {
+    model: selfOnboarding,
+    file: onboardingFile,
+    setManualComplete,
+    refreshBambooStale,
+  } = useOnboardingChecklist(selfPerson, surveyData);
+  const [checklistDrawerOpen, setChecklistDrawerOpen] = useState(false);
+  const [bambooStale, setBambooStale] = useState(false);
+
+  useEffect(() => {
+    void loadPreferences().then((prefs) => {
+      setBambooStale(prefs.sync.bambooStale);
+      refreshBambooStale(prefs.sync.bambooStale);
+    });
+  }, [data?.lastUpdatedAt, refreshBambooStale]);
+
+  useEffect(() => {
+    syncOnboardingChecklistInbox(selfOnboarding);
+  }, [selfOnboarding]);
+
+  const teamOnboardingProgress = useMemo(() => {
+    if (!data?.teamSnapshot || homeRole === "employee") return {};
+    const bamboo = deriveBambooChecklistSignals(
+      listNotificationEvents(),
+      bambooStale,
+    );
+    const jiraBase = resolveJiraBaseUrl();
+    const map: Record<string, ReturnType<typeof buildManagerOnboardingRow>> = {};
+    const directIds = new Set(teamSnapshot?.directReportIds ?? []);
+    for (const person of data.teamSnapshot.persons) {
+      if (!directIds.has(person.id)) continue;
+      const hireDate = person.bamboo.hireDate;
+      if (!hireDate || !isNewStarter(hireDate)) continue;
+      const accountKey = person.bamboo.id || person.id;
+      const model = buildOnboardingChecklist({
+        person,
+        accountState: getAccountState(onboardingFile, accountKey),
+        bamboo,
+        surveyData,
+        jiraBaseUrl: jiraBase,
+      });
+      if (model) {
+        map[person.id] = buildManagerOnboardingRow(
+          person.id,
+          person.bamboo.displayName,
+          model,
+        );
+      }
+    }
+    return map;
+  }, [
+    data?.teamSnapshot,
+    homeRole,
+    teamSnapshot?.directReportIds,
+    onboardingFile,
+    surveyData,
+    bambooStale,
+  ]);
 
   const workspaceModel = useMemo(() => {
     if (!selfPerson) return null;
@@ -135,6 +230,9 @@ export function HomePage() {
       knowledgeStatus: graph.status,
       reportParams: data?.reportParams,
       teamPersons: data?.teamSnapshot.persons ?? [],
+      operationalRules,
+      personalOnboarding: selfOnboarding,
+      teamOnboardingProgress,
     });
   }, [
     selfPerson,
@@ -152,6 +250,9 @@ export function HomePage() {
     graph.status,
     data?.reportParams,
     data?.teamSnapshot.persons,
+    operationalRules,
+    selfOnboarding,
+    teamOnboardingProgress,
   ]);
 
   const openPerson = (personId: string, tab?: "overview" | "work" | "history") => {
@@ -203,17 +304,86 @@ export function HomePage() {
         <p className="home-header__context">{workspaceModel.contextLine}</p>
       </header>
 
+      {digestModel?.prefs.showDailyOnHome && digestModel.daily ? (
+        <section className="home-card home-card--brief" aria-label="Today's brief" data-testid="home-daily-brief">
+          <h2 className="home-card__title">
+            {team ? "Team brief" : "Today's brief"}
+          </h2>
+          <p className="home-card__meta">{digestModel.daily.summaryLine}</p>
+          <Button
+            variant="secondary"
+            onClick={() => openDigest("daily")}
+          >
+            View details
+          </Button>
+        </section>
+      ) : null}
+
+      {digestModel?.prefs.showWeeklyOnHome &&
+      digestModel.weekly &&
+      team ? (
+        <section className="home-card" aria-label="Weekly digest" data-testid="home-weekly-digest">
+          <h2 className="home-card__title">Weekly digest</h2>
+          <p className="home-card__meta">{digestModel.weekly.summaryLine}</p>
+          <Button variant="ghost" onClick={() => openDigest("weekly")}>
+            View details
+          </Button>
+        </section>
+      ) : null}
+
+      {goalsFeatureOn &&
+      (goalsHomeSummary.activeCount > 0 || goalsHomeSummary.reviewApproachingCount > 0) ? (
+        <section
+          className="home-card"
+          aria-label="Goals"
+          data-testid="home-goals-summary"
+        >
+          <h2 className="home-card__title">{team ? "Goal reviews" : "Goals"}</h2>
+          <p className="home-card__meta">
+            {goalsHomeSummary.activeCount} active
+            {goalsHomeSummary.reviewApproachingCount > 0
+              ? ` · ${goalsHomeSummary.reviewApproachingCount} review approaching`
+              : ""}
+          </p>
+          <Button
+            variant="secondary"
+            onClick={() => {
+              dispatchAppRoute("performance");
+              if (team) {
+                window.dispatchEvent(
+                  new CustomEvent("metrio-open-performance-tab", {
+                    detail: "goals",
+                  }),
+                );
+              } else {
+                dispatchEmployeeView("goals");
+              }
+            }}
+          >
+            View goals
+          </Button>
+        </section>
+      ) : null}
+
       <div className="home-layout">
         <div className="home-column home-column--personal">
           <p className="home-section-label">My work</p>
 
           {selfPerson?.bamboo.hireDate && isNewStarter(selfPerson.bamboo.hireDate) ? (
-            <GettingStartedResources
-              bamboo={selfPerson.bamboo}
-              matched={onboardingMatched}
-              onViewAll={resourceLibrary.openLibrary}
-              compact
-            />
+            selfOnboarding ? (
+              <OnboardingChecklistCard
+                model={selfOnboarding}
+                onOpenDetail={() => setChecklistDrawerOpen(true)}
+                compact
+              />
+            ) : (
+              <GettingStartedResources
+                bamboo={selfPerson.bamboo}
+                matched={onboardingMatched}
+                onViewAll={resourceLibrary.openLibrary}
+                compact
+              />
+            )
           ) : null}
 
           <ActionQueueSection
@@ -371,6 +541,25 @@ export function HomePage() {
               </Button>
             </section>
 
+            {team.projectSignals.length > 0 ? (
+              <section className="home-card" aria-label="Project signals">
+                <h2 className="home-card__title">Project signals</h2>
+                <ul className="home-link-list">
+                  {team.projectSignals.map((signal) => (
+                    <li key={signal.projectKey}>
+                      <button
+                        type="button"
+                        className="home-link-list__button"
+                        onClick={() => openProjectCockpit(signal.projectKey)}
+                      >
+                        {signal.projectKey} · {signal.label}
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            ) : null}
+
             <section className="home-card" aria-label="Upcoming availability">
               <h2 className="home-card__title">Upcoming availability</h2>
               <p className="home-card__meta">
@@ -405,14 +594,35 @@ export function HomePage() {
                 <h2 className="home-card__title">New starters</h2>
                 <ul className="home-link-list">
                   {team.newStarters.map((row) => (
-                    <li key={row.personId}>
+                    <li key={row.personId} className="home-new-starter-row">
                       <button
                         type="button"
                         className="home-link-list__button"
                         onClick={() => openPerson(row.personId)}
                       >
                         {row.personName} · {row.dayLabel}
+                        {row.progressLabel ? ` · ${row.progressLabel}` : ""}
                       </button>
+                      {row.remainingTitles?.length ? (
+                        <p className="home-card__meta">
+                          Remaining: {row.remainingTitles.join(" · ")}
+                        </p>
+                      ) : null}
+                      {canOpenPersonBrief(currentUser, row.personId) ? (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          onClick={() => {
+                            window.dispatchEvent(
+                              new CustomEvent("metrio-open-person-brief", {
+                                detail: { personId: row.personId },
+                              }),
+                            );
+                          }}
+                        >
+                          Prepare for 1:1
+                        </Button>
+                      ) : null}
                     </li>
                   ))}
                 </ul>
@@ -483,6 +693,15 @@ export function HomePage() {
           onClose={resourceLibrary.closeLibrary}
           resources={onboardingMatched.all}
           byGroup={onboardingMatched.byGroup}
+        />
+      ) : null}
+
+      {selfOnboarding ? (
+        <OnboardingChecklistDrawer
+          open={checklistDrawerOpen}
+          model={selfOnboarding}
+          onClose={() => setChecklistDrawerOpen(false)}
+          onManualToggle={(id, complete) => void setManualComplete(id, complete)}
         />
       ) : null}
     </div>

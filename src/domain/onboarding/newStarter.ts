@@ -2,6 +2,18 @@ import { differenceInCalendarDays, format, parseISO } from "date-fns";
 
 export const NEW_STARTER_DAYS = 60;
 
+let configuredNewStarterDays = NEW_STARTER_DAYS;
+
+export function configureNewStarterWindow(days: number): void {
+  if (days >= 1 && days <= 120) {
+    configuredNewStarterDays = days;
+  }
+}
+
+export function getNewStarterWindowDays(): number {
+  return configuredNewStarterDays;
+}
+
 export interface NewStarterProfile {
   hireDate: string;
   department?: string;
@@ -13,7 +25,7 @@ export function isNewStarter(hireDate: string | undefined, today = new Date()): 
   const start = parseISO(hireDate.slice(0, 10));
   if (Number.isNaN(start.getTime())) return false;
   const days = differenceInCalendarDays(today, start);
-  return days >= 0 && days < NEW_STARTER_DAYS;
+  return days >= 0 && days < configuredNewStarterDays;
 }
 
 export function newStarterDayNumber(hireDate: string, today = new Date()): number {

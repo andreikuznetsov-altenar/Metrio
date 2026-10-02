@@ -1,0 +1,46 @@
+.digest-drawer__header {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.digest-drawer__title {
+  margin: 0;
+  font-size: 1.125rem;
+  font-weight: 600;
+}
+
+.digest-drawer__meta {
+  margin: 0;
+  font-size: 0.8125rem;
+  color: var(--color-text-muted);
+}
+
+.digest-drawer__body {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding-bottom: 24px;
+}
+
+.digest-drawer__section h3 {
+  margin: 0 0 8px;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.digest-drawer__section ul {
+  margin: 0;
+  padding-left: 1.1rem;
+  font-size: 0.875rem;
+}
+
+.digest-drawer__muted {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: 0.8125rem;
+}
+
+.digest-drawer__actions {
+  margin-top: 8px;
+}

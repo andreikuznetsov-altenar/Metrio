@@ -4,7 +4,9 @@ import { buildJiraIssueBrowseUrl } from "./jiraIssueUrl";
 import { openExternalUrl } from "./openExternal";
 import type { AppPreferences } from "./preferences";
 import { resolveJiraBaseUrl } from "../config/product";
+import { bambooEmployeePortalUrl } from "../config/bambooPortal";
 import { acknowledgeTrayJiraIssue } from "./trayActionCenter";
+import { openDigest } from "./digestNavigation";
 
 export async function openNotificationTarget(
   target: NotificationTarget | undefined,
@@ -38,6 +40,46 @@ export async function openNotificationTarget(
   if (target.kind === "performance") {
     window.dispatchEvent(
       new CustomEvent("metrio-open-performance-tab", { detail: target.tab }),
+    );
+    return;
+  }
+
+  if (target.kind === "feedback") {
+    window.dispatchEvent(
+      new CustomEvent("metrio-open-feedback-tab", { detail: target.tab }),
+    );
+    window.dispatchEvent(
+      new CustomEvent("metrio-navigate-route", { detail: "feedback" }),
+    );
+    return;
+  }
+
+  if (target.kind === "bamboo") {
+    await openExternalUrl(bambooEmployeePortalUrl());
+    return;
+  }
+
+  if (target.kind === "home") {
+    window.dispatchEvent(
+      new CustomEvent("metrio-navigate-route", { detail: "home" }),
+    );
+    return;
+  }
+
+  if (target.kind === "digest") {
+    window.dispatchEvent(
+      new CustomEvent("metrio-navigate-route", { detail: "home" }),
+    );
+    openDigest(target.digestKind);
+    return;
+  }
+
+  if (target.kind === "goal") {
+    window.dispatchEvent(
+      new CustomEvent("metrio-navigate-route", { detail: "performance" }),
+    );
+    window.dispatchEvent(
+      new CustomEvent("metrio-open-performance-tab", { detail: "goals" }),
     );
   }
 }

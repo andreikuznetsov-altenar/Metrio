@@ -9,6 +9,8 @@ import { performanceHelp } from "../../domain/performance/performanceHelp";
 import { buildJiraIssueBrowseUrl } from "../../platform/jiraIssueUrl";
 import { loadPreferences } from "../../platform/preferences";
 import { openExternalUrl } from "../../platform/openExternal";
+import { openProjectCockpit } from "../../platform/projectCockpitNavigation";
+import { projectKeyFromIssueKey } from "../../domain/workGraph/issueProjectKey";
 
 function statusVariant(status: string): "danger" | "warning" | "neutral" {
   const normalized = status.toLowerCase();
@@ -72,6 +74,17 @@ export function TeamDeliveryRiskView({
                 <tr key={row.issueKey}>
                   <td className="performance-delivery-risk__issue">
                     <span className="performance-issue-key">{row.issueKey}</span>
+                    {projectKeyFromIssueKey(row.issueKey) ? (
+                      <button
+                        type="button"
+                        className="performance-table__person-link performance-delivery-risk__project"
+                        onClick={() =>
+                          openProjectCockpit(projectKeyFromIssueKey(row.issueKey)!)
+                        }
+                      >
+                        {projectKeyFromIssueKey(row.issueKey)}
+                      </button>
+                    ) : null}
                     <span className="performance-delivery-risk__title">
                       {row.issueTitle}
                     </span>

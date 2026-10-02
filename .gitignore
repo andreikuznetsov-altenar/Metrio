@@ -29,3 +29,8 @@ test-results/
 CertificateSigningRequest.*
 *.p12
 *.p8
+
+# Tauri updater private keys
+*.key
+metrio-updater
+release-artifacts/

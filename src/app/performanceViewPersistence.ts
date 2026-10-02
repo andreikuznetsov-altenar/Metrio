@@ -11,11 +11,13 @@ const TEAM_VIEWS: TeamPerformanceView[] = [
   "people",
   "radar",
   "delivery-risk",
+  "goals",
 ];
 
 const EMPLOYEE_VIEWS: EmployeePerformanceView[] = [
   "overview",
   "my-week",
+  "goals",
   "trends",
   "work-history",
 ];

@@ -35,6 +35,9 @@ import {
   type PerformanceViewModels,
 } from "../services/performance/performanceViewModel";
 import { registerCoalescedBackgroundRefresh } from "../services/refresh/backgroundRefresh";
+import { DEFAULT_OPERATIONAL_RULES } from "../domain/operationalRules/operationalRulesDefaults";
+import { useOptionalCurrentUser } from "./CurrentUserContext";
+import type { OperationalRules } from "../domain/operationalRules/operationalRulesTypes";
 import { createCoalescedRefresh } from "../services/refresh/refreshCoordinator";
 import {
   installKpiReconciliationDevTools,
@@ -89,6 +92,7 @@ export interface PerformanceDataProviderProps {
   audience: PerformanceAudience;
   selfPersonId: string;
   managerTeamTray: boolean;
+  operationalRules?: OperationalRules;
   children: ReactNode;
 }
 
@@ -102,8 +106,11 @@ export function PerformanceDataProvider({
   audience,
   selfPersonId,
   managerTeamTray,
+  operationalRules = DEFAULT_OPERATIONAL_RULES,
   children,
 }: PerformanceDataProviderProps) {
+  const currentUserCtx = useOptionalCurrentUser();
+  const userRole = currentUserCtx?.currentUser.person.role ?? "employee";
   const [data, setData] = useState<PerformanceFetchResult | null>(null);
   const [viewModels, setViewModels] = useState<PerformanceViewModels | null>(
     null,
@@ -120,10 +127,10 @@ export function PerformanceDataProvider({
   const requestSeqRef = useRef(0);
   const initialLoadDoneRef = useRef(false);
   const datasetKeyRef = useRef<string | null>(null);
+  const appliedRulesKeyRef = useRef<string | null>(null);
   dataRef.current = data;
   viewModelsRef.current = viewModels;
   managerTeamTrayRef.current = managerTeamTray;
-
   useEffect(() => {
     installKpiReconciliationDevTools();
   }, []);
@@ -182,9 +189,11 @@ export function PerformanceDataProvider({
           dateRangeKeyFromPerformanceRange(dateRange),
           dateRange,
           reviewTarget,
+          operationalRules,
         );
         setData(next);
         setViewModels(models);
+        appliedRulesKeyRef.current = JSON.stringify(operationalRules);
         registerKpiReconciliationDataSource(next, reviewTarget);
         const partial =
           next.partialWarnings.length > 0 || Boolean(models.statusMessage);
@@ -193,6 +202,9 @@ export function PerformanceDataProvider({
         setErrorMessage(null);
         await applyPerformanceRefreshSideEffects(next, {
           selfPersonId,
+          role: userRole,
+          viewModels: models,
+          currentUser: currentUserCtx?.currentUser ?? null,
         });
       } catch (error) {
         if (!isLatestPerformanceRequest(requestId, requestSeqRef.current)) {
@@ -212,8 +224,34 @@ export function PerformanceDataProvider({
         }
       }
     },
-    [dateRange, reviewTarget, audience, enabled, selfPersonId],
+    [
+      dateRange,
+      reviewTarget,
+      audience,
+      enabled,
+      selfPersonId,
+      operationalRules,
+      userRole,
+      currentUserCtx?.currentUser,
+    ],
   );
+
+  useEffect(() => {
+    const current = dataRef.current;
+    if (!current || !enabled) return;
+    const rulesKey = JSON.stringify(operationalRules);
+    if (rulesKey === appliedRulesKeyRef.current) return;
+    appliedRulesKeyRef.current = rulesKey;
+    const models = buildPerformanceViewModels(
+      current,
+      selfPersonId,
+      dateRangeKeyFromPerformanceRange(dateRange),
+      dateRange,
+      reviewTarget,
+      operationalRules,
+    );
+    setViewModels(models);
+  }, [operationalRules, dateRange, reviewTarget, selfPersonId, enabled]);
 
   const coalescedLoadRef = useRef(createCoalescedRefresh(() => load("refresh")));
 

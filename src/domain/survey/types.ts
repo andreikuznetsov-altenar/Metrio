@@ -75,8 +75,22 @@ export interface SurveySendBatch {
   failedCount: number;
 }
 
+export type FeedbackConfidentiality =
+  | 'identified'
+  | 'confidential_named'
+  | 'anonymous_aggregated';
+
+/** Feedback run instance — same persistence row as legacy Survey. */
 export interface Survey {
   id: string;
+  /** Parent cycle; null = legacy one-off run */
+  cycleId?: string | null;
+  /** Dedup key for scheduled runs e.g. 2026-W10 or 2026-03 */
+  periodKey?: string | null;
+  templateId?: string | null;
+  templateVersion?: number | null;
+  dueAt?: string | null;
+  confidentiality?: FeedbackConfidentiality;
   googleFormId: string | null;
   responderUri: string | null;
   createdAt: string;
@@ -117,6 +131,9 @@ export interface SurveyDataFile {
   defaults: SurveyConfigDefaults;
   surveys: Survey[];
   activeSurveyId: string | null;
+  cycles?: import('../feedbackCycles/feedbackCycleTypes').FeedbackCycle[];
+  templates?: import('../feedbackCycles/feedbackCycleTypes').FeedbackSurveyTemplate[];
+  scheduleState?: import('../feedbackCycles/feedbackCycleTypes').FeedbackScheduleState;
 }
 
 export interface PrepareValidationIssue {

@@ -4,6 +4,7 @@ import { useFeedbackSurveyStore } from "../../app/feedbackSurveyStore";
 import { actionOpenLabel, navigateActionTarget } from "../../app/actionNavigation";
 import { buildDirectorTeamActions } from "../../domain/actions/buildOrganizationActions";
 import { buildTeamActions } from "../../domain/actions/buildTeamActions";
+import { useOperationalRules } from "../../app/OperationalRulesContext";
 import { summarizeFeedbackActions } from "../../domain/feedback/feedbackActionSummary";
 import type { TeamSecondarySnapshot } from "../../domain/performance";
 import { ActionQueueSection } from "./ActionQueueSection";
@@ -84,18 +85,26 @@ export function TeamOverviewView({
     () => summarizeFeedbackActions(surveyData),
     [surveyData],
   );
+  const { rules: operationalRules } = useOperationalRules();
 
   const teamActions = useMemo(() => {
     const input = {
       snapshot,
       deliveryRisk: secondary.deliveryRisk,
       feedback: feedbackSummary,
+      operationalRules,
     };
     if (currentUser?.person.role === "director") {
       return buildDirectorTeamActions(input);
     }
     return buildTeamActions(input);
-  }, [snapshot, secondary.deliveryRisk, feedbackSummary, currentUser?.person.role]);
+  }, [
+    snapshot,
+    secondary.deliveryRisk,
+    feedbackSummary,
+    currentUser?.person.role,
+    operationalRules,
+  ]);
 
   const actionTitle =
     currentUser?.person.role === "director" ? "Organization actions" : "Team actions";

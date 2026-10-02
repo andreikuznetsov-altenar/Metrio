@@ -14,6 +14,8 @@ export interface HomeNewStarterCard {
   headline: string;
   resourceCount: number;
   bambooActionCount: number;
+  checklistProgress?: string;
+  checklistNextTitles?: string[];
 }
 
 export interface HomeTimeOffCard {
@@ -45,6 +47,8 @@ export interface HomeNewStarterTeamRow {
   personId: string;
   personName: string;
   dayLabel: string;
+  progressLabel?: string;
+  remainingTitles?: string[];
 }
 
 export interface HomePersonalWorkspace {
@@ -57,9 +61,15 @@ export interface HomePersonalWorkspace {
   performanceSnapshot: HomePerformanceSnapshot;
 }
 
+export interface HomeProjectSignal {
+  projectKey: string;
+  label: string;
+}
+
 export interface HomeTeamWorkspace {
   actions: ActionItem[];
   deliverySummary: HomeDeliverySummary;
+  projectSignals: HomeProjectSignal[];
   awayNextWeek: number;
   availabilityPreview: ManagerAvailabilityRow[];
   newStarters: HomeNewStarterTeamRow[];

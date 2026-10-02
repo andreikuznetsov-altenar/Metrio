@@ -33,6 +33,15 @@ use api::google::{
 use api::google::credentials::GoogleAuthState;
 use api::google::oauth::GoogleTokenState;
 use api::survey_store::{survey_data_load, survey_data_save};
+use api::goals_store::{goals_data_load, goals_data_save};
+use api::onboarding_checklist_store::{
+    onboarding_checklist_data_load,
+    onboarding_checklist_data_save,
+};
+use api::company_config_store::{
+    company_config_cache_load,
+    company_config_cache_save,
+};
 use keyring::Entry;
 use logs::{log_write, logs_get_path, logs_open_folder, write_setup_log};
 use persistence::{atomic_write_json, load_json_file, PREFERENCES_SCHEMA_VERSION};
@@ -473,6 +482,8 @@ pub fn run() {
         .plugin(tauri_plugin_notification::init())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_fs::init())
+        .plugin(tauri_plugin_process::init())
+        .plugin(tauri_plugin_updater::Builder::new().build())
         .manage(AppState {
             tray: Mutex::new(tray_action::TrayActionState::default()),
             quitting: Mutex::new(false),
@@ -531,6 +542,12 @@ pub fn run() {
             google_drive_set_responder_access,
             survey_data_load,
             survey_data_save,
+            goals_data_load,
+            goals_data_save,
+            onboarding_checklist_data_load,
+            onboarding_checklist_data_save,
+            company_config_cache_load,
+            company_config_cache_save,
             kpi_snapshot_load,
             kpi_snapshot_save,
             credential_import_legacy,

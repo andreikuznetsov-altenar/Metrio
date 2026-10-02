@@ -10,17 +10,24 @@ import type { Person } from "../domain/people/types";
 import type { ReportParams } from "../domain/jira/types";
 import {
   markJiraAssignmentRead,
+  unreadJiraAssignments,
   type JiraAssignmentState,
 } from "../domain/jira/jiraAssignmentTracking";
 import { bambooEmployeePortalUrl } from "../config/bambooPortal";
 import { JIRA_ASSIGNMENT_CHANGED } from "./jiraAssignmentEvents";
+import {
+  markInboxJiraEventsReadForIssueKey,
+  syncTrayBambooInboxActions,
+} from "./notificationEvents";
 import { loadPreferences, savePreferences } from "./preferences";
+import { registerTrayContextForUpdate } from "./trayUpdateBridge";
 
 export interface TrayBuildContext {
   assignmentState: JiraAssignmentState;
   activeTaskCount: number;
   bambooActions: TrayActionSnapshot["bambooActions"];
   upcomingVacation?: TrayActionSnapshot["upcomingVacation"];
+  softwareUpdateAvailable?: boolean;
 }
 
 let lastTrayContext: TrayBuildContext | null = null;
@@ -61,7 +68,12 @@ export async function updateTrayActionCenter(
 
 export async function pushTrayFromContext(context: TrayBuildContext): Promise<void> {
   lastTrayContext = context;
-  const snapshot = buildTrayActionSnapshot(context);
+  registerTrayContextForUpdate(context);
+  syncTrayBambooInboxActions(context.bambooActions);
+  const snapshot = {
+    ...buildTrayActionSnapshot(context),
+    softwareUpdateAvailable: context.softwareUpdateAvailable,
+  };
   try {
     await updateTrayActionCenter(snapshot);
   } catch {
@@ -75,6 +87,35 @@ export async function acknowledgeTrayJiraIssue(issueKey: string): Promise<void> 
   if (!state) return;
   const readAt = new Date().toISOString();
   const nextState = markJiraAssignmentRead(state, issueKey, readAt);
+  await savePreferences({
+    ...prefs,
+    notificationState: {
+      ...prefs.notificationState,
+      jiraAssignment: nextState,
+    },
+  });
+  markInboxJiraEventsReadForIssueKey(issueKey);
+  if (lastTrayContext) {
+    await pushTrayFromContext({
+      ...lastTrayContext,
+      assignmentState: nextState,
+    });
+  }
+  window.dispatchEvent(new CustomEvent(JIRA_ASSIGNMENT_CHANGED));
+}
+
+export async function markAllTrayJiraAssignmentsRead(): Promise<void> {
+  const prefs = await loadPreferences();
+  const state = prefs.notificationState.jiraAssignment;
+  if (!state || unreadJiraAssignments(state).length === 0) return;
+  const readAt = new Date().toISOString();
+  const records = { ...state.records };
+  for (const key of Object.keys(records)) {
+    if (!records[key].readAt) {
+      records[key] = { ...records[key], readAt };
+    }
+  }
+  const nextState: JiraAssignmentState = { ...state, records };
   await savePreferences({
     ...prefs,
     notificationState: {

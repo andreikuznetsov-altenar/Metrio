@@ -32,6 +32,7 @@ function formatRange(start: Date, end: Date): string {
 export function classifyAvailability(
   entry: TimeOffEntry | null,
   today: Date = startOfDay(new Date()),
+  soonWithinDays = 7,
 ): PersonAvailability {
   const day = startOfDay(today);
 
@@ -86,7 +87,8 @@ export function classifyAvailability(
     };
   }
 
-  const soonLimit = addDays(day, 7);
+  const windowDays = Math.max(1, Math.min(21, Math.round(soonWithinDays)));
+  const soonLimit = addDays(day, windowDays);
   if (isAfter(start, day) && !isAfter(start, soonLimit)) {
     return {
       state: 'vacation_soon',

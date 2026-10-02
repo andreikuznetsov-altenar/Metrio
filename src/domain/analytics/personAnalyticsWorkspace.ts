@@ -32,6 +32,8 @@ import {
   getActiveIssues,
 } from "../radar/taskSignals";
 import { classifyTaskHealth } from "../task-health/taskHealthEngine";
+import type { OperationalRules } from "../operationalRules/operationalRulesTypes";
+import { DEFAULT_OPERATIONAL_RULES } from "../operationalRules/operationalRulesDefaults";
 import { getOperationalIssues } from "../people/ownedIssues";
 import {
   availabilityHeadline,
@@ -108,6 +110,7 @@ export interface BuildPersonAnalyticsWorkspaceInput {
   reviewTarget: PerformanceReviewTarget;
   timeOffEntries: TimeOffEntry[];
   teamEmployeeIds: Set<string>;
+  operationalRules?: OperationalRules;
 }
 
 function efficiencyStatusVariant(score: number): BadgeVariant {
@@ -296,6 +299,7 @@ function buildPersonTimeOffContext(
 export function buildPersonAnalyticsWorkspace(
   input: BuildPersonAnalyticsWorkspaceInput,
 ): PersonAnalyticsWorkspace {
+  const operationalRules = input.operationalRules ?? DEFAULT_OPERATIONAL_RULES;
   const {
     person,
     historyPerson,
@@ -362,7 +366,7 @@ export function buildPersonAnalyticsWorkspace(
   const activeIssues = getActiveIssues(person, params);
   const attention: PersonalAttentionItem[] = activeIssues
     .map((issue) => {
-      const item = classifyIssueAttention(issue, params, now);
+      const item = classifyIssueAttention(issue, params, now, operationalRules);
       if (!item) return null;
       return {
         label: formatAttentionHealthLabel(item.health.status),

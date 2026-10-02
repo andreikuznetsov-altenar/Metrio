@@ -23,10 +23,15 @@ import type {
   EmployeePerformanceSnapshot,
   TeamPerformanceSnapshot,
 } from "../performance";
+import { buildHomeProjectSignals } from "../projectCockpit/buildHomeProjectSignals";
+import type { OperationalRules } from "../operationalRules/operationalRulesTypes";
+import { DEFAULT_OPERATIONAL_RULES } from "../operationalRules/operationalRulesDefaults";
 import type { OrganizationOverviewModel } from "../organization/organizationTypes";
 import type { Person } from "../people/types";
 import type { UserRole } from "../types";
 import type { SurveyDataFile } from "../survey/types";
+import type { OnboardingChecklistModel } from "../onboardingChecklist/onboardingChecklistTypes";
+import type { ManagerOnboardingProgressRow } from "../onboardingChecklist/onboardingChecklistTypes";
 import type {
   HomeDeliverySummary,
   HomeFeedbackCard,
@@ -57,6 +62,9 @@ export interface BuildHomeWorkspaceInput {
   teamPersons: Person[];
   selfDisplayName: string;
   now?: Date;
+  operationalRules?: OperationalRules;
+  personalOnboarding?: OnboardingChecklistModel | null;
+  teamOnboardingProgress?: Record<string, ManagerOnboardingProgressRow>;
 }
 
 export function resolveHomeRoleVariant(
@@ -143,6 +151,10 @@ function buildPersonalSection(
       headline: formatNewStarterHeadline(hireDate, now),
       resourceCount: matched.preview.length,
       bambooActionCount: matched.all.filter((r) => r.source === "bamboo").length,
+      checklistProgress: input.personalOnboarding?.progress.headline,
+      checklistNextTitles: input.personalOnboarding?.progress.nextItems.map(
+        (i) => i.title,
+      ),
     };
   }
 
@@ -191,11 +203,13 @@ function buildTeamSection(
 ): HomeTeamWorkspace {
   const snapshot = input.teamSnapshot!;
   const feedbackSummary = summarizeFeedbackActions(input.surveyData);
+  const rules = input.operationalRules ?? DEFAULT_OPERATIONAL_RULES;
   const actionsInput = {
     snapshot,
     deliveryRisk: input.deliveryRisk,
     feedback: feedbackSummary,
     now,
+    operationalRules: rules,
   };
   const actions =
     input.role === "director"
@@ -217,16 +231,20 @@ function buildTeamSection(
     if (!directReportIds.has(person.id)) continue;
     const hireDate = person.bamboo.hireDate;
     if (!hireDate || !isNewStarter(hireDate, now)) continue;
+    const onboardingRow = input.teamOnboardingProgress?.[person.id];
     newStarters.push({
       personId: person.id,
       personName: person.bamboo.displayName,
       dayLabel: `Day ${newStarterDayNumber(hireDate, now)}`,
+      progressLabel: onboardingRow?.progressLabel,
+      remainingTitles: onboardingRow?.remainingTitles,
     });
   }
 
   return {
     actions,
-    deliverySummary: summarizeDelivery(input.deliveryRisk),
+    deliverySummary: summarizeDelivery(input.deliveryRisk, rules),
+    projectSignals: buildHomeProjectSignals(input.deliveryRisk, rules),
     awayNextWeek,
     availabilityPreview: availabilityRows.slice(0, 3),
     newStarters,
@@ -244,15 +262,22 @@ function buildOrganizationSection(
   };
 }
 
-function summarizeDelivery(deliveryRisk: DeliveryRiskRow[]): HomeDeliverySummary {
+function summarizeDelivery(
+  deliveryRisk: DeliveryRiskRow[],
+  rules: OperationalRules = DEFAULT_OPERATIONAL_RULES,
+): HomeDeliverySummary {
   let problematic = 0;
   let longReview = 0;
   let backflowSignals = 0;
+  const longReviewDays = rules.taskAttention.longReviewHighlightDays;
   for (const row of deliveryRisk) {
     if (/problematic|at risk/i.test(row.riskReason)) {
       problematic += 1;
     }
-    if (/review/i.test(row.status) && parseStageDays(row.age) >= 7) {
+    if (
+      /review/i.test(row.status) &&
+      parseStageDays(row.age) >= longReviewDays
+    ) {
       longReview += 1;
     }
     if (/backflow/i.test(row.riskReason)) {

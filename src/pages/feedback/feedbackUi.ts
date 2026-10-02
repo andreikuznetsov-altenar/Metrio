@@ -4,9 +4,10 @@ import { recipientStatusLabel } from '../../domain/survey/status';
 import type { RecipientStatus } from '../../domain/survey/types';
 import type { AppPreferences } from '../../platform/preferences';
 
-export type FeedbackTab = 'survey' | 'delivery' | 'results' | 'history';
+export type FeedbackTab = 'survey' | 'delivery' | 'results' | 'history' | 'cycles';
 
 export const FEEDBACK_TABS: { id: FeedbackTab; label: string }[] = [
+  { id: 'cycles', label: 'Cycles' },
   { id: 'survey', label: 'Survey' },
   { id: 'delivery', label: 'Delivery' },
   { id: 'results', label: 'Results' },

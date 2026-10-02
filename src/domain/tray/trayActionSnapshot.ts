@@ -18,6 +18,8 @@ export interface TrayVacationItem {
 export interface TrayActionSnapshot {
   /** macOS menu bar title: digits only when >0 unread Jira assignments */
   trayTitle?: string;
+  /** Informational only — does not affect numeric tray badge */
+  softwareUpdateAvailable?: boolean;
   unreadAssignmentCount: number;
   newTasks: TrayJiraTaskItem[];
   activeTaskCount: number;
@@ -63,6 +65,10 @@ export function trayMenuItemsFromSnapshot(snapshot: TrayActionSnapshot): TrayMen
       id: `vacation:${snapshot.upcomingVacation.id}`,
       label: snapshot.upcomingVacation.label,
     });
+  }
+
+  if (snapshot.softwareUpdateAvailable) {
+    items.push({ id: "update-available", label: "Update available" });
   }
 
   items.push({ id: "refresh", label: "Refresh" });

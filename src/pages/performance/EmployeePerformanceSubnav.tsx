@@ -4,6 +4,7 @@ import { PageSubnav } from "../../shell/PageSubnav";
 const ITEMS: { id: EmployeePerformanceView; label: string }[] = [
   { id: "overview", label: "Overview" },
   { id: "my-week", label: "My Week" },
+  { id: "goals", label: "Goals" },
   { id: "trends", label: "Trends" },
   { id: "work-history", label: "Work History" },
 ];

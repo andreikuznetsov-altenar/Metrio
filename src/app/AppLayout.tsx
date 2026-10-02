@@ -15,25 +15,45 @@ import { FeedbackPage } from "../pages/FeedbackPage";
 import { PerformancePage } from "../pages/PerformancePage";
 import { HomePage } from "../pages/home/HomePage";
 import { WorkGraphShell } from "./WorkGraphShell";
+import { CompanyConfigProvider, useOptionalCompanyConfig } from "./CompanyConfigContext";
+import { OperationalRulesProvider } from "./OperationalRulesContext";
 import { SettingsPage } from "../pages/settings/SettingsPage";
 import type { SettingsSection } from "../pages/settings/types";
 import { MetrioAppHeader } from "../shell/MetrioAppHeader";
+import { CommandPalette } from "../shell/CommandPalette";
+import { PersonBriefDrawer } from "../pages/performance/PersonBriefDrawer";
+import { ProjectCockpitDrawer } from "../pages/project/ProjectCockpitDrawer";
+import { DigestDrawer } from "../pages/digest/DigestDrawer";
+import { DIGEST_OPEN_EVENT } from "../platform/digestNavigation";
+import { useDigestPreferences } from "../hooks/useDigestPreferences";
+import type { OperationalDigest } from "../domain/digests/digestTypes";
+import { openProjectCockpit } from "../platform/projectCockpitNavigation";
+import { useWorkGraph } from "./WorkGraphContext";
+import { useTheme } from "../theme/ThemeProvider";
+import { resolveJiraBaseUrl } from "../config/product";
+import { loadPreferences } from "../platform/preferences";
+import { buildJiraIssueBrowseUrl } from "../platform/jiraIssueUrl";
+import { isCommandPaletteShortcut } from "../platform/commandPaletteShortcut";
 import { PageToolbar } from "../shell/PageToolbar";
 import { Button } from "../components/Button/Button";
 import { PerformanceToolbar } from "../shell/PerformanceToolbar";
 import { NotificationCenter } from "../shell/NotificationCenter";
-import { countUnreadNotificationEvents, NOTIFICATION_EVENTS_CHANGED } from "../platform/notificationEvents";
+import {
+  clearNotificationHistory,
+  countUnreadNotificationEvents,
+  NOTIFICATION_EVENTS_CHANGED,
+} from "../platform/notificationEvents";
 import { RuntimeShellEffects } from "./RuntimeShellEffects";
 import { TrayMenuEffects } from "./TrayMenuEffects";
+import { UpdateProvider } from "./UpdateContext";
+import { UpdateTrayEffects } from "./UpdateTrayEffects";
 import { useCurrentUser } from "./CurrentUserContext";
 import { clearConnection } from "./connectionStorage";
 import { useConnectionGate } from "./ConnectionContext";
 import { logoutSession } from "./logoutSession";
 import { clearTrayUserContext } from "../platform/trayActionCenter";
-import {
-  PerformanceDataProvider,
-  usePerformanceData,
-} from "./PerformanceDataContext";
+import { usePerformanceData } from "./PerformanceDataContext";
+import { PerformanceDataWithRules } from "./PerformanceDataWithRules";
 import {
   PerformanceExportProvider,
   usePerformanceExport,
@@ -95,7 +115,10 @@ export function AppLayout() {
   return (
     <>
       <RuntimeShellEffects />
-      <PerformanceDataProvider
+      <UpdateProvider>
+      <CompanyConfigProvider>
+      <OperationalRulesProvider>
+      <PerformanceDataWithRules
         enabled
         showLoadingOverlay={performanceSurfaceActive}
         dateRange={dateRange}
@@ -135,7 +158,10 @@ export function AppLayout() {
         />
         </WorkGraphShell>
         </PerformanceExportProvider>
-      </PerformanceDataProvider>
+      </PerformanceDataWithRules>
+      </OperationalRulesProvider>
+      </CompanyConfigProvider>
+      </UpdateProvider>
     </>
   );
 }
@@ -173,10 +199,29 @@ function AppLayoutShell({
   showTeamPerformance,
   showEmployeePerformance,
 }: AppLayoutShellProps) {
-  const feedbackEnabled = isFeedbackEnabled();
+  const companyConfig = useOptionalCompanyConfig();
+  const feedbackEnabled = isFeedbackEnabled(companyConfig?.effective.features);
   const { resetConnection, invalidateSession } = useConnectionGate();
-  const { refresh, performanceControlsDisabled } = usePerformanceData();
+  const { refresh, performanceControlsDisabled, data } = usePerformanceData();
   const performanceExport = usePerformanceExport();
+  const workGraph = useWorkGraph();
+  const { preference, setPreference } = useTheme();
+  const { currentUser } = useCurrentUser();
+  const openAboutSettings = useCallback(() => {
+    setSettingsOpen(true);
+    setSettingsSection("about");
+  }, [setSettingsOpen, setSettingsSection]);
+  const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
+  const [personBriefPersonId, setPersonBriefPersonId] = useState<string | null>(
+    null,
+  );
+  const [projectCockpitKey, setProjectCockpitKey] = useState<string | null>(
+    null,
+  );
+  const [digestOpen, setDigestOpen] = useState(false);
+  const [digestKind, setDigestKind] = useState<"daily" | "weekly">("daily");
+  const { digest: digestModel } = useDigestPreferences();
+  const [paletteJiraBaseUrl, setPaletteJiraBaseUrl] = useState("");
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [notificationUnread, setNotificationUnread] = useState(() =>
     countUnreadNotificationEvents(),
@@ -188,6 +233,59 @@ function AppLayoutShell({
     const onChanged = () => setNotificationUnread(countUnreadNotificationEvents());
     window.addEventListener(NOTIFICATION_EVENTS_CHANGED, onChanged);
     return () => window.removeEventListener(NOTIFICATION_EVENTS_CHANGED, onChanged);
+  }, []);
+
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (isCommandPaletteShortcut(event)) {
+        event.preventDefault();
+        setCommandPaletteOpen(true);
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, []);
+
+  useEffect(() => {
+    void loadPreferences().then((prefs) => {
+      setPaletteJiraBaseUrl(resolveJiraBaseUrl(prefs));
+    });
+  }, []);
+
+  useEffect(() => {
+    const onBrief = (event: Event) => {
+      const detail = (event as CustomEvent<{ personId: string }>).detail;
+      if (detail?.personId) {
+        setPersonBriefPersonId(detail.personId);
+      }
+    };
+    window.addEventListener("metrio-open-person-brief", onBrief);
+    return () => window.removeEventListener("metrio-open-person-brief", onBrief);
+  }, []);
+
+  useEffect(() => {
+    const onDigest = (event: Event) => {
+      const detail = (event as CustomEvent<{ digestKind: "daily" | "weekly" }>)
+        .detail;
+      if (detail?.digestKind) {
+        setDigestKind(detail.digestKind);
+        setDigestOpen(true);
+      }
+    };
+    window.addEventListener(DIGEST_OPEN_EVENT, onDigest);
+    return () => window.removeEventListener(DIGEST_OPEN_EVENT, onDigest);
+  }, []);
+
+  useEffect(() => {
+    const onProject = (event: Event) => {
+      const detail = (event as CustomEvent<{ projectKey: string }>).detail;
+      if (detail?.projectKey) {
+        setProjectCockpitKey(detail.projectKey);
+      }
+    };
+    window.addEventListener("metrio-open-project-cockpit", onProject);
+    return () =>
+      window.removeEventListener("metrio-open-project-cockpit", onProject);
   }, []);
 
   useEffect(() => {
@@ -233,8 +331,43 @@ function AppLayoutShell({
     [setSettingsOpen, setSettingsSection],
   );
 
+  const commandPaletteHandlers = useMemo(
+    () => ({
+      refresh: onRefresh,
+      openNotifications: () => setNotificationsOpen(true),
+      openSettings: () => onOpenSettings("general"),
+      openPerson: (personId: string) => {
+        window.dispatchEvent(
+          new CustomEvent("metrio-open-person", { detail: personId }),
+        );
+      },
+      openProjectCockpit: (projectKey: string) => {
+        openProjectCockpit(projectKey);
+      },
+      switchTheme: () => {
+        const order = ["system", "light", "dark"] as const;
+        const next = order[(order.indexOf(preference) + 1) % order.length];
+        setPreference(next);
+      },
+      feedbackEnabled,
+      resolveJiraUrl: (issueKey: string) =>
+        buildJiraIssueBrowseUrl(paletteJiraBaseUrl, issueKey),
+    }),
+    [
+      onRefresh,
+      onOpenSettings,
+      preference,
+      setPreference,
+      feedbackEnabled,
+      paletteJiraBaseUrl,
+    ],
+  );
+
+  const teamPersons = data?.teamSnapshot?.persons ?? [];
+
   const onLogout = useCallback(() => {
     void clearTrayUserContext();
+    clearNotificationHistory();
     logoutSession();
     invalidateSession();
   }, [invalidateSession]);
@@ -343,6 +476,7 @@ function AppLayoutShell({
   return (
     <>
       <TrayMenuEffects onRefresh={() => void refresh()} />
+      <UpdateTrayEffects onOpenAbout={openAboutSettings} />
       <AppShell
         header={
           <MetrioAppHeader
@@ -351,6 +485,7 @@ function AppLayoutShell({
             onNavigate={onNavigate}
             onOpenSettings={() => onOpenSettings("general")}
             onOpenNotifications={() => setNotificationsOpen(true)}
+            onOpenCommandPalette={() => setCommandPaletteOpen(true)}
             notificationUnreadCount={notificationUnread}
             onOpenConnections={() => onOpenSettings("connections")}
             onLogout={onLogout}
@@ -370,6 +505,37 @@ function AppLayoutShell({
           );
         }}
         onOpenSettings={onOpenSettings}
+      />
+      <CommandPalette
+        open={commandPaletteOpen}
+        onClose={() => setCommandPaletteOpen(false)}
+        handlers={commandPaletteHandlers}
+        searchInput={{
+          currentUser,
+          teamPersons,
+          workGraph,
+          feedbackEnabled,
+        }}
+      />
+      <PersonBriefDrawer
+        personId={personBriefPersonId}
+        open={personBriefPersonId != null}
+        onClose={() => setPersonBriefPersonId(null)}
+      />
+      <ProjectCockpitDrawer
+        projectKey={projectCockpitKey}
+        open={projectCockpitKey != null}
+        onClose={() => setProjectCockpitKey(null)}
+        dateRange={dateRange}
+      />
+      <DigestDrawer
+        digest={
+          (digestKind === "weekly"
+            ? digestModel?.weekly
+            : digestModel?.daily) as OperationalDigest | null
+        }
+        open={digestOpen}
+        onClose={() => setDigestOpen(false)}
       />
     </>
   );

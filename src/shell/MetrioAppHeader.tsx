@@ -1,4 +1,4 @@
-import { Bell, Settings2 } from "lucide-react";
+import { Bell, Search, Settings2 } from "lucide-react";
 import { IconButton } from "../components/IconButton/IconButton";
 import type { AppRoute } from "../domain/types";
 import { ConnectionHealthBadge } from "./ConnectionHealthBadge";
@@ -17,6 +17,7 @@ export interface MetrioAppHeaderProps {
   feedbackEnabled?: boolean;
   onOpenSettings?: () => void;
   onOpenNotifications?: () => void;
+  onOpenCommandPalette?: () => void;
   notificationUnreadCount?: number;
   onOpenConnections?: () => void;
   onLogout?: () => void;
@@ -28,6 +29,7 @@ export function MetrioAppHeader({
   feedbackEnabled = true,
   onOpenSettings,
   onOpenNotifications,
+  onOpenCommandPalette,
   notificationUnreadCount = 0,
   onOpenConnections,
   onLogout,
@@ -63,6 +65,12 @@ export function MetrioAppHeader({
       </div>
 
       <div className="app-header__actions">
+        <IconButton
+          label="Search · ⌘K"
+          onClick={onOpenCommandPalette}
+        >
+          <Search size={16} strokeWidth={1.7} />
+        </IconButton>
         <ConnectionHealthBadge onOpenConnections={onOpenConnections} />
         <IconButton label="Settings" onClick={onOpenSettings}>
           <Settings2 size={16} strokeWidth={1.7} />

@@ -34,6 +34,8 @@ import { buildPreLeaveWorkSummary } from "../../domain/availability/preLeaveWork
 import { summarizeChangesWhileAway } from "../../domain/availability/changedWhileAway";
 import { isUpcomingLeaveState } from "../../domain/availability/leaveCalendar";
 import { PerformanceStatusBanner } from "./PerformanceStatusBanner";
+import { EmployeeGoalsView } from "./EmployeeGoalsView";
+import "./goal-detail-drawer.css";
 import { buildMetricDrilldownRequest } from "./analyticsDrilldownModel";
 import "./performance-dashboard.css";
 
@@ -262,6 +264,10 @@ export function EmployeePerformanceOverview({ personId }: EmployeePerformanceOve
 
       {activeView === "my-week" ? (
         <EmployeeMyWeekView myWeek={snapshot.myWeek} />
+      ) : null}
+
+      {activeView === "goals" ? (
+        <EmployeeGoalsView personId={personId} />
       ) : null}
 
       {activeView === "trends" ? (

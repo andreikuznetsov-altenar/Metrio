@@ -20,6 +20,15 @@ export function setPerformanceApproved(approved: boolean): void {
   }
 }
 
-export function isFeedbackEnabled(): boolean {
+export function isFeedbackEnabled(features?: { feedback?: boolean }): boolean {
+  if (features && features.feedback === false) return false;
   return isPerformanceApproved();
+}
+
+export function isGoalsEnabled(features?: { goals?: boolean }): boolean {
+  return features?.goals !== false;
+}
+
+export function isProjectCockpitEnabled(features?: { projectCockpit?: boolean }): boolean {
+  return features?.projectCockpit !== false;
 }

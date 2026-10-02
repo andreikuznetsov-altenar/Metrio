@@ -19,7 +19,9 @@ export function dispatchOpenHome() {
   dispatchAppRoute("home");
 }
 
-export function dispatchEmployeeView(view: "overview" | "my-week" | "trends" | "work-history") {
+export function dispatchEmployeeView(
+  view: "overview" | "my-week" | "goals" | "trends" | "work-history",
+) {
   window.dispatchEvent(
     new CustomEvent("metrio-open-employee-view", { detail: view }),
   );
@@ -61,6 +63,13 @@ export function navigateActionTarget(
       return;
     case "home":
       dispatchAppRoute("home");
+      return;
+    case "person_brief":
+      window.dispatchEvent(
+        new CustomEvent("metrio-open-person-brief", {
+          detail: { personId: target.personId },
+        }),
+      );
       return;
     default:
       return;

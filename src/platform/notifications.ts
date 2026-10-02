@@ -2,6 +2,8 @@ import type { AppPreferences } from "./preferences";
 import type { Person } from "../domain/people/types";
 import type { ReportParams } from "../domain/jira/types";
 import { classifyTaskHealth } from "../domain/task-health/taskHealthEngine";
+import { taskHealthThresholdsFromRules } from "../domain/operationalRules/normalizeOperationalRules";
+import { normalizeOperationalRules } from "../domain/operationalRules/normalizeOperationalRules";
 import { getOperationalIssues } from "../domain/people/ownedIssues";
 import {
   recordNotificationEvent,
@@ -57,6 +59,8 @@ export function collectPersonNotificationTransitions(
     },
   };
   const descriptors: NotificationTransitionDescriptor[] = [];
+  const rules = normalizeOperationalRules(prefs.operationalRules);
+  const healthThresholds = taskHealthThresholdsFromRules(rules);
 
   for (const person of persons) {
     const key = person.id;
@@ -152,7 +156,11 @@ export function collectPersonNotificationTransitions(
 
     if (params) {
       for (const issue of getOperationalIssues(person)) {
-        const health = classifyTaskHealth({ issue, params });
+        const health = classifyTaskHealth({
+          issue,
+          params,
+          thresholds: healthThresholds,
+        });
         const issueStateKey = `${key}:${issue.issueKey}`;
         const prevHealth = state.workloadLevels[issueStateKey];
         if (prevHealth !== health.status && health.status === "problematic") {
@@ -220,6 +228,13 @@ export function nativeToggleForType(
     case "jira_assignment":
     case "jira_reassignment":
       return "jiraAssignmentAlerts";
+    case "bamboo_document_action":
+    case "bamboo_onboarding_action":
+      return "bambooActionAlerts";
+    case "feedback_action":
+      return "feedbackActionAlerts";
+    case "integration_problem":
+      return "integrationProblemAlerts";
     default:
       return null;
   }

@@ -39,6 +39,8 @@ import type { AuditIssue } from "../../domain/jira/types";
 import { classifyTaskHealth } from "../../domain/task-health/taskHealthEngine";
 import { buildDeliveryRiskItems } from "../../domain/radar/deliveryRisk";
 import { buildTeamRadar } from "../../domain/radar/teamRadar";
+import type { OperationalRules } from "../../domain/operationalRules/operationalRulesTypes";
+import { DEFAULT_OPERATIONAL_RULES } from "../../domain/operationalRules/operationalRulesDefaults";
 import type { RadarSeverity } from "../../domain/radar/types";
 import {
   classifyIssueAttention,
@@ -163,6 +165,7 @@ export function buildPerformanceViewModels(
   dateRangeKey: DateRangeKey = "30d",
   displayRange?: PerformanceDateRange,
   reviewTarget: PerformanceReviewTarget = "team",
+  operationalRules: OperationalRules = DEFAULT_OPERATIONAL_RULES,
 ): PerformanceViewModels {
   const trendDays = displayRange
     ? trendComparisonDayCount(displayRange)
@@ -178,8 +181,13 @@ export function buildPerformanceViewModels(
     data;
   const params = reportData.params;
   const historyParams = historyReportData.params;
-  const radar = buildTeamRadar(teamSnapshot, params);
-  const deliveryRisk = buildDeliveryRiskItems(teamSnapshot, params);
+  const radar = buildTeamRadar(teamSnapshot, params, undefined, operationalRules);
+  const deliveryRisk = buildDeliveryRiskItems(
+    teamSnapshot,
+    params,
+    undefined,
+    operationalRules,
+  );
 
   const teamKpi = reportData.teamKpi;
   const firstPassRate =
@@ -441,12 +449,21 @@ export function buildPerformanceViewModels(
           reviewTarget,
           timeOffEntries,
           teamEmployeeIds,
+          operationalRules,
         });
         const myWeek = buildMyWeek(
           historyEmployeePerson || employeePerson,
           historyParams,
+          undefined,
+          operationalRules,
         );
-        return buildEmployeeSnapshot(workspace, myWeek, params, historyParams);
+        return buildEmployeeSnapshot(
+          workspace,
+          myWeek,
+          params,
+          historyParams,
+          operationalRules,
+        );
       })()
     : null;
 
@@ -455,7 +472,13 @@ export function buildPerformanceViewModels(
     if (!person) return null;
     const historyPerson =
       findPerson(historyTeamSnapshot, personId) || person;
-    return buildPersonDetailSnapshot(person, historyPerson, params, historyParams);
+    return buildPersonDetailSnapshot(
+      person,
+      historyPerson,
+      params,
+      historyParams,
+      operationalRules,
+    );
   };
 
   const getPersonAnalytics = (personId: string): PersonAnalyticsWorkspace | null => {
@@ -474,6 +497,7 @@ export function buildPerformanceViewModels(
       reviewTarget,
       timeOffEntries,
       teamEmployeeIds,
+      operationalRules,
     });
   };
 
@@ -546,6 +570,7 @@ function buildEmployeeSnapshot(
   myWeek: ReturnType<typeof buildMyWeek>,
   _params: AuditReportData["params"],
   historyParams: AuditReportData["params"],
+  operationalRules: OperationalRules = DEFAULT_OPERATIONAL_RULES,
 ): EmployeePerformanceSnapshot {
   const now = new Date();
   const metrics = workspace.performanceKpis;
@@ -557,7 +582,12 @@ function buildEmployeeSnapshot(
   }));
 
   const myWeekAttention = myWeek.needsAttention.map((task) => {
-    const signal = classifyIssueAttention(task.issue, historyParams, now);
+    const signal = classifyIssueAttention(
+      task.issue,
+      historyParams,
+      now,
+      operationalRules,
+    );
     return {
       label: signal
         ? formatAttentionHealthLabel(signal.health.status)
@@ -610,6 +640,7 @@ function buildPersonDetailSnapshot(
   historyPerson: Person,
   params: AuditReportData["params"],
   historyParams: AuditReportData["params"],
+  operationalRules: OperationalRules = DEFAULT_OPERATIONAL_RULES,
 ): PersonDetailSnapshot {
   const perf = person.performance;
   const activeIssues = getActiveIssues(person, params);
@@ -633,7 +664,7 @@ function buildPersonDetailSnapshot(
     backflows: perf ? String(perf.backflowCount) : "0",
     attention: activeIssues
       .map((issue) => {
-        const item = classifyIssueAttention(issue, params, now);
+        const item = classifyIssueAttention(issue, params, now, operationalRules);
         if (!item) return null;
         return {
           label: formatAttentionHealthLabel(item.health.status),

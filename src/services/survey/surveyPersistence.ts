@@ -8,7 +8,9 @@ import type {
   SurveyRecipient,
 } from '../../domain/survey/types';
 
-export const SURVEY_DATA_SCHEMA_VERSION = 1;
+import { applyFeedbackCyclesMigration } from '../../domain/feedbackCycles/migrateFeedbackData';
+
+export const SURVEY_DATA_SCHEMA_VERSION = 2;
 
 export const EMPTY_SURVEY_DATA: SurveyDataFile = {
   schemaVersion: SURVEY_DATA_SCHEMA_VERSION,
@@ -92,6 +94,12 @@ function migrateSurvey(survey: Partial<Survey>): Survey {
     emailsSent,
     lastResponseSyncAt: survey.lastResponseSyncAt ?? null,
     error: survey.error ?? null,
+    cycleId: survey.cycleId ?? null,
+    periodKey: survey.periodKey ?? null,
+    templateId: survey.templateId ?? null,
+    templateVersion: survey.templateVersion ?? null,
+    dueAt: survey.dueAt ?? null,
+    confidentiality: survey.confidentiality ?? 'identified',
   };
 }
 
@@ -112,7 +120,7 @@ export function migrateSurveyData(raw: Partial<SurveyDataFile>): SurveyDataFile 
   if (version > SURVEY_DATA_SCHEMA_VERSION) {
     throw new Error(`Unsupported survey data schema version: ${version}`);
   }
-  return migrated;
+  return applyFeedbackCyclesMigration(migrated);
 }
 
 export async function loadSurveyData(): Promise<SurveyDataFile> {

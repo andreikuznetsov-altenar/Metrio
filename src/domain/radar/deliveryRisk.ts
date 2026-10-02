@@ -8,6 +8,8 @@ import {
   vacationDaysLabel,
 } from './taskSignals';
 import type { DeliveryRiskItem, RadarSeverity } from './types';
+import type { OperationalRules } from '../operationalRules/operationalRulesTypes';
+import { DEFAULT_OPERATIONAL_RULES } from '../operationalRules/operationalRulesDefaults';
 
 function maxSeverity(a: RadarSeverity, b: RadarSeverity): RadarSeverity {
   const order = { critical: 0, warning: 1, info: 2 };
@@ -18,6 +20,7 @@ export function buildDeliveryRiskItems(
   snapshot: TeamSnapshot,
   params: ReportParams,
   now = new Date(),
+  rules: OperationalRules = DEFAULT_OPERATIONAL_RULES,
 ): DeliveryRiskItem[] {
   const items: DeliveryRiskItem[] = [];
 
@@ -26,7 +29,7 @@ export function buildDeliveryRiskItems(
     const vacationLabel = vacationDaysLabel(person);
 
     for (const issue of getActiveIssues(person)) {
-      const attention = classifyIssueAttention(issue, params, now);
+      const attention = classifyIssueAttention(issue, params, now, rules);
       if (!attention) continue;
 
       let severity = attention.severity;

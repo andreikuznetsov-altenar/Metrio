@@ -1,9 +1,12 @@
 import type { SurveyDataFile } from "../survey/types";
+import { responseProgress } from "../feedbackCycles/runComparison";
 
 export interface FeedbackActionSummary {
   preparedNotSent: boolean;
   pendingResponseCount: number;
   deliveryFailureCount: number;
+  activeCycleProgress?: string;
+  feedbackRequestedCount: number;
 }
 
 export function summarizeFeedbackActions(data: SurveyDataFile | null | undefined): FeedbackActionSummary {
@@ -12,6 +15,7 @@ export function summarizeFeedbackActions(data: SurveyDataFile | null | undefined
       preparedNotSent: false,
       pendingResponseCount: 0,
       deliveryFailureCount: 0,
+      feedbackRequestedCount: 0,
     };
   }
 
@@ -21,6 +25,7 @@ export function summarizeFeedbackActions(data: SurveyDataFile | null | undefined
       preparedNotSent: false,
       pendingResponseCount: 0,
       deliveryFailureCount: 0,
+      feedbackRequestedCount: 0,
     };
   }
 
@@ -30,9 +35,24 @@ export function summarizeFeedbackActions(data: SurveyDataFile | null | undefined
   ).length;
   const deliveryFailureCount = latest.recipients.filter((r) => r.status === "failed").length;
 
+  const activeCycle = (data.cycles ?? []).find((c) => c.status === "active" && c.currentRunId);
+  const cycleRun = activeCycle
+    ? data.surveys.find((s) => s.id === activeCycle.currentRunId)
+    : null;
+  const progress = cycleRun ? responseProgress(cycleRun) : null;
+
+  const feedbackRequestedCount = data.surveys
+    .flatMap((s) => s.recipients)
+    .filter((r) => r.selected && r.status === "sent" && !r.respondedAt).length;
+
   return {
     preparedNotSent,
     pendingResponseCount,
     deliveryFailureCount,
+    activeCycleProgress:
+      progress && progress.total > 0
+        ? `${progress.responded}/${progress.total} responses`
+        : undefined,
+    feedbackRequestedCount,
   };
 }

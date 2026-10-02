@@ -31,6 +31,7 @@ import { FeedbackSurveyReady } from './FeedbackSurveyReady';
 import { FeedbackDeliveryView } from './FeedbackDeliveryView';
 import { FeedbackResultsView } from './FeedbackResultsView';
 import { FeedbackHistoryView } from './FeedbackHistoryView';
+import { FeedbackCyclesView } from './FeedbackCyclesView';
 import { FeedbackRecipientsDrawer } from './FeedbackRecipientsDrawer';
 import {
   FeedbackRegenerateConfirmDrawer,
@@ -389,6 +390,8 @@ export function FeedbackPage() {
               {googleSurveyReady && (
                 <>
                   <Segmented tabs={FEEDBACK_TABS} active={tab} onChange={(id) => setTab(id as FeedbackTab)} />
+
+                  {tab === 'cycles' ? <FeedbackCyclesView /> : null}
 
                   {tab === 'survey' && (
                     <>

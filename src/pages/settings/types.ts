@@ -1,1 +1,8 @@
-export type SettingsSection = "general" | "connections" | "notifications";
+export type SettingsSection =
+  | "general"
+  | "connections"
+  | "notifications"
+  | "operational-rules"
+  | "digests"
+  | "company"
+  | "about";

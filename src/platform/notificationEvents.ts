@@ -1,15 +1,28 @@
 import {
+  enrichInboxEvent,
+  inboxActionRequiredForType,
+  inboxSourceForType,
+} from "../domain/inbox/actionInboxModel";
+import {
   normalizeStoredNotificationEvent,
   severityForNotificationType,
   type NotificationEvent,
   type NotificationEventType,
   type NotificationSeverity,
   type NotificationTarget,
+  type ActionInboxSource,
 } from "./notificationTypes";
 
 const STORAGE_KEY = "metrio-notification-events";
 export const NOTIFICATION_EVENT_LIMIT = 100;
 export const NOTIFICATION_EVENTS_CHANGED = "metrio-notification-events-changed";
+
+const DEDUPE_UPSERT_TYPES: NotificationEventType[] = [
+  "integration_problem",
+  "feedback_action",
+  "bamboo_document_action",
+  "bamboo_onboarding_action",
+];
 
 export type {
   NotificationEvent,
@@ -85,15 +98,18 @@ export interface RecordNotificationEventInput {
   severity?: NotificationSeverity;
   target?: NotificationTarget;
   dedupeKey?: string;
+  source?: ActionInboxSource;
+  actionRequired?: boolean;
 }
 
-export function recordNotificationEvent(
+function buildEventFromInput(
   input: RecordNotificationEventInput,
+  id?: string,
 ): NotificationEvent {
-  const events = listNotificationEvents();
-  const event: NotificationEvent = {
-    id: `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
-    type: input.type,
+  const type = input.type;
+  return enrichInboxEvent({
+    id: id ?? `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
+    type,
     createdAt: input.createdAt ?? new Date().toISOString(),
     title: input.title,
     message: input.message,
@@ -101,11 +117,48 @@ export function recordNotificationEvent(
     personName: input.personName,
     issueKey: input.issueKey,
     issueTitle: input.issueTitle,
-    severity: input.severity ?? severityForNotificationType(input.type),
+    severity: input.severity ?? severityForNotificationType(type),
     target: input.target,
     dedupeKey: input.dedupeKey,
-  };
+    source: input.source ?? inboxSourceForType(type),
+    actionRequired: input.actionRequired ?? inboxActionRequiredForType(type),
+  });
+}
 
+export function recordNotificationEvent(
+  input: RecordNotificationEventInput,
+): NotificationEvent {
+  const events = listNotificationEvents();
+
+  if (input.dedupeKey && DEDUPE_UPSERT_TYPES.includes(input.type)) {
+    const existingIdx = events.findIndex(
+      (event) =>
+        event.dedupeKey === input.dedupeKey && !event.resolvedAt,
+    );
+    if (existingIdx >= 0) {
+      const existing = events[existingIdx];
+      const updated = enrichInboxEvent({
+        ...existing,
+        title: input.title,
+        message: input.message,
+        severity: input.severity ?? existing.severity,
+        target: input.target ?? existing.target,
+        issueKey: input.issueKey ?? existing.issueKey,
+        issueTitle: input.issueTitle ?? existing.issueTitle,
+        personId: input.personId ?? existing.personId,
+        personName: input.personName ?? existing.personName,
+        actionRequired:
+          input.actionRequired ??
+          existing.actionRequired ??
+          inboxActionRequiredForType(input.type),
+      });
+      const rest = events.filter((_, index) => index !== existingIdx);
+      writeEvents([updated, ...rest]);
+      return updated;
+    }
+  }
+
+  const event = buildEventFromInput(input);
   writeEvents([event, ...events]);
   if (import.meta.env.DEV && input.dedupeKey) {
     console.debug("[notifications] recorded", input.type, input.dedupeKey);
@@ -119,6 +172,97 @@ export function markNotificationEventRead(id: string): void {
       ? { ...event, readAt: new Date().toISOString() }
       : event,
   );
+  writeEvents(events);
+}
+
+export function markInboxJiraEventsReadForIssueKey(issueKey: string): void {
+  const now = new Date().toISOString();
+  const events = listNotificationEvents().map((event) =>
+    event.issueKey === issueKey &&
+    (event.type === "jira_assignment" || event.type === "jira_reassignment") &&
+    !event.readAt
+      ? { ...event, readAt: now }
+      : event,
+  );
+  writeEvents(events);
+}
+
+export function markAllJiraAssignmentInboxEventsRead(): void {
+  const now = new Date().toISOString();
+  const events = listNotificationEvents().map((event) =>
+    (event.type === "jira_assignment" || event.type === "jira_reassignment") &&
+    !event.readAt
+      ? { ...event, readAt: now }
+      : event,
+  );
+  writeEvents(events);
+}
+
+export function resolveNotificationByDedupeKey(
+  dedupeKey: string,
+  resolvedAt?: string,
+): void {
+  const now = resolvedAt ?? new Date().toISOString();
+  const events = listNotificationEvents().map((event) =>
+    event.dedupeKey === dedupeKey && !event.resolvedAt
+      ? { ...event, resolvedAt: now }
+      : event,
+  );
+  writeEvents(events);
+}
+
+export function syncTrayBambooInboxActions(
+  actions: { id: string; label: string }[],
+): void {
+  const activeIds = new Set(actions.map((action) => action.id));
+  let events = listNotificationEvents();
+  const now = new Date().toISOString();
+
+  for (const action of actions) {
+    const dedupeKey = `bamboo:action:${action.id}`;
+    const existingIdx = events.findIndex(
+      (event) => event.dedupeKey === dedupeKey && !event.resolvedAt,
+    );
+    if (existingIdx >= 0) {
+      const existing = events[existingIdx];
+      if (existing.message !== action.label || existing.title !== action.label) {
+        const updated = enrichInboxEvent({
+          ...existing,
+          title: "Document requires signature",
+          message: action.label,
+        });
+        events = events.map((event, index) =>
+          index === existingIdx ? updated : event,
+        );
+      }
+      continue;
+    }
+    const created = buildEventFromInput({
+      type: "bamboo_document_action",
+      title: "Document requires signature",
+      message: action.label,
+      dedupeKey,
+      target: { kind: "bamboo" },
+      actionRequired: true,
+    });
+    events = [created, ...events];
+  }
+
+  events = events.map((event) => {
+    if (
+      event.type !== "bamboo_document_action" ||
+      event.resolvedAt ||
+      !event.dedupeKey?.startsWith("bamboo:action:")
+    ) {
+      return event;
+    }
+    const id = event.dedupeKey.slice("bamboo:action:".length);
+    if (!activeIds.has(id)) {
+      return { ...event, resolvedAt: now };
+    }
+    return event;
+  });
+
   writeEvents(events);
 }
 

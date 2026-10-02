@@ -9,6 +9,8 @@ import {
   vacationRiskSeverity,
 } from './taskSignals';
 import type { RadarSeverity, TeamRadarItem, RadarSignal } from './types';
+import type { OperationalRules } from '../operationalRules/operationalRulesTypes';
+import { DEFAULT_OPERATIONAL_RULES } from '../operationalRules/operationalRulesDefaults';
 
 const SEVERITY_ORDER: Record<RadarSeverity, number> = {
   critical: 0,
@@ -37,6 +39,7 @@ function buildPersonRadarItem(
   params: ReportParams,
   teamAverageActive: number,
   now: Date,
+  rules: OperationalRules,
 ): TeamRadarItem | null {
   const signals: RadarSignal[] = [];
   const relatedIssueKeys: string[] = [];
@@ -49,7 +52,7 @@ function buildPersonRadarItem(
   const activeCount = person.workload?.activeCount ?? activeIssues.length;
 
   for (const issue of activeIssues) {
-    const attention = classifyIssueAttention(issue, params, now);
+    const attention = classifyIssueAttention(issue, params, now, rules);
     if (!attention) continue;
     severity = maxSeverity(severity, attention.severity);
     relatedIssueKeys.push(issue.issueKey);
@@ -134,6 +137,7 @@ export function buildTeamRadar(
   snapshot: TeamSnapshot,
   params: ReportParams,
   now = new Date(),
+  rules: OperationalRules = DEFAULT_OPERATIONAL_RULES,
 ): TeamRadarItem[] {
   if (snapshot.mode !== 'team') return [];
 
@@ -146,7 +150,9 @@ export function buildTeamRadar(
       : 0;
 
   const items = snapshot.persons
-    .map((person) => buildPersonRadarItem(person, params, teamAverageActive, now))
+    .map((person) =>
+      buildPersonRadarItem(person, params, teamAverageActive, now, rules),
+    )
     .filter((item): item is TeamRadarItem => !!item);
 
   return items.sort((a, b) => {

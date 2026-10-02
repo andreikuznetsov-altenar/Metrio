@@ -541,3 +541,34 @@
 [data-theme='dark'] .feedback-ds__banner--success {
   background: color-mix(in srgb, var(--color-success, #22c55e) 12%, transparent);
 }
+
+.feedback-cycles__list {
+  list-style: none;
+  padding: 0;
+  margin: var(--space-4) 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.feedback-cycle-card {
+  border: 1px solid color-mix(in srgb, var(--color-border) 75%, transparent);
+  border-radius: var(--radius-md);
+  padding: var(--space-3);
+}
+
+.feedback-cycle-card__meta {
+  font-size: 12px;
+  color: var(--color-text-secondary);
+}
+
+.feedback-cycles__actions {
+  display: flex;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.feedback-template-library__ver {
+  opacity: 0.7;
+  font-size: 12px;
+}

@@ -9,6 +9,8 @@
     "autostart:default",
     "notification:default",
     "dialog:default",
-    "fs:default"
+    "fs:default",
+    "process:default",
+    "updater:default"
   ]
 }

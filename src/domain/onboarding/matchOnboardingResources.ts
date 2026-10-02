@@ -64,13 +64,14 @@ function groupResources(
 export function matchOnboardingResources(
   input: OnboardingResourceMatchInput,
   jiraBaseUrl: string,
+  catalog: typeof CURATED_ONBOARDING_RESOURCES = CURATED_ONBOARDING_RESOURCES,
 ): MatchedOnboardingResources {
   const dept = normalize(input.department);
   const location = normalize(input.location);
   const team = normalize(input.teamLabel);
   const matched: OnboardingResource[] = [];
 
-  for (const def of CURATED_ONBOARDING_RESOURCES) {
+  for (const def of catalog) {
     let include = false;
     let priority = def.priority + jobTitleBoost(def, input.jobTitle);
 
@@ -136,7 +137,7 @@ export function matchOnboardingResources(
   const all = sortResources(dedupeResources(matched));
   const companyDefaults = sortResources(
     dedupeResources(
-      CURATED_ONBOARDING_RESOURCES.filter((d) => d.audience === "company").map((d) =>
+      catalog.filter((d) => d.audience === "company").map((d) =>
         materializeCuratedResource(d, jiraBaseUrl),
       ),
     ),

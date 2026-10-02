@@ -71,6 +71,7 @@ function visualPerson(
   options: {
     jobTitle?: string;
     department?: string;
+    hireDate?: string;
     workload?: ReturnType<typeof testWorkload>;
     performance?: ReturnType<typeof testKpi>;
     issues?: AuditIssue[];
@@ -94,6 +95,7 @@ function visualPerson(
       workEmail: `${fixtureId}@visual.metrio`,
       jobTitle: options.jobTitle ?? "Product Designer",
       department: options.department,
+      hireDate: options.hireDate,
       status: "Active",
     },
     jira: {
@@ -140,6 +142,8 @@ function buildTeamPersons(): Person[] {
     }),
     visualPerson("person-alex", {
       jobTitle: "Product Designer",
+      department: "Design",
+      hireDate: "2026-09-14",
       issues: [
         activeIssue(
           "UX-401",

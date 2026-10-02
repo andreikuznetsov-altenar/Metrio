@@ -30,12 +30,20 @@ import type { SettingsSection } from "./types";
 import { GoogleConnectionPanel } from "../feedback/GoogleConnectionPanel";
 import { SettingsCredentialField } from "./SettingsCredentialField";
 import "../page-content.css";
+import { OperationalRulesSettingsPanel } from "./OperationalRulesSettingsPanel";
+import { DigestSettingsPanel } from "./DigestSettingsPanel";
+import { AboutSettingsPanel } from "./AboutSettingsPanel";
+import { CompanySettingsPanel } from "./CompanySettingsPanel";
 import "./settings.css";
 
 const SECTIONS: { id: SettingsSection; label: string }[] = [
   { id: "general", label: "General" },
   { id: "connections", label: "Connections" },
   { id: "notifications", label: "Notifications" },
+  { id: "operational-rules", label: "Attention rules" },
+  { id: "digests", label: "Briefs" },
+  { id: "company", label: "Company" },
+  { id: "about", label: "About" },
 ];
 
 const THEME_OPTIONS: {
@@ -74,29 +82,49 @@ const NOTIFICATION_ROWS: {
   description: string;
 }[] = [
   {
-    key: "vacationStarts",
-    label: "Vacation starting soon",
-    description: "Get notified before a team member's leave.",
+    key: "jiraAssignmentAlerts",
+    label: "New Jira assignments",
+    description: "When a Jira issue is newly assigned to you.",
+  },
+  {
+    key: "problematicTaskAlerts",
+    label: "Task attention",
+    description: "When a task needs attention or becomes problematic.",
+  },
+  {
+    key: "bambooActionAlerts",
+    label: "Bamboo actions",
+    description: "When BambooHR requires a document or onboarding step.",
   },
   {
     key: "vacationReminder",
     label: "Vacation reminders",
-    description: "Reminder while planned leave is approaching.",
+    description: "Reminders at 7, 3, and 1 day before leave (and on the day).",
+  },
+  {
+    key: "vacationStarts",
+    label: "Vacation starting soon",
+    description: "When a team member's leave is about to start.",
   },
   {
     key: "returns",
     label: "Return from time off",
-    description: "Alert when someone returns to the team.",
+    description: "When someone returns to the team.",
   },
   {
     key: "workloadAlerts",
-    label: "Workload changes",
-    description: "Notify when workload becomes heavy or overloaded.",
+    label: "Workload alerts",
+    description: "When workload becomes heavy or overloaded.",
   },
   {
-    key: "problematicTaskAlerts",
-    label: "Problematic tasks",
-    description: "Alert when task health becomes problematic.",
+    key: "feedbackActionAlerts",
+    label: "Feedback actions",
+    description: "Delivery failures and surveys that need your action.",
+  },
+  {
+    key: "integrationProblemAlerts",
+    label: "Integration problems",
+    description: "When Jira or BambooHR data cannot be refreshed.",
   },
 ];
 
@@ -381,6 +409,24 @@ export function SettingsPage({
             onUpdatePrefs={patchGooglePrefs}
           />
         </div>
+      ) : null}
+
+      {section === "digests" ? (
+        <DigestSettingsPanel
+          prefs={prefs}
+          onPersist={(next) => persistPrefs(next)}
+        />
+      ) : null}
+
+      {section === "company" ? <CompanySettingsPanel /> : null}
+
+      {section === "about" ? <AboutSettingsPanel /> : null}
+
+      {section === "operational-rules" ? (
+        <OperationalRulesSettingsPanel
+          prefs={prefs}
+          onPersist={(next) => persistPrefs(next, "Attention rules saved")}
+        />
       ) : null}
 
       {section === "notifications" ? (

@@ -13,6 +13,8 @@ import { TeamOverviewView } from "./TeamOverviewView";
 import { TeamPeopleView } from "./TeamPeopleView";
 import { TeamPerformanceSubnav } from "./TeamPerformanceSubnav";
 import { TeamRadarView } from "./TeamRadarView";
+import { ManagerGoalsView } from "./ManagerGoalsView";
+import "./goal-detail-drawer.css";
 import { PerformanceStatusBanner } from "./PerformanceStatusBanner";
 import {
   PerformanceOverviewSkeleton,
@@ -146,6 +148,8 @@ export function TeamPerformanceOverview({
       {activeView === "delivery-risk" ? (
         <TeamDeliveryRiskView rows={secondary.deliveryRisk} onOpenPerson={onOpenPerson} />
       ) : null}
+
+      {activeView === "goals" ? <ManagerGoalsView /> : null}
     </div>
   );
 }

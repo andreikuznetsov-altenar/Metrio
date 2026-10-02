@@ -3,6 +3,7 @@ import { listen } from "@tauri-apps/api/event";
 import { dispatchAppRoute, dispatchEmployeeView } from "./actionNavigation";
 import { logoutSession } from "./logoutSession";
 import { openExternalUrl } from "../platform/openExternal";
+import { clearNotificationHistory } from "../platform/notificationEvents";
 import { acknowledgeTrayJiraIssue, clearTrayUserContext } from "../platform/trayActionCenter";
 import { resolveBambooSubdomain } from "../config/product";
 
@@ -27,6 +28,7 @@ export function TrayMenuEffects({
       .catch(() => undefined);
 
     void listen("tray-logout", () => {
+      clearNotificationHistory();
       void clearTrayUserContext().finally(() => logoutSession());
     })
       .then((fn) => unsubs.push(fn))

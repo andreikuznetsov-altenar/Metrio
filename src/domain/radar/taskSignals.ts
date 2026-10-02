@@ -7,6 +7,9 @@ import {
   getCurrentStageAgeMs,
   type TaskHealthResult,
 } from '../task-health/taskHealthEngine';
+import { DEFAULT_OPERATIONAL_RULES } from '../operationalRules/operationalRulesDefaults';
+import { taskHealthThresholdsFromRules } from '../operationalRules/normalizeOperationalRules';
+import type { OperationalRules } from '../operationalRules/operationalRulesTypes';
 import type { Person } from '../people/types';
 import { getOperationalIssues } from '../people/ownedIssues';
 import type { RadarSeverity } from './types';
@@ -56,13 +59,18 @@ export function classifyIssueAttention(
   issue: AuditIssue,
   params: ReportParams,
   now = new Date(),
+  rules: OperationalRules = DEFAULT_OPERATIONAL_RULES,
 ): { severity: RadarSeverity; reason: string; health: TaskHealthResult } | null {
-  const health = classifyTaskHealth({ issue, params, now });
+  const thresholds = taskHealthThresholdsFromRules(rules);
+  const health = classifyTaskHealth({ issue, params, now, thresholds });
   if (health.isCompleted) return null;
 
   const status = issue.currentStatus || '';
   const stageDays = stageAgeDays(issue, now);
-  const targetDays = params.targetReviewDays;
+  const reviewDays = rules.taskAttention.reviewAttentionDays;
+  const inProgressDays =
+    rules.taskAttention.reviewAttentionDays +
+    rules.taskAttention.inProgressGraceDays;
 
   if (health.status === 'problematic' || health.status === 'no_activity') {
     const reason = health.reasons[0] || 'Needs attention';
@@ -85,7 +93,7 @@ export function classifyIssueAttention(
     return { severity: 'warning', reason: 'Returned from Review', health };
   }
 
-  if (stageDays !== null && isInReviewStatus(status) && stageDays >= targetDays) {
+  if (stageDays !== null && isInReviewStatus(status) && stageDays >= reviewDays) {
     return {
       severity: 'warning',
       reason: `Review for ${stageDays} day${stageDays === 1 ? '' : 's'}`,
@@ -93,7 +101,7 @@ export function classifyIssueAttention(
     };
   }
 
-  if (stageDays !== null && isInProgressStatus(status) && stageDays >= targetDays + 2) {
+  if (stageDays !== null && isInProgressStatus(status) && stageDays >= inProgressDays) {
     return {
       severity: 'warning',
       reason: `In Progress for ${stageDays} days`,
@@ -105,7 +113,10 @@ export function classifyIssueAttention(
     return { severity: 'warning', reason: health.reasons[0] || 'At risk', health };
   }
 
-  if (stageDays !== null && stageDays >= params.targetReviewDays) {
+  if (
+    stageDays !== null &&
+    stageDays >= rules.taskAttention.stageAgeAttentionDays
+  ) {
     return {
       severity: 'warning',
       reason: `No activity for ${stageDays} days`,

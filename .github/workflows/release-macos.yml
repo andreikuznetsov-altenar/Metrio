@@ -1,0 +1,52 @@
+name: Release macOS
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Semver to release (must match package.json after sync)"
+        required: true
+
+jobs:
+  release:
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Sync version
+        run: node scripts/sync-app-version.mjs
+
+      - name: Test gate
+        run: |
+          npm test
+          npm run build
+          (cd src-tauri && cargo test && cargo check)
+
+      - name: Build signed app
+        env:
+          BUILD_CHANNEL: production
+          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+          APPLE_API_ISSUER: ${{ secrets.APPLE_API_ISSUER }}
+          APPLE_API_KEY: ${{ secrets.APPLE_API_KEY }}
+          APPLE_API_KEY_PATH: ${{ secrets.APPLE_API_KEY_PATH }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+          METRIO_UPDATE_ENDPOINT: ${{ secrets.METRIO_UPDATE_ENDPOINT }}
+          METRIO_UPDATE_BASE_URL: ${{ secrets.METRIO_UPDATE_BASE_URL }}
+        run: npm run release:macos
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: metrio-macos-${{ inputs.version }}
+          path: release-artifacts/**

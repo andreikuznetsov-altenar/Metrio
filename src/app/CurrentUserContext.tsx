@@ -188,6 +188,10 @@ export function CurrentUserProvider({ children }: { children: ReactNode }) {
   );
 }
 
+export function useOptionalCurrentUser(): CurrentUserContextValue | null {
+  return useContext(CurrentUserContext);
+}
+
 export function useCurrentUser(): CurrentUserContextValue {
   const ctx = useContext(CurrentUserContext);
   if (!ctx) {

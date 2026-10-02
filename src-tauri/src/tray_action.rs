@@ -105,6 +105,9 @@ pub fn handle_tray_menu_event(app: &AppHandle, menu_id: &str) {
         "logout" => {
             let _ = app.emit("tray-logout", ());
         }
+        "update-available" => {
+            let _ = app.emit("tray-update-available", ());
+        }
         "view-all-work" | "active-work" => {
             let _ = app.emit("tray-view-all-work", ());
         }

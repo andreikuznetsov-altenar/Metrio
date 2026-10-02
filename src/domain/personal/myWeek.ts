@@ -7,6 +7,8 @@ import { classifyTaskHealth } from '../task-health/taskHealthEngine';
 import type { AuditIssue, ReportParams } from '../jira/types';
 import type { Person } from '../people/types';
 import { classifyIssueAttention, getActiveIssues } from '../radar/taskSignals';
+import type { OperationalRules } from '../operationalRules/operationalRulesTypes';
+import { DEFAULT_OPERATIONAL_RULES } from '../operationalRules/operationalRulesDefaults';
 
 export interface MyWeekAttentionTask {
   issueKey: string;
@@ -41,14 +43,19 @@ function isInProgressStatus(status: string): boolean {
   return status.toLowerCase().includes('in progress');
 }
 
-export function buildMyWeek(person: Person, params: ReportParams, now = new Date()): MyWeekGroups {
+export function buildMyWeek(
+  person: Person,
+  params: ReportParams,
+  now = new Date(),
+  rules: OperationalRules = DEFAULT_OPERATIONAL_RULES,
+): MyWeekGroups {
   const weekRange = getCurrentWeekRange(now);
   const completedThisWeek = listCompletedIssuesInRange(person.issues, weekRange);
   const activeIssues = getActiveIssues(person, params);
 
   const needsAttention: MyWeekAttentionTask[] = [];
   for (const issue of activeIssues) {
-    const attention = classifyIssueAttention(issue, params, now);
+    const attention = classifyIssueAttention(issue, params, now, rules);
     if (!attention) continue;
     needsAttention.push({
       issueKey: issue.issueKey,

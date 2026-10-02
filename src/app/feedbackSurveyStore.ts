@@ -28,6 +28,7 @@ import {
   recoverStaleSendingRecipients,
   saveSurveyData,
 } from '../services/survey/surveyPersistence';
+import { runFeedbackCycleScheduler } from '../platform/feedbackCycleScheduler';
 import {
   ensureGoogleFormForSurvey,
   regenerateGoogleFormForSurvey,
@@ -127,8 +128,12 @@ export const useFeedbackSurveyStore = create<SurveyState>((set, get) => ({
   init: async () => {
     const loaded = await loadSurveyData();
     const surveys = loaded.surveys.map((survey) => recoverStaleSendingRecipients(survey));
-    const data = { ...loaded, surveys };
-    if (JSON.stringify(surveys) !== JSON.stringify(loaded.surveys)) {
+    let data = { ...loaded, surveys };
+    const scheduled = runFeedbackCycleScheduler(data);
+    if (scheduled !== data) {
+      data = scheduled;
+    }
+    if (JSON.stringify(data.surveys) !== JSON.stringify(loaded.surveys) || scheduled !== loaded) {
       await saveSurveyData(data);
     }
     set({ data });

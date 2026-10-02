@@ -134,6 +134,7 @@ describe("applyPerformanceRefreshSideEffects", () => {
   it("updates personal tray and clears stale sync flags after refresh", async () => {
     await applyPerformanceRefreshSideEffects(baseResult, {
       selfPersonId: "self-1",
+      role: "employee",
     });
     expect(pushTrayFromContext).toHaveBeenCalledTimes(1);
     expect(savePreferences).toHaveBeenCalledWith(

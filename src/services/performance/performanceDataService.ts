@@ -270,12 +270,14 @@ export async function fetchPerformanceData(
     );
   }
 
+  const vacationSoonWithinDays = prefs.operationalRules.vacation.soonWithinDays;
   const teamSnapshot = buildTeamSnapshot(
     org,
     reportData,
     timeOffEntries,
     prefs.workloadThresholds,
     teamUsers,
+    vacationSoonWithinDays,
   );
 
   const historyTeamSnapshot = buildTeamSnapshot(
@@ -284,6 +286,7 @@ export async function fetchPerformanceData(
     timeOffEntries,
     prefs.workloadThresholds,
     teamUsers,
+    vacationSoonWithinDays,
   );
 
   let kpiSnapshots = await loadKpiSnapshots();

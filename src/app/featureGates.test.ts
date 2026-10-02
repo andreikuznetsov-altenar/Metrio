@@ -26,4 +26,9 @@ describe("featureGates", () => {
     setPerformanceApproved(true);
     expect(isFeedbackEnabled()).toBe(true);
   });
+
+  it("respects company feature flag", () => {
+    expect(isFeedbackEnabled({ feedback: false })).toBe(false);
+    expect(isFeedbackEnabled({ feedback: true })).toBe(true);
+  });
 });

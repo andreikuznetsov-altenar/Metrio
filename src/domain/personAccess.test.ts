@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { canOpenPersonDetail } from "./personAccess";
+import { canOpenPersonBrief, canOpenPersonDetail } from "./personAccess";
 import { getFixtureUser } from "../fixtures/currentUsers";
 
 describe("canOpenPersonDetail", () => {
@@ -16,5 +16,15 @@ describe("canOpenPersonDetail", () => {
     expect(canOpenPersonDetail(lead, reportId)).toBe(true);
     expect(canOpenPersonDetail(lead, "person-jordan")).toBe(false);
     expect(canOpenPersonDetail(lead, lead.person.id)).toBe(true);
+  });
+});
+
+describe("canOpenPersonBrief", () => {
+  it("allows managers for direct reports only", () => {
+    const lead = getFixtureUser("lead");
+    const reportId = lead.team!.directReportIds[0];
+    expect(canOpenPersonBrief(lead, reportId)).toBe(true);
+    expect(canOpenPersonBrief(lead, lead.person.id)).toBe(false);
+    expect(canOpenPersonBrief(lead, "person-jordan")).toBe(false);
   });
 });

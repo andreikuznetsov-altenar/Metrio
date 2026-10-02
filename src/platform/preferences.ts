@@ -8,8 +8,19 @@ import {
 import { applyProductConfig } from '../config/product';
 import type { JiraEmailVerification } from '../domain/setup/jiraIdentity';
 import type { JiraAssignmentState } from '../domain/jira/jiraAssignmentTracking';
+import { normalizeOperationalRules } from '../domain/operationalRules/normalizeOperationalRules';
+import type { OperationalRules } from '../domain/operationalRules/operationalRulesTypes';
+import { rebaseNotificationStateForOperationalRulesChange } from './notificationRulesRebase';
+import {
+  DEFAULT_DIGEST_PREFERENCES,
+  EMPTY_DIGEST_STATE,
+  type DigestPersistedState,
+  type DigestUserPreferences,
+} from './digestPreferences';
 
-export const PREFERENCES_SCHEMA_VERSION = 6;
+export const PREFERENCES_SCHEMA_VERSION = 8;
+
+export const PREFERENCES_SAVED_EVENT = 'metrio-preferences-saved';
 
 export interface StoredJiraIdentity {
   accountId: string;
@@ -57,6 +68,9 @@ export interface AppPreferences {
   };
   teamDetection: TeamDetectionResult | null;
   workloadThresholds: WorkloadThresholds;
+  operationalRules: OperationalRules;
+  digests: DigestUserPreferences;
+  digestState: DigestPersistedState;
   sync: SyncMetadata;
   notificationState: NotificationState;
   notifications: {
@@ -66,6 +80,9 @@ export interface AppPreferences {
     workloadAlerts: boolean;
     problematicTaskAlerts: boolean;
     jiraAssignmentAlerts: boolean;
+    bambooActionAlerts: boolean;
+    feedbackActionAlerts: boolean;
+    integrationProblemAlerts: boolean;
   };
   general: {
     keepRunningInTray: boolean;
@@ -113,6 +130,9 @@ export const DEFAULT_PREFERENCES: AppPreferences = {
   },
   teamDetection: null,
   workloadThresholds: DEFAULT_WORKLOAD_THRESHOLDS,
+  operationalRules: normalizeOperationalRules(null),
+  digests: DEFAULT_DIGEST_PREFERENCES,
+  digestState: EMPTY_DIGEST_STATE,
   sync: {
     lastBambooSync: null,
     lastJiraSync: null,
@@ -132,6 +152,9 @@ export const DEFAULT_PREFERENCES: AppPreferences = {
     workloadAlerts: true,
     problematicTaskAlerts: true,
     jiraAssignmentAlerts: true,
+    bambooActionAlerts: true,
+    feedbackActionAlerts: true,
+    integrationProblemAlerts: true,
   },
   general: {
     keepRunningInTray: true,
@@ -223,6 +246,16 @@ export function migratePreferences(raw: Partial<AppPreferences> & { schemaVersio
     setup: { ...DEFAULT_PREFERENCES.setup, ...raw.setup },
     jiraIdentity: raw.jiraIdentity ?? null,
     workloadThresholds: normalizeWorkloadThresholds(raw.workloadThresholds),
+    operationalRules: normalizeOperationalRules(raw.operationalRules),
+    digests: { ...DEFAULT_DIGEST_PREFERENCES, ...raw.digests },
+    digestState: {
+      ...EMPTY_DIGEST_STATE,
+      ...raw.digestState,
+      history: {
+        daily: raw.digestState?.history?.daily ?? [],
+        weekly: raw.digestState?.history?.weekly ?? [],
+      },
+    },
     sync: { ...DEFAULT_PREFERENCES.sync, ...raw.sync },
     notificationState: { ...DEFAULT_PREFERENCES.notificationState, ...raw.notificationState },
     notifications: { ...DEFAULT_PREFERENCES.notifications, ...raw.notifications },
@@ -357,12 +390,27 @@ export async function loadPreferencesForMerge(): Promise<AppPreferences> {
 export async function savePreferences(prefs: AppPreferences): Promise<void> {
   if (isVisualFixtureBuild()) {
     localStorage.setItem(VISUAL_PREFS_STORAGE_KEY, JSON.stringify(prefs));
+    window.dispatchEvent(new CustomEvent(PREFERENCES_SAVED_EVENT, { detail: prefs }));
     return;
   }
 
   await invoke('preferences_save', {
     preferences: { ...prefs, schemaVersion: PREFERENCES_SCHEMA_VERSION },
   });
+  window.dispatchEvent(new CustomEvent(PREFERENCES_SAVED_EVENT, { detail: prefs }));
+}
+
+export function applyOperationalRulesPatch(
+  prefs: AppPreferences,
+  rules: OperationalRules,
+): AppPreferences {
+  return {
+    ...prefs,
+    operationalRules: normalizeOperationalRules(rules),
+    notificationState: rebaseNotificationStateForOperationalRulesChange(
+      prefs.notificationState,
+    ),
+  };
 }
 
 export async function loadStorageWarnings(): Promise<string[]> {

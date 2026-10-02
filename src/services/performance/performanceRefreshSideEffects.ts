@@ -11,9 +11,17 @@ import {
   pushTrayFromContext,
   trayContextFromSelfPerson,
 } from "../../platform/trayActionCenter";
+import { runDigestCycle } from "../../platform/runDigestCycle";
+import type { CurrentUser, UserRole } from "../../domain/types";
+import { loadGoalsData } from "../goals/goalsPersistence";
+import { syncGoalReviewNotifications } from "../../platform/goalReviewNotifications";
+import type { PerformanceViewModels } from "./performanceViewModel";
 
 export interface PerformanceSideEffectOptions {
   selfPersonId: string;
+  role: UserRole;
+  viewModels?: PerformanceViewModels | null;
+  currentUser?: CurrentUser | null;
 }
 
 function resolveSelfPerson(
@@ -66,6 +74,24 @@ export async function applyPerformanceRefreshSideEffects(
     jiraStale: false,
     bambooStale: false,
   });
+
+  const digestResult = runDigestCycle({
+    prefs,
+    result,
+    viewModels: options.viewModels ?? null,
+    selfPersonId: options.selfPersonId,
+    role: options.role,
+  });
+  prefs = digestResult.prefs;
+
+  if (options.currentUser) {
+    try {
+      const goalsFile = await loadGoalsData();
+      syncGoalReviewNotifications(goalsFile.goals, options.currentUser);
+    } catch {
+      // Goals store unavailable (web dev).
+    }
+  }
 
   await savePreferences({
     ...prefs,

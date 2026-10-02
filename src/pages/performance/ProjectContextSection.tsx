@@ -8,6 +8,7 @@ import {
   buildConfluenceSpaceUrl,
   buildJiraProjectBrowseUrl,
 } from "../../platform/atlassianUrls";
+import { openProjectCockpit } from "../../platform/projectCockpitNavigation";
 import { KnowledgeContextRow } from "./KnowledgeContextRow";
 import type { KnowledgeContextItem } from "../../domain/knowledge/knowledgeMatching";
 
@@ -68,6 +69,13 @@ export function ProjectContextSection() {
         ))}
       </ul>
       <div className="project-context__actions">
+        <Button
+          type="button"
+          variant="secondary"
+          onClick={() => openProjectCockpit(project.key)}
+        >
+          Project cockpit
+        </Button>
         <Button
           type="button"
           variant="secondary"

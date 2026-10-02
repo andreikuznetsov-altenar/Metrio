@@ -17,6 +17,23 @@ describe("notificationEvents", () => {
     clearNotificationEventsForTests();
   });
 
+  it("upserts integration_problem events with the same dedupe key", () => {
+    recordNotificationEvent({
+      type: "integration_problem",
+      title: "Jira connection problem",
+      message: "First",
+      dedupeKey: "integration:jira:unhealthy",
+    });
+    recordNotificationEvent({
+      type: "integration_problem",
+      title: "Jira connection problem",
+      message: "Updated",
+      dedupeKey: "integration:jira:unhealthy",
+    });
+    expect(listNotificationEvents()).toHaveLength(1);
+    expect(listNotificationEvents()[0].message).toBe("Updated");
+  });
+
   it("records events and allows repeated dedupe keys after separate transitions", () => {
     recordNotificationEvent({
       type: "task_attention",

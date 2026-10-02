@@ -145,6 +145,7 @@ export interface WorkHistoryRow {
 export type EmployeePerformanceView =
   | "overview"
   | "my-week"
+  | "goals"
   | "trends"
   | "work-history";
 
@@ -207,7 +208,8 @@ export type TeamPerformanceView =
   | "overview"
   | "people"
   | "radar"
-  | "delivery-risk";
+  | "delivery-risk"
+  | "goals";
 
 export interface TeamPeopleRow {
   personId: string;

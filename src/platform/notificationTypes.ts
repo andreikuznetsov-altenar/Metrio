@@ -1,3 +1,5 @@
+import { enrichInboxEvent, inboxSourceForType } from "../domain/inbox/actionInboxModel";
+
 export type NotificationEventType =
   | "task_attention"
   | "workload_change"
@@ -9,13 +11,41 @@ export type NotificationEventType =
   | "jira_assignment"
   | "jira_reassignment"
   | "bamboo_onboarding_action"
-  | "bamboo_document_action";
+  | "bamboo_document_action"
+  | "feedback_action"
+  | "daily_brief_ready"
+  | "weekly_digest_ready"
+  | "goal_review_due"
+  | "feedback_requested"
+  | "feedback_delivery_failed"
+  | "feedback_cycle_due"
+  | "onboarding_step_due"
+  | "onboarding_feedback_due";
+
+export type ActionInboxSource = "jira" | "bamboo" | "feedback" | "metrio";
 
 export type NotificationTarget =
   | { kind: "person"; personId: string }
   | { kind: "jira"; issueKey: string }
   | { kind: "settings"; section: "connections" }
-  | { kind: "performance"; tab: "radar" | "people" | "delivery-risk" | "overview" };
+  | { kind: "performance"; tab: "radar" | "people" | "delivery-risk" | "overview" }
+  | { kind: "feedback"; tab: "survey" | "delivery" | "results" | "history" | "cycles" }
+  | { kind: "bamboo" }
+  | { kind: "home" }
+  | { kind: "digest"; digestKind: "daily" | "weekly" }
+  | { kind: "goal"; goalId: string };
+
+/** @deprecated Use InboxFilterId */
+export type NotificationFilterId =
+  | "all"
+  | "tasks"
+  | "people"
+  | "time_off"
+  | "system";
+
+export type InboxFilterId = "all" | "unread" | "actions";
+
+export type InboxSourceFilterId = "all" | "jira" | "bamboo" | "feedback" | "metrio";
 
 export type NotificationSeverity = "info" | "warning" | "danger" | "success";
 
@@ -24,6 +54,7 @@ export interface NotificationEvent {
   type: NotificationEventType;
   createdAt: string;
   readAt?: string;
+  resolvedAt?: string;
   title: string;
   message: string;
   personId?: string;
@@ -33,14 +64,9 @@ export interface NotificationEvent {
   severity?: NotificationSeverity;
   target?: NotificationTarget;
   dedupeKey?: string;
+  source?: ActionInboxSource;
+  actionRequired?: boolean;
 }
-
-export type NotificationFilterId =
-  | "all"
-  | "tasks"
-  | "people"
-  | "time_off"
-  | "system";
 
 const TASK_TYPES: NotificationEventType[] = [
   "task_attention",
@@ -60,6 +86,7 @@ const SYSTEM_TYPES: NotificationEventType[] = [
   "integration_problem",
   "bamboo_onboarding_action",
   "bamboo_document_action",
+  "feedback_action",
 ];
 
 export function notificationMatchesFilter(
@@ -73,6 +100,20 @@ export function notificationMatchesFilter(
   return SYSTEM_TYPES.includes(event.type);
 }
 
+export function inboxMatchesFilter(
+  event: NotificationEvent,
+  filter: InboxFilterId,
+  sourceFilter: InboxSourceFilterId = "all",
+): boolean {
+  const item = enrichInboxEvent(event);
+  if (item.resolvedAt && filter === "actions") return false;
+  if (filter === "unread" && item.readAt) return false;
+  if (filter === "actions" && !item.actionRequired) return false;
+  const source = item.source ?? inboxSourceForType(item.type);
+  if (sourceFilter !== "all" && source !== sourceFilter) return false;
+  return true;
+}
+
 export function severityForNotificationType(
   type: NotificationEventType,
 ): NotificationSeverity {
@@ -84,6 +125,7 @@ export function severityForNotificationType(
     case "jira_reassignment":
     case "bamboo_onboarding_action":
     case "bamboo_document_action":
+    case "feedback_action":
       return "warning";
     case "vacation_return":
       return "success";
@@ -152,5 +194,8 @@ export function normalizeStoredNotificationEvent(
     severity: raw.severity ?? severityForNotificationType(type),
     target,
     dedupeKey: raw.dedupeKey,
+    resolvedAt: raw.resolvedAt,
+    source: raw.source,
+    actionRequired: raw.actionRequired,
   };
 }
