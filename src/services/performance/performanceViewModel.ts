@@ -69,6 +69,11 @@ import { buildWorkloadBalance } from "../../domain/workload/workloadBalance";
 import { personRouteKey } from "../../domain/people/personDisplay";
 import type { PerformanceFetchResult } from "./performanceTypes";
 import { getOperationalIssues } from "../../domain/people/ownedIssues";
+import {
+  comparisonPeriodLabel,
+  trendComparisonDayCount,
+  type PerformanceDateRange,
+} from "../../domain/performance/performanceDateRange";
 function efficiencyStatusVariant(score: number): BadgeVariant {
   const status = getEfficiencyStatus(score);
   if (status === "Excellent" || status === "Healthy") return "success";
@@ -143,7 +148,18 @@ export function buildPerformanceViewModels(
   data: PerformanceFetchResult,
   selfPersonId: string,
   dateRangeKey: DateRangeKey = "30d",
+  displayRange?: PerformanceDateRange,
 ): PerformanceViewModels {
+  const trendDays = displayRange
+    ? trendComparisonDayCount(displayRange)
+    : dateRangeKey === "7d"
+      ? 7
+      : dateRangeKey === "30d"
+        ? 30
+        : 90;
+  const trendContextLabel = displayRange
+    ? comparisonPeriodLabel(displayRange)
+    : undefined;
   const { teamSnapshot, historyTeamSnapshot, reportData, historyReportData, kpiSnapshots, partialWarnings } =
     data;
   const params = reportData.params;
@@ -160,22 +176,22 @@ export function buildPerformanceViewModels(
   const completedTrend = compareTrendPeriods(
     teamTrendPoints(kpiSnapshots, "completedOnDate"),
     "completed",
-    28,
+    trendDays,
   );
   const firstPassTrend = compareWeightedFirstPassTrend(
     teamTrendPoints(kpiSnapshots, "completedOnDate"),
     teamTrendPoints(kpiSnapshots, "firstPassOnDate"),
-    28,
+    trendDays,
   );
   const avgCycleTrend = compareWeightedAvgCycleTrend(
     teamTrendPoints(kpiSnapshots, "cycleMsSumOnDate"),
     teamTrendPoints(kpiSnapshots, "completedWithCycleOnDate"),
-    28,
+    trendDays,
   );
   const backflowTrend = compareTrendPeriods(
     teamTrendPoints(kpiSnapshots, "backflowsOnDate"),
     "backflows",
-    28,
+    trendDays,
   );
 
   const summary: MetricCardData[] = [
@@ -188,17 +204,17 @@ export function buildPerformanceViewModels(
     {
       label: "First pass",
       value: `${firstPassRate}%`,
-      ...metricContextFromComparison(firstPassTrend, dateRangeKey),
+      ...metricContextFromComparison(firstPassTrend, dateRangeKey, trendContextLabel),
     },
     {
       label: "Completed",
       value: String(teamKpi.completedCount),
-      ...metricContextFromComparison(completedTrend, dateRangeKey),
+      ...metricContextFromComparison(completedTrend, dateRangeKey, trendContextLabel),
     },
     {
       label: "Backflows",
       value: String(teamKpi.backflowCount),
-      ...metricContextFromComparison(backflowTrend, dateRangeKey),
+      ...metricContextFromComparison(backflowTrend, dateRangeKey, trendContextLabel),
     },
   ];
 
@@ -362,6 +378,7 @@ export function buildPerformanceViewModels(
         params,
         historyParams,
         kpiSnapshots,
+        trendDays,
       )
     : null;
 
@@ -424,26 +441,27 @@ function mapWorkHistoryGroups(
 function buildPersonalTrendCards(
   personId: string,
   kpiSnapshots: KpiSnapshotFile,
+  trendDays: number,
 ): TrendCardData[] {
   const completedTrend = compareTrendPeriods(
     personTrendPoints(kpiSnapshots, personId, "completedOnDate"),
     "completed",
-    28,
+    trendDays,
   );
   const firstPassTrend = compareWeightedFirstPassTrend(
     personTrendPoints(kpiSnapshots, personId, "completedOnDate"),
     personTrendPoints(kpiSnapshots, personId, "firstPassOnDate"),
-    28,
+    trendDays,
   );
   const avgCycleTrend = compareWeightedAvgCycleTrend(
     personTrendPoints(kpiSnapshots, personId, "cycleMsSumOnDate"),
     personTrendPoints(kpiSnapshots, personId, "completedWithCycleOnDate"),
-    28,
+    trendDays,
   );
   const backflowTrend = compareTrendPeriods(
     personTrendPoints(kpiSnapshots, personId, "backflowsOnDate"),
     "backflows",
-    28,
+    trendDays,
   );
   const sparkCompleted = sparklineValues(
     personSparklinePoints(kpiSnapshots, personId, "completedOnDate"),
@@ -466,6 +484,7 @@ function buildEmployeeSnapshot(
   params: AuditReportData["params"],
   historyParams: AuditReportData["params"],
   kpiSnapshots: KpiSnapshotFile,
+  trendDays: number,
 ): EmployeePerformanceSnapshot {
   const myWeek = buildMyWeek(historyPerson, historyParams);
   const perf = person.performance;
@@ -541,7 +560,7 @@ function buildEmployeeSnapshot(
     activeWork,
     attention,
     timeOff,
-    trends: buildPersonalTrendCards(person.id, kpiSnapshots),
+    trends: buildPersonalTrendCards(person.id, kpiSnapshots, trendDays),
     myWeek: myWeekView,
     historyWeek: mapWorkHistoryGroups(historyPerson, historyParams, "week"),
     historyMonth: mapWorkHistoryGroups(historyPerson, historyParams, "month"),

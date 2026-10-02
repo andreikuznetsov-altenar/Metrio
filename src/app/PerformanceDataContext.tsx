@@ -8,7 +8,11 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import type { DateRangeKey, PerformanceReviewTarget } from "../domain/performance";
+import type { PerformanceReviewTarget } from "../domain/performance";
+import {
+  dateRangeKeyFromPerformanceRange,
+  type PerformanceDateRange,
+} from "../domain/performance/performanceDateRange";
 import type { PerformanceAudience } from "../domain/performance/reportParams";
 import { fetchPerformanceData } from "../services/performance/performanceDataService";
 import {
@@ -58,7 +62,7 @@ function errorMessageFromError(error: unknown): string {
 
 export interface PerformanceDataProviderProps {
   enabled: boolean;
-  dateRange: DateRangeKey;
+  dateRange: PerformanceDateRange;
   reviewTarget: PerformanceReviewTarget;
   audience: PerformanceAudience;
   selfPersonId: string;
@@ -103,7 +107,12 @@ export function PerformanceDataProvider({
 
       try {
         const next = await fetchPerformanceData(dateRange, reviewTarget, audience);
-        const models = buildPerformanceViewModels(next, selfPersonId, dateRange);
+        const models = buildPerformanceViewModels(
+          next,
+          selfPersonId,
+          dateRangeKeyFromPerformanceRange(dateRange),
+          dateRange,
+        );
         setData(next);
         setViewModels(models);
         const partial =

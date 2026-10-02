@@ -10,6 +10,7 @@ import type {
   PerformanceReviewTarget,
 } from "../domain/performance";
 import type { PerformanceAudience } from "../domain/performance/reportParams";
+import { createPerformanceDateRange } from "../domain/performance/performanceDateRange";
 import { resolvePerformanceReportRanges } from "../domain/performance/reportParams";
 import {
   EMPTY_KPI_SNAPSHOT_FILE,
@@ -286,7 +287,12 @@ export function buildVisualPerformanceFetchResult(
     historyReportData: reportData,
     kpiSnapshots,
     reportParams: params,
-    reportRanges: resolvePerformanceReportRanges("30d", "team", "team"),
+    reportRanges: resolvePerformanceReportRanges(
+      createPerformanceDateRange("30d"),
+      "team",
+      "team",
+      3,
+    ),
     identityResolution: persons.map((person) => ({
       employeeId: person.id,
       displayName: person.bamboo.displayName,

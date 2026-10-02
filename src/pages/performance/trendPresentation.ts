@@ -55,6 +55,7 @@ export function buildTrendCardData(
 export function metricContextFromComparison(
   comparison: TrendComparison,
   dateRangeKey: DateRangeKey,
+  captionOverride?: string,
 ): Pick<
   import("../../domain/performance").MetricCardData,
   "contextLabel" | "contextSemantic" | "contextCaption"
@@ -63,7 +64,7 @@ export function metricContextFromComparison(
   return {
     contextLabel: comparison.label,
     contextSemantic: trendSemanticFromComparison(comparison),
-    contextCaption: trendComparisonCaption(dateRangeKey),
+    contextCaption: captionOverride ?? trendComparisonCaption(dateRangeKey),
   };
 }
 

@@ -1,10 +1,12 @@
 import { Button } from "../components/Button/Button";
 import { IconButton } from "../components/IconButton/IconButton";
 import { Select } from "../components/Select/Select";
-import type {
-  DateRangeKey,
-  PerformanceReviewTarget,
-} from "../domain/performance";
+import type { DateRangeKey, PerformanceReviewTarget } from "../domain/performance";
+import {
+  createPerformanceDateRange,
+  validatePerformanceDateRange,
+  type PerformanceDateRange,
+} from "../domain/performance/performanceDateRange";
 import "./PerformanceToolbar.css";
 
 const DATE_RANGE_OPTIONS = [
@@ -73,17 +75,21 @@ function RefreshIcon() {
 }
 
 export interface PerformanceToolbarProps {
-  dateRange: DateRangeKey;
+  dateRange: PerformanceDateRange;
   reviewTarget: PerformanceReviewTarget;
   audience: "team" | "employee";
   refreshing?: boolean;
-  onDateRangeChange: (value: DateRangeKey) => void;
+  onDateRangeChange: (value: PerformanceDateRange) => void;
   onReviewTargetChange: (value: PerformanceReviewTarget) => void;
   onRefresh: () => void;
   onExportPdf?: () => void;
   exportDisabled?: boolean;
   exportBusy?: boolean;
   exportStatusMessage?: string | null;
+}
+
+function applyPreset(preset: DateRangeKey): PerformanceDateRange {
+  return createPerformanceDateRange(preset);
 }
 
 export function PerformanceToolbar({
@@ -104,20 +110,65 @@ export function PerformanceToolbar({
       ? EMPLOYEE_REVIEW_TARGET_OPTIONS
       : TEAM_REVIEW_TARGET_OPTIONS;
 
+  const rangeValidation = validatePerformanceDateRange(dateRange);
+  const presetValue =
+    dateRange.preset === "custom" ? "30d" : (dateRange.preset as DateRangeKey);
+
   return (
     <div className="performance-toolbar">
       <h2 className="performance-toolbar__title" aria-hidden>
         Filters
       </h2>
       <div className="performance-toolbar__controls">
+        <div className="performance-toolbar__field performance-toolbar__field--date">
+          <label className="performance-toolbar__date-label" htmlFor="perf-from">
+            From
+          </label>
+          <input
+            id="perf-from"
+            type="date"
+            className="performance-toolbar__date-input"
+            value={dateRange.from}
+            onChange={(event) =>
+              onDateRangeChange({
+                ...dateRange,
+                from: event.target.value,
+                preset: "custom",
+              })
+            }
+          />
+        </div>
+        <div className="performance-toolbar__field performance-toolbar__field--date">
+          <label className="performance-toolbar__date-label" htmlFor="perf-to">
+            To
+          </label>
+          <input
+            id="perf-to"
+            type="date"
+            className="performance-toolbar__date-input"
+            value={dateRange.to}
+            onChange={(event) =>
+              onDateRangeChange({
+                ...dateRange,
+                to: event.target.value,
+                preset: "custom",
+              })
+            }
+          />
+        </div>
         <div className="performance-toolbar__field">
           <Select
-            aria-label="Date range"
-            value={dateRange}
-            options={DATE_RANGE_OPTIONS}
-            onChange={(event) =>
-              onDateRangeChange(event.target.value as DateRangeKey)
-            }
+            aria-label="Date range preset"
+            value={dateRange.preset === "custom" ? "custom" : presetValue}
+            options={[
+              ...DATE_RANGE_OPTIONS,
+              { value: "custom", label: "Custom" },
+            ]}
+            onChange={(event) => {
+              const value = event.target.value;
+              if (value === "custom") return;
+              onDateRangeChange(applyPreset(value as DateRangeKey));
+            }}
           />
         </div>
         <div className="performance-toolbar__field performance-toolbar__field--wide">
@@ -142,7 +193,7 @@ export function PerformanceToolbar({
           <IconButton
             label="Refresh"
             onClick={onRefresh}
-            disabled={refreshing}
+            disabled={refreshing || !rangeValidation.valid}
           >
             <RefreshIcon />
           </IconButton>
@@ -152,7 +203,7 @@ export function PerformanceToolbar({
             <Button
               type="button"
               variant="secondary"
-              disabled={exportDisabled || exportBusy}
+              disabled={exportDisabled || exportBusy || !rangeValidation.valid}
               onClick={onExportPdf}
             >
               <ExportIcon />
@@ -164,6 +215,11 @@ export function PerformanceToolbar({
       {exportStatusMessage ? (
         <p className="performance-toolbar__status" role="status" aria-live="polite">
           {exportStatusMessage}
+        </p>
+      ) : null}
+      {!rangeValidation.valid && rangeValidation.message ? (
+        <p className="performance-toolbar__status performance-toolbar__status--error" role="status">
+          {rangeValidation.message}
         </p>
       ) : null}
     </div>

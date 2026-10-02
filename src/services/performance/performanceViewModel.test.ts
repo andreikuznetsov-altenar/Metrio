@@ -3,6 +3,7 @@ import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { buildPerformanceViewModels } from "./performanceViewModel";
 import type { PerformanceFetchResult } from "./performanceTypes";
+import { createPerformanceDateRange } from "../../domain/performance/performanceDateRange";
 import { resolvePerformanceReportRanges } from "../../domain/performance/reportParams";
 import type { Person, TeamSnapshot } from "../../domain/people/types";
 import type { AuditReportData } from "../../domain/jira/types";
@@ -122,7 +123,12 @@ function buildResult(
     historyReportData: reportData,
     kpiSnapshots: EMPTY_KPI_SNAPSHOT_FILE,
     reportParams: params,
-    reportRanges: resolvePerformanceReportRanges("30d", "team", "team"),
+    reportRanges: resolvePerformanceReportRanges(
+      createPerformanceDateRange("30d"),
+      "team",
+      "team",
+      3,
+    ),
     identityResolution: [],
     timeOffEntries: [],
     partialWarnings: [],

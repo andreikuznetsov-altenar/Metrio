@@ -1,4 +1,8 @@
 import { buildCompletedCyclesFromSegments, getCycleSegments } from './cycles';
+import {
+  isCompletedCycleInReportingPeriod,
+  isHoldSegmentInReportingPeriod,
+} from './cycleKpi';
 import type { AuditIssue, KpiData, ReportParams } from './types';
 
 function averageMs(items: number[]): number | null {
@@ -90,14 +94,15 @@ export function buildKpiFromIssues(
 
   (issues || []).forEach((issue) => {
     const segments = getCycleSegments(issue, params);
-    const completedCycles = buildCompletedCyclesFromSegments(segments);
+    const completedCycles = buildCompletedCyclesFromSegments(segments).filter((cycle) =>
+      isCompletedCycleInReportingPeriod(cycle, params),
+    );
 
     segments.forEach((segment) => {
-      if (segment.type === 'progress_to_hold') {
-        holdCount++;
-        if (segment.ms !== null && segment.ms >= 0) {
-          progressToHoldDurations.push(segment.ms);
-        }
+      if (!isHoldSegmentInReportingPeriod(segment, params)) return;
+      holdCount++;
+      if (segment.ms !== null && segment.ms >= 0) {
+        progressToHoldDurations.push(segment.ms);
       }
     });
 

@@ -1,4 +1,5 @@
 import { buildCompletedCyclesFromSegments, getCycleSegments } from './cycles';
+import { isCompletedCycleInReportingPeriod } from './cycleKpi';
 import type { AuditIssue, AuditReportData, ReportParams } from './types';
 
 function round2(value: number): number {
@@ -28,7 +29,9 @@ export function buildFirstPassRateMetrics(reportData: {
 
   issues.forEach((issue) => {
     const segments = getCycleSegments(issue, reportData.params || ({} as ReportParams));
-    const completedCycles = buildCompletedCyclesFromSegments(segments);
+    const completedCycles = buildCompletedCyclesFromSegments(segments).filter((cycle) =>
+      isCompletedCycleInReportingPeriod(cycle, reportData.params || ({} as ReportParams)),
+    );
 
     completedCycles.forEach((cycle) => {
       completedTasks++;

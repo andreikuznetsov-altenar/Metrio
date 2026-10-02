@@ -15,6 +15,7 @@ import {
 } from "../platform/preferences";
 import { setFeedbackPrefsSnapshot } from "./feedbackPrefsBridge";
 import { fetchPerformanceData } from "../services/performance/performanceDataService";
+import { createPerformanceDateRange } from "../domain/performance/performanceDateRange";
 import type { TeamSnapshot } from "../domain/people/types";
 import { applyProductConfig } from "../config/product";
 import type { OrgResolutionResult } from "../services/bamboo/orgResolver";
@@ -64,7 +65,11 @@ export function FeedbackTeamProvider({ children }: { children: ReactNode }) {
     setTeamLoading(true);
     setTeamError(null);
     try {
-      const data = await fetchPerformanceData("30d", "team", "team");
+      const data = await fetchPerformanceData(
+        createPerformanceDateRange("30d"),
+        "team",
+        "team",
+      );
       setTeamSnapshot(data.teamSnapshot);
       setTeamDetection(teamDetectionFromPrefs(prefs));
     } catch (error) {

@@ -3,6 +3,7 @@ import { applyPerformanceRefreshSideEffects } from "./performanceRefreshSideEffe
 import type { PerformanceFetchResult } from "./performanceTypes";
 import { EMPTY_KPI_SNAPSHOT_FILE } from "../../domain/snapshots/snapshotEngine";
 import { testKpi } from "../../domain/testFixtures";
+import { createPerformanceDateRange } from "../../domain/performance/performanceDateRange";
 import { resolvePerformanceReportRanges } from "../../domain/performance/reportParams";
 
 vi.mock("../../platform/tray", () => ({
@@ -90,7 +91,12 @@ const baseResult: PerformanceFetchResult = {
     users: [],
     projects: [],
   },
-  reportRanges: resolvePerformanceReportRanges("30d", "team", "team"),
+  reportRanges: resolvePerformanceReportRanges(
+    createPerformanceDateRange("30d"),
+    "team",
+    "team",
+    3,
+  ),
   identityResolution: [],
   timeOffEntries: [],
   partialWarnings: [],

@@ -3,6 +3,7 @@ import { buildPerformanceExportPayloadFromFetch } from "./performanceExportBridg
 import type { PerformanceFetchResult } from "../performance/performanceTypes";
 import { EMPTY_KPI_SNAPSHOT_FILE } from "../../domain/snapshots/snapshotEngine";
 import { testKpi, testWorkload } from "../../domain/testFixtures";
+import { createPerformanceDateRange } from "../../domain/performance/performanceDateRange";
 import { resolvePerformanceReportRanges } from "../../domain/performance/reportParams";
 
 vi.mock("../../platform/preferences", () => ({
@@ -102,7 +103,12 @@ function fetchResult(): PerformanceFetchResult {
       users: [],
       projects: ["MET"],
     },
-    reportRanges: resolvePerformanceReportRanges("30d", "team", "team"),
+    reportRanges: resolvePerformanceReportRanges(
+      createPerformanceDateRange("30d"),
+      "team",
+      "team",
+      3,
+    ),
     identityResolution: [],
     timeOffEntries: [],
     partialWarnings: [],

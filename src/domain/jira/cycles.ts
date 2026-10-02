@@ -1,5 +1,4 @@
 import { getWorkingDurationMs } from './dates';
-import { getStatusEventsSorted } from './events';
 import {
   isProgressToHoldTransition,
   isProgressToReviewTransition,
@@ -8,9 +7,12 @@ import {
 } from './transitions';
 import type { AuditIssue, CompletedCycle, CycleSegment, ReportParams } from './types';
 
-/** Port of legacy getCycleSegments_ */
+/** Build cycle segments from full issue history (not range-truncated events). */
 export function getCycleSegments(issue: AuditIssue, _params?: ReportParams): CycleSegment[] {
-  const events = getStatusEventsSorted(issue);
+  const events = (issue.events || [])
+    .filter((e) => e.eventType === 'Status')
+    .slice()
+    .sort((a, b) => new Date(a.changedAt).getTime() - new Date(b.changedAt).getTime());
   const segments: CycleSegment[] = [];
 
   let cycleStarted = false;

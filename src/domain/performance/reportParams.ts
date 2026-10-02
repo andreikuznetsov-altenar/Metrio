@@ -1,20 +1,20 @@
 import { getEarliestFetchDate } from "../history/historyRanges";
-import type { DateRangeKey, PerformanceReviewTarget } from "../performance";
-import { dateRangeKeyToBounds } from "./dateRangeParams";
+import type { PerformanceReviewTarget } from "../performance";
+import type { PerformanceDateRange } from "./performanceDateRange";
+import { resolveReviewTargetPolicy } from "./reviewTargetPolicy";
 
 export type PerformanceAudience = "team" | "employee";
 
 export function reviewTargetToTeamScope(
   reviewTarget: PerformanceReviewTarget,
   audience: PerformanceAudience,
+  configuredTargetReviewDays: number,
 ): "direct" | "full" {
-  if (audience === "employee") {
-    return "direct";
-  }
-  if (reviewTarget === "org") {
-    return "full";
-  }
-  return "direct";
+  return resolveReviewTargetPolicy(
+    reviewTarget,
+    configuredTargetReviewDays,
+    audience,
+  ).teamScope;
 }
 
 export interface PerformanceReportRanges {
@@ -23,21 +23,29 @@ export interface PerformanceReportRanges {
   fetchDateFrom: string;
   fetchDateTo: string;
   teamScope: "direct" | "full";
+  targetReviewDays: number;
 }
 
 export function resolvePerformanceReportRanges(
-  dateRangeKey: DateRangeKey,
+  dateRange: PerformanceDateRange,
   reviewTarget: PerformanceReviewTarget,
   audience: PerformanceAudience,
+  configuredTargetReviewDays: number,
   now = new Date(),
 ): PerformanceReportRanges {
-  const { dateFrom, dateTo } = dateRangeKeyToBounds(dateRangeKey, now);
-  const fetchDateFrom = getEarliestFetchDate(dateFrom, dateTo);
+  void now;
+  const policy = resolveReviewTargetPolicy(
+    reviewTarget,
+    configuredTargetReviewDays,
+    audience,
+  );
+  const fetchDateFrom = getEarliestFetchDate(dateRange.from, dateRange.to);
   return {
-    displayDateFrom: dateFrom,
-    displayDateTo: dateTo,
+    displayDateFrom: dateRange.from,
+    displayDateTo: dateRange.to,
     fetchDateFrom,
-    fetchDateTo: dateTo,
-    teamScope: reviewTargetToTeamScope(reviewTarget, audience),
+    fetchDateTo: dateRange.to,
+    teamScope: policy.teamScope,
+    targetReviewDays: policy.targetReviewDays,
   };
 }

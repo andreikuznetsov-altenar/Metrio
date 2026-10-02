@@ -2,10 +2,12 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { AppShell } from "../components/AppShell/AppShell";
 import { bootLog } from "./bootDiagnostics";
 import { ScrollArea } from "../components/ScrollArea/ScrollArea";
-import type {
-  DateRangeKey,
-  PerformanceReviewTarget,
-} from "../domain/performance";
+import type { PerformanceReviewTarget } from "../domain/performance";
+import {
+  readSessionPerformanceDateRange,
+  writeSessionPerformanceDateRange,
+  type PerformanceDateRange,
+} from "../domain/performance/performanceDateRange";
 import { isManagerRole } from "../domain/performance";
 import type { AppRoute } from "../domain/types";
 import { isFeedbackEnabled } from "./featureGates";
@@ -53,7 +55,13 @@ export function AppLayout() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [settingsSection, setSettingsSection] =
     useState<SettingsSection>("general");
-  const [dateRange, setDateRange] = useState<DateRangeKey>("30d");
+  const [dateRange, setDateRangeState] = useState<PerformanceDateRange>(() =>
+    readSessionPerformanceDateRange(),
+  );
+  const setDateRange = useCallback((value: PerformanceDateRange) => {
+    writeSessionPerformanceDateRange(value);
+    setDateRangeState(value);
+  }, []);
   const { currentUser } = useCurrentUser();
   const [reviewTarget, setReviewTarget] = useState<PerformanceReviewTarget>(
     () => defaultReviewTarget(currentUser.person.role),
@@ -115,8 +123,8 @@ interface AppLayoutShellProps {
   setSettingsOpen: (open: boolean) => void;
   settingsSection: SettingsSection;
   setSettingsSection: (section: SettingsSection) => void;
-  dateRange: DateRangeKey;
-  setDateRange: (value: DateRangeKey) => void;
+  dateRange: PerformanceDateRange;
+  setDateRange: (value: PerformanceDateRange) => void;
   reviewTarget: PerformanceReviewTarget;
   setReviewTarget: (value: PerformanceReviewTarget) => void;
   performanceDataEnabled: boolean;

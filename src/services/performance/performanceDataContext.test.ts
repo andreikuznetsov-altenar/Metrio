@@ -22,6 +22,7 @@ vi.mock("../refresh/backgroundRefresh", () => ({
 import { fetchPerformanceData } from "../performance/performanceDataService";
 import { buildPerformanceViewModels } from "../performance/performanceViewModel";
 import type { PerformanceFetchResult } from "../performance/performanceTypes";
+import { createPerformanceDateRange } from "../../domain/performance/performanceDateRange";
 import { resolvePerformanceReportRanges } from "../../domain/performance/reportParams";
 import { EMPTY_KPI_SNAPSHOT_FILE } from "../../domain/snapshots/snapshotEngine";
 import { testKpi } from "../../domain/testFixtures";
@@ -36,7 +37,7 @@ function wrapper(enabled = true) {
       PerformanceDataProvider,
       {
         enabled,
-        dateRange: "30d",
+        dateRange: createPerformanceDateRange("30d"),
         reviewTarget: "team",
         audience: "team",
         selfPersonId: "1114",
@@ -106,7 +107,12 @@ const emptyResult: PerformanceFetchResult = {
     users: [],
     projects: [],
   },
-  reportRanges: resolvePerformanceReportRanges("30d", "team", "team"),
+  reportRanges: resolvePerformanceReportRanges(
+    createPerformanceDateRange("30d"),
+    "team",
+    "team",
+    3,
+  ),
   identityResolution: [],
   timeOffEntries: [],
   partialWarnings: [],
@@ -130,7 +136,11 @@ describe("PerformanceDataContext", () => {
       await result.current.refresh();
     });
     expect(mockFetch).toHaveBeenCalledTimes(1);
-    expect(mockFetch).toHaveBeenCalledWith("30d", "team", "team");
+    expect(mockFetch).toHaveBeenCalledWith(
+      expect.objectContaining({ preset: "30d" }),
+      "team",
+      "team",
+    );
   });
 
   it("keeps previous viewModels when refresh fails", async () => {

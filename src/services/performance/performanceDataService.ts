@@ -3,6 +3,7 @@ import { buildJql, normalizeReportParams } from "../../domain/jira/jql";
 import { buildEnhancedJiraAuditReport } from "../../domain/jira/report";
 import { buildTeamIdentityIndex } from "../../domain/jira/users";
 import type { TimeOffEntry } from "../../domain/people/availability";
+import type { PerformanceDateRange } from "../../domain/performance/performanceDateRange";
 import type { DateRangeKey, PerformanceReviewTarget } from "../../domain/performance";
 import type { PerformanceAudience } from "../../domain/performance/reportParams";
 import {
@@ -100,7 +101,7 @@ function membersForJiraScope(
 }
 
 export async function fetchPerformanceData(
-  dateRangeKey: DateRangeKey,
+  dateRange: PerformanceDateRange,
   reviewTarget: PerformanceReviewTarget,
   audience: PerformanceAudience,
 ): Promise<PerformanceFetchResult> {
@@ -108,8 +109,10 @@ export async function fetchPerformanceData(
     const { buildVisualPerformanceFetchResult } = await import(
       "../../fixtures/performanceFetchFixture"
     );
+    const presetKey =
+      dateRange.preset === "custom" ? "30d" : (dateRange.preset as DateRangeKey);
     return buildVisualPerformanceFetchResult(
-      dateRangeKey,
+      presetKey,
       reviewTarget,
       audience,
     );
@@ -129,9 +132,10 @@ export async function fetchPerformanceData(
   }
 
   const reportRanges = resolvePerformanceReportRanges(
-    dateRangeKey,
+    dateRange,
     reviewTarget,
     audience,
+    prefs.reportFilters.targetReviewDays,
   );
 
   const workEmail = getWorkEmail(prefs);
@@ -183,7 +187,7 @@ export async function fetchPerformanceData(
   const fetchParams = normalizeReportParams({
     dateFrom: reportRanges.fetchDateFrom,
     dateTo: reportRanges.fetchDateTo,
-    targetReviewDays: prefs.reportFilters.targetReviewDays,
+    targetReviewDays: reportRanges.targetReviewDays,
     users: userInputs,
     projects: prefs.reportFilters.projects,
     teamScope: reportRanges.teamScope,
@@ -192,7 +196,7 @@ export async function fetchPerformanceData(
   const displayParams = normalizeReportParams({
     dateFrom: reportRanges.displayDateFrom,
     dateTo: reportRanges.displayDateTo,
-    targetReviewDays: prefs.reportFilters.targetReviewDays,
+    targetReviewDays: reportRanges.targetReviewDays,
     users: userInputs,
     projects: prefs.reportFilters.projects,
     teamScope: reportRanges.teamScope,
