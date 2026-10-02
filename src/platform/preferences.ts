@@ -285,7 +285,25 @@ export function migratePreferences(raw: Partial<AppPreferences> & { schemaVersio
   return applyProductConfig(merged);
 }
 
+const VISUAL_PREFS_STORAGE_KEY = "metrio-visual-preferences";
+
+function isVisualFixtureBuild(): boolean {
+  return import.meta.env.VITE_VISUAL_FIXTURE === "1";
+}
+
 export async function loadPreferencesOutcome(): Promise<PreferencesLoadOutcome> {
+  if (isVisualFixtureBuild()) {
+    try {
+      const raw = localStorage.getItem(VISUAL_PREFS_STORAGE_KEY);
+      const prefs = raw
+        ? migratePreferences(JSON.parse(raw) as Partial<AppPreferences>)
+        : DEFAULT_PREFERENCES;
+      return { ok: true, prefs, source: "default" };
+    } catch {
+      return { ok: true, prefs: DEFAULT_PREFERENCES, source: "default" };
+    }
+  }
+
   try {
     const response = await invoke<PreferencesLoadResponse>('preferences_load');
     try {
@@ -329,6 +347,11 @@ export async function loadPreferencesForMerge(): Promise<AppPreferences> {
 }
 
 export async function savePreferences(prefs: AppPreferences): Promise<void> {
+  if (isVisualFixtureBuild()) {
+    localStorage.setItem(VISUAL_PREFS_STORAGE_KEY, JSON.stringify(prefs));
+    return;
+  }
+
   await invoke('preferences_save', {
     preferences: { ...prefs, schemaVersion: PREFERENCES_SCHEMA_VERSION },
   });

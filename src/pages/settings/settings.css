@@ -1,7 +1,9 @@
 .settings-layout {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  gap: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+  padding: 0 var(--space-6) var(--space-6);
+  max-width: 760px;
 }
 
 .settings-panel {
@@ -10,15 +12,28 @@
   gap: var(--space-4);
 }
 
-.settings-row {
+.settings-intro {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--color-text-secondary);
+}
+
+.settings-group {
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
 }
 
+.settings-row {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
 .settings-row__label {
   font-size: 13px;
-  font-weight: 500;
+  font-weight: 600;
   color: var(--color-text-primary);
 }
 
@@ -28,90 +43,93 @@
   color: var(--color-text-secondary);
 }
 
-.settings-toggle {
+.settings-row__hint--error {
+  color: var(--color-danger);
+}
+
+.settings-credential {
   display: flex;
-  align-items: flex-start;
+  flex-direction: column;
   gap: var(--space-2);
+}
+
+.settings-credential__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.settings-credential__row .input {
+  flex: 1 1 220px;
+  min-width: 0;
+}
+
+.settings-integration {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding-top: var(--space-2);
+  border-top: 1px solid color-mix(in srgb, var(--color-border) 70%, transparent);
+}
+
+.settings-integration__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.settings-toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  min-height: 52px;
+  padding: var(--space-2) 0;
+  border-top: 1px solid color-mix(in srgb, var(--color-border) 65%, transparent);
+}
+
+.settings-toggle-row__label {
   font-size: 13px;
   color: var(--color-text-primary);
-  cursor: pointer;
 }
 
-.settings-toggle input[type="checkbox"] {
-  appearance: none;
-  width: 16px;
-  height: 16px;
-  margin-top: 2px;
-  flex-shrink: 0;
-  border: 1px solid var(--color-border);
-  border-radius: 4px;
-  background: var(--color-surface);
-  display: grid;
-  place-content: center;
-  transition:
-    border-color var(--motion-hover) var(--transition-easing),
-    background var(--motion-hover) var(--transition-easing);
+.settings-notification-list {
+  display: flex;
+  flex-direction: column;
 }
 
-.settings-toggle input[type="checkbox"]::before {
-  content: "";
-  width: 8px;
-  height: 8px;
-  transform: scale(0);
-  transition: transform var(--motion-hover) var(--transition-easing);
-  clip-path: polygon(14% 44%, 0 65%, 50% 100%, 100% 16%, 80% 0, 43% 62%);
-  background: var(--color-surface);
+.settings-notification-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  min-height: 56px;
+  padding: var(--space-3) 0;
+  border-top: 1px solid color-mix(in srgb, var(--color-border) 65%, transparent);
 }
 
-.settings-toggle input[type="checkbox"]:checked {
-  background: var(--color-accent);
-  border-color: var(--color-accent);
+.settings-notification-row__text {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
 }
 
-.settings-toggle input[type="checkbox"]:checked::before {
-  transform: scale(1);
+.settings-notification-row__label {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-text-primary);
 }
 
-.settings-toggle input[type="checkbox"]:hover:not(:disabled) {
-  border-color: var(--color-accent);
-}
-
-.settings-panel .card {
-  border-color: color-mix(in srgb, var(--color-border) 55%, transparent);
-  box-shadow: none;
-}
-
-.settings-toggle input[type="checkbox"]:focus-visible {
-  box-shadow: var(--focus-ring);
-}
-
-.settings-toggle input[type="checkbox"]:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
+.settings-notification-row__description {
+  font-size: 12px;
+  color: var(--color-text-secondary);
 }
 
 .settings-actions {
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-2);
-}
-
-.settings-advanced-note {
-  margin: 0;
-  font-size: 12px;
-  color: var(--color-text-tertiary);
-}
-
-.settings-status {
-  margin: 0;
-  font-size: 12px;
-  color: var(--color-text-secondary);
-}
-
-.settings-status--ok {
-  color: var(--color-success, #0a7a3e);
-}
-
-.settings-status--warn {
-  color: var(--color-warning, #9a6700);
 }

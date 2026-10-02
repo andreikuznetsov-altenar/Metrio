@@ -3,15 +3,7 @@ import { useCurrentUser } from "../app/CurrentUserContext";
 import type { DevFixtureId } from "../domain/types";
 import { personInitials } from "../domain/types";
 import { profileSubtitle } from "../domain/types/profileSubtitle";
-import { useTheme } from "../theme/ThemeProvider";
-import type { ThemePreference } from "../theme/theme";
 import "./ProfileMenu.css";
-
-const THEME_OPTIONS: { value: ThemePreference; label: string }[] = [
-  { value: "light", label: "Light" },
-  { value: "dark", label: "Dark" },
-  { value: "system", label: "System" },
-];
 
 const DEV_FIXTURES: { id: DevFixtureId; label: string }[] = [
   { id: "employee", label: "Employee fixture" },
@@ -31,7 +23,6 @@ export function ProfileMenu({
   const [open, setOpen] = useState(false);
   const { currentUser, devFixtureId, setDevFixture, isDevFixtureMode } =
     useCurrentUser();
-  const { preference, setPreference } = useTheme();
   const initials = personInitials(currentUser.person.name);
 
   useEffect(() => {
@@ -82,29 +73,6 @@ export function ProfileMenu({
           <div className="profile-menu__identity">
             <p className="profile-menu__name">{currentUser.person.name}</p>
             <p className="profile-menu__role">{profileSubtitle(currentUser)}</p>
-          </div>
-
-          <div className="profile-menu__divider" />
-
-          <div className="profile-menu__section-label">Theme</div>
-          <div
-            className="profile-menu__theme"
-            role="group"
-            aria-label="Theme preference"
-          >
-            {THEME_OPTIONS.map((option) => (
-              <button
-                key={option.value}
-                type="button"
-                className={
-                  preference === option.value ? "is-active" : undefined
-                }
-                aria-pressed={preference === option.value}
-                onClick={() => setPreference(option.value)}
-              >
-                {option.label}
-              </button>
-            ))}
           </div>
 
           <div className="profile-menu__divider" />

@@ -1,5 +1,1 @@
-export type SettingsSection =
-  | "general"
-  | "connections"
-  | "notifications"
-  | "advanced";
+export type SettingsSection = "general" | "connections" | "notifications";

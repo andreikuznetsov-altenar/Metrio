@@ -1,18 +1,22 @@
-import { useCallback, useEffect, useState } from "react";
-import { COMPANY_CONFIG } from "../../config/company";
+import { useCallback, useEffect, useState, type ReactNode } from "react";
+import { Laptop, Moon, Sun } from "lucide-react";
 import { readSavedConnection, type SavedConnection } from "../../app/connectionStorage";
 import { setFeedbackPrefsSnapshot } from "../../app/feedbackPrefsBridge";
 import { useFeedbackSurveyStore } from "../../app/feedbackSurveyStore";
 import { Button } from "../../components/Button/Button";
-import { Card } from "../../components/Card/Card";
+import { SegmentedControl } from "../../components/SegmentedControl/SegmentedControl";
+import { Switch } from "../../components/Switch/Switch";
 import { Input } from "../../components/Input/Input";
-import { Select } from "../../components/Select/Select";
-import { formatPreferenceSyncTimestamp } from "../../platform/formatPreferenceSync";
+import { useToast } from "../../components/Toast/ToastContext";
 import { syncGeneralPreferencesToNative } from "../../platform/generalPreferencesSync";
 import {
   testBambooConnectionSaved,
   testJiraConnectionSaved,
 } from "../../platform/connectionTest";
+import {
+  updateBambooApiKey,
+  updateJiraToken,
+} from "../../platform/integrationCredentials";
 import {
   DEFAULT_PREFERENCES,
   loadPreferences,
@@ -24,6 +28,7 @@ import type { ThemePreference } from "../../theme/theme";
 import { PageSubnav } from "../../shell/PageSubnav";
 import type { SettingsSection } from "./types";
 import { GoogleConnectionPanel } from "../feedback/GoogleConnectionPanel";
+import { SettingsCredentialField } from "./SettingsCredentialField";
 import "../page-content.css";
 import "./settings.css";
 
@@ -31,13 +36,68 @@ const SECTIONS: { id: SettingsSection; label: string }[] = [
   { id: "general", label: "General" },
   { id: "connections", label: "Connections" },
   { id: "notifications", label: "Notifications" },
-  { id: "advanced", label: "Advanced" },
 ];
 
-const THEME_OPTIONS: { value: ThemePreference; label: string }[] = [
-  { value: "light", label: "Light" },
-  { value: "dark", label: "Dark" },
-  { value: "system", label: "System" },
+const THEME_OPTIONS: {
+  value: ThemePreference;
+  label: ReactNode;
+}[] = [
+  {
+    value: "light",
+    label: (
+      <>
+        <Sun size={14} strokeWidth={1.75} aria-hidden /> Light
+      </>
+    ),
+  },
+  {
+    value: "dark",
+    label: (
+      <>
+        <Moon size={14} strokeWidth={1.75} aria-hidden /> Dark
+      </>
+    ),
+  },
+  {
+    value: "system",
+    label: (
+      <>
+        <Laptop size={14} strokeWidth={1.75} aria-hidden /> System
+      </>
+    ),
+  },
+];
+
+const NOTIFICATION_ROWS: {
+  key: keyof AppPreferences["notifications"];
+  label: string;
+  description: string;
+}[] = [
+  {
+    key: "vacationStarts",
+    label: "Vacation starting soon",
+    description: "Get notified before a team member's leave.",
+  },
+  {
+    key: "vacationReminder",
+    label: "Vacation reminders",
+    description: "Reminder while planned leave is approaching.",
+  },
+  {
+    key: "returns",
+    label: "Return from time off",
+    description: "Alert when someone returns to the team.",
+  },
+  {
+    key: "workloadAlerts",
+    label: "Workload changes",
+    description: "Notify when workload becomes heavy or overloaded.",
+  },
+  {
+    key: "problematicTaskAlerts",
+    label: "Problematic tasks",
+    description: "Alert when task health becomes problematic.",
+  },
 ];
 
 export interface SettingsPageProps {
@@ -46,19 +106,19 @@ export interface SettingsPageProps {
 }
 
 export function SettingsPage({
-  onReconnect,
   initialSection = "general",
 }: SettingsPageProps) {
   const { preference, setPreference } = useTheme();
+  const toast = useToast();
   const [section, setSection] = useState<SettingsSection>(initialSection);
   const [prefs, setPrefs] = useState<AppPreferences>(DEFAULT_PREFERENCES);
   const [connection, setConnection] = useState<SavedConnection | null>(null);
-  const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-  const [jiraTest, setJiraTest] = useState<string | null>(null);
-  const [bambooTest, setBambooTest] = useState<string | null>(null);
-  const [googleMessage, setGoogleMessage] = useState<string | null>(null);
   const { connectGoogle, disconnectGoogle, loading: googleBusy } = useFeedbackSurveyStore();
+
+  const refreshConnection = useCallback(async () => {
+    setConnection(await readSavedConnection());
+  }, []);
 
   useEffect(() => {
     setSection(initialSection);
@@ -66,13 +126,13 @@ export function SettingsPage({
 
   useEffect(() => {
     let cancelled = false;
-    loadPreferences().then((loaded) => {
+    void loadPreferences().then((loaded) => {
       if (!cancelled) {
         setPrefs(loaded);
         setFeedbackPrefsSnapshot(loaded);
       }
     });
-    readSavedConnection().then((saved) => {
+    void readSavedConnection().then((saved) => {
       if (!cancelled) setConnection(saved);
     });
     return () => {
@@ -80,21 +140,23 @@ export function SettingsPage({
     };
   }, []);
 
-  const persistPrefs = useCallback(async (next: AppPreferences) => {
-    setPrefs(next);
-    setFeedbackPrefsSnapshot(next);
-    try {
-      await savePreferences(next);
-      await syncGeneralPreferencesToNative(next.general);
-      setStatusMessage("Settings saved.");
-    } catch {
-      setStatusMessage("Could not save settings to disk.");
-    }
-  }, []);
+  const persistPrefs = useCallback(
+    async (next: AppPreferences, toastMessage = "Settings saved") => {
+      setPrefs(next);
+      setFeedbackPrefsSnapshot(next);
+      try {
+        await savePreferences(next);
+        await syncGeneralPreferencesToNative(next.general);
+        toast.success(toastMessage);
+      } catch {
+        toast.error("Could not save settings to disk.");
+      }
+    },
+    [toast],
+  );
 
   const handleGoogleConnect = useCallback(
     async (input: { webAppUrl: string; bridgeSecret: string }) => {
-      setGoogleMessage(null);
       const status = await connectGoogle(input);
       const patch: Partial<AppPreferences["google"]> = { ...status };
       if (input.webAppUrl.trim()) {
@@ -102,28 +164,32 @@ export function SettingsPage({
         patch.responseAccess = "anyone_with_link";
         patch.emailCollectionMode = "RESPONDER_INPUT";
       }
-      await persistPrefs({
-        ...prefs,
-        google: { ...prefs.google, ...patch },
-      });
-      setGoogleMessage(`Connected as ${status.accountEmail}`);
+      await persistPrefs(
+        {
+          ...prefs,
+          google: { ...prefs.google, ...patch },
+        },
+        `Connected as ${status.accountEmail}`,
+      );
     },
     [connectGoogle, persistPrefs, prefs],
   );
 
   const handleGoogleDisconnect = useCallback(async () => {
     await disconnectGoogle();
-    await persistPrefs({
-      ...prefs,
-      google: {
-        ...prefs.google,
-        appsScriptWebAppUrl: "",
-        accountEmail: "",
-        formsConnected: false,
-        gmailConnected: false,
+    await persistPrefs(
+      {
+        ...prefs,
+        google: {
+          ...prefs.google,
+          appsScriptWebAppUrl: "",
+          accountEmail: "",
+          formsConnected: false,
+          gmailConnected: false,
+        },
       },
-    });
-    setGoogleMessage("Disconnected");
+      "Google disconnected",
+    );
   }, [disconnectGoogle, persistPrefs, prefs]);
 
   const patchGooglePrefs = useCallback(
@@ -133,85 +199,48 @@ export function SettingsPage({
     [persistPrefs, prefs],
   );
 
-  const onExportDiagnostics = async () => {
-    setBusy(true);
-    setStatusMessage(null);
-    try {
-      const { invoke } = await import("@tauri-apps/api/core");
-      const payload = JSON.stringify(
-        {
-          exportedAt: new Date().toISOString(),
-          connections: {
-            workEmail: connection?.workEmail ?? prefs.workEmail,
-            jiraBaseUrl: COMPANY_CONFIG.jiraBaseUrl,
-            bambooSubdomain: COMPANY_CONFIG.bambooSubdomain,
-            hasJiraToken: connection?.hasJiraToken ?? false,
-            hasBambooApiKey: connection?.hasBambooApiKey ?? false,
-          },
-          sync: prefs.sync,
-        },
-        null,
-        2,
-      );
-      const path = await invoke<string>("diagnostics_export_file", {
-        content: payload,
-      });
-      setStatusMessage(`Diagnostics exported to ${path}`);
-    } catch {
-      setStatusMessage("Diagnostics export is unavailable in this environment.");
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  const onOpenLogs = async () => {
-    setBusy(true);
-    setStatusMessage(null);
-    try {
-      const { invoke } = await import("@tauri-apps/api/core");
-      await invoke("logs_open_folder");
-      setStatusMessage("Opened logs folder.");
-    } catch {
-      setStatusMessage("Log folder is unavailable in this environment.");
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  const onResetData = async () => {
-    if (!window.confirm("Reset app preferences and connection metadata on this device?")) {
-      return;
-    }
-    setBusy(true);
-    try {
-      const { clearConnection } = await import("../../app/connectionStorage");
-      await clearConnection();
-      await savePreferences({ ...DEFAULT_PREFERENCES });
-      setPrefs({ ...DEFAULT_PREFERENCES });
-      setConnection(null);
-      setStatusMessage("Local app data reset. Reconnect to continue.");
-      onReconnect?.();
-    } catch {
-      setStatusMessage("Reset failed.");
-    } finally {
-      setBusy(false);
-    }
-  };
-
   const onTestJira = async () => {
     setBusy(true);
-    setJiraTest(null);
     const result = await testJiraConnectionSaved();
-    setJiraTest(`${result.label}: ${result.detail}`);
+    if (result.label === "Connected") {
+      toast.success("Jira connection succeeded");
+    } else {
+      toast.error(`Jira connection failed: ${result.detail}`);
+    }
     setBusy(false);
   };
 
   const onTestBamboo = async () => {
     setBusy(true);
-    setBambooTest(null);
     const result = await testBambooConnectionSaved();
-    setBambooTest(`${result.label}: ${result.detail}`);
+    if (result.label === "Connected") {
+      toast.success("Bamboo connection succeeded");
+    } else {
+      toast.error(`Bamboo connection failed: ${result.detail}`);
+    }
     setBusy(false);
+  };
+
+  const onSaveJiraToken = async (token: string) => {
+    setBusy(true);
+    try {
+      await updateJiraToken(token);
+      await refreshConnection();
+      toast.success("Jira token updated");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const onSaveBambooKey = async (apiKey: string) => {
+    setBusy(true);
+    try {
+      await updateBambooApiKey(apiKey);
+      await refreshConnection();
+      toast.success("Bamboo API key updated");
+    } finally {
+      setBusy(false);
+    }
   };
 
   return (
@@ -223,107 +252,129 @@ export function SettingsPage({
         ariaLabel="Settings sections"
       />
 
-      {statusMessage ? (
-        <p className="settings-status" role="status">
-          {statusMessage}
-        </p>
-      ) : null}
-
       {section === "general" ? (
         <div className="settings-panel">
-          <Card title="General" description="Appearance and startup behavior.">
-            <div className="settings-row">
-              <span className="settings-row__label">Theme</span>
-              <Select
-                aria-label="Theme"
-                value={preference}
-                options={THEME_OPTIONS}
-                onChange={(event) =>
-                  setPreference(event.target.value as ThemePreference)
-                }
-              />
+          <p className="settings-intro">Appearance and startup behavior.</p>
+          <div className="settings-group">
+            <span className="settings-row__label">Theme</span>
+            <SegmentedControl
+              ariaLabel="Theme preference"
+              value={preference}
+              options={THEME_OPTIONS}
+              onChange={(value) => {
+                setPreference(value);
+                toast.success("Settings saved");
+              }}
+            />
+          </div>
+
+          <div className="settings-toggle-row">
+            <div className="settings-toggle-row__text">
+              <span className="settings-toggle-row__label">Launch Metrio at login</span>
             </div>
+            <Switch
+              aria-label="Launch Metrio at login"
+              checked={prefs.general.launchAtLogin}
+              onCheckedChange={(checked) => {
+                void persistPrefs({
+                  ...prefs,
+                  general: { ...prefs.general, launchAtLogin: checked },
+                });
+              }}
+            />
+          </div>
 
-            <label className="settings-toggle">
-              <input
-                type="checkbox"
-                checked={prefs.general.launchAtLogin}
-                onChange={(event) => {
-                  void persistPrefs({
-                    ...prefs,
-                    general: {
-                      ...prefs.general,
-                      launchAtLogin: event.target.checked,
-                    },
-                  });
-                }}
-              />
-              Launch Metrio at login
-            </label>
-
-            <label className="settings-toggle">
-              <input
-                type="checkbox"
-                checked={prefs.general.keepRunningInTray}
-                onChange={(event) => {
-                  void persistPrefs({
-                    ...prefs,
-                    general: {
-                      ...prefs.general,
-                      keepRunningInTray: event.target.checked,
-                    },
-                  });
-                }}
-              />
-              Keep running in the menu bar when the window is closed
-            </label>
-          </Card>
+          <div className="settings-toggle-row">
+            <div className="settings-toggle-row__text">
+              <span className="settings-toggle-row__label">
+                Keep running in the menu bar when the window is closed
+              </span>
+            </div>
+            <Switch
+              aria-label="Keep running in the menu bar when the window is closed"
+              checked={prefs.general.keepRunningInTray}
+              onCheckedChange={(checked) => {
+                void persistPrefs({
+                  ...prefs,
+                  general: { ...prefs.general, keepRunningInTray: checked },
+                });
+              }}
+            />
+          </div>
         </div>
       ) : null}
 
       {section === "connections" ? (
         <div className="settings-panel">
-          <Card
-            title="Connections"
-            description="Jira and Bamboo credentials are stored in the system keychain."
-          >
-            <div className="settings-row">
-              <span className="settings-row__label">Work email</span>
-              <Input
-                readOnly
-                value={connection?.workEmail || prefs.workEmail || "—"}
-              />
-            </div>
-            <div className="settings-row">
-              <span className="settings-row__label">Jira</span>
-              <Input readOnly value={COMPANY_CONFIG.jiraBaseUrl} />
-            </div>
-            <div className="settings-row">
-              <span className="settings-row__label">BambooHR</span>
-              <Input readOnly value={COMPANY_CONFIG.bambooPortalUrl} />
-            </div>
+          <p className="settings-intro">
+            Manage secure credentials for your company integrations.
+          </p>
+
+          <div className="settings-group">
+            <span className="settings-row__label">Work email</span>
+            <Input
+              readOnly
+              value={connection?.workEmail || prefs.workEmail || "—"}
+            />
             <p className="settings-row__hint">
-              Jira token:{" "}
-              {connection?.hasJiraToken ? "Saved securely" : "Not configured"}
-              {" · "}
-              Bamboo key:{" "}
-              {connection?.hasBambooApiKey ? "Saved securely" : "Not configured"}
+              Used to match your Metrio account with Jira and Bamboo.
             </p>
-            {onReconnect ? (
-              <div className="settings-actions">
-                <Button type="button" variant="secondary" onClick={onReconnect}>
-                  Reconnect integrations
-                </Button>
-              </div>
-            ) : null}
-          </Card>
+          </div>
+
+          <div className="settings-integration">
+            <div className="settings-integration__head">
+              <span className="settings-row__label">Jira</span>
+              <span
+                className={
+                  connection?.hasJiraToken
+                    ? "settings-status-badge settings-status-badge--ok"
+                    : "settings-status-badge settings-status-badge--offline"
+                }
+              >
+                {connection?.hasJiraToken ? "Connected" : "Not configured"}
+              </span>
+            </div>
+            <SettingsCredentialField
+              label="Token"
+              hasValue={Boolean(connection?.hasJiraToken)}
+              busy={busy}
+              onSave={onSaveJiraToken}
+            />
+            <Button type="button" variant="secondary" disabled={busy} onClick={() => void onTestJira()}>
+              Test connection
+            </Button>
+          </div>
+
+          <div className="settings-integration">
+            <div className="settings-integration__head">
+              <span className="settings-row__label">BambooHR</span>
+              <span
+                className={
+                  connection?.hasBambooApiKey
+                    ? "settings-status-badge settings-status-badge--ok"
+                    : "settings-status-badge settings-status-badge--offline"
+                }
+              >
+                {connection?.hasBambooApiKey ? "Connected" : "Not configured"}
+              </span>
+            </div>
+            <SettingsCredentialField
+              label="API key"
+              hasValue={Boolean(connection?.hasBambooApiKey)}
+              busy={busy}
+              onSave={onSaveBambooKey}
+            />
+            <Button type="button" variant="secondary" disabled={busy} onClick={() => void onTestBamboo()}>
+              Test connection
+            </Button>
+          </div>
 
           <GoogleConnectionPanel
             prefs={prefs}
             loading={googleBusy}
-            message={googleMessage}
+            message={null}
             mode="settings"
-            showAdvanced
+            showAdvanced={false}
             onConnect={handleGoogleConnect}
             onReconnect={handleGoogleConnect}
             onDisconnect={handleGoogleDisconnect}
@@ -334,113 +385,32 @@ export function SettingsPage({
 
       {section === "notifications" ? (
         <div className="settings-panel">
-          <Card title="Notifications" description="Choose which alerts Metrio may show.">
-            {(
-              [
-                ["vacationStarts", "Vacation starting soon"],
-                ["vacationReminder", "Vacation reminders"],
-                ["returns", "Return from time off"],
-                ["workloadAlerts", "Workload changes"],
-                ["problematicTaskAlerts", "Problematic tasks"],
-              ] as const
-            ).map(([key, label]) => (
-              <label key={key} className="settings-toggle">
-                <input
-                  type="checkbox"
-                  checked={prefs.notifications[key]}
-                  onChange={(event) => {
+          <p className="settings-intro">Choose which alerts Metrio may show.</p>
+          <div className="settings-notification-list">
+            {NOTIFICATION_ROWS.map((row) => (
+              <div key={row.key} className="settings-notification-row">
+                <div className="settings-notification-row__text">
+                  <span className="settings-notification-row__label">{row.label}</span>
+                  <span className="settings-notification-row__description">
+                    {row.description}
+                  </span>
+                </div>
+                <Switch
+                  aria-label={row.label}
+                  checked={prefs.notifications[row.key]}
+                  onCheckedChange={(checked) => {
                     void persistPrefs({
                       ...prefs,
                       notifications: {
                         ...prefs.notifications,
-                        [key]: event.target.checked,
+                        [row.key]: checked,
                       },
                     });
                   }}
                 />
-                {label}
-              </label>
+              </div>
             ))}
-          </Card>
-        </div>
-      ) : null}
-
-      {section === "advanced" ? (
-        <div className="settings-panel">
-          <Card
-            title="Advanced"
-            description="Diagnostics and maintenance tools. Not shown in other settings sections."
-          >
-            <p className="settings-advanced-note">
-              Use these tools only when troubleshooting sync or connection issues.
-            </p>
-            <div className="settings-actions">
-              <Button
-                type="button"
-                variant="secondary"
-                disabled={busy}
-                onClick={() => void onExportDiagnostics()}
-              >
-                Export diagnostics
-              </Button>
-              <Button
-                type="button"
-                variant="secondary"
-                disabled={busy}
-                onClick={() => void onOpenLogs()}
-              >
-                Open logs folder
-              </Button>
-              <Button
-                type="button"
-                variant="danger"
-                disabled={busy}
-                onClick={() => void onResetData()}
-              >
-                Reset local data
-              </Button>
-            </div>
-          </Card>
-
-          <Card title="Connection debugging" description="Quick integration checks.">
-            <p className="settings-row__hint">
-              Last Jira sync: {formatPreferenceSyncTimestamp(prefs.sync.lastJiraSync)}
-              {" · "}
-              Last Bamboo sync:{" "}
-              {formatPreferenceSyncTimestamp(prefs.sync.lastBambooSync)}
-            </p>
-            <p
-              className={
-                prefs.sync.jiraStale || prefs.sync.bambooStale
-                  ? "settings-status settings-status--warn"
-                  : "settings-status settings-status--ok"
-              }
-            >
-              {prefs.sync.jiraStale || prefs.sync.bambooStale
-                ? "One or more integrations may be stale."
-                : "Integration timestamps look current."}
-            </p>
-            <div className="settings-actions">
-              <Button
-                type="button"
-                variant="secondary"
-                disabled={busy}
-                onClick={() => void onTestJira()}
-              >
-                Test Jira connection
-              </Button>
-              <Button
-                type="button"
-                variant="secondary"
-                disabled={busy}
-                onClick={() => void onTestBamboo()}
-              >
-                Test Bamboo connection
-              </Button>
-            </div>
-            {jiraTest ? <p className="settings-row__hint">{jiraTest}</p> : null}
-            {bambooTest ? <p className="settings-row__hint">{bambooTest}</p> : null}
-          </Card>
+          </div>
         </div>
       ) : null}
     </div>

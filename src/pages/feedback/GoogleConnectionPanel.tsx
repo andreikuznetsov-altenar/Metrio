@@ -97,7 +97,7 @@ export function GoogleConnectionPanel({
           )}
           {mode === 'settings' && (
             <p className="ds-feedback-connect__hint">
-              Deploy the Metrio companion from <code>apps-script/metrio-feedback</code> and connect it here.
+              Connect Google to create and send Feedback surveys.
             </p>
           )}
           <div className="ds-feedback-connect__actions">
