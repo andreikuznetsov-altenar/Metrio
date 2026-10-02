@@ -1,73 +1,121 @@
 import { Badge } from "../../components/Badge/Badge";
-import { Card } from "../../components/Card/Card";
-import type { EmployeeMyWeekSnapshot } from "../../domain/performance";
+import { ExternalLink } from "lucide-react";
+import type {
+  EmployeeCompletedRowView,
+  EmployeeMyWeekSnapshot,
+  EmployeeWorkRowView,
+} from "../../domain/performance";
+import { resolveJiraBaseUrl } from "../../config/product";
+import { loadPreferences } from "../../platform/preferences";
+import { buildJiraIssueBrowseUrl } from "../../platform/jiraIssueUrl";
+import { openExternalUrl } from "../../platform/openExternal";
+import { GroupedAttentionList } from "./GroupedAttentionList";
+import { PersonWorkRow } from "./PersonWorkRow";
+
+async function openIssueInJira(issueKey: string) {
+  const prefs = await loadPreferences();
+  const url = buildJiraIssueBrowseUrl(resolveJiraBaseUrl(prefs), issueKey);
+  await openExternalUrl(url);
+}
+
+function MyWeekSummary({ summary }: { summary: EmployeeMyWeekSnapshot["summary"] }) {
+  return (
+    <div className="employee-my-week-summary" aria-label="Week summary">
+      {summary.map((metric) => (
+        <div key={metric.label} className="employee-my-week-summary__item">
+          <span className="employee-my-week-summary__label">{metric.label}</span>
+          <span className="employee-my-week-summary__value">{metric.value}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function WorkRowList({ items }: { items: EmployeeWorkRowView[] }) {
+  return (
+    <div className="performance-work-list">
+      {items.map((item) => (
+        <PersonWorkRow key={item.key} item={item} />
+      ))}
+    </div>
+  );
+}
+
+function CompletedRow({ item }: { item: EmployeeCompletedRowView }) {
+  const metaParts = [item.completedOn, item.cycle ? `${item.cycle} cycle` : null].filter(
+    Boolean,
+  ) as string[];
+
+  return (
+    <div className="performance-work-row performance-work-row--person">
+      <div className="performance-work-row__main">
+        <div className="person-work-row__head">
+          <span className="performance-work-row__key">{item.key}</span>
+          {item.outcome ? (
+            <Badge variant={item.outcome === "First pass" ? "success" : "warning"}>
+              {item.outcome}
+            </Badge>
+          ) : null}
+        </div>
+        <div className="performance-work-row__title performance-work-row__title--wrap">
+          {item.title}
+        </div>
+        {metaParts.length ? (
+          <div className="performance-work-row__meta person-work-row__foot">
+            <span>{metaParts.join(" · ")}</span>
+            <button
+              type="button"
+              className="person-work-row__jira"
+              aria-label={`Open ${item.key} in Jira`}
+              onClick={() => void openIssueInJira(item.key)}
+            >
+              <ExternalLink size={15} strokeWidth={1.75} aria-hidden />
+            </button>
+          </div>
+        ) : null}
+      </div>
+    </div>
+  );
+}
 
 export function EmployeeMyWeekView({ myWeek }: { myWeek: EmployeeMyWeekSnapshot }) {
   return (
     <>
       <section aria-label="My week summary">
-        <div className="performance-metrics">
-          {myWeek.summary.map((metric) => (
-            <Card key={metric.label} className="performance-metric-card">
-              <div className="performance-metric-card__label">{metric.label}</div>
-              <div className="performance-metric-card__value">{metric.value}</div>
-            </Card>
-          ))}
-        </div>
+        <MyWeekSummary summary={myWeek.summary} />
       </section>
 
-      <section aria-label="Needs attention">
-        <h3 className="performance-section__title">Needs attention</h3>
-        {myWeek.needsAttention.length === 0 ? (
-          <div className="performance-empty performance-work-list">
-            Nothing needs your attention right now.
-          </div>
-        ) : (
+      {myWeek.needsAttention.length > 0 ? (
+        <section aria-label="Needs attention">
+          <h3 className="performance-section__title">Needs attention</h3>
+          <GroupedAttentionList items={myWeek.needsAttention} />
+        </section>
+      ) : null}
+
+      {myWeek.inReview.length > 0 ? (
+        <section aria-label="In review">
+          <h3 className="performance-section__title">In review</h3>
+          <WorkRowList items={myWeek.inReview} />
+        </section>
+      ) : null}
+
+      {myWeek.inProgress.length > 0 ? (
+        <section aria-label="In progress">
+          <h3 className="performance-section__title">In progress</h3>
+          <WorkRowList items={myWeek.inProgress} />
+        </section>
+      ) : null}
+
+      {myWeek.completedThisWeek.length > 0 ? (
+        <section aria-label="Completed this week">
+          <h3 className="performance-section__title">Completed this week</h3>
           <div className="performance-work-list">
-            {myWeek.needsAttention.map((item) => (
-              <div key={item.reason} className="performance-work-row">
-                <div className="performance-work-row__main">
-                  <Badge variant={item.variant}>{item.label}</Badge>
-                  <div className="performance-work-row__meta">{item.reason}</div>
-                </div>
-              </div>
+            {myWeek.completedThisWeek.map((item) => (
+              <CompletedRow key={item.key} item={item} />
             ))}
           </div>
-        )}
-      </section>
-
-      <TaskGroup title="In progress" items={myWeek.inProgress} />
-      <TaskGroup title="In review" items={myWeek.inReview} />
-      <TaskGroup title="Completed this week" items={myWeek.completedThisWeek} />
+        </section>
+      ) : null}
     </>
-  );
-}
-
-function TaskGroup({
-  title,
-  items,
-}: {
-  title: string;
-  items: { key: string; title: string; status: string }[];
-}) {
-  return (
-    <section aria-label={title}>
-      <h3 className="performance-section__title">{title}</h3>
-      {items.length === 0 ? (
-        <div className="performance-empty performance-work-list">None</div>
-      ) : (
-        <div className="performance-work-list">
-          {items.map((item) => (
-            <div key={item.key} className="performance-work-row">
-              <div className="performance-work-row__key">{item.key}</div>
-              <div className="performance-work-row__main">
-                <div className="performance-work-row__title">{item.title}</div>
-                <div className="performance-work-row__meta">{item.status}</div>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-    </section>
   );
 }

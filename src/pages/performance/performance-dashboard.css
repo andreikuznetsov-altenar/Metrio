@@ -766,6 +766,122 @@
   color: var(--color-text-secondary);
 }
 
+.performance-employee-context {
+  margin: 0 0 var(--space-4);
+  font-size: 12px;
+  color: var(--color-text-secondary);
+}
+
+.performance-inline-empty {
+  margin: 0 0 var(--space-4);
+  font-size: 13px;
+  color: var(--color-text-secondary);
+}
+
+.performance-attention-empty {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0 0 var(--space-4);
+  font-size: 13px;
+  color: var(--color-text-secondary);
+}
+
+.performance-attention-key {
+  border: none;
+  background: var(--color-surface-secondary);
+  color: var(--color-text-primary);
+  font-size: 12px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+
+.performance-attention-key:hover {
+  background: var(--color-surface-tertiary);
+}
+
+.performance-timeoff-compact {
+  margin-bottom: var(--space-4);
+  font-size: 13px;
+}
+
+.performance-timeoff-compact__range {
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.performance-timeoff-compact__note {
+  margin-top: var(--space-1);
+  color: var(--color-text-secondary);
+}
+
+.person-work-row__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.person-work-row__foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.person-work-row__jira {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+}
+
+.person-work-row__jira:hover {
+  background: var(--color-surface-secondary);
+  color: var(--color-text-primary);
+}
+
+.employee-my-week-summary {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--space-3);
+  margin-bottom: var(--space-5);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-secondary);
+}
+
+.employee-my-week-summary__label {
+  display: block;
+  font-size: 11px;
+  color: var(--color-text-tertiary);
+  margin-bottom: var(--space-1);
+}
+
+.employee-my-week-summary__value {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.performance-trends--employee {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.performance-trend-card--flat {
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-secondary);
+}
+
 @media (max-width: 1080px) {
   .performance-metrics,
   .performance-trends,
