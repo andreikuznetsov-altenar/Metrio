@@ -45,12 +45,19 @@
 
 .drawer__header {
   flex-shrink: 0;
+  position: relative;
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
   gap: var(--space-3);
-  padding: var(--space-4);
+  padding: var(--space-5) 56px var(--space-4) var(--space-4);
   border-bottom: 1px solid var(--color-border);
+}
+
+.drawer__header .icon-btn {
+  position: absolute;
+  top: 20px;
+  right: 20px;
 }
 
 .drawer__body {
@@ -60,6 +67,7 @@
   overflow-x: hidden;
   padding: var(--space-4);
   scroll-behavior: smooth;
+  scrollbar-gutter: stable;
   scrollbar-width: thin;
   scrollbar-color: color-mix(in srgb, var(--color-text-tertiary) 35%, transparent)
     transparent;
@@ -76,6 +84,10 @@
 
 .drawer__body:hover::-webkit-scrollbar-thumb {
   background: color-mix(in srgb, var(--color-text-tertiary) 55%, transparent);
+}
+
+.drawer--notifications {
+  width: min(390px, 100vw);
 }
 
 @media (prefers-reduced-motion: reduce) {

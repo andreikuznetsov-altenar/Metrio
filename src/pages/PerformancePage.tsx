@@ -39,6 +39,7 @@ export function PerformancePage({ reviewTarget }: PerformancePageProps) {
   const { currentUser } = useCurrentUser();
   const { performanceControlsDisabled } = usePerformanceData();
   const [personDetailId, setPersonDetailId] = useState<string | null>(null);
+  const [personDrawerOpen, setPersonDrawerOpen] = useState(false);
   const canViewTeamDashboard =
     isManagerRole(currentUser.person.role) && currentUser.team;
 
@@ -50,12 +51,17 @@ export function PerformancePage({ reviewTarget }: PerformancePageProps) {
       if (performanceControlsDisabled) return;
       if (canOpenPersonDetail(currentUser, personId)) {
         setPersonDetailId(personId);
+        setPersonDrawerOpen(true);
       }
     },
     [currentUser, performanceControlsDisabled],
   );
 
   const closePersonDetail = useCallback(() => {
+    setPersonDrawerOpen(false);
+  }, []);
+
+  const clearPersonDetail = useCallback(() => {
     setPersonDetailId(null);
   }, []);
 
@@ -69,10 +75,6 @@ export function PerformancePage({ reviewTarget }: PerformancePageProps) {
     window.addEventListener("metrio-open-person", handler);
     return () => window.removeEventListener("metrio-open-person", handler);
   }, [openPersonDetail]);
-
-  const drawerOpen =
-    personDetailId != null &&
-    canOpenPersonDetail(currentUser, personDetailId);
 
   let content;
 
@@ -99,11 +101,12 @@ export function PerformancePage({ reviewTarget }: PerformancePageProps) {
   return (
     <>
       <PerformanceContentShell>{content}</PerformanceContentShell>
-      {drawerOpen && personDetailId ? (
+      {personDetailId ? (
         <PersonDetailDrawer
           personId={personDetailId}
-          open={drawerOpen}
+          open={personDrawerOpen}
           onClose={closePersonDetail}
+          onClosed={clearPersonDetail}
         />
       ) : null}
     </>

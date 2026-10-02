@@ -18,6 +18,7 @@ function CloseIcon() {
 export interface DrawerProps {
   open: boolean;
   onClose: () => void;
+  onClosed?: () => void;
   ariaLabel: string;
   header?: ReactNode;
   children: ReactNode;
@@ -27,6 +28,7 @@ export interface DrawerProps {
 export function Drawer({
   open,
   onClose,
+  onClosed,
   ariaLabel,
   header,
   children,
@@ -59,9 +61,12 @@ export function Drawer({
       return;
     }
 
-    const timer = window.setTimeout(() => setMounted(false), 200);
+    const timer = window.setTimeout(() => {
+      setMounted(false);
+      onClosed?.();
+    }, 240);
     return () => window.clearTimeout(timer);
-  }, [mounted, open, visible]);
+  }, [mounted, onClosed, open, visible]);
 
   useEffect(() => {
     if (!open) {

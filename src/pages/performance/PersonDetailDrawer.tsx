@@ -12,6 +12,7 @@ export interface PersonDetailDrawerProps {
   personId: string;
   open: boolean;
   onClose: () => void;
+  onClosed?: () => void;
 }
 
 function outcomeVariant(outcome: string): "success" | "warning" | "neutral" {
@@ -42,6 +43,7 @@ export function PersonDetailDrawer({
   personId,
   open,
   onClose,
+  onClosed,
 }: PersonDetailDrawerProps) {
   const { viewModels } = usePerformanceData();
   const person = viewModels?.getPerson(personId);
@@ -132,14 +134,14 @@ export function PersonDetailDrawer({
                           {group.reason}
                         </div>
                         {visibleKeys.length > 0 || extraKeys > 0 ? (
-                          <div className="performance-attention-group__keys">
+                          <div className="issue-chip-list performance-attention-group__keys">
                             {visibleKeys.map((key) => (
                               <Badge key={key} variant="neutral">
                                 {key}
                               </Badge>
                             ))}
                             {extraKeys > 0 ? (
-                              <span className="performance-attention-row__more">
+                              <span className="issue-chip-list__more">
                                 +{extraKeys} more
                               </span>
                             ) : null}
@@ -220,6 +222,7 @@ export function PersonDetailDrawer({
     <Drawer
       open={open}
       onClose={onClose}
+      onClosed={onClosed}
       ariaLabel={`Person detail for ${displayName}`}
       header={
         <div className="person-detail-drawer__identity">
