@@ -20,8 +20,10 @@ import {
 } from "../../app/actionNavigation";
 import { ActionQueueSection } from "./ActionQueueSection";
 import { GettingStartedSection } from "./GettingStartedSection";
+import { ProjectContextSection } from "./ProjectContextSection";
+import { WorkGraphProvider } from "../../app/WorkGraphContext";
 import { PersonPerformanceMetrics } from "./PersonPerformanceMetrics";
-import { PersonWorkRow } from "./PersonWorkRow";
+import { EmployeeCurrentWorkList } from "./EmployeeCurrentWorkList";
 import { PerformanceStatusBanner } from "./PerformanceStatusBanner";
 import { buildMetricDrilldownRequest } from "./analyticsDrilldownModel";
 import "./performance-dashboard.css";
@@ -133,7 +135,16 @@ export function EmployeePerformanceOverview({ personId }: EmployeePerformanceOve
     );
   }
 
+  const selfPerson = data?.teamSnapshot.persons.find((p) => p.id === personId);
+  const datasetKey = data?.lastUpdatedAt ?? personId;
+
   return (
+    <WorkGraphProvider
+      person={selfPerson ?? null}
+      params={data?.reportParams}
+      datasetKey={datasetKey}
+      department={selfBamboo?.department}
+    >
     <div
       className="performance-dashboard"
       data-testid="performance-dashboard-ready"
@@ -152,6 +163,8 @@ export function EmployeePerformanceOverview({ personId }: EmployeePerformanceOve
           <p className="performance-employee-context">{workspace.contextLine}</p>
 
           {selfBamboo ? <GettingStartedSection bamboo={selfBamboo} /> : null}
+
+          <ProjectContextSection />
 
           <ActionQueueSection
             title="My focus"
@@ -179,11 +192,7 @@ export function EmployeePerformanceOverview({ personId }: EmployeePerformanceOve
           {currentWork.length === 0 ? (
             <p className="performance-inline-empty">No active work in this period.</p>
           ) : (
-            <div className="performance-work-list">
-              {currentWork.map((item) => (
-                <PersonWorkRow key={item.key} item={item} />
-              ))}
-            </div>
+            <EmployeeCurrentWorkList rows={currentWork} />
           )}
 
           <h3 className="performance-section__title">Needs attention</h3>
@@ -229,5 +238,6 @@ export function EmployeePerformanceOverview({ personId }: EmployeePerformanceOve
         />
       ) : null}
     </div>
+    </WorkGraphProvider>
   );
 }

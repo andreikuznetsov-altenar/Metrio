@@ -63,3 +63,17 @@
 .analytics-drawer__outcome {
   margin-bottom: var(--space-1);
 }
+
+.knowledge-popover__panel {
+  margin-top: var(--space-2);
+  padding: var(--space-3);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-secondary);
+  max-width: 420px;
+}
+
+.project-context__actions {
+  display: flex;
+  gap: var(--space-2);
+  margin-top: var(--space-3);
+}

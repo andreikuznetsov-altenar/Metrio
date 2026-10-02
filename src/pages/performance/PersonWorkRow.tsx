@@ -7,8 +7,12 @@ import { loadPreferences } from "../../platform/preferences";
 import { buildJiraIssueBrowseUrl } from "../../platform/jiraIssueUrl";
 import { openExternalUrl } from "../../platform/openExternal";
 
+import { KnowledgePopover } from "./KnowledgePopover";
+import type { WorkKnowledgeLink } from "../../domain/workGraph/workGraphTypes";
+
 export interface PersonWorkRowProps {
   item: PersonWorkRowData;
+  knowledgeLinks?: WorkKnowledgeLink[];
 }
 
 function stageAgeLabel(item: PersonWorkRowData): string {
@@ -16,7 +20,7 @@ function stageAgeLabel(item: PersonWorkRowData): string {
   return `${item.stageAge} in ${inReview ? "review" : "stage"}`;
 }
 
-export function PersonWorkRow({ item }: PersonWorkRowProps) {
+export function PersonWorkRow({ item, knowledgeLinks }: PersonWorkRowProps) {
   const healthBadge =
     item.healthVariant === "danger" ? (
       <Badge variant="danger">Problematic</Badge>
@@ -41,6 +45,9 @@ export function PersonWorkRow({ item }: PersonWorkRowProps) {
         </div>
         <div className="performance-work-row__meta person-work-row__foot">
           <span>{stageAgeLabel(item)}</span>
+          {knowledgeLinks?.length ? (
+            <KnowledgePopover issueKey={item.key} links={knowledgeLinks} />
+          ) : null}
           <Tooltip content="Open in Jira">
             <button
               type="button"
