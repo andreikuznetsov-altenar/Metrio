@@ -271,6 +271,7 @@
   gap: var(--space-2);
 }
 
+.drawer--notification .drawer__header,
 .drawer--notifications .drawer__header {
   padding-bottom: var(--space-3);
 }

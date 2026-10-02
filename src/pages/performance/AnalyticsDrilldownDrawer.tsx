@@ -168,7 +168,7 @@ export function AnalyticsDrilldownDrawer({
       onClose={onClose}
       onClosed={onClosed}
       ariaLabel={evidence ? `${evidence.title} analytics detail` : "Analytics detail"}
-      className="drawer--analytics"
+      size="analytics"
       header={
         evidence ? (
           <div className="analytics-drawer__header">

@@ -224,6 +224,7 @@ export function PersonDetailDrawer({
       onClose={onClose}
       onClosed={onClosed}
       ariaLabel={`Person detail for ${displayName}`}
+      size="person"
       header={
         <div className="person-detail-drawer__identity">
           <PersonAvatar

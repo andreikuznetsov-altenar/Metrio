@@ -1,7 +1,3 @@
-.drawer--analytics {
-  width: min(520px, 100vw);
-}
-
 .drawer--analytics .drawer__header {
   padding: var(--space-5) 56px var(--space-4) 24px;
 }
@@ -23,6 +19,17 @@
   align-items: baseline;
   justify-content: space-between;
   gap: var(--space-3);
+  flex-wrap: nowrap;
+  width: 100%;
+}
+
+.analytics-drawer__title-row .analytics-drawer__title {
+  flex: 1;
+  min-width: 0;
+}
+
+.analytics-drawer__title-row .analytics-drawer__value {
+  flex-shrink: 0;
 }
 
 .analytics-drawer__title {
@@ -86,6 +93,18 @@
   display: flex;
   flex-direction: column;
   gap: 2px;
+  width: 100%;
+}
+
+.analytics-drawer__efficiency-breakdown .efficiency-component-row__primary {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  column-gap: var(--space-4);
+}
+
+.analytics-drawer__efficiency-breakdown .efficiency-component-row__points {
+  min-width: 4.75rem;
+  text-align: right;
 }
 
 .analytics-drawer__efficiency-total {

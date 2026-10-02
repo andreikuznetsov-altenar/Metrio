@@ -1,0 +1,51 @@
+/**
+ * Shared drawer width tokens (notification ~400, person ~590, analytics ~620).
+ * Width is set at mount; slide animation uses transform only.
+ */
+:root {
+  --drawer-width-default: min(460px, calc(100vw - 32px));
+  --drawer-width-notification: min(400px, calc(100vw - 32px));
+  --drawer-width-person: min(590px, calc(100vw - 32px));
+  --drawer-width-analytics: min(620px, calc(100vw - 32px));
+}
+
+@media (min-width: 900px) {
+  :root {
+    --drawer-width-default: min(460px, calc(100vw - 32px));
+    --drawer-width-notification: min(410px, calc(100vw - 32px));
+    --drawer-width-person: min(540px, 44vw);
+    --drawer-width-analytics: min(560px, 46vw);
+  }
+}
+
+@media (min-width: 1100px) {
+  :root {
+    --drawer-width-person: min(560px, 44vw);
+    --drawer-width-analytics: min(580px, 46vw);
+  }
+}
+
+@media (min-width: 1400px) {
+  :root {
+    --drawer-width-notification: min(400px, calc(100vw - 32px));
+    --drawer-width-person: min(590px, 44vw);
+    --drawer-width-analytics: min(620px, 46vw);
+  }
+}
+
+.drawer {
+  width: var(--drawer-width-default);
+}
+
+.drawer--notification,
+.drawer--notifications {
+  width: var(--drawer-width-notification);
+}
+
+.drawer--person {
+  width: var(--drawer-width-person);
+}
+
+.drawer--analytics {
+  width: var(--drawer-width-analytics);
+}

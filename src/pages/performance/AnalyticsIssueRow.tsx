@@ -46,6 +46,7 @@ export function AnalyticsIssueRow({
   const durationLabel = formatCycleDurationShort(issue.cycleDurationMs);
   const hasBackflowDetails = (issue.backflowEvents?.length ?? 0) > 0;
   const metaParts = [
+    issue.cycleLabel,
     completedLabel,
     durationLabel ? `${durationLabel} cycle` : null,
     showBackflowSummary && (issue.backflowCount ?? 0) > 0
@@ -58,9 +59,6 @@ export function AnalyticsIssueRow({
       <div className="analytics-issue-row__top">
         <div className="analytics-issue-row__key-line">
           <span className="analytics-issue-row__key">{issue.issueKey}</span>
-          {issue.cycleLabel ? (
-            <span className="analytics-issue-row__cycle">{issue.cycleLabel}</span>
-          ) : null}
         </div>
         {badge ? (
           <Badge variant={badge.variant} className="analytics-issue-row__badge">

@@ -203,6 +203,7 @@ export function NotificationCenter({
       open={open}
       onClose={onClose}
       ariaLabel="Notifications"
+      size="notification"
       className="drawer--notifications"
       header={
         <div className="notification-center__header">

@@ -1,3 +1,5 @@
+@import "./drawer-sizes.css";
+
 .drawer-root {
   position: fixed;
   inset: 0;
@@ -29,7 +31,6 @@
   top: 0;
   right: 0;
   height: 100%;
-  width: min(460px, 100vw);
   border-left: 1px solid var(--color-border);
   background: var(--color-surface);
   box-shadow: -8px 0 32px rgba(0, 0, 0, 0.08);
@@ -84,10 +85,6 @@
 
 .drawer__body:hover::-webkit-scrollbar-thumb {
   background: color-mix(in srgb, var(--color-text-tertiary) 55%, transparent);
-}
-
-.drawer--notifications {
-  width: min(390px, 100vw);
 }
 
 @media (prefers-reduced-motion: reduce) {

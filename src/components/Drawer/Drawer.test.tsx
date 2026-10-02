@@ -1,8 +1,21 @@
-import { act, render, screen } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { act, cleanup, render, screen } from "@testing-library/react";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { Drawer } from "./Drawer";
 
 describe("Drawer", () => {
+  afterEach(() => {
+    cleanup();
+  });
+
+  it("applies size variant class for analytics width token", () => {
+    render(
+      <Drawer open onClose={vi.fn()} ariaLabel="Sized drawer" size="analytics">
+        Body
+      </Drawer>,
+    );
+    expect(screen.getByRole("dialog")).toHaveClass("drawer--analytics");
+  });
+
   it("stays mounted during close exit animation", () => {
     vi.useFakeTimers();
     const onClose = vi.fn();

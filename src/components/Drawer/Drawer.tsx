@@ -15,6 +15,15 @@ function CloseIcon() {
   );
 }
 
+export type DrawerSize = "default" | "notification" | "person" | "analytics";
+
+const DRAWER_SIZE_CLASS: Record<DrawerSize, string | undefined> = {
+  default: undefined,
+  notification: "drawer--notification",
+  person: "drawer--person",
+  analytics: "drawer--analytics",
+};
+
 export interface DrawerProps {
   open: boolean;
   onClose: () => void;
@@ -22,6 +31,8 @@ export interface DrawerProps {
   ariaLabel: string;
   header?: ReactNode;
   children: ReactNode;
+  /** Shared width variant; use instead of ad-hoc width classes. */
+  size?: DrawerSize;
   className?: string;
 }
 
@@ -32,6 +43,7 @@ export function Drawer({
   ariaLabel,
   header,
   children,
+  size = "default",
   className,
 }: DrawerProps) {
   const titleId = useId();
@@ -98,7 +110,9 @@ export function Drawer({
         onClick={onClose}
       />
       <aside
-        className={["drawer", className].filter(Boolean).join(" ")}
+        className={[ "drawer", DRAWER_SIZE_CLASS[size], className]
+          .filter(Boolean)
+          .join(" ")}
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}

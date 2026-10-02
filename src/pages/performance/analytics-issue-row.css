@@ -53,8 +53,10 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: var(--space-2);
+  gap: var(--space-3);
   margin-top: 10px;
+  width: 100%;
+  min-width: 0;
 }
 
 .analytics-issue-row__person-line {
@@ -62,7 +64,8 @@
   align-items: center;
   gap: var(--space-2);
   min-width: 0;
-  flex-wrap: wrap;
+  flex: 1;
+  flex-wrap: nowrap;
 }
 
 .analytics-issue-row__person,
@@ -88,6 +91,10 @@
 .analytics-issue-row__meta {
   font-size: 12px;
   color: var(--color-text-tertiary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
 }
 
 .analytics-issue-row__meta::before {
