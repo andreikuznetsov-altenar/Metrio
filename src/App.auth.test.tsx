@@ -5,6 +5,7 @@ import * as CurrentUserContext from "./app/CurrentUserContext";
 import { getFixtureUser } from "./fixtures/currentUsers";
 import { ThemeProvider } from "./theme/ThemeProvider";
 import { ConnectionProvider } from "./app/ConnectionContext";
+import { ToastProvider } from "./components/Toast/ToastContext";
 
 vi.mock("./app/connectionStorage", () => ({
   isAppConnected: () => true,
@@ -14,9 +15,11 @@ vi.mock("./app/connectionStorage", () => ({
 function renderAuthenticatedApp() {
   return render(
     <ThemeProvider>
-      <ConnectionProvider>
-        <AuthenticatedApp />
-      </ConnectionProvider>
+      <ToastProvider>
+        <ConnectionProvider>
+          <AuthenticatedApp />
+        </ConnectionProvider>
+      </ToastProvider>
     </ThemeProvider>,
   );
 }
