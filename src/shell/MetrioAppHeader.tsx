@@ -67,14 +67,20 @@ export function MetrioAppHeader({
           <Settings2 size={16} strokeWidth={1.7} />
         </IconButton>
         <span className="app-header__bell-wrap">
-          <IconButton label="Notifications" onClick={onOpenNotifications}>
+          <IconButton
+            label={
+              notificationUnreadCount > 0
+                ? `Notifications, ${notificationUnreadCount} unread`
+                : "Notifications"
+            }
+            onClick={onOpenNotifications}
+          >
             <Bell size={16} strokeWidth={1.7} />
           </IconButton>
           {notificationUnreadCount > 0 ? (
-            <span
-              className="app-header__bell-dot"
-              aria-label={`${notificationUnreadCount} unread notifications`}
-            />
+            <span className="app-header__bell-badge" aria-hidden>
+              {notificationUnreadCount > 9 ? "9+" : notificationUnreadCount}
+            </span>
           ) : null}
         </span>
         <ProfileMenu onOpenSettings={onOpenSettings} onLogout={onLogout} />

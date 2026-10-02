@@ -19,7 +19,7 @@ import { MetrioAppHeader } from "../shell/MetrioAppHeader";
 import { PageToolbar } from "../shell/PageToolbar";
 import { PerformanceToolbar } from "../shell/PerformanceToolbar";
 import { NotificationCenter } from "../shell/NotificationCenter";
-import { countUnreadNotificationEvents } from "../platform/notificationEvents";
+import { countUnreadNotificationEvents, NOTIFICATION_EVENTS_CHANGED } from "../platform/notificationEvents";
 import { RuntimeShellEffects } from "./RuntimeShellEffects";
 import { useCurrentUser } from "./CurrentUserContext";
 import { clearConnection } from "./connectionStorage";
@@ -161,6 +161,9 @@ function AppLayoutShell({
   useEffect(() => {
     bootLog("17M", "AppLayout mounted");
     setNotificationUnread(countUnreadNotificationEvents());
+    const onChanged = () => setNotificationUnread(countUnreadNotificationEvents());
+    window.addEventListener(NOTIFICATION_EVENTS_CHANGED, onChanged);
+    return () => window.removeEventListener(NOTIFICATION_EVENTS_CHANGED, onChanged);
   }, []);
 
   useEffect(() => {
@@ -301,15 +304,12 @@ function AppLayoutShell({
         open={notificationsOpen}
         onClose={() => setNotificationsOpen(false)}
         onUnreadChange={setNotificationUnread}
-        onNavigate={(target) => {
-          if (target.startsWith("person:")) {
-            window.dispatchEvent(
-              new CustomEvent("metrio-open-person", {
-                detail: target.slice("person:".length),
-              }),
-            );
-          }
+        onOpenPerson={(personId) => {
+          window.dispatchEvent(
+            new CustomEvent("metrio-open-person", { detail: personId }),
+          );
         }}
+        onOpenSettings={onOpenSettings}
       />
     </>
   );

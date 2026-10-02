@@ -93,14 +93,20 @@
   display: inline-flex;
 }
 
-.app-header__bell-dot {
+.app-header__bell-badge {
   position: absolute;
-  top: 6px;
-  right: 6px;
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: var(--color-accent);
+  top: 2px;
+  right: 0;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: var(--color-danger, #dc2626);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 16px;
+  text-align: center;
   border: 1.5px solid var(--color-surface);
   pointer-events: none;
 }
