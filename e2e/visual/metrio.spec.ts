@@ -207,7 +207,8 @@ test.describe("Metrio visual regression", () => {
   test("person drawer overview grouped", async ({ page }) => {
     await bootMetrio(page, "lead");
     await openFirstAttentionPerson(page);
-    await expect(page.locator(".drawer")).toBeVisible();
+    await expect(page.locator(".drawer--person")).toBeVisible();
+    await expect(page.locator(".person-detail-drawer__context")).toBeVisible();
     await expect(page).toHaveScreenshot("person-drawer-overview.png", {
       fullPage: true,
       maxDiffPixelRatio: 0.02,
@@ -217,7 +218,8 @@ test.describe("Metrio visual regression", () => {
   test("person drawer work tab", async ({ page }) => {
     await bootMetrio(page, "lead");
     await openFirstAttentionPerson(page);
-    await page.locator(".drawer").getByRole("tab", { name: "Work" }).click();
+    await page.locator(".drawer--person").getByRole("tab", { name: "Work" }).click();
+    await expect(page.locator(".person-detail-drawer__context")).toBeVisible();
     await expect(page).toHaveScreenshot("person-drawer-work.png", {
       fullPage: true,
       maxDiffPixelRatio: 0.02,
@@ -227,7 +229,8 @@ test.describe("Metrio visual regression", () => {
   test("person drawer history tab", async ({ page }) => {
     await bootMetrio(page, "lead");
     await openFirstAttentionPerson(page);
-    await page.locator(".drawer").getByRole("tab", { name: "History" }).click();
+    await page.locator(".drawer--person").getByRole("tab", { name: "History" }).click();
+    await expect(page.locator(".person-detail-drawer__context")).toBeVisible();
     await expect(page).toHaveScreenshot("person-drawer-history.png", {
       fullPage: true,
       maxDiffPixelRatio: 0.02,
