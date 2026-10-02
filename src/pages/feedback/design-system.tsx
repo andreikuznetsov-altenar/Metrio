@@ -1,7 +1,12 @@
 import type { ComponentProps, ReactNode } from "react";
+import { Badge, type BadgeVariant } from "../../components/Badge/Badge";
 import { Button as BaseButton } from "../../components/Button/Button";
 import { Card } from "../../components/Card/Card";
-import { Drawer as BaseDrawer } from "../../components/Drawer/Drawer";
+import {
+  Drawer as BaseDrawer,
+  type DrawerSize,
+} from "../../components/Drawer/Drawer";
+import { MetrioDatePicker } from "../../components/DatePicker/MetrioDatePicker";
 import { Input } from "../../components/Input/Input";
 import { Select } from "../../components/Select/Select";
 import { ScrollArea } from "../../components/ScrollArea/ScrollArea";
@@ -26,6 +31,23 @@ function mapBannerVariant(variant?: string): BannerTone {
   }
 }
 
+function toneToBadge(tone?: string): BadgeVariant {
+  switch (tone) {
+    case "green":
+      return "success";
+    case "blue":
+      return "info";
+    case "orange":
+      return "warning";
+    case "red":
+      return "danger";
+    default:
+      return "neutral";
+  }
+}
+
+export { Badge, type BadgeVariant } from "../../components/Badge/Badge";
+
 export function Button({
   size: _size,
   ...props
@@ -41,18 +63,21 @@ export function Drawer({
   open,
   onClose,
   children,
+  size = "default",
 }: {
   open: boolean;
   title: string;
   onClose: () => void;
   footer?: ReactNode;
   children: ReactNode;
+  size?: DrawerSize;
 }) {
   return (
     <BaseDrawer
       open={open}
       onClose={onClose}
       ariaLabel={title}
+      size={size}
       header={<h2 className="feedback-ds__drawer-title">{title}</h2>}
     >
       {children}
@@ -76,12 +101,33 @@ export function Section({
   subtitle,
   headerRight,
   children,
+  variant = "card",
 }: {
   title: ReactNode;
   subtitle?: ReactNode;
   headerRight?: ReactNode;
   children: ReactNode;
+  variant?: "card" | "plain";
 }) {
+  if (variant === "plain") {
+    return (
+      <section className="feedback-block">
+        <div className="feedback-block__header">
+          <div>
+            {typeof title === "string" ? (
+              <h3 className="feedback-block__title">{title}</h3>
+            ) : (
+              title
+            )}
+            {subtitle ? <p className="feedback-block__subtitle">{subtitle}</p> : null}
+          </div>
+          {headerRight ? <div className="feedback-block__header-right">{headerRight}</div> : null}
+        </div>
+        <div className="feedback-block__body">{children}</div>
+      </section>
+    );
+  }
+
   return (
     <Card
       title={typeof title === "string" ? title : "Section"}
@@ -116,6 +162,7 @@ export function Segmented({
   );
 }
 
+/** Persistent / blocking messages only — prefer toasts for transient success. */
 export function StatusBanner({
   children,
   tone,
@@ -142,11 +189,7 @@ export function Status({
   tone?: string;
   variant?: string;
 }) {
-  return (
-    <span className={`feedback-ds__status feedback-ds__status--${tone || "grey"}`}>
-      {children}
-    </span>
-  );
+  return <Badge variant={toneToBadge(tone)}>{children}</Badge>;
 }
 
 export function Tag({
@@ -155,11 +198,11 @@ export function Tag({
   tone,
 }: {
   children: ReactNode;
-  variant?: "success" | "warning" | "danger" | "info" | "neutral";
+  variant?: BadgeVariant;
   tone?: string;
 }) {
-  const resolved = variant || tone || "neutral";
-  return <span className={`feedback-ds__tag feedback-ds__tag--${resolved}`}>{children}</span>;
+  const resolved = variant || toneToBadge(tone);
+  return <Badge variant={resolved}>{children}</Badge>;
 }
 
 export function MetricCard({
@@ -206,18 +249,20 @@ export function StickyActionBar({
 export function DatePicker({
   label,
   value,
+  disabled,
   onChange,
-  ...props
-}: Omit<ComponentProps<typeof Input>, "onChange"> & {
+}: {
+  label: string;
+  value: string;
+  disabled?: boolean;
   onChange?: (value: string) => void;
 }) {
   return (
-    <Input
-      {...props}
+    <MetrioDatePicker
       label={label}
-      type="date"
       value={value}
-      onChange={(event) => onChange?.(event.target.value)}
+      disabled={disabled}
+      onChange={(iso) => onChange?.(iso)}
     />
   );
 }
@@ -245,10 +290,6 @@ export function SelectDropdown({
       onChange={(event) => onChange(event.target.value)}
     />
   );
-}
-
-export function Icon({ name, size: _size }: { name: string; size?: number }) {
-  return <span className="feedback-ds__icon" aria-hidden>{name.slice(0, 1)}</span>;
 }
 
 export function DrawerActions({ children }: { children: ReactNode }) {

@@ -1,3 +1,4 @@
+import type { BadgeVariant } from '../../components/Badge/Badge';
 import type { SurveyIndexStatus } from '../../domain/survey/metrics';
 import { recipientStatusLabel } from '../../domain/survey/status';
 import type { RecipientStatus } from '../../domain/survey/types';
@@ -47,9 +48,7 @@ export function recipientStatusDisplay(status: RecipientStatus): string {
   return recipientStatusLabel(status);
 }
 
-export function surveyIndexTagVariant(
-  status: SurveyIndexStatus,
-): 'success' | 'warning' | 'danger' | 'info' | 'neutral' {
+export function surveyIndexBadgeVariant(status: SurveyIndexStatus): BadgeVariant {
   switch (status) {
     case 'Excellent':
     case 'Healthy':
@@ -62,6 +61,74 @@ export function surveyIndexTagVariant(
     default:
       return 'neutral';
   }
+}
+
+/** @deprecated use surveyIndexBadgeVariant */
+export function surveyIndexTagVariant(
+  status: SurveyIndexStatus,
+): 'success' | 'warning' | 'danger' | 'info' | 'neutral' {
+  const v = surveyIndexBadgeVariant(status);
+  return v === 'accent' ? 'info' : v;
+}
+
+export function recipientStatusBadgeVariant(status: RecipientStatus): BadgeVariant {
+  switch (status) {
+    case 'ready':
+      return 'success';
+    case 'responded':
+    case 'sent':
+      return 'info';
+    case 'sending':
+    case 'no_email':
+      return 'warning';
+    case 'failed':
+      return 'danger';
+    default:
+      return 'neutral';
+  }
+}
+
+export function formatFeedbackLastSync(iso: string | null | undefined, now = Date.now()): string {
+  if (!iso) return 'Not synced yet';
+  const ts = Date.parse(iso);
+  if (Number.isNaN(ts)) return 'Not synced yet';
+  const diffMs = now - ts;
+  const diffMin = Math.floor(diffMs / 60_000);
+  if (diffMin < 1) return 'Updated just now';
+  if (diffMin < 60) return `Updated ${diffMin} min ago`;
+  const diffHours = Math.floor(diffMin / 60);
+  if (diffHours < 24) return `Updated ${diffHours} h ago`;
+  const date = new Date(ts);
+  const sameDay = new Date(now).toDateString() === date.toDateString();
+  const time = date.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+  if (sameDay) return `Last synced today, ${time}`;
+  return `Last synced ${date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}, ${time}`;
+}
+
+export function formatFeedbackSendSummaryToast(
+  summary: string,
+): { variant: 'success' | 'warning' | 'info'; message: string } {
+  if (summary.startsWith('Sent ')) {
+    const parts = summary.match(/Sent (\d+) · Failed (\d+) · Skipped (\d+)/);
+    if (parts) {
+      const sent = Number(parts[1]);
+      const failed = Number(parts[2]);
+      if (failed > 0) {
+        return { variant: 'warning', message: `${sent} sent · ${failed} failed` };
+      }
+      return { variant: 'success', message: sent === 1 ? '1 survey sent' : `${sent} surveys sent` };
+    }
+  }
+  if (summary.startsWith('Reminders sent:')) {
+    return { variant: 'success', message: 'Reminders sent' };
+  }
+  if (summary.toLowerCase().includes('test sent')) {
+    return { variant: 'success', message: 'Test email sent' };
+  }
+  if (summary.toLowerCase().includes('regenerated')) {
+    return { variant: 'success', message: 'Google Form regenerated' };
+  }
+  return { variant: 'info', message: summary };
 }
 
 export function questionTypeLabel(type: string): string {
