@@ -1,5 +1,7 @@
+import { ChevronDown, ChevronUp, Trash2 } from 'lucide-react';
 import type { SurveyQuestion } from '../../domain/survey/types';
-import { Checkbox, Icon, Input, SelectDropdown } from './design-system';
+import { Switch } from '../../components/Switch/Switch';
+import { Input, SelectDropdown } from './design-system';
 import { questionTypeLabel } from './feedbackUi';
 
 export function FeedbackQuestionEditor({
@@ -36,7 +38,7 @@ export function FeedbackQuestionEditor({
             aria-label="Move question up"
             onClick={onMoveUp}
           >
-            <Icon name="up" size={16} />
+            <ChevronUp size={16} strokeWidth={1.75} aria-hidden />
           </button>
           <button
             type="button"
@@ -45,7 +47,7 @@ export function FeedbackQuestionEditor({
             aria-label="Move question down"
             onClick={onMoveDown}
           >
-            <Icon name="down" size={16} />
+            <ChevronDown size={16} strokeWidth={1.75} aria-hidden />
           </button>
         </div>
         <span className="ds-feedback-question__number">Q{index + 1}</span>
@@ -59,18 +61,24 @@ export function FeedbackQuestionEditor({
           ]}
           onChange={(v) => onChange({ type: v as SurveyQuestion['type'] })}
         />
-        <Checkbox
-          label="Active"
-          checked={question.active}
-          disabled={disabled}
-          onChange={(v) => onChange({ active: v })}
-        />
-        <Checkbox
-          label="Required"
-          checked={question.required}
-          disabled={disabled}
-          onChange={(v) => onChange({ required: v })}
-        />
+        <label className="ds-feedback-question__switch">
+          <span>Enabled</span>
+          <Switch
+            checked={question.active}
+            disabled={disabled}
+            aria-label={`Question ${index + 1} enabled`}
+            onCheckedChange={(v) => onChange({ active: v })}
+          />
+        </label>
+        <label className="ds-feedback-question__switch">
+          <span>Required</span>
+          <Switch
+            checked={question.required}
+            disabled={disabled}
+            aria-label={`Question ${index + 1} required`}
+            onCheckedChange={(v) => onChange({ required: v })}
+          />
+        </label>
         <button
           type="button"
           className="ds-feedback-question__icon-btn ds-feedback-question__delete"
@@ -78,7 +86,7 @@ export function FeedbackQuestionEditor({
           aria-label="Delete question"
           onClick={onDelete}
         >
-          ×
+          <Trash2 size={16} strokeWidth={1.75} aria-hidden />
         </button>
       </header>
       <div className="ds-feedback-question__body">

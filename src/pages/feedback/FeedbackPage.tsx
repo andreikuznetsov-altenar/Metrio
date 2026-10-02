@@ -1,6 +1,9 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { Loader2 } from 'lucide-react';
 import { getSurveyMetrics, useFeedbackSurveyStore } from '../../app/feedbackSurveyStore';
 import { useFeedbackAppStore } from '../../app/FeedbackTeamProvider';
+import { useToast } from '../../components/Toast/ToastContext';
+import { Skeleton } from '../../components/Skeleton/Skeleton';
 import { getTodayIsoDate } from '../../domain/jira/dates';
 import type { AppPreferences } from '../../platform/preferences';
 import { computeDeliveryCounts } from '../../domain/survey/deliveryMetrics';
@@ -12,7 +15,15 @@ import {
   StatusBanner,
   StickyActionBar,
 } from './design-system';
-import { FEEDBACK_TABS, type FeedbackTab, hasGoogleAccount, isGoogleReadyForSurveys } from './feedbackUi';
+import {
+  FEEDBACK_TABS,
+  type FeedbackTab,
+  formatFeedbackLastSync,
+  formatFeedbackSendSummaryToast,
+  formatGoogleOAuthError,
+  hasGoogleAccount,
+  isGoogleReadyForSurveys,
+} from './feedbackUi';
 import { GoogleConnectionPanel } from './GoogleConnectionPanel';
 import { FeedbackSurveySetup } from './FeedbackSurveySetup';
 import { FeedbackSurveyContent } from './FeedbackSurveyContent';
@@ -27,12 +38,19 @@ import {
   FeedbackSendConfirmDrawer,
 } from './FeedbackConfirmDrawers';
 
-function formatLastSync(iso: string | null | undefined): string {
-  if (!iso) return '—';
-  return iso.slice(0, 16).replace('T', ' ');
+function FeedbackPageSkeleton() {
+  return (
+    <div className="ds-feedback-stack">
+      <Skeleton height={40} className="feedback-skeleton-strip" />
+      <Skeleton height={32} width={320} />
+      <Skeleton height={120} />
+      <Skeleton height={200} />
+    </div>
+  );
 }
 
 export function FeedbackPage() {
+  const toast = useToast();
   const { prefs, teamDetection, teamSnapshot, updatePrefs } = useFeedbackAppStore();
   const surveyStore = useFeedbackSurveyStore();
   const {
@@ -76,12 +94,20 @@ export function FeedbackPage() {
   const [tab, setTab] = useState<FeedbackTab>('survey');
   const [editingDefaults, setEditingDefaults] = useState(true);
   const [formDetailsOpen, setFormDetailsOpen] = useState(false);
-  const [googleMessage, setGoogleMessage] = useState<string | null>(null);
-  const [testSentMessage, setTestSentMessage] = useState<string | null>(null);
+  const [initializing, setInitializing] = useState(true);
+  const [syncingResponses, setSyncingResponses] = useState(false);
+  const lastSendSummaryRef = useRef<string | null>(null);
 
   useEffect(() => {
-    init();
+    init().finally(() => setInitializing(false));
   }, [init]);
+
+  useEffect(() => {
+    if (!sendSummary || sendSummary === lastSendSummaryRef.current) return;
+    lastSendSummaryRef.current = sendSummary;
+    const { variant, message } = formatFeedbackSendSummaryToast(sendSummary);
+    toast[variant](message);
+  }, [sendSummary, toast]);
 
   useEffect(() => {
     if (!isTeamMode || !data.activeSurveyId) return;
@@ -116,39 +142,43 @@ export function FeedbackPage() {
       r.reporterEmail,
   ).length;
 
+  const failedCount = activeSurvey
+    ? activeSurvey.recipients.filter((r) => r.status === 'failed' && r.selected).length
+    : 0;
+
   const alreadySentCount = activeSurvey
     ? activeSurvey.recipients.filter((r) => r.status === 'sent' || r.status === 'responded').length
     : 0;
 
   const missingEmailCount = counts?.missingEmail ?? 0;
 
-  const primaryStatus = useMemo(() => {
-    if (loading) return { variant: 'loading' as const, text: 'Working…' };
-    if (error) return { variant: 'error' as const, text: error };
-    if (prepareIssues.length > 0) {
-      return { variant: 'error' as const, text: prepareIssues.map((i) => i.message).join(' ') };
-    }
-    if (testSentMessage) return { variant: 'success' as const, text: testSentMessage };
-    if (sendSummary) return { variant: 'success' as const, text: sendSummary };
+  const blockingMessage = useMemo(() => {
+    if (error) return formatGoogleOAuthError(error);
+    if (prepareIssues.length > 0) return prepareIssues[0]?.message;
     return null;
-  }, [loading, error, prepareIssues, testSentMessage, sendSummary]);
+  }, [error, prepareIssues]);
 
   const handleGoogleConnect = async (input: { webAppUrl: string; bridgeSecret: string }) => {
-    setGoogleMessage(null);
-    const status = await connectGoogle(input);
-    const patch: Partial<AppPreferences['google']> = { ...status };
-    if (input.webAppUrl.trim()) {
-      patch.appsScriptWebAppUrl = input.webAppUrl.trim();
-      patch.responseAccess = 'anyone_with_link';
-      patch.emailCollectionMode = 'RESPONDER_INPUT';
+    try {
+      const status = await connectGoogle(input);
+      const patch: Partial<AppPreferences['google']> = { ...status };
+      if (input.webAppUrl.trim()) {
+        patch.appsScriptWebAppUrl = input.webAppUrl.trim();
+        patch.responseAccess = 'anyone_with_link';
+        patch.emailCollectionMode = 'RESPONDER_INPUT';
+      }
+      await updatePrefs({
+        google: {
+          ...prefs.google,
+          ...patch,
+        },
+      });
+      toast.success('Google connected');
+    } catch (e) {
+      const raw = e instanceof Error ? e.message : String(e);
+      toast.error(formatGoogleOAuthError(raw));
+      throw e;
     }
-    await updatePrefs({
-      google: {
-        ...prefs.google,
-        ...patch,
-      },
-    });
-    setGoogleMessage(`Connected as ${status.accountEmail}`);
   };
 
   const handleGoogleDisconnect = async () => {
@@ -162,12 +192,11 @@ export function FeedbackPage() {
         gmailConnected: false,
       },
     });
-    setGoogleMessage('Disconnected');
+    toast.info('Google disconnected');
   };
 
   const runPrepareSurvey = async () => {
-    setTestSentMessage(null);
-    await prepareSurvey({
+    const result = await prepareSurvey({
       prefs,
       teamSnapshot,
       teamDetection,
@@ -176,6 +205,20 @@ export function FeedbackPage() {
       scope,
       projects: projectsText.split(/[\n,]/).map((s) => s.trim()).filter(Boolean),
     });
+    if (result) toast.success('Survey prepared');
+  };
+
+  const runSyncResponses = async () => {
+    if (!activeSurvey) return;
+    setSyncingResponses(true);
+    try {
+      await syncResponses(activeSurvey.id);
+      toast.success('Responses updated');
+    } catch (e) {
+      toast.error("Couldn't refresh responses. Try again.");
+    } finally {
+      setSyncingResponses(false);
+    }
   };
 
   const updateQuestionAt = async (index: number, patch: Partial<SurveyQuestion>) => {
@@ -225,14 +268,7 @@ export function FeedbackPage() {
       <div className="ds-feedback-page-shell">
         <MetrioScrollArea className="ds-feedback-scroll">
           <div className="metrio-canvas ds-feedback-canvas">
-            <section className="ds-section">
-              <header className="ds-section__header">
-                <h2 className="ds-section__title">Feedback</h2>
-              </header>
-              <div className="ds-section__body">
-                <p className="ds-feedback-empty-inline">No personal feedback is available yet.</p>
-              </div>
-            </section>
+            <p className="ds-feedback-empty-inline">Feedback is available to team leads.</p>
           </div>
         </MetrioScrollArea>
       </div>
@@ -244,189 +280,225 @@ export function FeedbackPage() {
       <div className="ds-feedback-page-shell">
         <MetrioScrollArea className="ds-feedback-scroll">
           <div className="metrio-canvas ds-feedback-canvas ds-feedback-canvas--connect">
-            <div className="ds-feedback-connect-panel">
-              <GoogleConnectionPanel
+            <GoogleConnectionPanel
               prefs={prefs}
               loading={loading}
-              message={googleMessage}
               onConnect={handleGoogleConnect}
               onReconnect={handleGoogleConnect}
               onDisconnect={handleGoogleDisconnect}
               onUpdatePrefs={async (patch) => updatePrefs({ google: { ...prefs.google, ...patch } })}
             />
-            </div>
           </div>
         </MetrioScrollArea>
       </div>
     );
   }
 
+  const preparing = loading && tab === 'survey';
+  const sending = loading && tab === 'delivery';
+
   const footerAction =
-    tab === 'survey'
-      ? (
-        <Button disabled={loading || !googleSurveyReady} onClick={() => runPrepareSurvey()}>
-          {loading ? 'Preparing…' : 'Prepare survey'}
-        </Button>
-      )
-      : (
+    tab === 'survey' ? (
+      <Button disabled={loading || !googleSurveyReady} onClick={() => void runPrepareSurvey()}>
+        {preparing ? (
+          <>
+            <Loader2 size={16} className="feedback-btn-spinner" aria-hidden />
+            Preparing…
+          </>
+        ) : (
+          'Prepare survey'
+        )}
+      </Button>
+    ) : tab === 'delivery' ? (
+      <>
         <Button
           variant="secondary"
-          disabled={!activeSurvey || loading}
-          onClick={() => activeSurvey && syncResponses(activeSurvey.id)}
+          disabled={!activeSurvey || loading || reminderCount === 0}
+          onClick={() => setShowReminderConfirm(true)}
         >
-          Refresh responses
+          Send reminders ({reminderCount})
         </Button>
-      );
+        <Button
+          disabled={!activeSurvey || sending || !activeSurvey?.responderUri || selectedSendCount === 0}
+          onClick={() => setShowSendConfirm(true)}
+        >
+          {sending ? 'Sending surveys…' : 'Send surveys'}
+        </Button>
+      </>
+    ) : tab === 'results' ? (
+      <Button
+        variant="secondary"
+        disabled={!activeSurvey || syncingResponses}
+        onClick={() => void runSyncResponses()}
+      >
+        {syncingResponses ? (
+          <>
+            <Loader2 size={16} className="feedback-btn-spinner" aria-hidden />
+            Syncing…
+          </>
+        ) : (
+          'Refresh responses'
+        )}
+      </Button>
+    ) : null;
 
-  const lastResponseSync = activeSurvey?.lastResponseSyncAt || null;
+  const stickyLeft =
+    tab === 'results' && activeSurvey
+      ? formatFeedbackLastSync(activeSurvey.lastResponseSyncAt)
+      : null;
 
   return (
     <div className="ds-feedback-page-shell">
       <MetrioScrollArea className="ds-feedback-scroll">
         <div className="metrio-canvas ds-feedback-canvas">
-          <div className="ds-feedback-stack">
-            <GoogleConnectionPanel
-              prefs={prefs}
-              loading={loading}
-              message={googleMessage}
-              mode="feedback"
-              onConnect={handleGoogleConnect}
-              onReconnect={handleGoogleConnect}
-              onDisconnect={handleGoogleDisconnect}
-              onUpdatePrefs={async (patch) => updatePrefs({ google: { ...prefs.google, ...patch } })}
-            />
+          {initializing ? (
+            <FeedbackPageSkeleton />
+          ) : (
+            <div className="ds-feedback-stack">
+              <GoogleConnectionPanel
+                prefs={prefs}
+                loading={loading}
+                mode="feedback"
+                onConnect={handleGoogleConnect}
+                onReconnect={handleGoogleConnect}
+                onDisconnect={handleGoogleDisconnect}
+                onUpdatePrefs={async (patch) => updatePrefs({ google: { ...prefs.google, ...patch } })}
+              />
 
-            {primaryStatus && (
-              <StatusBanner variant={primaryStatus.variant}>{primaryStatus.text}</StatusBanner>
-            )}
+              {blockingMessage && (
+                <StatusBanner tone="danger">{blockingMessage}</StatusBanner>
+              )}
 
-            {googleSurveyReady && (
-              <>
-                <Segmented tabs={FEEDBACK_TABS} active={tab} onChange={(id) => setTab(id as FeedbackTab)} />
+              {prepareIssues.length > 1 && (
+                <ul className="feedback-field-errors">
+                  {prepareIssues.slice(1).map((issue) => (
+                    <li key={issue.field}>{issue.message}</li>
+                  ))}
+                </ul>
+              )}
 
-                {tab === 'survey' && (
-                  <>
-                    <FeedbackSurveySetup
-                      dateFrom={dateFrom}
-                      dateTo={dateTo}
-                      scope={scope}
-                      projectsText={projectsText}
-                      onDateFromChange={setDateFrom}
-                      onDateToChange={setDateTo}
-                      onScopeChange={setScope}
-                      onProjectsChange={setProjectsText}
-                    />
-                    <FeedbackSurveyContent
-                      title={editingDefaults ? data.defaults.title : activeSurvey?.title || ''}
-                      emailSubject={editingDefaults ? data.defaults.emailSubject : activeSurvey?.emailSubject || ''}
-                      introText={editingDefaults ? data.defaults.introText : activeSurvey?.introText || ''}
-                      questions={editingQuestions}
-                      editingDefaults={editingDefaults}
-                      canEdit={!!canEditQuestions}
-                      questionsLocked={activeSurvey?.questionsLocked}
-                      onTitleChange={(v) =>
-                        editingDefaults
-                          ? saveDefaults({ title: v })
-                          : activeSurvey && updateActiveSurvey(activeSurvey.id, { title: v })
-                      }
-                      onEmailSubjectChange={(v) =>
-                        editingDefaults
-                          ? saveDefaults({ emailSubject: v })
-                          : activeSurvey && updateActiveSurvey(activeSurvey.id, { emailSubject: v })
-                      }
-                      onIntroChange={(v) =>
-                        editingDefaults
-                          ? saveDefaults({ introText: v })
-                          : activeSurvey && updateActiveSurvey(activeSurvey.id, { introText: v })
-                      }
-                      onToggleMode={activeSurvey ? () => setEditingDefaults((v) => !v) : undefined}
-                      onQuestionChange={updateQuestionAt}
-                      onQuestionDelete={(index) => {
-                        const questions = editingQuestions.filter((_, i) => i !== index);
-                        if (editingDefaults) saveDefaults({ questions });
-                        else if (activeSurvey) updateActiveSurvey(activeSurvey.id, { questions });
-                      }}
-                      onQuestionMove={moveQuestion}
-                      onAddQuestion={addQuestion}
-                    />
-                    {activeSurvey && counts && (
-                      <FeedbackSurveyReady
-                        survey={activeSurvey}
-                        counts={counts}
-                        selectedSendCount={selectedSendCount}
-                        formDetailsOpen={formDetailsOpen}
-                        onToggleFormDetails={() => setFormDetailsOpen((v) => !v)}
-                        onReviewRecipients={() => setShowRecipients(true)}
-                        onSendTest={async () => {
-                          setTestSentMessage(null);
-                          await sendTestEmail(activeSurvey.id, prefs);
-                          setTestSentMessage(
-                            `Test email sent to ${prefs.google.accountEmail || 'your connected Google account'}.`,
-                          );
-                        }}
-                        onSendSurvey={() => setShowSendConfirm(true)}
-                        onRegenerate={() => setShowRegenerateConfirm(true)}
+              {googleSurveyReady && (
+                <>
+                  <Segmented tabs={FEEDBACK_TABS} active={tab} onChange={(id) => setTab(id as FeedbackTab)} />
+
+                  {tab === 'survey' && (
+                    <>
+                      <FeedbackSurveySetup
+                        dateFrom={dateFrom}
+                        dateTo={dateTo}
+                        scope={scope}
+                        projectsText={projectsText}
+                        onDateFromChange={setDateFrom}
+                        onDateToChange={setDateTo}
+                        onScopeChange={setScope}
+                        onProjectsChange={setProjectsText}
                       />
-                    )}
-                  </>
-                )}
+                      <FeedbackSurveyContent
+                        title={editingDefaults ? data.defaults.title : activeSurvey?.title || ''}
+                        emailSubject={editingDefaults ? data.defaults.emailSubject : activeSurvey?.emailSubject || ''}
+                        introText={editingDefaults ? data.defaults.introText : activeSurvey?.introText || ''}
+                        questions={editingQuestions}
+                        editingDefaults={editingDefaults}
+                        canEdit={!!canEditQuestions}
+                        questionsLocked={activeSurvey?.questionsLocked}
+                        onTitleChange={(v) =>
+                          editingDefaults
+                            ? saveDefaults({ title: v })
+                            : activeSurvey && updateActiveSurvey(activeSurvey.id, { title: v })
+                        }
+                        onEmailSubjectChange={(v) =>
+                          editingDefaults
+                            ? saveDefaults({ emailSubject: v })
+                            : activeSurvey && updateActiveSurvey(activeSurvey.id, { emailSubject: v })
+                        }
+                        onIntroChange={(v) =>
+                          editingDefaults
+                            ? saveDefaults({ introText: v })
+                            : activeSurvey && updateActiveSurvey(activeSurvey.id, { introText: v })
+                        }
+                        onToggleMode={activeSurvey ? () => setEditingDefaults((v) => !v) : undefined}
+                        onQuestionChange={updateQuestionAt}
+                        onQuestionDelete={(index) => {
+                          const questions = editingQuestions.filter((_, i) => i !== index);
+                          if (editingDefaults) saveDefaults({ questions });
+                          else if (activeSurvey) updateActiveSurvey(activeSurvey.id, { questions });
+                        }}
+                        onQuestionMove={moveQuestion}
+                        onAddQuestion={addQuestion}
+                      />
+                      {activeSurvey && counts && (
+                        <FeedbackSurveyReady
+                          survey={activeSurvey}
+                          counts={counts}
+                          formDetailsOpen={formDetailsOpen}
+                          onToggleFormDetails={() => setFormDetailsOpen((v) => !v)}
+                          onReviewRecipients={() => setShowRecipients(true)}
+                          onSendTest={async () => {
+                            try {
+                              await sendTestEmail(activeSurvey.id, prefs);
+                            } catch {
+                              toast.error("Couldn't send test email. Try again.");
+                            }
+                          }}
+                          onRegenerate={() => setShowRegenerateConfirm(true)}
+                        />
+                      )}
+                    </>
+                  )}
 
-                {tab === 'delivery' && activeSurvey && counts && (
-                  <FeedbackDeliveryView
-                    counts={counts}
-                    reminderCount={reminderCount}
-                    onReviewRecipients={() => setShowRecipients(true)}
-                    onRefreshResponses={() => syncResponses(activeSurvey.id)}
-                    onSendReminder={() => setShowReminderConfirm(true)}
-                  />
-                )}
+                  {tab === 'delivery' && activeSurvey && counts && (
+                    <FeedbackDeliveryView
+                      recipients={activeSurvey.recipients}
+                      counts={counts}
+                      reminderCount={reminderCount}
+                      failedCount={failedCount}
+                      onReviewRecipients={() => setShowRecipients(true)}
+                      onSendReminder={() => setShowReminderConfirm(true)}
+                      onSendSurveys={() => setShowSendConfirm(true)}
+                      selectedSendCount={selectedSendCount}
+                      sendDisabled={sending || !activeSurvey.responderUri || selectedSendCount === 0}
+                    />
+                  )}
 
-                {tab === 'delivery' && !activeSurvey && (
-                  <section className="ds-section">
-                    <div className="ds-section__body">
-                      <p className="ds-feedback-empty-inline">Prepare a survey to track delivery.</p>
-                    </div>
-                  </section>
-                )}
+                  {tab === 'delivery' && !activeSurvey && (
+                    <p className="ds-feedback-empty-inline">Prepare a survey to track delivery.</p>
+                  )}
 
-                {tab === 'results' && metrics && metrics.respondentCount > 0 && (
-                  <FeedbackResultsView metrics={metrics} />
-                )}
+                  {tab === 'results' && metrics && metrics.respondentCount > 0 && (
+                    <FeedbackResultsView metrics={metrics} sentCount={counts?.delivered ?? 0} />
+                  )}
 
-                {tab === 'results' && (!metrics || metrics.respondentCount === 0) && (
-                  <section className="ds-section">
-                    <div className="ds-section__body">
-                      <p className="ds-feedback-empty-inline">No survey responses yet.</p>
-                    </div>
-                  </section>
-                )}
+                  {tab === 'results' && (!metrics || metrics.respondentCount === 0) && (
+                    <p className="ds-feedback-empty-inline">No survey responses yet.</p>
+                  )}
 
-                {tab === 'history' && (
-                  <FeedbackHistoryView
-                    surveys={data.surveys}
-                    activeSurveyId={data.activeSurveyId}
-                    onSelectSurvey={(id) => {
-                      setActiveSurvey(id);
-                      setTab('survey');
-                    }}
-                  />
-                )}
-              </>
-            )}
-          </div>
+                  {tab === 'history' && (
+                    <FeedbackHistoryView
+                      surveys={[...data.surveys].sort(
+                        (a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt),
+                      )}
+                      activeSurveyId={data.activeSurveyId}
+                      onSelectSurvey={(id) => {
+                        setActiveSurvey(id);
+                        setTab('survey');
+                      }}
+                    />
+                  )}
+                </>
+              )}
+            </div>
+          )}
         </div>
       </MetrioScrollArea>
 
-      {googleSurveyReady && (
-        <StickyActionBar
-          left={<span>Last response sync: {formatLastSync(lastResponseSync)}</span>}
-          right={footerAction}
-        />
+      {googleSurveyReady && !initializing && tab !== 'history' && (
+        <StickyActionBar left={stickyLeft} right={footerAction} />
       )}
 
       {activeSurvey && (
         <FeedbackRecipientsDrawer
           open={showRecipients}
+          recipientCount={activeSurvey.recipients.length}
           recipients={activeSurvey.recipients}
           search={recipientSearch}
           statusFilter={recipientStatusFilter}
@@ -443,10 +515,9 @@ export function FeedbackPage() {
         selectedCount={selectedSendCount}
         missingEmailCount={missingEmailCount}
         alreadySentCount={alreadySentCount}
-        accountEmail={prefs.google.accountEmail}
         onClose={() => setShowSendConfirm(false)}
         onConfirm={() => {
-          if (activeSurvey) sendSurveyBatch(activeSurvey.id, prefs);
+          if (activeSurvey) void sendSurveyBatch(activeSurvey.id, prefs);
           setShowSendConfirm(false);
         }}
       />
@@ -456,7 +527,7 @@ export function FeedbackPage() {
         reminderCount={reminderCount}
         onClose={() => setShowReminderConfirm(false)}
         onConfirm={() => {
-          if (activeSurvey) sendReminders(activeSurvey.id, prefs);
+          if (activeSurvey) void sendReminders(activeSurvey.id, prefs);
           setShowReminderConfirm(false);
         }}
       />
@@ -465,7 +536,7 @@ export function FeedbackPage() {
         open={showRegenerateConfirm}
         onClose={() => setShowRegenerateConfirm(false)}
         onConfirm={() => {
-          if (activeSurvey) regenerateGoogleForm(activeSurvey.id);
+          if (activeSurvey) void regenerateGoogleForm(activeSurvey.id);
           setShowRegenerateConfirm(false);
         }}
       />

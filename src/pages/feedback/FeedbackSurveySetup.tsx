@@ -1,4 +1,5 @@
 import { DatePicker, Input, Section, SelectDropdown } from './design-system';
+import { FEEDBACK_HELP } from './feedbackHelp';
 
 export function FeedbackSurveySetup({
   dateFrom,
@@ -20,11 +21,11 @@ export function FeedbackSurveySetup({
   onProjectsChange: (v: string) => void;
 }) {
   return (
-    <Section title="Survey setup">
+    <Section title="Survey scope" subtitle={FEEDBACK_HELP.surveyScope} variant="plain">
       <div className="ds-filter-row ds-filter-row--embedded">
         <div className="ds-filter-row__grid ds-filter-row__grid--four">
-          <DatePicker label="Start date" value={dateFrom} onChange={onDateFromChange} />
-          <DatePicker label="End date" value={dateTo} onChange={onDateToChange} />
+          <DatePicker label="From" value={dateFrom} onChange={onDateFromChange} />
+          <DatePicker label="To" value={dateTo} onChange={onDateToChange} />
           <SelectDropdown
             label="Team scope"
             value={scope}
@@ -38,7 +39,7 @@ export function FeedbackSurveySetup({
             label="Projects (optional)"
             value={projectsText}
             onChange={(e) => onProjectsChange(e.target.value)}
-            placeholder="All projects"
+            placeholder="Comma-separated keys, or leave empty for all"
           />
         </div>
       </div>

@@ -36,52 +36,60 @@ export function FeedbackSurveyContent({
   onAddQuestion: () => void;
 }) {
   return (
-    <Section
-      title="Survey content"
-      headerRight={
-        onToggleMode ? (
-          <Button variant="secondary" size="small" onClick={onToggleMode}>
-            {editingDefaults ? 'Prepared survey' : 'Edit defaults'}
-          </Button>
-        ) : undefined
-      }
-    >
-      <div className="ds-feedback-form-stack">
-        <Input label="Survey title" value={title} disabled={!canEdit} onChange={(e) => onTitleChange(e.target.value)} />
-        <Input
-          label="Email subject"
-          value={emailSubject}
-          disabled={!canEdit}
-          onChange={(e) => onEmailSubjectChange(e.target.value)}
-        />
-        <Input
-          label="Intro text"
-          value={introText}
-          disabled={!canEdit}
-          onChange={(e) => onIntroChange(e.target.value)}
-        />
-      </div>
-      <div className="ds-feedback-questions">
-        {questions.map((question, index) => (
-          <FeedbackQuestionEditor
-            key={question.id}
-            index={index}
-            question={question}
-            disabled={!canEdit || questionsLocked}
-            onChange={(patch) => onQuestionChange(index, patch)}
-            onDelete={() => onQuestionDelete(index)}
-            onMoveUp={() => onQuestionMove(index, -1)}
-            onMoveDown={() => onQuestionMove(index, 1)}
-            canMoveUp={index > 0}
-            canMoveDown={index < questions.length - 1}
+    <>
+      <Section
+        title="Survey content"
+        variant="plain"
+        headerRight={
+          onToggleMode ? (
+            <Button variant="secondary" size="small" onClick={onToggleMode}>
+              {editingDefaults ? 'Current survey' : 'Template'}
+            </Button>
+          ) : undefined
+        }
+      >
+        <div className="ds-feedback-form-stack">
+          <Input label="Survey title" value={title} disabled={!canEdit} onChange={(e) => onTitleChange(e.target.value)} />
+          <Input
+            label="Email subject"
+            value={emailSubject}
+            disabled={!canEdit}
+            onChange={(e) => onEmailSubjectChange(e.target.value)}
           />
-        ))}
-      </div>
-      {canEdit && !questionsLocked && (
-        <div className="ds-feedback-section-footer">
-          <Button variant="secondary" size="small" onClick={onAddQuestion}>Add question</Button>
+          <Input
+            label="Introduction"
+            value={introText}
+            disabled={!canEdit}
+            onChange={(e) => onIntroChange(e.target.value)}
+          />
         </div>
-      )}
-    </Section>
+      </Section>
+
+      <Section title="Questions" variant="plain">
+        <div className="ds-feedback-questions">
+          {questions.map((question, index) => (
+            <FeedbackQuestionEditor
+              key={question.id}
+              index={index}
+              question={question}
+              disabled={!canEdit || questionsLocked}
+              onChange={(patch) => onQuestionChange(index, patch)}
+              onDelete={() => onQuestionDelete(index)}
+              onMoveUp={() => onQuestionMove(index, -1)}
+              onMoveDown={() => onQuestionMove(index, 1)}
+              canMoveUp={index > 0}
+              canMoveDown={index < questions.length - 1}
+            />
+          ))}
+        </div>
+        {canEdit && !questionsLocked && (
+          <div className="ds-feedback-section-footer">
+            <Button variant="secondary" size="small" onClick={onAddQuestion}>
+              + Add question
+            </Button>
+          </div>
+        )}
+      </Section>
+    </>
   );
 }
