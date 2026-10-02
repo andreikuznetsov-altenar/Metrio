@@ -127,6 +127,7 @@ export function TeamPerformanceOverview({
       {activeView === "overview" ? (
         <TeamOverviewView
           snapshot={snapshot}
+          secondary={secondary}
           onOpenPerson={onOpenPerson}
           onViewAllRadar={() => setActiveView("radar")}
           onOpenMetricDrilldown={openMetricDrilldown}

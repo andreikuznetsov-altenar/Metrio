@@ -1,5 +1,15 @@
-import { Badge } from "../../components/Badge/Badge";
+import { useMemo } from "react";
+import { useCurrentUser } from "../../app/CurrentUserContext";
+import { useFeedbackSurveyStore } from "../../app/feedbackSurveyStore";
+import { actionOpenLabel, navigateActionTarget } from "../../app/actionNavigation";
+import { buildDirectorTeamActions } from "../../domain/actions/buildOrganizationActions";
+import { buildTeamActions } from "../../domain/actions/buildTeamActions";
+import { summarizeFeedbackActions } from "../../domain/feedback/feedbackActionSummary";
+import type { TeamSecondarySnapshot } from "../../domain/performance";
+import { ActionQueueSection } from "./ActionQueueSection";
+import { useOptionalPerformanceAnalytics } from "../../app/performanceAnalyticsContext";
 import { Button } from "../../components/Button/Button";
+import { Badge } from "../../components/Badge/Badge";
 import { Card } from "../../components/Card/Card";
 import { HelpIcon } from "../../components/HelpIcon/HelpIcon";
 import { SectionTitle } from "../../components/SectionTitle/SectionTitle";
@@ -21,6 +31,7 @@ import { CalendarDays } from "lucide-react";
 
 export interface TeamOverviewViewProps {
   snapshot: TeamPerformanceSnapshot;
+  secondary: TeamSecondarySnapshot;
   onOpenPerson: (personId: string) => void;
   onViewAllRadar?: () => void;
   onOpenMetricDrilldown?: (metric: MetricCardData, source: HTMLElement) => void;
@@ -59,13 +70,56 @@ const visualInsufficientHistoryFixture =
 
 export function TeamOverviewView({
   snapshot,
+  secondary,
   onOpenPerson,
   onViewAllRadar,
   onOpenMetricDrilldown,
   onOpenTrendDrilldown,
 }: TeamOverviewViewProps) {
+  const { currentUser } = useCurrentUser();
+  const analytics = useOptionalPerformanceAnalytics();
+  const surveyData = useFeedbackSurveyStore((state) => state.data);
+  const feedbackSummary = useMemo(
+    () => summarizeFeedbackActions(surveyData),
+    [surveyData],
+  );
+
+  const teamActions = useMemo(() => {
+    const input = {
+      snapshot,
+      deliveryRisk: secondary.deliveryRisk,
+      feedback: feedbackSummary,
+    };
+    if (currentUser?.person.role === "director") {
+      return buildDirectorTeamActions(input);
+    }
+    return buildTeamActions(input);
+  }, [snapshot, secondary.deliveryRisk, feedbackSummary, currentUser?.person.role]);
+
+  const actionTitle =
+    currentUser?.person.role === "director" ? "Organization actions" : "Team actions";
+
+  const handleAction = (item: import("../../domain/actions/actionTypes").ActionItem) => {
+    navigateActionTarget(item.target, {
+      openPerson: (personId, tab) => {
+        if (analytics) {
+          analytics.openPersonDrawer({ personId, tab });
+          return;
+        }
+        onOpenPerson(personId);
+      },
+    });
+  };
+
   return (
     <>
+      <ActionQueueSection
+        title={actionTitle}
+        items={teamActions}
+        emptyMessage="No high-priority team actions right now."
+        onOpen={handleAction}
+        openLabel={actionOpenLabel}
+      />
       <section aria-label="Summary metrics">
         <div className="performance-metrics">
           {snapshot.summary.map((metric) => {

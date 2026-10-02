@@ -13,7 +13,13 @@ import { EmployeePerformanceSubnav } from "./EmployeePerformanceSubnav";
 import { EmployeeTrendsView } from "./EmployeeTrendsView";
 import { EmployeeWorkHistoryView } from "./EmployeeWorkHistoryView";
 import { GroupedAttentionList } from "./GroupedAttentionList";
-import { PersonAnalyticsMetricGrid } from "./PersonAnalyticsMetricGrid";
+import { buildEmployeeFocusActions } from "../../domain/actions/buildEmployeeFocus";
+import {
+  actionOpenLabel,
+  navigateActionTarget,
+} from "../../app/actionNavigation";
+import { ActionQueueSection } from "./ActionQueueSection";
+import { PersonPerformanceMetrics } from "./PersonPerformanceMetrics";
 import { PersonWorkRow } from "./PersonWorkRow";
 import { PerformanceStatusBanner } from "./PerformanceStatusBanner";
 import { buildMetricDrilldownRequest } from "./analyticsDrilldownModel";
@@ -42,12 +48,38 @@ export function EmployeePerformanceOverview({ personId }: EmployeePerformanceOve
   const analytics = useOptionalPerformanceAnalytics();
   const { registerEmployeeView } = usePerformanceExport();
 
+  const workspace = viewModels?.getPersonAnalytics(personId);
+  const snapshot = viewModels?.employee;
+
+  const focusItems = useMemo(() => {
+    if (!workspace || !snapshot) return [];
+    return buildEmployeeFocusActions({
+      workspace,
+      myWeek: snapshot.myWeek,
+      selfPersonId: personId,
+    });
+  }, [workspace, snapshot, personId]);
+
+  const handleFocusAction = (item: import("../../domain/actions/actionTypes").ActionItem) => {
+    navigateActionTarget(item.target, {
+      openPerson: (id, tab) => analytics?.openPersonDrawer({ personId: id, tab }),
+    });
+  };
   useEffect(() => {
     registerEmployeeView(activeView);
   }, [activeView, registerEmployeeView]);
 
-  const workspace = viewModels?.getPersonAnalytics(personId);
-  const snapshot = viewModels?.employee;
+  useEffect(() => {
+    const handler = (event: Event) => {
+      const view = (event as CustomEvent<EmployeePerformanceView>).detail;
+      if (view) {
+        writePersistedEmployeePerformanceView(view);
+        setActiveView(view);
+      }
+    };
+    window.addEventListener("metrio-open-employee-view", handler);
+    return () => window.removeEventListener("metrio-open-employee-view", handler);
+  }, []);
 
   const currentWork = useMemo(() => {
     if (!workspace) return [];
@@ -114,9 +146,25 @@ export function EmployeePerformanceOverview({ personId }: EmployeePerformanceOve
         <section aria-label="Performance overview">
           <p className="performance-employee-context">{workspace.contextLine}</p>
 
+          <ActionQueueSection
+            title="My focus"
+            items={focusItems}
+            emptyMessage="Nothing needs your attention right now."
+            onOpen={handleFocusAction}
+            openLabel={actionOpenLabel}
+            footerAction={{
+              label: "View all work",
+              onClick: () => {
+                writePersistedEmployeePerformanceView("my-week");
+                setActiveView("my-week");
+              },
+            }}
+          />
+
           <h3 className="performance-section__title">Performance</h3>
-          <PersonAnalyticsMetricGrid
-            metrics={snapshot.metrics}
+          <PersonPerformanceMetrics
+            kpis={snapshot.metrics}
+            cycleTime={snapshot.cycleTime}
             onOpenMetric={openMetricDrilldown}
           />
 

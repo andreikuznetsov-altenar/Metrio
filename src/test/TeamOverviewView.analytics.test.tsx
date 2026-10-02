@@ -6,6 +6,17 @@ import { performanceHelp } from "../domain/performance/performanceHelp";
 import { TooltipProvider } from "../components/Tooltip/Tooltip";
 import { TeamOverviewView } from "../pages/performance/TeamOverviewView";
 
+vi.mock("../app/feedbackSurveyStore", () => ({
+  useFeedbackSurveyStore: (selector: (state: { data: null }) => unknown) =>
+    selector({ data: null }),
+}));
+
+vi.mock("../app/CurrentUserContext", () => ({
+  useCurrentUser: () => ({
+    currentUser: { person: { role: "lead" } },
+  }),
+}));
+
 function renderOverview(ui: React.ReactElement) {
   return render(<TooltipProvider>{ui}</TooltipProvider>);
 }
@@ -26,6 +37,12 @@ const snapshot: TeamPerformanceSnapshot = {
   personDetails: {},
 };
 
+const secondaryEmpty = {
+  people: [],
+  radar: [],
+  deliveryRisk: [],
+};
+
 describe("TeamOverviewView analytics drill-down", () => {
   it("opens Completed drill-down from KPI card without Help icon triggering it", async () => {
     const user = userEvent.setup();
@@ -34,6 +51,7 @@ describe("TeamOverviewView analytics drill-down", () => {
     renderOverview(
       <TeamOverviewView
         snapshot={snapshot}
+        secondary={secondaryEmpty}
         onOpenPerson={() => {}}
         onOpenMetricDrilldown={onOpenMetricDrilldown}
       />,
