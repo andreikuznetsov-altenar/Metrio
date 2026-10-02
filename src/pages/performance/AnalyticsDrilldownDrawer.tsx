@@ -173,7 +173,11 @@ export function AnalyticsDrilldownDrawer({
         evidence ? (
           <div className="analytics-drawer__header">
             <div className="analytics-drawer__title-row">
-              <h2 className="analytics-drawer__title">{evidence.title}</h2>
+              <h2 className="analytics-drawer__title">
+                {evidence.personDisplayName
+                  ? `${evidence.personDisplayName} · ${evidence.title}`
+                  : evidence.title}
+              </h2>
               <span className="analytics-drawer__value">{evidence.valueLabel}</span>
             </div>
             <p className="analytics-drawer__context">{buildContextLine(evidence)}</p>

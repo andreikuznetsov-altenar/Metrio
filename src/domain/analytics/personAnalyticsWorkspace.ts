@@ -1,0 +1,363 @@
+import { format, parseISO } from "date-fns";
+import type { BadgeVariant } from "../../components/Badge/Badge";
+import { getEfficiencyStatus } from "../jira/kpi";
+import { formatDuration } from "../jira/dates";
+import type { AuditIssue, ReportParams } from "../jira/types";
+import type { Person } from "../people/types";
+import { buildPlannedTimeOffRows } from "../people/plannedTimeOff";
+import {
+  avgCycleLabel,
+  firstPassPercent,
+  formatWorkloadLabel,
+  personActiveCount,
+} from "../people/personDisplay";
+import { buildWorkHistory, type WorkHistoryPeriod } from "../personal/workHistory";
+import type {
+  DateRangeKey,
+  MetricCardData,
+  PerformanceReviewTarget,
+  PersonalAttentionItem,
+  TrendCardData,
+  WorkHistoryGroupView,
+} from "../performance";
+import {
+  comparisonPeriodLabel,
+  formatPerformanceDateDisplay,
+  performanceDateRangeFromPresetKey,
+  type PerformanceDateRange,
+} from "../performance/performanceDateRange";
+import {
+  classifyIssueAttention,
+  formatStageAgeLabel,
+  getActiveIssues,
+} from "../radar/taskSignals";
+import { classifyTaskHealth } from "../task-health/taskHealthEngine";
+import { getOperationalIssues } from "../people/ownedIssues";
+import type { TimeOffEntry } from "../people/availability";
+import type { KpiSnapshotFile } from "../snapshots/types";
+import {
+  compareTrendPeriods,
+  compareWeightedAvgCycleTrend,
+  compareWeightedFirstPassTrend,
+} from "../trends/trendEngine";
+import {
+  personSparklinePoints,
+  personTrendPoints,
+} from "../snapshots/snapshotEngine";
+import { sparklineValuesFromPoints } from "../snapshots/sparklineSeries";
+import {
+  buildTrendCardData,
+  formatAttentionHealthLabel,
+  metricContextFromComparison,
+} from "../../pages/performance/trendPresentation";
+import { targetScopeLabel } from "./analyticsReportScope";
+import type { AnalyticsEvidenceIssue } from "./analyticsEvidenceTypes";
+
+export interface PersonWorkRowData {
+  key: string;
+  title: string;
+  status: string;
+  stageAge: string;
+  healthVariant: BadgeVariant;
+}
+
+export interface PersonAnalyticsWorkspace {
+  personId: string;
+  personName: string;
+  role: string;
+  availability: string;
+  workload: string;
+  contextLine: string;
+  summary: MetricCardData[];
+  trends: TrendCardData[];
+  attention: PersonalAttentionItem[];
+  workRows: PersonWorkRowData[];
+  problematicWork: PersonWorkRowData[];
+  timeOff?: { rangeLabel: string; note: string };
+  historyWeek: WorkHistoryGroupView[];
+  historyMonth: WorkHistoryGroupView[];
+  historyQuarter: WorkHistoryGroupView[];
+}
+
+export interface BuildPersonAnalyticsWorkspaceInput {
+  person: Person;
+  historyPerson: Person;
+  params: ReportParams;
+  historyParams: ReportParams;
+  kpiSnapshots: KpiSnapshotFile;
+  trendDays: number;
+  dateRangeKey: DateRangeKey;
+  displayRange?: PerformanceDateRange;
+  reviewTarget: PerformanceReviewTarget;
+  timeOffEntries: TimeOffEntry[];
+  teamEmployeeIds: Set<string>;
+}
+
+function efficiencyStatusVariant(score: number): BadgeVariant {
+  const status = getEfficiencyStatus(score);
+  if (status === "Excellent" || status === "Healthy") return "success";
+  if (status === "Watch") return "warning";
+  return "danger";
+}
+
+function severityToBadge(severity: import("../radar/types").RadarSeverity): BadgeVariant {
+  if (severity === "critical") return "danger";
+  if (severity === "warning") return "warning";
+  return "neutral";
+}
+
+function mapWorkHistoryGroups(
+  person: Person,
+  params: ReportParams,
+  period: WorkHistoryPeriod,
+): WorkHistoryGroupView[] {
+  return buildWorkHistory(person, params, period).map((group) => ({
+    label: group.label,
+    completedCount: group.completedCount,
+    firstPassCount: group.firstPassCount,
+    reviewReturns: group.reviewReturns,
+    rows: group.entries.map((entry) => ({
+      key: entry.issueKey,
+      title: entry.summary,
+      project: entry.project,
+      completedOn: entry.completedAt
+        ? format(parseISO(entry.completedAt), "dd MMM yyyy")
+        : "—",
+      cycle: entry.cycleMs != null ? formatDuration(entry.cycleMs) : "—",
+      outcome: entry.firstPass ? "First pass" : "Rework",
+    })),
+  }));
+}
+
+function issueToWorkRow(issue: AuditIssue, params: ReportParams, now: Date): PersonWorkRowData {
+  const health = classifyTaskHealth({ issue, params, now });
+  return {
+    key: issue.issueKey,
+    title: issue.issueSummary,
+    status: issue.currentStatus || "—",
+    stageAge: formatStageAgeLabel(issue, now),
+    healthVariant:
+      health.status === "problematic"
+        ? "danger"
+        : health.status === "at_risk"
+          ? "warning"
+          : "neutral",
+  };
+}
+
+function buildPersonTrendCards(
+  personId: string,
+  kpiSnapshots: KpiSnapshotFile,
+  trendDays: number,
+): TrendCardData[] {
+  const completedTrend = compareTrendPeriods(
+    personTrendPoints(kpiSnapshots, personId, "completedOnDate"),
+    "completed",
+    trendDays,
+  );
+  const firstPassTrend = compareWeightedFirstPassTrend(
+    personTrendPoints(kpiSnapshots, personId, "completedOnDate"),
+    personTrendPoints(kpiSnapshots, personId, "firstPassOnDate"),
+    trendDays,
+  );
+  const avgCycleTrend = compareWeightedAvgCycleTrend(
+    personTrendPoints(kpiSnapshots, personId, "cycleMsSumOnDate"),
+    personTrendPoints(kpiSnapshots, personId, "completedWithCycleOnDate"),
+    trendDays,
+  );
+  const backflowTrend = compareTrendPeriods(
+    personTrendPoints(kpiSnapshots, personId, "backflowsOnDate"),
+    "backflows",
+    trendDays,
+  );
+  const sparkCompleted = sparklineValuesFromPoints(
+    personSparklinePoints(kpiSnapshots, personId, "completedOnDate"),
+  );
+  const sparkBackflows = sparklineValuesFromPoints(
+    personSparklinePoints(kpiSnapshots, personId, "backflowsOnDate"),
+  );
+
+  return [
+    buildTrendCardData("Completed", completedTrend, {
+      sparkline: sparkCompleted,
+      trendMetricKind: "count",
+    }),
+    buildTrendCardData("First pass", firstPassTrend, {
+      trendMetricKind: "percent",
+    }),
+    buildTrendCardData("Avg cycle", avgCycleTrend, {
+      trendMetricKind: "duration",
+    }),
+    buildTrendCardData("Backflows", backflowTrend, {
+      sparkline: sparkBackflows,
+      trendMetricKind: "count",
+    }),
+  ];
+}
+
+export function workHistoryEntryToEvidenceIssue(
+  entry: ReturnType<typeof buildWorkHistory>[number]["entries"][number],
+  personId: string,
+  personName: string,
+): AnalyticsEvidenceIssue {
+  return {
+    issueKey: entry.issueKey,
+    title: entry.summary,
+    personId,
+    personName,
+    projectKey: entry.project,
+    completedAt: entry.completedAt,
+    cycleDurationMs: entry.cycleMs,
+    outcome: entry.firstPass ? "first_pass" : "rework",
+  };
+}
+
+export function buildPersonAnalyticsContextLine(
+  params: ReportParams,
+  reviewTarget: PerformanceReviewTarget,
+  dateRangeKey: DateRangeKey,
+  displayRange?: PerformanceDateRange,
+): string {
+  const rangeLabel = `${formatPerformanceDateDisplay(params.dateFrom)} – ${formatPerformanceDateDisplay(params.dateTo)}`;
+  const comparisonLabel = displayRange
+    ? comparisonPeriodLabel(displayRange)
+    : comparisonPeriodLabel(performanceDateRangeFromPresetKey(dateRangeKey));
+  return [rangeLabel, targetScopeLabel(reviewTarget), comparisonLabel]
+    .filter(Boolean)
+    .join("  ·  ");
+}
+
+export function buildPersonAnalyticsWorkspace(
+  input: BuildPersonAnalyticsWorkspaceInput,
+): PersonAnalyticsWorkspace {
+  const {
+    person,
+    historyPerson,
+    params,
+    historyParams,
+    kpiSnapshots,
+    trendDays,
+    dateRangeKey,
+    displayRange,
+    reviewTarget,
+    timeOffEntries,
+    teamEmployeeIds,
+  } = input;
+
+  const perf = person.performance;
+  const now = new Date();
+  const trendContextLabel = displayRange
+    ? comparisonPeriodLabel(displayRange)
+    : undefined;
+
+  const completedTrend = compareTrendPeriods(
+    personTrendPoints(kpiSnapshots, person.id, "completedOnDate"),
+    "completed",
+    trendDays,
+  );
+  const firstPassTrend = compareWeightedFirstPassTrend(
+    personTrendPoints(kpiSnapshots, person.id, "completedOnDate"),
+    personTrendPoints(kpiSnapshots, person.id, "firstPassOnDate"),
+    trendDays,
+  );
+  const backflowTrend = compareTrendPeriods(
+    personTrendPoints(kpiSnapshots, person.id, "backflowsOnDate"),
+    "backflows",
+    trendDays,
+  );
+
+  const summary: MetricCardData[] = [
+    {
+      label: "Efficiency",
+      value: perf ? `${perf.efficiencyIndex}%` : "—",
+      status: perf ? getEfficiencyStatus(perf.efficiencyIndex) : undefined,
+      statusVariant: perf ? efficiencyStatusVariant(perf.efficiencyIndex) : undefined,
+    },
+    {
+      label: "First pass",
+      value: `${firstPassPercent(person)}%`,
+      ...metricContextFromComparison(firstPassTrend, dateRangeKey, trendContextLabel),
+    },
+    {
+      label: "Completed",
+      value: perf ? String(perf.completedCount) : "0",
+      ...metricContextFromComparison(completedTrend, dateRangeKey, trendContextLabel),
+    },
+    {
+      label: "Backflows",
+      value: perf ? String(perf.backflowCount) : "0",
+      ...metricContextFromComparison(backflowTrend, dateRangeKey, trendContextLabel),
+    },
+    {
+      label: "Active",
+      value: String(personActiveCount(person, params)),
+    },
+    {
+      label: "Avg cycle",
+      value: avgCycleLabel(person),
+    },
+  ];
+
+  const activeIssues = getActiveIssues(person, params);
+  const attention: PersonalAttentionItem[] = activeIssues
+    .map((issue) => {
+      const item = classifyIssueAttention(issue, params, now);
+      if (!item) return null;
+      return {
+        label: formatAttentionHealthLabel(item.health.status),
+        variant: severityToBadge(item.severity),
+        reason: item.reason,
+        issueKey: issue.issueKey,
+      };
+    })
+    .filter((item) => item != null)
+    .slice(0, 24);
+
+  const workRows = activeIssues.slice(0, 24).map((issue) => issueToWorkRow(issue, params, now));
+  const problematicWork = getOperationalIssues(person)
+    .filter(
+      (issue) => classifyTaskHealth({ issue, params, now }).status === "problematic",
+    )
+    .slice(0, 12)
+    .map((issue) => issueToWorkRow(issue, params, now));
+
+  const plannedTimeOff = buildPlannedTimeOffRows(timeOffEntries, teamEmployeeIds);
+  const personTimeOff = plannedTimeOff.find((row) => row.employeeId === person.id);
+  const timeOff =
+    person.availability.state !== "available"
+      ? {
+          rangeLabel: person.availability.label,
+          note: person.availability.returnDate
+            ? `Returns ${person.availability.returnDate}`
+            : personTimeOff?.typeLabel || "",
+        }
+      : personTimeOff
+        ? {
+            rangeLabel: personTimeOff.rangeLabel,
+            note: personTimeOff.typeLabel,
+          }
+        : undefined;
+
+  return {
+    personId: person.id,
+    personName: person.bamboo.displayName,
+    role: person.bamboo.jobTitle || "—",
+    availability: person.availability.label,
+    workload: formatWorkloadLabel(person.workload?.level),
+    contextLine: buildPersonAnalyticsContextLine(
+      params,
+      reviewTarget,
+      dateRangeKey,
+      displayRange,
+    ),
+    summary,
+    trends: buildPersonTrendCards(person.id, kpiSnapshots, trendDays),
+    attention,
+    workRows,
+    problematicWork,
+    timeOff,
+    historyWeek: mapWorkHistoryGroups(historyPerson, historyParams, "week"),
+    historyMonth: mapWorkHistoryGroups(historyPerson, historyParams, "month"),
+    historyQuarter: mapWorkHistoryGroups(historyPerson, historyParams, "quarter"),
+  };
+}

@@ -1,6 +1,11 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect } from "react";
 import { usePerformanceData } from "../app/PerformanceDataContext";
 import { useCurrentUser } from "../app/CurrentUserContext";
+import {
+  PerformanceAnalyticsProvider,
+  usePerformanceAnalytics,
+  type PersonDrawerTab,
+} from "../app/performanceAnalyticsContext";
 import {
   isManagerRole,
   type EmployeeReviewTargetKey,
@@ -12,6 +17,7 @@ import { EmployeePerformanceOverview } from "./performance/EmployeePerformanceOv
 import { PersonDetailDrawer } from "./performance/PersonDetailDrawer";
 import { TeamPerformanceOverview } from "./performance/TeamPerformanceOverview";
 import { PerformanceContentShell } from "./performance/PerformanceContentShell";
+import { AnalyticsDrilldownDrawer } from "./performance/AnalyticsDrilldownDrawer";
 
 export interface PerformancePageProps {
   reviewTarget: PerformanceReviewTarget;
@@ -35,46 +41,50 @@ function asEmployeeReviewTarget(
   return "sprint";
 }
 
-export function PerformancePage({ reviewTarget }: PerformancePageProps) {
+function PerformancePageBody({ reviewTarget }: PerformancePageProps) {
   const { currentUser } = useCurrentUser();
   const { performanceControlsDisabled } = usePerformanceData();
-  const [personDetailId, setPersonDetailId] = useState<string | null>(null);
-  const [personDrawerOpen, setPersonDrawerOpen] = useState(false);
+  const {
+    personId,
+    personTab,
+    personDrawerOpen,
+    openPersonDrawer,
+    closePersonDrawer,
+    clearPersonDrawer,
+    drilldownOpen,
+    drilldownEvidence,
+    closeDrilldown,
+    returnFocusRef,
+  } = usePerformanceAnalytics();
   const canViewTeamDashboard =
     isManagerRole(currentUser.person.role) && currentUser.team;
 
   void asTeamReviewTarget(reviewTarget);
   void asEmployeeReviewTarget(reviewTarget);
 
-  const openPersonDetail = useCallback(
-    (personId: string) => {
+  const handleOpenPerson = useCallback(
+    (nextPersonId: string) => {
       if (performanceControlsDisabled) return;
-      if (canOpenPersonDetail(currentUser, personId)) {
-        setPersonDetailId(personId);
-        setPersonDrawerOpen(true);
-      }
+      openPersonDrawer({ personId: nextPersonId });
     },
-    [currentUser, performanceControlsDisabled],
+    [openPersonDrawer, performanceControlsDisabled],
   );
-
-  const closePersonDetail = useCallback(() => {
-    setPersonDrawerOpen(false);
-  }, []);
-
-  const clearPersonDetail = useCallback(() => {
-    setPersonDetailId(null);
-  }, []);
 
   useEffect(() => {
     const handler = (event: Event) => {
-      const personId = (event as CustomEvent<string>).detail;
-      if (typeof personId === "string" && personId) {
-        openPersonDetail(personId);
+      const detail = (event as CustomEvent<string | { personId: string; tab?: PersonDrawerTab }>)
+        .detail;
+      if (typeof detail === "string" && detail) {
+        openPersonDrawer({ personId: detail });
+        return;
+      }
+      if (detail && typeof detail === "object" && detail.personId) {
+        openPersonDrawer({ personId: detail.personId, tab: detail.tab });
       }
     };
     window.addEventListener("metrio-open-person", handler);
     return () => window.removeEventListener("metrio-open-person", handler);
-  }, [openPersonDetail]);
+  }, [openPersonDrawer]);
 
   let content;
 
@@ -82,20 +92,20 @@ export function PerformancePage({ reviewTarget }: PerformancePageProps) {
     content = (
       <EmployeePerformanceOverview
         personId={currentUser.person.id}
-        onOpenPerson={openPersonDetail}
+        onOpenPerson={handleOpenPerson}
       />
     );
   } else if (!canViewTeamDashboard) {
     content = (
       <EmployeePerformanceOverview
         personId={currentUser.person.id}
-        onOpenPerson={openPersonDetail}
+        onOpenPerson={handleOpenPerson}
       />
     );
   } else {
     content = (
       <TeamPerformanceOverview
-        onOpenPerson={openPersonDetail}
+        onOpenPerson={handleOpenPerson}
         reviewTarget={asTeamReviewTarget(reviewTarget)}
       />
     );
@@ -104,14 +114,47 @@ export function PerformancePage({ reviewTarget }: PerformancePageProps) {
   return (
     <>
       <PerformanceContentShell>{content}</PerformanceContentShell>
-      {personDetailId ? (
+      {personId ? (
         <PersonDetailDrawer
-          personId={personDetailId}
+          personId={personId}
           open={personDrawerOpen}
-          onClose={closePersonDetail}
-          onClosed={clearPersonDetail}
+          activeTab={personTab}
+          onTabChange={(tab) => openPersonDrawer({ personId, tab })}
+          onClose={closePersonDrawer}
+          onClosed={clearPersonDrawer}
+        />
+      ) : null}
+      {canViewTeamDashboard ? (
+        <AnalyticsDrilldownDrawer
+          open={drilldownOpen}
+          evidence={drilldownEvidence}
+          onClose={closeDrilldown}
+          onOpenPerson={handleOpenPerson}
+          returnFocusRef={returnFocusRef}
         />
       ) : null}
     </>
+  );
+}
+
+export function PerformancePage({ reviewTarget }: PerformancePageProps) {
+  const { currentUser } = useCurrentUser();
+  const { performanceControlsDisabled } = usePerformanceData();
+
+  const canOpenPerson = useCallback(
+    (personId: string) => {
+      if (performanceControlsDisabled) return false;
+      return canOpenPersonDetail(currentUser, personId);
+    },
+    [currentUser, performanceControlsDisabled],
+  );
+
+  return (
+    <PerformanceAnalyticsProvider
+      reviewTarget={reviewTarget}
+      canOpenPerson={canOpenPerson}
+    >
+      <PerformancePageBody reviewTarget={reviewTarget} />
+    </PerformanceAnalyticsProvider>
   );
 }

@@ -18,13 +18,22 @@ export interface TabItem {
 export interface TabsProps {
   items: TabItem[];
   defaultValue?: string;
+  value?: string;
+  onValueChange?: (value: string) => void;
 }
 
-export function Tabs({ items, defaultValue }: TabsProps) {
+export function Tabs({ items, defaultValue, value, onValueChange }: TabsProps) {
   const baseId = useId();
   const listRef = useRef<HTMLDivElement>(null);
   const initial = defaultValue ?? items[0]?.value ?? "";
-  const [active, setActive] = useState(initial);
+  const [uncontrolledActive, setUncontrolledActive] = useState(initial);
+  const active = value ?? uncontrolledActive;
+  const setActive = (next: string) => {
+    if (value == null) {
+      setUncontrolledActive(next);
+    }
+    onValueChange?.(next);
+  };
   const [indicator, setIndicator] = useState({ left: 0, width: 0 });
   const activeItem = items.find((item) => item.value === active) ?? items[0];
 

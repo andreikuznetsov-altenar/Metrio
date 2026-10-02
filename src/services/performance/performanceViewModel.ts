@@ -72,6 +72,8 @@ import {
   workloadDisplayLabel,
 } from "../../domain/workload/workloadDisplay";
 import { personRouteKey } from "../../domain/people/personDisplay";
+import type { PerformanceReviewTarget } from "../../domain/performance";
+import { buildPersonAnalyticsWorkspace, type PersonAnalyticsWorkspace } from "../../domain/analytics/personAnalyticsWorkspace";
 import type { PerformanceFetchResult } from "./performanceTypes";
 import { getOperationalIssues } from "../../domain/people/ownedIssues";
 import {
@@ -148,6 +150,7 @@ export interface PerformanceViewModels {
   teamSecondary: TeamSecondarySnapshot;
   employee: EmployeePerformanceSnapshot | null;
   getPersonDetail: (personId: string) => PersonDetailSnapshot | null;
+  getPersonAnalytics: (personId: string) => PersonAnalyticsWorkspace | null;
   getPerson: (personId: string) => Person | undefined;
   statusMessage: string | null;
 }
@@ -157,6 +160,7 @@ export function buildPerformanceViewModels(
   selfPersonId: string,
   dateRangeKey: DateRangeKey = "30d",
   displayRange?: PerformanceDateRange,
+  reviewTarget: PerformanceReviewTarget = "team",
 ): PerformanceViewModels {
   const trendDays = displayRange
     ? trendComparisonDayCount(displayRange)
@@ -438,6 +442,26 @@ export function buildPerformanceViewModels(
     return buildPersonDetailSnapshot(person, historyPerson, params, historyParams);
   };
 
+  const getPersonAnalytics = (personId: string): PersonAnalyticsWorkspace | null => {
+    const person = findPerson(teamSnapshot, personId);
+    if (!person) return null;
+    const historyPerson = findPerson(historyTeamSnapshot, personId) || person;
+    const teamEmployeeIds = new Set(teamSnapshot.persons.map((p) => p.id));
+    return buildPersonAnalyticsWorkspace({
+      person,
+      historyPerson,
+      params,
+      historyParams,
+      kpiSnapshots,
+      trendDays,
+      dateRangeKey,
+      displayRange,
+      reviewTarget,
+      timeOffEntries,
+      teamEmployeeIds,
+    });
+  };
+
   let statusMessage: string | null = null;
   if (partialWarnings.includes("no_jira_issues_in_period")) {
     statusMessage = "No Jira work found for this period.";
@@ -450,6 +474,7 @@ export function buildPerformanceViewModels(
     teamSecondary,
     employee,
     getPersonDetail,
+    getPersonAnalytics,
     getPerson: (personId) => findPerson(teamSnapshot, personId),
     statusMessage,
   };

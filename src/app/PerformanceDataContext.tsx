@@ -169,6 +169,7 @@ export function PerformanceDataProvider({
           selfPersonId,
           dateRangeKeyFromPerformanceRange(dateRange),
           dateRange,
+          reviewTarget,
         );
         setData(next);
         setViewModels(models);
