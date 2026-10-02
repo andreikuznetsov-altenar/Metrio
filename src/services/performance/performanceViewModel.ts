@@ -324,6 +324,7 @@ export function buildPerformanceViewModels(
       personName: person?.bamboo.displayName || row.personName,
       rangeLabel: row.rangeLabel,
       note: row.typeLabel,
+      startDate: row.start,
     };
   });
 
@@ -501,14 +502,6 @@ function issueToActiveWork(issue: AuditIssue): ActiveWorkItem {
   };
 }
 
-const EMPLOYEE_OVERVIEW_KPI_LABELS = new Set([
-  "Efficiency",
-  "First pass",
-  "Completed",
-  "Backflows",
-  "Avg cycle",
-]);
-
 function employeeWorkRowView(
   issue: import("../../domain/jira/types").AuditIssue,
   params: AuditReportData["params"],
@@ -554,9 +547,7 @@ function buildEmployeeSnapshot(
   historyParams: AuditReportData["params"],
 ): EmployeePerformanceSnapshot {
   const now = new Date();
-  const metrics = workspace.summary.filter((metric) =>
-    EMPLOYEE_OVERVIEW_KPI_LABELS.has(metric.label),
-  );
+  const metrics = workspace.performanceKpis;
 
   const activeWork: ActiveWorkItem[] = workspace.workRows.slice(0, 12).map((row) => ({
     key: row.key,
@@ -601,6 +592,7 @@ function buildEmployeeSnapshot(
   return {
     personId: workspace.personId,
     metrics,
+    cycleTime: workspace.cycleTime,
     activeWork,
     attention: workspace.attention,
     timeOff: workspace.timeOff,

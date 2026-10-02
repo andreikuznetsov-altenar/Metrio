@@ -68,7 +68,12 @@ export interface PersonAnalyticsWorkspace {
   availability: string;
   workload: string;
   contextLine: string;
-  summary: MetricCardData[];
+  /** Core performance outcome KPIs (Efficiency, First pass, Completed, Backflows). */
+  performanceKpis: MetricCardData[];
+  /** Segment cycle-time presentation (not a headline KPI). */
+  cycleTime: { label: string; value: string }[];
+  /** Active task count for operational summaries (Work tab / context). */
+  activeWorkCount: number;
   trends: TrendCardData[];
   attention: PersonalAttentionItem[];
   workRows: PersonWorkRowData[];
@@ -273,7 +278,7 @@ export function buildPersonAnalyticsWorkspace(
     trendDays,
   );
 
-  const summary: MetricCardData[] = [
+  const summaryKpis: MetricCardData[] = [
     {
       label: "Efficiency",
       value: perf ? `${perf.efficiencyIndex}%` : "—",
@@ -295,16 +300,10 @@ export function buildPersonAnalyticsWorkspace(
       value: perf ? String(perf.backflowCount) : "0",
       ...metricContextFromComparison(backflowTrend, dateRangeKey, trendContextLabel),
     },
-    {
-      label: "Active",
-      value: String(personActiveCount(person, params)),
-    },
-    {
-      label: "Avg cycle",
-      value: avgCycleSegments(person)[0]?.value ?? "—",
-      cycleSegments: avgCycleSegments(person),
-    },
   ];
+
+  const cycleTime = avgCycleSegments(person);
+  const activeWorkCount = personActiveCount(person, params);
 
   const activeIssues = getActiveIssues(person, params);
   const attention: PersonalAttentionItem[] = activeIssues
@@ -358,7 +357,9 @@ export function buildPersonAnalyticsWorkspace(
       dateRangeKey,
       displayRange,
     ),
-    summary,
+    performanceKpis: summaryKpis,
+    cycleTime,
+    activeWorkCount,
     trends: buildPersonTrendCards(person.id, kpiSnapshots, trendDays),
     attention,
     workRows,

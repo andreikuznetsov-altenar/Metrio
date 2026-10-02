@@ -186,14 +186,9 @@ describe("buildPerformanceViewModels", () => {
     const workspace = vm.getPersonAnalytics("914");
     expect(workspace).not.toBeNull();
     expect(vm.employee?.metrics.map((m) => m.label)).toEqual(
-      workspace!.summary
-        .filter((m) =>
-          ["Efficiency", "First pass", "Completed", "Backflows", "Avg cycle"].includes(
-            m.label,
-          ),
-        )
-        .map((m) => m.label),
+      workspace!.performanceKpis.map((m) => m.label),
     );
+    expect(vm.employee?.cycleTime).toEqual(workspace!.cycleTime);
     expect(vm.employee?.attention).toEqual(workspace!.attention);
     expect(vm.employee?.trends).toEqual(workspace!.trends);
   });

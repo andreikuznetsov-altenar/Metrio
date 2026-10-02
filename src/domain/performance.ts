@@ -61,6 +61,8 @@ export interface TimeOffEntry {
   personName?: string;
   rangeLabel: string;
   note: string;
+  /** ISO date (yyyy-MM-dd) when leave starts — for action rules only. */
+  startDate?: string;
 }
 
 export interface PersonPerformanceDetail {
@@ -169,6 +171,7 @@ export interface WorkHistoryGroupView {
 export interface EmployeePerformanceSnapshot {
   personId: string;
   metrics: MetricCardData[];
+  cycleTime: { label: string; value: string }[];
   activeWork: ActiveWorkItem[];
   attention: PersonalAttentionItem[];
   timeOff?: { rangeLabel: string; note: string };

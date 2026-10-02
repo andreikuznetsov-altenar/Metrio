@@ -26,7 +26,7 @@ describe("buildPersonAnalyticsWorkspace", () => {
     });
 
     const currentCompleted = person.performance?.completedCount ?? 0;
-    expect(workspace.summary.find((m) => m.label === "Completed")?.value).toBe(
+    expect(workspace.performanceKpis.find((m) => m.label === "Completed")?.value).toBe(
       String(currentCompleted),
     );
     expect(workspace.workload).toMatch(/Light|Balanced|Heavy|Overloaded/);

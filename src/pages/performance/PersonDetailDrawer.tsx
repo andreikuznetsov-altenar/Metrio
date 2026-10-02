@@ -1,7 +1,6 @@
-import { useEffect, useMemo, useState, type MouseEvent } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Badge } from "../../components/Badge/Badge";
 import { Button } from "../../components/Button/Button";
-import { Card } from "../../components/Card/Card";
 import { Drawer } from "../../components/Drawer/Drawer";
 import { Select } from "../../components/Select/Select";
 import { Tabs } from "../../components/Tabs/Tabs";
@@ -20,12 +19,12 @@ import {
 import { groupAttentionSignals, hiddenAttentionKeyCount } from "./groupAttentionSignals";
 import { AnalyticsIssueRow } from "./AnalyticsIssueRow";
 import { PersonWorkRow } from "./PersonWorkRow";
-import { TrendInsufficientHistory, TrendMiniChart } from "./TrendMiniChart";
+import { PersonPerformanceMetrics } from "./PersonPerformanceMetrics";
+import { TrendMiniChart } from "./TrendMiniChart";
 import { TrendValue } from "./TrendValue";
 import {
   buildMetricDrilldownRequest,
   buildTrendDrilldownRequest,
-  metricLabelToDrilldownMetric,
 } from "./analyticsDrilldownModel";
 import "./person-detail-drawer.css";
 import "./performance-dashboard.css";
@@ -109,7 +108,7 @@ export function PersonDetailDrawer({
     }
 
     const openPersonDrilldownFromMetric = (
-      metric: (typeof workspace.summary)[number],
+      metric: (typeof workspace.performanceKpis)[number],
       source: HTMLElement,
     ) => {
       if (!analytics) return;
@@ -142,74 +141,66 @@ export function PersonDetailDrawer({
         content: (
           <div className="person-detail-drawer__panel">
             <p className="person-detail-drawer__context">{workspace.contextLine}</p>
-            <div className="person-detail-drawer__metrics performance-metrics performance-metrics--compact">
-              {workspace.summary.map((metric) => {
-                const drilldownMetric = metricLabelToDrilldownMetric(metric.label);
-                const interactive = Boolean(analytics && drilldownMetric);
-                return (
-                  <Card
-                    key={metric.label}
-                    className={
-                      interactive
-                        ? "performance-metric-card performance-metric-card--interactive"
-                        : "performance-metric-card"
-                    }
-                    {...(interactive
-                      ? {
-                          onClick: (event: MouseEvent<HTMLElement>) =>
-                            openPersonDrilldownFromMetric(metric, event.currentTarget),
-                          role: "button",
-                          tabIndex: 0,
-                        }
-                      : {})}
-                  >
-                    <div className="performance-metric-card__label">{metric.label}</div>
-                    <div className="performance-metric-card__value">{metric.value}</div>
-                    {metric.contextLabel ? (
-                      <div className="performance-metric-card__context">
-                        <span>{metric.contextLabel}</span>
-                      </div>
-                    ) : metric.status ? (
-                      <div className="performance-metric-card__status">
-                        {metric.statusVariant ? (
-                          <Badge variant={metric.statusVariant}>{metric.status}</Badge>
-                        ) : (
-                          metric.status
-                        )}
-                      </div>
-                    ) : null}
-                  </Card>
-                );
-              })}
+            <div className="person-detail-drawer__context-meta">
+              <span>{workspace.role}</span>
+              <span>{workspace.availability}</span>
+              {workspace.timeOff ? <span>{workspace.timeOff.rangeLabel}</span> : null}
             </div>
+            <PersonPerformanceMetrics
+              kpis={workspace.performanceKpis}
+              cycleTime={workspace.cycleTime}
+              onOpenMetric={
+                analytics
+                  ? (metric, source) => openPersonDrilldownFromMetric(metric, source)
+                  : undefined
+              }
+            />
 
             <h3 className="person-detail-drawer__section-title">Trends</h3>
             <div className="person-detail-drawer__trends">
-              {workspace.trends.map((trend) =>
-                trend.insufficientHistory ? (
-                  <TrendInsufficientHistory
+              {workspace.trends.map((trend) => {
+                const hasChart = (trend.chartSeries?.length ?? 0) >= 2;
+                if (trend.insufficientHistory) {
+                  return (
+                    <div
+                      key={trend.label}
+                      className="person-detail-drawer__trend-card person-detail-drawer__trend-card--compact"
+                    >
+                      <div className="person-detail-drawer__trend-head">
+                        <span>{trend.label}</span>
+                        <TrendValue trend={trend} />
+                      </div>
+                      <p className="person-detail-drawer__trend-empty">Not enough history</p>
+                    </div>
+                  );
+                }
+                return (
+                  <div
                     key={trend.label}
-                    recorded={trend.historyRecordedDays}
-                    recommended={trend.historyRecommendedDays}
-                  />
-                ) : (
-                  <div key={trend.label} className="person-detail-drawer__trend-card">
+                    className={
+                      hasChart
+                        ? "person-detail-drawer__trend-card"
+                        : "person-detail-drawer__trend-card person-detail-drawer__trend-card--compact"
+                    }
+                  >
                     <div className="person-detail-drawer__trend-head">
                       <span>{trend.label}</span>
                       <TrendValue trend={trend} />
                     </div>
-                    <TrendMiniChart
-                      trend={trend}
-                      onPointClick={
-                        analytics
-                          ? (point, source) =>
-                              openPersonDrilldownFromTrend(trend, point, source)
-                          : undefined
-                      }
-                    />
+                    {hasChart ? (
+                      <TrendMiniChart
+                        trend={trend}
+                        onPointClick={
+                          analytics
+                            ? (point, source) =>
+                                openPersonDrilldownFromTrend(trend, point, source)
+                            : undefined
+                        }
+                      />
+                    ) : null}
                   </div>
-                ),
-              )}
+                );
+              })}
             </div>
 
             {workspace.timeOff ? (
@@ -274,6 +265,9 @@ export function PersonDetailDrawer({
         content: (
           <div className="person-detail-drawer__panel">
             <p className="person-detail-drawer__context">{workspace.contextLine}</p>
+            <p className="person-performance-metrics__active" data-testid="person-work-active-summary">
+              Active work: <strong>{workspace.activeWorkCount}</strong>
+            </p>
             <div className="performance-work-list">
               {workspace.workRows.length === 0 ? (
                 <p className="person-detail-drawer__empty">No active work in this period.</p>

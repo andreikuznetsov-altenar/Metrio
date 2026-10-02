@@ -53,6 +53,10 @@ export function getEmployeePerformanceSnapshot(
   return {
     personId,
     metrics,
+    cycleTime: [
+      { label: "Progress → Review", value: "2h 39m" },
+      { label: "Review → Done", value: "23h 27m" },
+    ],
     activeWork: [
       {
         key: "MET-142",

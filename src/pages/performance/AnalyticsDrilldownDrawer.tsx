@@ -10,6 +10,7 @@ import {
   formatCycleDurationShort,
   isBackflowsZeroState,
   medianCycleMs,
+  shouldShowEvidenceListCaption,
   summaryLineValue,
 } from "./analyticsDrawerPresentation";
 import { AnalyticsIssueRow } from "./AnalyticsIssueRow";
@@ -155,12 +156,9 @@ export function AnalyticsDrilldownDrawer({
     ? completedCyclesCaption(filteredIssues)
     : "";
 
-  const showListCaption =
+  const showEvidenceListCaption =
     evidence &&
-    evidence.detailLevel === "task" &&
-    !backflowsZero &&
-    filteredIssues.length > 0 &&
-    evidence.metric !== "efficiency";
+    shouldShowEvidenceListCaption(evidence, filteredIssues.length, backflowsZero);
 
   return (
     <Drawer
@@ -245,10 +243,6 @@ export function AnalyticsDrilldownDrawer({
             />
           ) : null}
 
-          {evidence.metric === "completed" && evidence.detailLevel === "task" ? (
-            <p className="analytics-drawer__caption">{evidenceListCaption}</p>
-          ) : null}
-
           {backflowsZero ? (
             <div className="analytics-drawer__positive-empty">
               <CheckCircle2 size={20} strokeWidth={1.75} aria-hidden />
@@ -276,12 +270,6 @@ export function AnalyticsDrilldownDrawer({
                 onChange={setFirstPassFilter}
               />
             </div>
-          ) : null}
-
-          {evidence.metric === "first_pass" &&
-          evidence.detailLevel === "task" &&
-          filteredIssues.length > 0 ? (
-            <p className="analytics-drawer__caption">{evidenceListCaption}</p>
           ) : null}
 
           {evidence.metric === "efficiency" &&
@@ -329,7 +317,7 @@ export function AnalyticsDrilldownDrawer({
           filteredIssues.length > 0 ? (
             <>
               {listHeading ? <SectionHeading>{listHeading}</SectionHeading> : null}
-              {showListCaption ? (
+              {showEvidenceListCaption ? (
                 <p className="analytics-drawer__caption">{evidenceListCaption}</p>
               ) : null}
               <EvidenceList

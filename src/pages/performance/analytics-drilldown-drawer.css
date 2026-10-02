@@ -57,7 +57,7 @@
 .analytics-drawer__body {
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: var(--space-3);
 }
 
 .analytics-drawer__description {
@@ -215,6 +215,18 @@
   font-size: 13px;
   color: var(--color-text-tertiary);
   line-height: 1.45;
+}
+
+.analytics-drawer__caption {
+  margin: 0 0 var(--space-1);
+}
+
+.analytics-drawer__filter {
+  margin: 0;
+}
+
+.analytics-drawer__outcome {
+  margin: 0;
 }
 
 .analytics-drawer__list {

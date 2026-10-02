@@ -117,3 +117,16 @@ export function isBackflowsZeroState(evidence: AnalyticsEvidence): boolean {
     evidence.issues.length === 0
   );
 }
+
+/** Single list caption before evidence rows (avoids duplicate with outcome blocks). */
+export function shouldShowEvidenceListCaption(
+  evidence: AnalyticsEvidence,
+  filteredIssueCount: number,
+  backflowsZero: boolean,
+): boolean {
+  if (backflowsZero) return false;
+  if (evidence.detailLevel !== "task") return false;
+  if (filteredIssueCount === 0) return false;
+  if (evidence.metric === "efficiency") return false;
+  return true;
+}
