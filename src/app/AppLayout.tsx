@@ -18,6 +18,8 @@ import type { SettingsSection } from "../pages/settings/types";
 import { MetrioAppHeader } from "../shell/MetrioAppHeader";
 import { PageToolbar } from "../shell/PageToolbar";
 import { PerformanceToolbar } from "../shell/PerformanceToolbar";
+import { NotificationCenter } from "../shell/NotificationCenter";
+import { countUnreadNotificationEvents } from "../platform/notificationEvents";
 import { RuntimeShellEffects } from "./RuntimeShellEffects";
 import { useCurrentUser } from "./CurrentUserContext";
 import { clearConnection } from "./connectionStorage";
@@ -151,9 +153,14 @@ function AppLayoutShell({
   const { resetConnection, invalidateSession } = useConnectionGate();
   const { refresh, performanceControlsDisabled } = usePerformanceData();
   const performanceExport = usePerformanceExport();
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [notificationUnread, setNotificationUnread] = useState(() =>
+    countUnreadNotificationEvents(),
+  );
 
   useEffect(() => {
     bootLog("17M", "AppLayout mounted");
+    setNotificationUnread(countUnreadNotificationEvents());
   }, []);
 
   useEffect(() => {
@@ -274,21 +281,38 @@ function AppLayoutShell({
   );
 
   return (
-    <AppShell
-      header={
-        <MetrioAppHeader
-          activeRoute={settingsOpen ? null : activeRoute}
-          feedbackEnabled={feedbackEnabled}
-          onNavigate={onNavigate}
-          onOpenSettings={() => onOpenSettings("general")}
-          onOpenNotifications={() => onOpenSettings("notifications")}
-          onOpenConnections={() => onOpenSettings("connections")}
-          onLogout={onLogout}
-        />
-      }
-      pageToolbar={pageToolbar}
-    >
-      <ScrollArea>{mainContent}</ScrollArea>
-    </AppShell>
+    <>
+      <AppShell
+        header={
+          <MetrioAppHeader
+            activeRoute={settingsOpen ? null : activeRoute}
+            feedbackEnabled={feedbackEnabled}
+            onNavigate={onNavigate}
+            onOpenSettings={() => onOpenSettings("general")}
+            onOpenNotifications={() => setNotificationsOpen(true)}
+            notificationUnreadCount={notificationUnread}
+            onOpenConnections={() => onOpenSettings("connections")}
+            onLogout={onLogout}
+          />
+        }
+        pageToolbar={pageToolbar}
+      >
+        <ScrollArea>{mainContent}</ScrollArea>
+      </AppShell>
+      <NotificationCenter
+        open={notificationsOpen}
+        onClose={() => setNotificationsOpen(false)}
+        onUnreadChange={setNotificationUnread}
+        onNavigate={(target) => {
+          if (target.startsWith("person:")) {
+            window.dispatchEvent(
+              new CustomEvent("metrio-open-person", {
+                detail: target.slice("person:".length),
+              }),
+            );
+          }
+        }}
+      />
+    </>
   );
 }

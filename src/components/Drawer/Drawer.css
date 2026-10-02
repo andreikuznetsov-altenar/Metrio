@@ -59,6 +59,7 @@
   overflow-y: auto;
   overflow-x: hidden;
   padding: var(--space-4);
+  scroll-behavior: smooth;
   scrollbar-width: thin;
   scrollbar-color: color-mix(in srgb, var(--color-text-tertiary) 35%, transparent)
     transparent;

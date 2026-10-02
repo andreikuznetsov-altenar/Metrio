@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { usePerformanceData } from "../app/PerformanceDataContext";
 import { useCurrentUser } from "../app/CurrentUserContext";
 import {
@@ -58,6 +58,17 @@ export function PerformancePage({ reviewTarget }: PerformancePageProps) {
   const closePersonDetail = useCallback(() => {
     setPersonDetailId(null);
   }, []);
+
+  useEffect(() => {
+    const handler = (event: Event) => {
+      const personId = (event as CustomEvent<string>).detail;
+      if (typeof personId === "string" && personId) {
+        openPersonDetail(personId);
+      }
+    };
+    window.addEventListener("metrio-open-person", handler);
+    return () => window.removeEventListener("metrio-open-person", handler);
+  }, [openPersonDetail]);
 
   const drawerOpen =
     personDetailId != null &&

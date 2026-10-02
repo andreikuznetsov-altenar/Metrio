@@ -29,7 +29,9 @@
   --motion-hover: 120ms;
   --motion-control: 140ms;
   --motion-popover: 160ms;
-  --motion-drawer: 200ms;
+  --motion-drawer: 220ms;
+  --motion-backdrop: 200ms;
+  --motion-tab: 200ms;
   --transition-easing: cubic-bezier(0.4, 0, 0.2, 1);
   /* Legacy aliases */
   --transition-duration: var(--motion-control);
@@ -41,9 +43,9 @@
   --page-header-height: 48px;
   --bottom-action-height: 56px;
 
-  /* Focus */
-  --focus-ring: 0 0 0 2px var(--color-accent);
-  --focus-outline: 2px solid color-mix(in srgb, var(--color-accent) 72%, transparent);
+  /* Focus — keyboard only, subtle */
+  --focus-ring: 0 0 0 1.5px color-mix(in srgb, var(--color-accent) 55%, transparent);
+  --focus-outline: 1.5px solid color-mix(in srgb, var(--color-accent) 72%, transparent);
   --focus-outline-offset: 1px;
 
   /* Control states */

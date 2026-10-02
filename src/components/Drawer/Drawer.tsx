@@ -21,6 +21,7 @@ export interface DrawerProps {
   ariaLabel: string;
   header?: ReactNode;
   children: ReactNode;
+  className?: string;
 }
 
 export function Drawer({
@@ -29,6 +30,7 @@ export function Drawer({
   ariaLabel,
   header,
   children,
+  className,
 }: DrawerProps) {
   const titleId = useId();
   const [mounted, setMounted] = useState(open);
@@ -91,7 +93,7 @@ export function Drawer({
         onClick={onClose}
       />
       <aside
-        className="drawer"
+        className={["drawer", className].filter(Boolean).join(" ")}
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
