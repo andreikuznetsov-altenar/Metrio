@@ -27,6 +27,16 @@
   font-weight: 600;
 }
 
+.trend-chart-tooltip__hint {
+  margin-top: 4px;
+  color: var(--color-text-tertiary);
+  font-size: 10px;
+}
+
+.trend-mini-chart--clickable .recharts-surface {
+  cursor: pointer;
+}
+
 .performance-trend-card__history-state {
   margin-top: var(--space-3);
   display: flex;

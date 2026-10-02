@@ -17,6 +17,10 @@ export const TREND_CHART_FILL_OPACITY = 0.1;
 
 export interface TrendMiniChartProps {
   trend: TrendCardData;
+  onPointClick?: (
+    point: { date: string; value: number },
+    source: HTMLElement | null,
+  ) => void;
 }
 
 function formatValue(
@@ -48,11 +52,12 @@ function ChartTooltip({
       <div className="trend-chart-tooltip__value">
         {trend.label}: {formatValue(trend.trendMetricKind, point.value)}
       </div>
+      <div className="trend-chart-tooltip__hint">Click to view work</div>
     </div>
   );
 }
 
-export function TrendMiniChart({ trend }: TrendMiniChartProps) {
+export function TrendMiniChart({ trend, onPointClick }: TrendMiniChartProps) {
   const data = trend.chartSeries ?? [];
   if (data.length < 2) return null;
 
@@ -67,9 +72,27 @@ export function TrendMiniChart({ trend }: TrendMiniChartProps) {
   ];
 
   return (
-    <div className="trend-mini-chart" data-testid="trend-mini-chart">
+    <div
+      className={
+        onPointClick
+          ? "trend-mini-chart trend-mini-chart--clickable"
+          : "trend-mini-chart"
+      }
+      data-testid="trend-mini-chart"
+    >
       <ResponsiveContainer width="100%" height={56}>
-        <AreaChart data={data} margin={{ top: 6, right: 0, left: 0, bottom: 6 }}>
+        <AreaChart
+          data={data}
+          margin={{ top: 6, right: 0, left: 0, bottom: 6 }}
+          onClick={(state) => {
+            const payload = (
+              state as { activePayload?: { payload: { date: string; value: number } }[] }
+            )?.activePayload?.[0]?.payload;
+            if (payload && onPointClick) {
+              onPointClick(payload, null);
+            }
+          }}
+        >
           <CartesianGrid vertical={false} stroke="var(--color-border)" strokeOpacity={0.35} />
           <XAxis dataKey="date" hide />
           <YAxis domain={domain} hide />
