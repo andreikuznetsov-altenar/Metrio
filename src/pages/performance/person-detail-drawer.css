@@ -150,6 +150,62 @@
   color: var(--color-text-tertiary);
 }
 
-.performance-attention-group__keys {
+.person-detail-drawer__context {
+  margin: 0;
+  font-size: 12px;
+  color: var(--color-text-tertiary);
+  line-height: 1.4;
+}
+
+.person-detail-drawer__trends {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.person-detail-drawer__trend-card {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-control);
+  padding: var(--space-2) var(--space-3);
+  background: var(--color-surface-secondary);
+}
+
+.person-detail-drawer__trend-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  margin-bottom: var(--space-2);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+}
+
+.person-detail-drawer__history-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.person-detail-drawer__history-group + .person-detail-drawer__history-group {
+  margin-top: var(--space-3);
+}
+
+.person-detail-drawer__time-off {
+  font-size: 13px;
+  color: var(--color-text-primary);
+}
+
+.person-detail-drawer__time-off-note {
   margin-top: var(--space-1);
+  font-size: 12px;
+  color: var(--color-text-secondary);
+}
+
+.performance-metrics--compact {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.person-work-row__health {
+  align-self: start;
 }
