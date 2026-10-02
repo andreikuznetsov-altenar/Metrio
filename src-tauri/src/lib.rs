@@ -12,6 +12,7 @@ use api::bamboo::{
     bamboo_list_employees_all, bamboo_test_connection,
 };
 use std::time::Duration;
+use api::confluence::{confluence_search_pages, confluence_test_connection};
 use api::jira::{
     jira_fetch_changelog, jira_fetch_changelogs_batch, jira_get_issue, jira_search_issues,
     jira_search_users, jira_test_connection,
@@ -492,6 +493,8 @@ pub fn run() {
             jira_get_issue,
             jira_search_users,
             jira_fetch_changelogs_batch,
+            confluence_test_connection,
+            confluence_search_pages,
             bamboo_test_connection,
             bamboo_get_directory,
             bamboo_list_employees,
