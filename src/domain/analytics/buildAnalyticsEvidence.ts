@@ -31,6 +31,10 @@ export interface BuildAnalyticsEvidenceInput {
   bucketDate?: string;
   /** Trend backflow chart uses event counts per day; KPI card uses cycle counts. */
   trendBackflowEvents?: boolean;
+  personReportKey?: string;
+  personDisplayName?: string;
+  personId?: string;
+  personKpi?: KpiData;
   issuesAvailable?: boolean;
 }
 
@@ -132,20 +136,41 @@ export function buildAnalyticsEvidence(input: BuildAnalyticsEvidenceInput): Anal
     metric,
     issues,
     params,
-    kpi,
+    kpi: inputKpi,
     attributionIndex,
     rangeLabel,
     targetLabel,
     comparisonLabel,
     bucketDate,
     trendBackflowEvents = false,
-    issuesAvailable = true,
+    issuesAvailable,
+    personReportKey,
+    personKpi,
+    personDisplayName,
+    personId,
   } = input;
+
+  const cycleIssues =
+    personReportKey != null
+      ? issues.filter(
+          (issue) => attributionIndex[issue.issueKey]?.personCanonical === personReportKey,
+        )
+      : issues;
+  const kpi = personReportKey != null && personKpi ? personKpi : inputKpi;
+  const hasIssueDetail =
+    issuesAvailable ??
+    (personReportKey != null ? cycleIssues.length > 0 : issues.length > 0);
+  const personScope =
+    personDisplayName != null
+      ? { personDisplayName, personId }
+      : personId != null
+        ? { personId }
+        : {};
 
   const title = analyticsDrilldownTitle[metric];
   const description = analyticsDrilldownDescription[metric];
 
-  if (!issuesAvailable || !issues.length) {
+  if (!hasIssueDetail || !cycleIssues.length) {
     return {
       metric,
       title,
@@ -163,10 +188,11 @@ export function buildAnalyticsEvidence(input: BuildAnalyticsEvidenceInput): Anal
       params,
       kpi,
       bucketDate,
+      ...personScope,
     };
   }
 
-  const allRecords = collectReportingPeriodCycles(issues, params);
+  const allRecords = collectReportingPeriodCycles(cycleIssues, params);
   const scopedRecords = filterRecordsByBucket(allRecords, bucketDate);
 
   if (metric === "efficiency") {
@@ -245,12 +271,13 @@ export function buildAnalyticsEvidence(input: BuildAnalyticsEvidenceInput): Anal
       params,
       kpi,
       bucketDate,
+      ...personScope,
     };
   }
 
   if (metric === "backflows" && (trendBackflowEvents || bucketDate)) {
     const date = bucketDate || params.dateTo;
-    const eventRows = collectBackflowEventsOnDate(issues, date);
+    const eventRows = collectBackflowEventsOnDate(cycleIssues, date);
     const mapped: AnalyticsEvidenceIssue[] = eventRows.map((row) => {
       const attribution = attributionIndex[row.issueKey];
       const latest = row.events[row.events.length - 1];
@@ -288,6 +315,7 @@ export function buildAnalyticsEvidence(input: BuildAnalyticsEvidenceInput): Anal
       params,
       kpi,
       bucketDate,
+      ...personScope,
     };
   }
 
@@ -314,6 +342,7 @@ export function buildAnalyticsEvidence(input: BuildAnalyticsEvidenceInput): Anal
       params,
       kpi,
       bucketDate,
+      ...personScope,
     };
   }
 
@@ -345,6 +374,7 @@ export function buildAnalyticsEvidence(input: BuildAnalyticsEvidenceInput): Anal
       params,
       kpi,
       bucketDate,
+      ...personScope,
     };
   }
 
@@ -379,6 +409,7 @@ export function buildAnalyticsEvidence(input: BuildAnalyticsEvidenceInput): Anal
       params,
       kpi,
       bucketDate,
+      ...personScope,
     };
   }
 
@@ -400,6 +431,7 @@ export function buildAnalyticsEvidence(input: BuildAnalyticsEvidenceInput): Anal
     params,
     kpi,
     bucketDate,
+    ...personScope,
   };
 }
 

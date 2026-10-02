@@ -148,6 +148,63 @@ describe("buildAnalyticsEvidence", () => {
     expect(evidence.issues.length).toBe(0);
     expect(evidence.aggregateNote).toMatch(/unavailable/i);
   });
+
+  it("scopes completed evidence to a person report key", () => {
+    const issues = [
+      issueWithCompletion("UX-1", "2024-01-10T09:00:00.000Z"),
+      issueWithCompletion("UX-2", "2024-01-12T09:00:00.000Z"),
+    ];
+    const kpiTeam = buildKpiFromIssues(issues, {}, params);
+    const personKpi = buildKpiFromIssues([issues[0]!], {}, params);
+    const evidence = buildAnalyticsEvidence({
+      metric: "completed",
+      issues,
+      params,
+      kpi: kpiTeam,
+      personKpi,
+      personReportKey: "person-1",
+      personDisplayName: "Alex",
+      personId: "emp-1",
+      attributionIndex: {
+        "UX-1": { personCanonical: "person-1", personName: "Alex" },
+        "UX-2": { personCanonical: "person-2", personName: "Sam" },
+      },
+      rangeLabel: "Jan 2024",
+      targetLabel: "Team target",
+    });
+
+    expect(evidence.issues).toHaveLength(1);
+    expect(evidence.personDisplayName).toBe("Alex");
+    expect(evidence.kpi.completedCount).toBe(1);
+  });
+
+  it("uses person-scoped issues for trend backflow buckets", () => {
+    const issues = [
+      issueWithCompletion("UX-1", "2024-01-10T09:00:00.000Z", { backflow: true }),
+      issueWithCompletion("UX-2", "2024-01-10T10:00:00.000Z", { backflow: true }),
+    ];
+    const kpiTeam = buildKpiFromIssues(issues, {}, params);
+    const personKpi = buildKpiFromIssues([issues[0]!], {}, params);
+    const evidence = buildAnalyticsEvidence({
+      metric: "backflows",
+      issues,
+      params,
+      kpi: kpiTeam,
+      personKpi,
+      personReportKey: "person-1",
+      attributionIndex: {
+        "UX-1": { personCanonical: "person-1", personName: "Alex" },
+        "UX-2": { personCanonical: "person-2", personName: "Sam" },
+      },
+      rangeLabel: "Jan 2024",
+      targetLabel: "Team target",
+      bucketDate: "2024-01-03",
+      trendBackflowEvents: true,
+    });
+
+    expect(evidence.issues).toHaveLength(1);
+    expect(evidence.totalCountable).toBeGreaterThan(0);
+  });
 });
 
 describe("collectReportingPeriodCycles", () => {

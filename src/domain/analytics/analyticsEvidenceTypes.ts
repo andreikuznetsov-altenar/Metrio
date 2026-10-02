@@ -65,6 +65,8 @@ export interface AnalyticsEvidence {
   params: ReportParams;
   kpi: KpiData;
   bucketDate?: string;
+  personDisplayName?: string;
+  personId?: string;
 }
 
 export interface IssueAttribution {

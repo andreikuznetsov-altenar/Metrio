@@ -4,10 +4,15 @@ import { formatPerformanceDateDisplay } from "../../domain/performance/performan
 import { buildAnalyticsEvidence } from "../../domain/analytics/buildAnalyticsEvidence";
 import type { AnalyticsDrilldownMetric } from "../../domain/analytics/analyticsEvidenceTypes";
 import {
+  personIssuesFromReport,
+  personKpiFromReport,
+} from "../../domain/analytics/personAnalyticsScope";
+import {
   buildIssueAttributionIndex,
   flattenTeamKpiIssues,
   targetScopeLabel,
 } from "../../domain/analytics/analyticsReportScope";
+import { personRouteKey } from "../../domain/people/personDisplay";
 import type { PerformanceFetchResult } from "../../services/performance/performanceTypes";
 import type { MetricCardData, TrendCardData } from "../../domain/performance";
 
@@ -17,6 +22,8 @@ export interface AnalyticsDrilldownRequest {
   bucketDate?: string;
   bucketValue?: number;
   trendBackflowEvents?: boolean;
+  personId?: string;
+  personDisplayName?: string;
 }
 
 export function metricLabelToDrilldownMetric(label: string): AnalyticsDrilldownMetric | null {
@@ -32,6 +39,32 @@ export function trendLabelToDrilldownMetric(label: string): AnalyticsDrilldownMe
   return metricLabelToDrilldownMetric(label);
 }
 
+function resolvePersonScope(
+  data: PerformanceFetchResult,
+  request: AnalyticsDrilldownRequest,
+):
+  | {
+      personReportKey: string;
+      personKpi: ReturnType<typeof personKpiFromReport>;
+      personDisplayName: string;
+      personId: string;
+      scopedIssues: ReturnType<typeof personIssuesFromReport>;
+    }
+  | null {
+  if (!request.personId) return null;
+  const person = data.teamSnapshot.persons.find((item) => item.id === request.personId);
+  if (!person) return null;
+  const personReportKey = personRouteKey(person);
+  const report = data.reportData;
+  return {
+    personReportKey,
+    personKpi: personKpiFromReport(report, personReportKey),
+    personDisplayName: request.personDisplayName || person.bamboo.displayName,
+    personId: person.id,
+    scopedIssues: personIssuesFromReport(report, personReportKey),
+  };
+}
+
 export function useAnalyticsEvidence(
   data: PerformanceFetchResult | null,
   reviewTarget: PerformanceReviewTarget,
@@ -41,16 +74,20 @@ export function useAnalyticsEvidence(
   return useMemo(() => {
     if (!data || !request) return null;
     const report = data.reportData;
-    const issues = flattenTeamKpiIssues(report.grouped);
+    const personScope = resolvePersonScope(data, request);
+    const issues = personScope
+      ? personScope.scopedIssues
+      : flattenTeamKpiIssues(report.grouped);
     const attributionIndex = buildIssueAttributionIndex(report.grouped);
     const params = report.params;
     const rangeLabel = `${formatPerformanceDateDisplay(params.dateFrom)} – ${formatPerformanceDateDisplay(params.dateTo)}`;
+    const personKpi = personScope?.personKpi;
 
     return buildAnalyticsEvidence({
       metric: request.metric,
-      issues,
+      issues: personScope ? flattenTeamKpiIssues(report.grouped) : issues,
       params,
-      kpi: report.teamKpi,
+      kpi: personKpi ?? report.teamKpi,
       attributionIndex,
       rangeLabel,
       targetLabel: targetScopeLabel(reviewTarget),
@@ -58,6 +95,10 @@ export function useAnalyticsEvidence(
       bucketDate: request.bucketDate,
       trendBackflowEvents: request.trendBackflowEvents,
       issuesAvailable: issues.length > 0,
+      personReportKey: personScope?.personReportKey,
+      personKpi: personKpi ?? undefined,
+      personDisplayName: personScope?.personDisplayName,
+      personId: personScope?.personId,
     });
   }, [data, request, reviewTarget, summaryMetric]);
 }
@@ -65,6 +106,7 @@ export function useAnalyticsEvidence(
 export function buildTrendDrilldownRequest(
   trend: TrendCardData,
   point: { date: string; value: number },
+  personScope?: Pick<AnalyticsDrilldownRequest, "personId" | "personDisplayName">,
 ): AnalyticsDrilldownRequest | null {
   const metric = trendLabelToDrilldownMetric(trend.label);
   if (!metric) return null;
@@ -73,5 +115,19 @@ export function buildTrendDrilldownRequest(
     bucketDate: point.date,
     bucketValue: point.value,
     trendBackflowEvents: metric === "backflows",
+    ...personScope,
+  };
+}
+
+export function buildMetricDrilldownRequest(
+  metric: MetricCardData,
+  personScope?: Pick<AnalyticsDrilldownRequest, "personId" | "personDisplayName">,
+): AnalyticsDrilldownRequest | null {
+  const id = metricLabelToDrilldownMetric(metric.label);
+  if (!id) return null;
+  return {
+    metric: id,
+    comparisonLabel: metric.contextLabel,
+    ...personScope,
   };
 }
