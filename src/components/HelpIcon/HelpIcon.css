@@ -10,7 +10,7 @@
   border-radius: var(--radius-round);
   background: transparent;
   color: var(--color-text-tertiary);
-  cursor: help;
+  cursor: default;
   vertical-align: middle;
   transform: translateY(-0.5px);
 }

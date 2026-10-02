@@ -10,9 +10,22 @@
   display: flex;
   align-items: center;
   gap: var(--space-1);
-  margin: calc(var(--space-2) * -1) 0 0;
-  padding-bottom: var(--space-2);
-  border-bottom: 1px solid var(--color-border);
+  margin: 0;
+  padding: 0 0 var(--space-2);
+  position: relative;
+}
+
+.performance-subnav__indicator {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  height: 2px;
+  border-radius: var(--radius-round);
+  background: var(--color-accent);
+  transition:
+    transform var(--motion-tab) var(--transition-easing),
+    width var(--motion-tab) var(--transition-easing);
+  pointer-events: none;
 }
 
 .performance-subnav__link {
@@ -25,38 +38,29 @@
   font-size: 13px;
   font-weight: 500;
   cursor: pointer;
+  border-bottom: 2px solid transparent;
   transition:
     color var(--motion-hover) var(--transition-easing),
-    background var(--motion-hover) var(--transition-easing),
-    box-shadow var(--motion-control) var(--transition-easing);
+    border-color var(--motion-hover) var(--transition-easing);
 }
 
-.performance-subnav__link:hover {
+.performance-subnav__link:hover:not(.is-active) {
   color: var(--color-text-primary);
-  background: var(--color-surface-secondary);
-}
-
-.performance-subnav__link:active {
-  background: color-mix(in srgb, var(--color-surface-secondary) 88%, var(--color-border));
+  border-bottom-color: color-mix(in srgb, var(--color-border) 80%, var(--color-accent));
 }
 
 .performance-subnav__link.is-active {
   color: var(--color-text-primary);
 }
 
-.performance-subnav__link.is-active::after {
-  content: "";
-  position: absolute;
-  left: var(--space-2);
-  right: var(--space-2);
-  bottom: 0;
-  height: 2px;
-  border-radius: var(--radius-round);
-  background: var(--color-accent);
+.performance-subnav__link.is-active:hover {
+  color: var(--color-text-primary);
+  border-bottom-color: transparent;
 }
 
 .performance-subnav__link:focus-visible {
-  box-shadow: var(--focus-ring);
+  outline: var(--focus-outline);
+  outline-offset: var(--focus-outline-offset);
 }
 
 .performance-table--interactive .performance-table__person-button {
@@ -600,6 +604,114 @@
   margin-top: var(--space-1);
   font-size: 14px;
   font-weight: 600;
+}
+
+.performance-section-desc {
+  margin: 0 0 var(--space-3);
+  max-width: 72ch;
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--color-text-tertiary);
+}
+
+.performance-table__person-link {
+  border: none;
+  background: transparent;
+  padding: 0;
+  font: inherit;
+  color: var(--color-text-primary);
+  cursor: pointer;
+  text-align: left;
+  transition: color var(--motion-hover) var(--transition-easing);
+}
+
+.performance-table__person-link:hover {
+  color: var(--color-accent);
+}
+
+.performance-table__person-inline {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.performance-table__person-button--with-avatar {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  width: 100%;
+}
+
+.performance-table__person-text {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  min-width: 0;
+}
+
+.performance-table__clickable-row {
+  cursor: pointer;
+  transition: background var(--motion-hover) var(--transition-easing);
+}
+
+.performance-table__clickable-row:hover {
+  background: var(--color-surface-secondary);
+}
+
+.performance-table--delivery-risk {
+  table-layout: fixed;
+  width: 100%;
+}
+
+.performance-table--delivery-risk th:nth-child(1),
+.performance-table--delivery-risk td:nth-child(1) {
+  width: minmax(0, 1fr);
+}
+
+.performance-table--delivery-risk th:nth-child(2),
+.performance-table--delivery-risk td:nth-child(2) {
+  width: 170px;
+}
+
+.performance-table--delivery-risk th:nth-child(3),
+.performance-table--delivery-risk td:nth-child(3) {
+  width: 84px;
+}
+
+.performance-table--delivery-risk th:nth-child(4),
+.performance-table--delivery-risk td:nth-child(4) {
+  width: 180px;
+}
+
+.performance-table--delivery-risk th:nth-child(5),
+.performance-table--delivery-risk td:nth-child(5) {
+  width: 112px;
+}
+
+.performance-table--delivery-risk th:nth-child(6),
+.performance-table--delivery-risk td:nth-child(6) {
+  width: 56px;
+}
+
+.performance-delivery-risk__issue {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.performance-delivery-risk__title {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--color-text-secondary);
+}
+
+.performance-table__action {
+  text-align: right;
 }
 
 .performance-empty {

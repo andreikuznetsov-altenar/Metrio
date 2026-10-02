@@ -88,11 +88,14 @@ export function TeamPerformanceOverview({
       ) : null}
 
       {activeView === "radar" ? (
-        <TeamRadarView rows={secondary.radar} />
+        <TeamRadarView rows={secondary.radar} onOpenPerson={onOpenPerson} />
       ) : null}
 
       {activeView === "delivery-risk" ? (
-        <TeamDeliveryRiskView rows={secondary.deliveryRisk} />
+        <TeamDeliveryRiskView
+          rows={secondary.deliveryRisk}
+          onOpenPerson={onOpenPerson}
+        />
       ) : null}
     </div>
   );

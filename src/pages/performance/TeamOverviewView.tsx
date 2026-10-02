@@ -6,11 +6,11 @@ import { SectionTitle } from "../../components/SectionTitle/SectionTitle";
 import { Tooltip } from "../../components/Tooltip/Tooltip";
 import type { TeamPerformanceSnapshot } from "../../domain/performance";
 import { performanceHelp } from "../../domain/performance/performanceHelp";
+import { PersonAvatar } from "../../components/PersonAvatar/PersonAvatar";
 import {
   availabilityBadgeVariant,
   workloadBadgeVariantFromLabel,
 } from "../../domain/performance/performanceStatusBadges";
-import { personInitials } from "../../domain/types";
 import {
   TrendInsufficientHistory,
   TrendMiniChart,
@@ -122,48 +122,75 @@ export function TeamOverviewView({
             No direct reports need attention right now.
           </div>
         ) : (
-          <div className="performance-attention-list">
-            {snapshot.attention.map((item) => {
-              const name = item.personName || item.personId;
-              return (
-                <button
-                  key={item.personId}
-                  type="button"
-                  className="performance-attention-row"
-                  onClick={() => onOpenPerson(item.personId)}
-                >
-                  <span className="performance-avatar performance-avatar--sm" aria-hidden>
-                    {personInitials(name)}
-                  </span>
-                  <span className="performance-attention-row__main">
-                    <div className="performance-attention-row__title-line">
-                      <span className="performance-attention-row__name">{name}</span>
-                      {item.personRole ? (
-                        <span className="performance-attention-row__role">
-                          {item.personRole}
-                        </span>
-                      ) : null}
-                    </div>
-                    <div className="performance-attention-row__reason">{item.reason}</div>
-                  </span>
-                  <span className="performance-attention-row__meta">
-                    <Badge variant={severityBadgeVariant(item.severity)}>
-                      {severityAttentionLabel(item.severity)}
-                    </Badge>
-                    {item.issueKeys.map((key) => (
-                      <Badge key={key} variant="neutral">
-                        {key}
-                      </Badge>
-                    ))}
-                    {item.issueCount > item.issueKeys.length ? (
-                      <span className="performance-attention-row__more">
-                        +{item.issueCount - item.issueKeys.length} more
-                      </span>
-                    ) : null}
-                  </span>
-                </button>
-              );
-            })}
+          <div className="performance-table-wrap performance-table-wrap--attention">
+            <table className="performance-table performance-table--interactive performance-table--attention">
+              <thead>
+                <tr>
+                  <th>Person</th>
+                  <th>Attention</th>
+                  <th>Issues</th>
+                  <th>Severity</th>
+                  <th>Workload</th>
+                </tr>
+              </thead>
+              <tbody>
+                {snapshot.attention.map((item) => {
+                  const name = item.personName || item.personId;
+                  return (
+                    <tr
+                      key={item.personId}
+                      className="performance-table__clickable-row"
+                      onClick={() => onOpenPerson(item.personId)}
+                    >
+                      <td>
+                        <div className="performance-table__person-inline">
+                          <PersonAvatar
+                            employeeId={item.personId}
+                            displayName={name}
+                            size="sm"
+                          />
+                          <span>
+                            <span className="performance-table__person-name">{name}</span>
+                            {item.personRole ? (
+                              <span className="performance-table__person-role">
+                                {item.personRole}
+                              </span>
+                            ) : null}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="performance-table__reason">{item.reason}</td>
+                      <td>
+                        {item.issueKeys.map((key) => (
+                          <Badge key={key} variant="neutral">
+                            {key}
+                          </Badge>
+                        ))}
+                        {item.issueCount > item.issueKeys.length ? (
+                          <span className="performance-attention-row__more">
+                            +{item.issueCount - item.issueKeys.length} more
+                          </span>
+                        ) : null}
+                      </td>
+                      <td>
+                        <Badge variant={severityBadgeVariant(item.severity)}>
+                          {severityAttentionLabel(item.severity)}
+                        </Badge>
+                      </td>
+                      <td>
+                        {item.workload ? (
+                          <Badge variant={workloadBadgeVariantFromLabel(item.workload)}>
+                            {item.workload}
+                          </Badge>
+                        ) : (
+                          "—"
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
           </div>
         )}
       </section>
@@ -243,7 +270,7 @@ export function TeamOverviewView({
         {snapshot.timeOff.length === 0 ? (
           <div className="performance-empty performance-empty--compact performance-empty--timeoff">
             <CalendarDays size={18} strokeWidth={1.75} aria-hidden className="performance-empty__icon" />
-            <span>No upcoming time off for direct reports.</span>
+            <span>No upcoming time off</span>
           </div>
         ) : (
           <ul className="performance-timeoff-list">

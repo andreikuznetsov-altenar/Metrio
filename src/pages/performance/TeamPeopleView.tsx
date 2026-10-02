@@ -1,5 +1,5 @@
 import { Badge } from "../../components/Badge/Badge";
-import { SectionTitle } from "../../components/SectionTitle/SectionTitle";
+import { PersonAvatar } from "../../components/PersonAvatar/PersonAvatar";
 import type { TeamPeopleRow } from "../../domain/performance";
 import { performanceHelp } from "../../domain/performance/performanceHelp";
 import {
@@ -15,16 +15,16 @@ export interface TeamPeopleViewProps {
 export function TeamPeopleView({ rows, onOpenPerson }: TeamPeopleViewProps) {
   return (
     <section aria-label="People">
-      <SectionTitle title="People" help={performanceHelp.people} />
+      <p className="performance-section-desc">{performanceHelp.people}</p>
       <div className="performance-table-wrap">
         <table className="performance-table performance-table--interactive">
           <thead>
             <tr>
               <th>Person</th>
               <th className="performance-table__num">Efficiency</th>
-              <th>Workload</th>
-              <th>Availability</th>
               <th>Attention</th>
+              <th>Availability</th>
+              <th>Workload</th>
             </tr>
           </thead>
           <tbody>
@@ -33,28 +33,25 @@ export function TeamPeopleView({ rows, onOpenPerson }: TeamPeopleViewProps) {
                 <td>
                   <button
                     type="button"
-                    className="performance-table__person-button"
+                    className="performance-table__person-button performance-table__person-button--with-avatar"
                     onClick={() => onOpenPerson(row.personId)}
                   >
-                    <span className="performance-table__person-name">
-                      {row.personName}
-                    </span>
-                    <span className="performance-table__person-role">
-                      {row.role}
+                    <PersonAvatar
+                      employeeId={row.personId}
+                      displayName={row.personName || row.personId}
+                      size="sm"
+                    />
+                    <span className="performance-table__person-text">
+                      <span className="performance-table__person-name">
+                        {row.personName}
+                      </span>
+                      <span className="performance-table__person-role">
+                        {row.role}
+                      </span>
                     </span>
                   </button>
                 </td>
                 <td className="performance-table__num">{row.efficiency}</td>
-                <td>
-                  <Badge variant={workloadBadgeVariantFromLabel(row.workload)}>
-                    {row.workload}
-                  </Badge>
-                </td>
-                <td>
-                  <Badge variant={availabilityBadgeVariant(row.availability)}>
-                    {row.availability}
-                  </Badge>
-                </td>
                 <td>
                   {row.attentionSeverityLabel === "Stable" ? (
                     <Badge variant="success">Stable</Badge>
@@ -73,6 +70,16 @@ export function TeamPeopleView({ rows, onOpenPerson }: TeamPeopleViewProps) {
                       </span>
                     </div>
                   )}
+                </td>
+                <td>
+                  <Badge variant={availabilityBadgeVariant(row.availability)}>
+                    {row.availability}
+                  </Badge>
+                </td>
+                <td>
+                  <Badge variant={workloadBadgeVariantFromLabel(row.workload)}>
+                    {row.workload}
+                  </Badge>
                 </td>
               </tr>
             ))}

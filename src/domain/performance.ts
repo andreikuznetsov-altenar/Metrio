@@ -29,6 +29,7 @@ export interface AttentionPerson {
   severity: RadarSeverity;
   issueKeys: string[];
   issueCount: number;
+  workload?: WorkloadRow["workload"];
 }
 
 export interface TrendCardData {

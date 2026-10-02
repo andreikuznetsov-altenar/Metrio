@@ -12,12 +12,13 @@ export const performanceHelp = {
     "Change in team performance compared with the previous comparable period.",
   teamWorkload:
     "Current Jira workload based on issues presently assigned to each person.",
-  timeOff: "Upcoming BambooHR availability.",
+  timeOff: "Planned team time off over the next 12 months from BambooHR.",
   people:
-    "Direct reports with workload, availability, and attention signals for the selected period.",
-  radar: "Operational signals that may need manager review across the team.",
+    "Team performance, workload, availability and attention signals for the selected period.",
+  radar:
+    "People with active task-health or workload signals that may require attention.",
   deliveryRisk:
-    "Issues at elevated delivery risk based on age, status, and assignment patterns.",
+    "Current Jira work with delivery-risk signals such as inactivity, rework or blocking states.",
   atRiskTasks:
     "Active tasks flagged at risk by cycle-time rules (not the same as Radar signals).",
 } as const;

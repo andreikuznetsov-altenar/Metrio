@@ -245,6 +245,64 @@ test.describe("Metrio visual regression", () => {
     });
   });
 
+  test("app header utilities", async ({ page }) => {
+    await bootMetrio(page, "lead");
+    await expect(page.getByRole("navigation", { name: "Main" })).toBeVisible();
+    await expect(page).toHaveScreenshot("app-header-nav.png", {
+      fullPage: false,
+      maxDiffPixelRatio: 0.02,
+    });
+  });
+
+  test("performance date picker open", async ({ page }) => {
+    await bootMetrio(page, "lead");
+    await page.getByRole("button", { name: /^From date,/i }).click();
+    await expect(page.locator(".metrio-date-picker__popover")).toBeVisible();
+    await expect(page).toHaveScreenshot("performance-date-picker-from.png", {
+      fullPage: true,
+      maxDiffPixelRatio: 0.02,
+    });
+  });
+
+  test("notification sidebar", async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem("metrio-connection-connected", "true");
+      localStorage.setItem("metrio-dev-fixture", "lead");
+      localStorage.setItem("metrio-theme", "light");
+      localStorage.setItem(
+        "metrio-notification-events",
+        JSON.stringify([
+          {
+            id: "n1",
+            type: "task_attention",
+            createdAt: new Date().toISOString(),
+            title: "Task needs attention",
+            message: "UX-5446 · Daria Chernowa",
+            issueKey: "UX-5446",
+            dedupeKey: "visual:1",
+          },
+          {
+            id: "n2",
+            type: "upcoming_time_off",
+            createdAt: new Date(Date.now() - 720_000).toISOString(),
+            title: "Upcoming time off",
+            message: "Valeriia Pavlova · 12–18 Oct",
+            readAt: new Date().toISOString(),
+            dedupeKey: "visual:2",
+          },
+        ]),
+      );
+    });
+    await page.goto("/");
+    await expect(page.getByTestId("app-shell")).toBeVisible({ timeout: 30_000 });
+    await page.getByRole("button", { name: /^notifications$/i }).click();
+    await expect(page.getByRole("dialog", { name: "Notifications" })).toBeVisible();
+    await expect(page).toHaveScreenshot("notification-sidebar.png", {
+      fullPage: true,
+      maxDiffPixelRatio: 0.02,
+    });
+  });
+
   test("settings advanced", async ({ page }) => {
     await bootMetrio(page, "lead");
     await page.getByRole("button", { name: /^settings$/i }).click();
