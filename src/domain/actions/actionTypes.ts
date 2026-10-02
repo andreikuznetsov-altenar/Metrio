@@ -17,7 +17,8 @@ export type ActionTarget =
   | { kind: "performance"; view: "overview" | "people" | "radar" | "delivery-risk" }
   | { kind: "feedback"; tab: "survey" | "delivery" | "results" | "history" }
   | { kind: "confluence"; pageId: string; url: string }
-  | { kind: "employee-work"; view: "my-week" | "overview" };
+  | { kind: "employee-work"; view: "my-week" | "overview" }
+  | { kind: "home" };
 
 export interface ActionItem {
   id: string;

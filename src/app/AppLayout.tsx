@@ -13,10 +13,13 @@ import type { AppRoute } from "../domain/types";
 import { isFeedbackEnabled } from "./featureGates";
 import { FeedbackPage } from "../pages/FeedbackPage";
 import { PerformancePage } from "../pages/PerformancePage";
+import { HomePage } from "../pages/home/HomePage";
+import { WorkGraphShell } from "./WorkGraphShell";
 import { SettingsPage } from "../pages/settings/SettingsPage";
 import type { SettingsSection } from "../pages/settings/types";
 import { MetrioAppHeader } from "../shell/MetrioAppHeader";
 import { PageToolbar } from "../shell/PageToolbar";
+import { Button } from "../components/Button/Button";
 import { PerformanceToolbar } from "../shell/PerformanceToolbar";
 import { NotificationCenter } from "../shell/NotificationCenter";
 import { countUnreadNotificationEvents, NOTIFICATION_EVENTS_CHANGED } from "../platform/notificationEvents";
@@ -37,6 +40,12 @@ import {
 } from "./PerformanceExportContext";
 
 function toolbarCopy(route: AppRoute) {
+  if (route === "home") {
+    return {
+      title: "Home",
+      subtitle: "What matters to you right now",
+    };
+  }
   if (route === "performance") {
     return {
       title: "Performance",
@@ -55,7 +64,7 @@ function defaultReviewTarget(role: string): PerformanceReviewTarget {
 }
 
 export function AppLayout() {
-  const [activeRoute, setActiveRoute] = useState<AppRoute>("performance");
+  const [activeRoute, setActiveRoute] = useState<AppRoute>("home");
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [settingsSection, setSettingsSection] =
     useState<SettingsSection>("general");
@@ -99,7 +108,8 @@ export function AppLayout() {
           audience={performanceAudience}
           selfPersonId={currentUser.person.id}
         >
-          <AppLayoutShell
+          <WorkGraphShell selfPersonId={currentUser.person.id}>
+        <AppLayoutShell
           activeRoute={activeRoute}
           setActiveRoute={setActiveRoute}
           settingsOpen={settingsOpen}
@@ -111,6 +121,7 @@ export function AppLayout() {
           reviewTarget={reviewTarget}
           setReviewTarget={setReviewTarget}
           performanceDataEnabled={activeRoute === "performance" && !settingsOpen}
+          homeActive={activeRoute === "home" && !settingsOpen}
           showTeamPerformance={
             activeRoute === "performance" &&
             !settingsOpen &&
@@ -122,6 +133,7 @@ export function AppLayout() {
             currentUser.person.role === "employee"
           }
         />
+        </WorkGraphShell>
         </PerformanceExportProvider>
       </PerformanceDataProvider>
     </>
@@ -140,6 +152,7 @@ interface AppLayoutShellProps {
   reviewTarget: PerformanceReviewTarget;
   setReviewTarget: (value: PerformanceReviewTarget) => void;
   performanceDataEnabled: boolean;
+  homeActive: boolean;
   showTeamPerformance: boolean;
   showEmployeePerformance: boolean;
 }
@@ -156,6 +169,7 @@ function AppLayoutShell({
   reviewTarget,
   setReviewTarget,
   performanceDataEnabled,
+  homeActive,
   showTeamPerformance,
   showEmployeePerformance,
 }: AppLayoutShellProps) {
@@ -179,7 +193,7 @@ function AppLayoutShell({
   useEffect(() => {
     const onRoute = (event: Event) => {
       const route = (event as CustomEvent<AppRoute>).detail;
-      if (route === "performance" || route === "feedback") {
+      if (route === "home" || route === "performance" || route === "feedback") {
         setSettingsOpen(false);
         setActiveRoute(route);
       }
@@ -190,7 +204,7 @@ function AppLayoutShell({
 
   useEffect(() => {
     if (!feedbackEnabled && activeRoute === "feedback") {
-      setActiveRoute("performance");
+      setActiveRoute("home");
     }
   }, [feedbackEnabled, activeRoute, setActiveRoute]);
 
@@ -198,10 +212,10 @@ function AppLayoutShell({
     showTeamPerformance || showEmployeePerformance;
 
   const onRefresh = useCallback(() => {
-    if (performanceDataEnabled) {
+    if (performanceDataEnabled || homeActive) {
       void refresh();
     }
-  }, [performanceDataEnabled, refresh]);
+  }, [performanceDataEnabled, homeActive, refresh]);
 
   const onNavigate = useCallback(
     (route: AppRoute) => {
@@ -266,6 +280,24 @@ function AppLayoutShell({
         />
       );
     }
+    if (activeRoute === "home") {
+      const copy = toolbarCopy("home");
+      return (
+        <PageToolbar
+          title={copy.title}
+          subtitle={copy.subtitle}
+          actions={
+            <Button
+              variant="secondary"
+              disabled={homeActive && performanceControlsDisabled}
+              onClick={onRefresh}
+            >
+              Refresh
+            </Button>
+          }
+        />
+      );
+    }
     if (activeRoute === "performance") {
       const copy = toolbarCopy("performance");
       return <PageToolbar title={copy.title} subtitle={copy.subtitle} />;
@@ -289,7 +321,9 @@ function AppLayoutShell({
     performanceExport.exporting,
     performanceExport.exportCurrentView,
     activeRoute,
+    homeActive,
     feedbackToolbar,
+    onRefresh,
     setDateRange,
   ]);
 
@@ -298,6 +332,8 @@ function AppLayoutShell({
       initialSection={settingsSection}
       onReconnect={() => void onReconnect()}
     />
+  ) : activeRoute === "home" ? (
+    <HomePage />
   ) : activeRoute === "performance" ? (
     <PerformancePage reviewTarget={reviewTarget} />
   ) : (

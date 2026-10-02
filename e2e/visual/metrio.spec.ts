@@ -15,6 +15,12 @@ async function bootMetrioFeedback(page: Page, theme: "light" | "dark" = "light")
   );
   await page.goto("/");
   await expect(page.getByTestId("app-shell")).toBeVisible({ timeout: 30_000 });
+  await openPerformanceFromHome(page);
+}
+
+async function openPerformanceFromHome(page: Page) {
+  await expect(page.getByTestId("home-ready")).toBeVisible({ timeout: 30_000 });
+  await page.getByRole("button", { name: "Performance" }).click();
   await expect(page.getByTestId("performance-dashboard-ready")).toBeVisible({
     timeout: 30_000,
   });
@@ -32,9 +38,7 @@ async function bootMetrio(
 
   await page.goto("/");
   await expect(page.getByTestId("app-shell")).toBeVisible({ timeout: 30_000 });
-  await expect(page.getByTestId("performance-dashboard-ready")).toBeVisible({
-    timeout: 30_000,
-  });
+  await openPerformanceFromHome(page);
 }
 
 async function bootMetrioWithNotificationFixture(
@@ -50,9 +54,7 @@ async function bootMetrioWithNotificationFixture(
   }, eventsJson);
   await page.goto("/");
   await expect(page.getByTestId("app-shell")).toBeVisible({ timeout: 30_000 });
-  await expect(page.getByTestId("performance-dashboard-ready")).toBeVisible({
-    timeout: 30_000,
-  });
+  await expect(page.getByTestId("home-ready")).toBeVisible({ timeout: 30_000 });
   await page.evaluate((payload: string) => {
     localStorage.setItem("metrio-notification-events", payload);
     window.dispatchEvent(new CustomEvent("metrio-notification-events-changed"));
@@ -128,6 +130,7 @@ test.describe("Metrio visual regression", () => {
 
     await page.goto("/?visualOverlay=1");
     await expect(page.getByTestId("app-shell")).toBeVisible({ timeout: 30_000 });
+    await openPerformanceFromHome(page);
     await expect(page.getByTestId("performance-content-overlay")).toBeVisible({
       timeout: 30_000,
     });
@@ -145,9 +148,7 @@ test.describe("Metrio visual regression", () => {
     });
     await page.goto("/");
     await expect(page.getByTestId("app-shell")).toBeVisible({ timeout: 30_000 });
-    await expect(page.getByTestId("performance-dashboard-ready")).toBeVisible({
-      timeout: 30_000,
-    });
+    await openPerformanceFromHome(page);
     await expect(page).toHaveScreenshot("team-overview-dark.png", {
       fullPage: true,
       maxDiffPixelRatio: 0.02,
@@ -396,9 +397,7 @@ test.describe("Metrio visual regression", () => {
 
     await page.goto("/?visualInsufficientHistory=1");
     await expect(page.getByTestId("app-shell")).toBeVisible({ timeout: 30_000 });
-    await expect(page.getByTestId("performance-dashboard-ready")).toBeVisible({
-      timeout: 30_000,
-    });
+    await openPerformanceFromHome(page);
     await expect(page.getByTestId("visual-insufficient-history-card")).toBeVisible();
     await expect(page).toHaveScreenshot("performance-insufficient-history.png", {
       fullPage: true,
@@ -407,7 +406,13 @@ test.describe("Metrio visual regression", () => {
   });
 
   test("app header utilities", async ({ page }) => {
-    await bootMetrio(page, "lead");
+    await page.addInitScript((fixtureId: string) => {
+      localStorage.setItem("metrio-connection-connected", "true");
+      localStorage.setItem("metrio-dev-fixture", fixtureId);
+      localStorage.setItem("metrio-theme", "light");
+    }, "lead");
+    await page.goto("/");
+    await expect(page.getByTestId("home-ready")).toBeVisible({ timeout: 30_000 });
     await expect(page.getByRole("navigation", { name: "Main" })).toBeVisible();
     await expect(page).toHaveScreenshot("app-header-nav.png", {
       fullPage: false,
@@ -585,6 +590,64 @@ test.describe("Metrio visual regression", () => {
     await clickSubnav(page, /^delivery$/i);
     await expect(page.getByTestId("director-delivery")).toBeVisible();
     await expect(page).toHaveScreenshot("director-delivery.png", {
+      fullPage: true,
+      maxDiffPixelRatio: 0.02,
+    });
+  });
+
+  test("employee home", async ({ page }) => {
+    await page.addInitScript((fixtureId: string) => {
+      localStorage.setItem("metrio-connection-connected", "true");
+      localStorage.setItem("metrio-dev-fixture", fixtureId);
+      localStorage.setItem("metrio-theme", "light");
+    }, "employee");
+    await page.goto("/");
+    await expect(page.getByTestId("home-ready")).toBeVisible({ timeout: 30_000 });
+    await expect(page).toHaveScreenshot("home-employee.png", {
+      fullPage: true,
+      maxDiffPixelRatio: 0.02,
+    });
+  });
+
+  test("manager home", async ({ page }) => {
+    await page.addInitScript((fixtureId: string) => {
+      localStorage.setItem("metrio-connection-connected", "true");
+      localStorage.setItem("metrio-dev-fixture", fixtureId);
+      localStorage.setItem("metrio-theme", "light");
+    }, "lead");
+    await page.goto("/");
+    await expect(page.getByTestId("home-ready")).toBeVisible({ timeout: 30_000 });
+    await expect(page).toHaveScreenshot("home-manager.png", {
+      fullPage: true,
+      maxDiffPixelRatio: 0.02,
+    });
+  });
+
+  test("resource library from home", async ({ page }) => {
+    await page.addInitScript((fixtureId: string) => {
+      localStorage.setItem("metrio-connection-connected", "true");
+      localStorage.setItem("metrio-dev-fixture", fixtureId);
+      localStorage.setItem("metrio-theme", "light");
+    }, "employee");
+    await page.goto("/");
+    await expect(page.getByTestId("home-ready")).toBeVisible({ timeout: 30_000 });
+    await page.getByRole("button", { name: /Open resource library/i }).click();
+    await expect(page.getByTestId("resource-library")).toBeVisible();
+    await expect(page).toHaveScreenshot("home-resource-library.png", {
+      fullPage: true,
+      maxDiffPixelRatio: 0.02,
+    });
+  });
+
+  test("home dark", async ({ page }) => {
+    await page.addInitScript((fixtureId: string) => {
+      localStorage.setItem("metrio-connection-connected", "true");
+      localStorage.setItem("metrio-dev-fixture", fixtureId);
+      localStorage.setItem("metrio-theme", "dark");
+    }, "lead");
+    await page.goto("/");
+    await expect(page.getByTestId("home-ready")).toBeVisible({ timeout: 30_000 });
+    await expect(page).toHaveScreenshot("home-dark.png", {
       fullPage: true,
       maxDiffPixelRatio: 0.02,
     });

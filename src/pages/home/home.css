@@ -1,0 +1,143 @@
+.home-page {
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: var(--space-4) var(--space-5) var(--space-6);
+}
+
+.home-header {
+  margin-bottom: var(--space-4);
+}
+
+.home-header__title {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.home-header__context {
+  margin: var(--space-1) 0 0;
+  font-size: 13px;
+  color: var(--color-text-secondary);
+}
+
+.home-layout {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-5);
+}
+
+@media (min-width: 960px) {
+  .home-layout {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .home-layout:has(.home-column--org) {
+    grid-template-columns: 1fr 1fr 1fr;
+  }
+}
+
+.home-section-label {
+  margin: 0 0 var(--space-2);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--color-text-tertiary);
+}
+
+.home-column {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.home-card {
+  padding: var(--space-3);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-secondary);
+}
+
+.home-card__title {
+  margin: 0 0 var(--space-2);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.home-card__lead {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-text-primary);
+}
+
+.home-card__meta {
+  margin: var(--space-1) 0 0;
+  font-size: 13px;
+  color: var(--color-text-secondary);
+}
+
+.home-card__empty {
+  margin: 0;
+  font-size: 13px;
+  color: var(--color-text-secondary);
+}
+
+.home-card__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-top: var(--space-3);
+}
+
+.home-link-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.home-link-list__button {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: var(--space-1) 0;
+  border: none;
+  background: none;
+  font-size: 13px;
+  color: var(--color-text-primary);
+  cursor: pointer;
+}
+
+.home-link-list__button:hover {
+  color: var(--color-accent);
+}
+
+.home-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-2);
+  margin: 0 0 var(--space-3);
+}
+
+.home-metrics__row dt {
+  font-size: 11px;
+  color: var(--color-text-tertiary);
+}
+
+.home-metrics__row dd {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.home-skeleton {
+  min-height: 240px;
+  border-radius: var(--radius-md);
+  background: var(--color-surface-tertiary);
+  opacity: 0.5;
+}
+
+.home-column .action-queue {
+  margin-bottom: 0;
+}

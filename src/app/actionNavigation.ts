@@ -11,8 +11,12 @@ export function dispatchFeedbackTab(tab: "survey" | "delivery" | "results" | "hi
   window.dispatchEvent(new CustomEvent("metrio-open-feedback-tab", { detail: tab }));
 }
 
-export function dispatchAppRoute(route: "performance" | "feedback") {
+export function dispatchAppRoute(route: "home" | "performance" | "feedback") {
   window.dispatchEvent(new CustomEvent("metrio-navigate-route", { detail: route }));
+}
+
+export function dispatchOpenHome() {
+  dispatchAppRoute("home");
 }
 
 export function dispatchEmployeeView(view: "overview" | "my-week" | "trends" | "work-history") {
@@ -54,6 +58,9 @@ export function navigateActionTarget(
     case "employee-work":
       dispatchAppRoute("performance");
       dispatchEmployeeView(target.view);
+      return;
+    case "home":
+      dispatchAppRoute("home");
       return;
     default:
       return;

@@ -23,7 +23,7 @@ export interface CurrentUser {
 
 export type DevFixtureId = "employee" | "lead" | "director";
 
-export type AppRoute = "performance" | "feedback";
+export type AppRoute = "home" | "performance" | "feedback";
 
 export function roleLabel(role: UserRole): string {
   switch (role) {

@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { listen } from "@tauri-apps/api/event";
-import { dispatchEmployeeView } from "./actionNavigation";
+import { dispatchAppRoute, dispatchEmployeeView } from "./actionNavigation";
 import { logoutSession } from "./logoutSession";
 import { openExternalUrl } from "../platform/openExternal";
 import { acknowledgeTrayJiraIssue, clearTrayUserContext } from "../platform/trayActionCenter";
@@ -42,6 +42,7 @@ export function TrayMenuEffects({
       .catch(() => undefined);
 
     void listen("tray-view-all-work", () => {
+      dispatchAppRoute("performance");
       dispatchEmployeeView("my-week");
     })
       .then((fn) => unsubs.push(fn))

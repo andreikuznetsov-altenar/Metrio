@@ -6,6 +6,7 @@ import { ProfileMenu } from "./ProfileMenu";
 import "./AppHeader.css";
 
 const NAV_ITEMS: { route: AppRoute; label: string }[] = [
+  { route: "home", label: "Home" },
   { route: "performance", label: "Performance" },
   { route: "feedback", label: "Feedback" },
 ];
