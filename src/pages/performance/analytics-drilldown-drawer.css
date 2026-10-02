@@ -1,0 +1,141 @@
+.drawer--analytics {
+  width: min(520px, 100vw);
+}
+
+.analytics-drawer__header {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.analytics-drawer__title-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.analytics-drawer__title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.analytics-drawer__value {
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.analytics-drawer__range,
+.analytics-drawer__context {
+  margin: 0;
+  font-size: 12px;
+  color: var(--color-text-tertiary);
+}
+
+.analytics-drawer__description {
+  margin: var(--space-2) 0 0;
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--color-text-secondary);
+}
+
+.analytics-drawer__body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.analytics-drawer__summary {
+  margin: 0;
+  display: grid;
+  gap: var(--space-1);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-control);
+  background: var(--color-surface-secondary);
+}
+
+.analytics-drawer__summary-row {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-2);
+  font-size: 12px;
+}
+
+.analytics-drawer__summary-row dt {
+  margin: 0;
+  color: var(--color-text-tertiary);
+}
+
+.analytics-drawer__summary-row dd {
+  margin: 0;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.analytics-drawer__components {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.analytics-drawer__components li {
+  display: grid;
+  gap: 2px;
+  font-size: 12px;
+}
+
+.analytics-drawer__component-label {
+  font-weight: 600;
+  color: var(--color-text-secondary);
+}
+
+.analytics-drawer__component-value {
+  color: var(--color-text-primary);
+}
+
+.analytics-drawer__component-detail {
+  color: var(--color-text-tertiary);
+  line-height: 1.4;
+}
+
+.analytics-drawer__count {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+}
+
+.analytics-drawer__empty,
+.analytics-drawer__aggregate {
+  margin: 0;
+  font-size: 13px;
+  color: var(--color-text-tertiary);
+  line-height: 1.45;
+}
+
+.analytics-drawer__more {
+  align-self: flex-start;
+  border: none;
+  background: transparent;
+  color: var(--color-accent);
+  font-size: 13px;
+  cursor: pointer;
+  padding: 0;
+}
+
+.analytics-drawer__list {
+  display: flex;
+  flex-direction: column;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .performance-metric-card--interactive {
+    transition-duration: 0ms;
+  }
+}

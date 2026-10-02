@@ -94,7 +94,10 @@ export function PerformancePage({ reviewTarget }: PerformancePageProps) {
     );
   } else {
     content = (
-      <TeamPerformanceOverview onOpenPerson={openPersonDetail} />
+      <TeamPerformanceOverview
+        onOpenPerson={openPersonDetail}
+        reviewTarget={asTeamReviewTarget(reviewTarget)}
+      />
     );
   }
 

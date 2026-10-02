@@ -4,7 +4,7 @@ import { Card } from "../../components/Card/Card";
 import { HelpIcon } from "../../components/HelpIcon/HelpIcon";
 import { SectionTitle } from "../../components/SectionTitle/SectionTitle";
 import { Tooltip } from "../../components/Tooltip/Tooltip";
-import type { TeamPerformanceSnapshot } from "../../domain/performance";
+import type { MetricCardData, TeamPerformanceSnapshot, TrendCardData } from "../../domain/performance";
 import { performanceHelp } from "../../domain/performance/performanceHelp";
 import { PersonAvatar } from "../../components/PersonAvatar/PersonAvatar";
 import {
@@ -23,6 +23,12 @@ export interface TeamOverviewViewProps {
   snapshot: TeamPerformanceSnapshot;
   onOpenPerson: (personId: string) => void;
   onViewAllRadar?: () => void;
+  onOpenMetricDrilldown?: (metric: MetricCardData, source: HTMLElement) => void;
+  onOpenTrendDrilldown?: (
+    trend: TrendCardData,
+    point: { date: string; value: number },
+    source: HTMLElement | null,
+  ) => void;
 }
 
 const METRIC_HELP: Record<string, string> = {
@@ -55,51 +61,115 @@ export function TeamOverviewView({
   snapshot,
   onOpenPerson,
   onViewAllRadar,
+  onOpenMetricDrilldown,
+  onOpenTrendDrilldown,
 }: TeamOverviewViewProps) {
   return (
     <>
       <section aria-label="Summary metrics">
         <div className="performance-metrics">
-          {snapshot.summary.map((metric) => (
-            <Card key={metric.label} className="performance-metric-card">
+          {snapshot.summary.map((metric) => {
+            const drilldownEnabled = Boolean(onOpenMetricDrilldown) &&
+              ["Efficiency", "First pass", "Completed", "Backflows"].includes(metric.label);
+            const cardClass = drilldownEnabled
+              ? "performance-metric-card performance-metric-card--interactive"
+              : "performance-metric-card";
+            const valueText = metric.value;
+            const ariaLabel = drilldownEnabled
+              ? `View ${metric.label} details, ${valueText}`
+              : undefined;
+
+            return (
+            <Card key={metric.label} className={cardClass}>
               <div className="performance-metric-card__label">
                 {metric.label}
                 {METRIC_HELP[metric.label] ? (
-                  <HelpIcon label={METRIC_HELP[metric.label]} />
+                  <span
+                    className="performance-metric-card__help"
+                    onPointerDown={(event) => event.stopPropagation()}
+                    onClick={(event) => event.stopPropagation()}
+                  >
+                    <HelpIcon label={METRIC_HELP[metric.label]} />
+                  </span>
                 ) : null}
               </div>
-              <div className="performance-metric-card__value">{metric.value}</div>
-              {metric.status ? (
-                <div className="performance-metric-card__status">
-                  {metric.statusVariant ? (
-                    <Badge variant={metric.statusVariant}>{metric.status}</Badge>
-                  ) : (
-                    metric.status
-                  )}
-                </div>
-              ) : null}
-              {metric.contextLabel ? (
-                <div
-                  className={`performance-metric-card__context performance-metric-card__context--${metric.contextSemantic || "neutral"}`}
+              {drilldownEnabled ? (
+                <button
+                  type="button"
+                  className="performance-metric-card__trigger"
+                  aria-label={ariaLabel}
+                  onClick={(event) =>
+                    onOpenMetricDrilldown?.(metric, event.currentTarget)
+                  }
                 >
-                  <Tooltip
-                    content={
-                      metric.contextCaption
-                        ? `${metric.contextCaption}`
-                        : metric.contextLabel
-                    }
-                  >
-                    <span>{metric.contextLabel}</span>
-                  </Tooltip>
-                  {metric.contextCaption ? (
-                    <span className="performance-metric-card__context-caption">
-                      {metric.contextCaption}
-                    </span>
+                  <div className="performance-metric-card__value">{metric.value}</div>
+                  {metric.status ? (
+                    <div className="performance-metric-card__status">
+                      {metric.statusVariant ? (
+                        <Badge variant={metric.statusVariant}>{metric.status}</Badge>
+                      ) : (
+                        metric.status
+                      )}
+                    </div>
                   ) : null}
-                </div>
-              ) : null}
+                  {metric.contextLabel ? (
+                    <div
+                      className={`performance-metric-card__context performance-metric-card__context--${metric.contextSemantic || "neutral"}`}
+                    >
+                      <Tooltip
+                        content={
+                          metric.contextCaption
+                            ? `${metric.contextCaption}`
+                            : metric.contextLabel
+                        }
+                      >
+                        <span>{metric.contextLabel}</span>
+                      </Tooltip>
+                      {metric.contextCaption ? (
+                        <span className="performance-metric-card__context-caption">
+                          {metric.contextCaption}
+                        </span>
+                      ) : null}
+                    </div>
+                  ) : null}
+                </button>
+              ) : (
+                <>
+                  <div className="performance-metric-card__value">{metric.value}</div>
+                  {metric.status ? (
+                    <div className="performance-metric-card__status">
+                      {metric.statusVariant ? (
+                        <Badge variant={metric.statusVariant}>{metric.status}</Badge>
+                      ) : (
+                        metric.status
+                      )}
+                    </div>
+                  ) : null}
+                  {metric.contextLabel ? (
+                    <div
+                      className={`performance-metric-card__context performance-metric-card__context--${metric.contextSemantic || "neutral"}`}
+                    >
+                      <Tooltip
+                        content={
+                          metric.contextCaption
+                            ? `${metric.contextCaption}`
+                            : metric.contextLabel
+                        }
+                      >
+                        <span>{metric.contextLabel}</span>
+                      </Tooltip>
+                      {metric.contextCaption ? (
+                        <span className="performance-metric-card__context-caption">
+                          {metric.contextCaption}
+                        </span>
+                      ) : null}
+                    </div>
+                  ) : null}
+                </>
+              )}
             </Card>
-          ))}
+            );
+          })}
         </div>
       </section>
 
@@ -205,7 +275,12 @@ export function TeamOverviewView({
               <div className="performance-trend-card__label">{trend.label}</div>
               <TrendValue trend={trend} />
               {trend.chartSeries && trend.chartSeries.length >= 2 ? (
-                <TrendMiniChart trend={trend} />
+                <TrendMiniChart
+                  trend={trend}
+                  onPointClick={(point, source) =>
+                    onOpenTrendDrilldown?.(trend, point, source)
+                  }
+                />
               ) : trend.insufficientHistory ? (
                 <TrendInsufficientHistory
                   recorded={trend.historyRecordedDays}

@@ -214,6 +214,38 @@
   justify-content: flex-start;
 }
 
+.performance-metric-card--interactive {
+  transition:
+    background 140ms var(--transition-easing),
+    box-shadow 140ms var(--transition-easing);
+}
+
+.performance-metric-card--interactive:hover {
+  background: color-mix(in srgb, var(--color-surface-secondary) 65%, var(--color-surface));
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-border) 85%, transparent);
+}
+
+.performance-metric-card__trigger {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  flex: 1;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+}
+
+.performance-metric-card__help {
+  display: inline-flex;
+  vertical-align: middle;
+}
+
 .performance-metric-card__context {
   font-size: 11px;
   line-height: 1.35;

@@ -1,5 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { TeamPerformanceView } from "../../domain/performance";
+import type { PerformanceReviewTarget } from "../../domain/performance";
 import { usePerformanceData } from "../../app/PerformanceDataContext";
 import { usePerformanceExport } from "../../app/PerformanceExportContext";
 import { TeamDeliveryRiskView } from "./TeamDeliveryRiskView";
@@ -12,18 +13,33 @@ import {
   PerformanceOverviewSkeleton,
   PerformanceTableSkeleton,
 } from "./PerformanceSkeletons";
+import { AnalyticsDrilldownDrawer } from "./AnalyticsDrilldownDrawer";
+import {
+  buildTrendDrilldownRequest,
+  metricLabelToDrilldownMetric,
+  useAnalyticsEvidence,
+  type AnalyticsDrilldownRequest,
+} from "./analyticsDrilldownModel";
+import type { MetricCardData, TrendCardData } from "../../domain/performance";
 import "./performance-dashboard.css";
 
 export interface TeamPerformanceOverviewProps {
   onOpenPerson: (personId: string) => void;
+  reviewTarget: PerformanceReviewTarget;
 }
 
 export function TeamPerformanceOverview({
   onOpenPerson,
+  reviewTarget,
 }: TeamPerformanceOverviewProps) {
   const [activeView, setActiveView] = useState<TeamPerformanceView>("overview");
-  const { viewModels, uiState } = usePerformanceData();
+  const { viewModels, uiState, data } = usePerformanceData();
   const { registerTeamView } = usePerformanceExport();
+  const [drilldownOpen, setDrilldownOpen] = useState(false);
+  const [drilldownRequest, setDrilldownRequest] =
+    useState<AnalyticsDrilldownRequest | null>(null);
+  const [summaryMetric, setSummaryMetric] = useState<MetricCardData | undefined>();
+  const returnFocusRef = useRef<HTMLElement | null>(null);
 
   const visualForceSkeleton =
     import.meta.env.VITE_VISUAL_FIXTURE === "1" &&
@@ -44,6 +60,57 @@ export function TeamPerformanceOverview({
     window.addEventListener("metrio-open-performance-tab", handler);
     return () => window.removeEventListener("metrio-open-performance-tab", handler);
   }, []);
+
+  useEffect(() => {
+    setDrilldownOpen(false);
+    setDrilldownRequest(null);
+  }, [
+    data?.reportData.params.dateFrom,
+    data?.reportData.params.dateTo,
+    data?.reportData.params.teamScope,
+    reviewTarget,
+  ]);
+
+  const evidence = useAnalyticsEvidence(
+    data,
+    reviewTarget,
+    drilldownRequest,
+    summaryMetric,
+  );
+
+  const openDrilldown = (
+    request: AnalyticsDrilldownRequest,
+    source: HTMLElement | null,
+    metric?: MetricCardData,
+  ) => {
+    returnFocusRef.current = source;
+    setSummaryMetric(metric);
+    setDrilldownRequest(request);
+    setDrilldownOpen(true);
+  };
+
+  const openMetricDrilldown = (metric: MetricCardData, source: HTMLElement) => {
+    const id = metricLabelToDrilldownMetric(metric.label);
+    if (!id) return;
+    openDrilldown(
+      {
+        metric: id,
+        comparisonLabel: metric.contextLabel,
+      },
+      source,
+      metric,
+    );
+  };
+
+  const openTrendDrilldown = (
+    trend: TrendCardData,
+    point: { date: string; value: number },
+    source: HTMLElement | null,
+  ) => {
+    const request = buildTrendDrilldownRequest(trend, point);
+    if (!request) return;
+    openDrilldown(request, source);
+  };
 
   if (visualForceSkeleton || uiState === "initial-loading") {
     return (
@@ -79,35 +146,46 @@ export function TeamPerformanceOverview({
   const secondary = viewModels.teamSecondary;
 
   return (
-    <div
-      className="performance-dashboard"
-      data-testid="performance-dashboard-ready"
-    >
-      <PerformanceStatusBanner />
-      <TeamPerformanceSubnav activeView={activeView} onChange={setActiveView} />
+    <>
+      <div
+        className="performance-dashboard"
+        data-testid="performance-dashboard-ready"
+      >
+        <PerformanceStatusBanner />
+        <TeamPerformanceSubnav activeView={activeView} onChange={setActiveView} />
 
-      {activeView === "overview" ? (
-        <TeamOverviewView
-          snapshot={snapshot}
-          onOpenPerson={onOpenPerson}
-          onViewAllRadar={() => setActiveView("radar")}
-        />
-      ) : null}
+        {activeView === "overview" ? (
+          <TeamOverviewView
+            snapshot={snapshot}
+            onOpenPerson={onOpenPerson}
+            onViewAllRadar={() => setActiveView("radar")}
+            onOpenMetricDrilldown={openMetricDrilldown}
+            onOpenTrendDrilldown={openTrendDrilldown}
+          />
+        ) : null}
 
-      {activeView === "people" ? (
-        <TeamPeopleView rows={secondary.people} onOpenPerson={onOpenPerson} />
-      ) : null}
+        {activeView === "people" ? (
+          <TeamPeopleView rows={secondary.people} onOpenPerson={onOpenPerson} />
+        ) : null}
 
-      {activeView === "radar" ? (
-        <TeamRadarView rows={secondary.radar} onOpenPerson={onOpenPerson} />
-      ) : null}
+        {activeView === "radar" ? (
+          <TeamRadarView rows={secondary.radar} onOpenPerson={onOpenPerson} />
+        ) : null}
 
-      {activeView === "delivery-risk" ? (
-        <TeamDeliveryRiskView
-          rows={secondary.deliveryRisk}
-          onOpenPerson={onOpenPerson}
-        />
-      ) : null}
-    </div>
+        {activeView === "delivery-risk" ? (
+          <TeamDeliveryRiskView
+            rows={secondary.deliveryRisk}
+            onOpenPerson={onOpenPerson}
+          />
+        ) : null}
+      </div>
+      <AnalyticsDrilldownDrawer
+        open={drilldownOpen}
+        evidence={evidence}
+        onClose={() => setDrilldownOpen(false)}
+        onOpenPerson={onOpenPerson}
+        returnFocusRef={returnFocusRef}
+      />
+    </>
   );
 }
