@@ -52,8 +52,31 @@ export function DirectorPerformanceOverview({
   }, [data?.lastUpdatedAt]);
 
   const model = useMemo(() => {
-    if (!data || !org?.ok) return null;
-    const scope = resolveAuthorizedPeopleScope(org, currentUser.person.role);
+    if (!data) return null;
+    const orgForScope: OrgResolutionResult | null =
+      org?.ok
+        ? org
+        : data.teamSnapshot.persons[0]
+          ? {
+              ok: true,
+              mode: data.teamSnapshot.mode === "team" ? "team" : "personal",
+              employee: data.teamSnapshot.persons[0].bamboo,
+              directReports: data.teamSnapshot.persons
+                .slice(1)
+                .map((person) => person.bamboo),
+              fullTeam: [],
+              missingFields: [],
+              restrictedFields: [],
+              diagnostics: [],
+              reportingSource: "unknown",
+              ambiguousSupervisorNames: 0,
+            }
+          : null;
+    if (!orgForScope?.ok) return null;
+    const scope = resolveAuthorizedPeopleScope(
+      orgForScope,
+      currentUser.person.role,
+    );
     return buildOrganizationModel({
       snapshot: data.teamSnapshot,
       params: data.reportParams,
