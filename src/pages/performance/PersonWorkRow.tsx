@@ -11,23 +11,36 @@ export interface PersonWorkRowProps {
   item: PersonWorkRowData;
 }
 
+function stageAgeLabel(item: PersonWorkRowData): string {
+  const inReview = /review/i.test(item.status);
+  return `${item.stageAge} in ${inReview ? "review" : "stage"}`;
+}
+
 export function PersonWorkRow({ item }: PersonWorkRowProps) {
+  const healthBadge =
+    item.healthVariant === "danger" ? (
+      <Badge variant="danger">Problematic</Badge>
+    ) : item.healthVariant === "warning" ? (
+      <Badge variant="warning">At risk</Badge>
+    ) : null;
+
   return (
     <div className="performance-work-row performance-work-row--person">
       <div className="performance-work-row__main">
         <div className="person-work-row__head">
           <span className="performance-work-row__key">{item.key}</span>
-          <Badge variant="neutral" className="person-work-row__status">
-            {item.status}
-          </Badge>
+          <div className="person-work-row__head-badges">
+            <Badge variant="neutral" className="person-work-row__status">
+              {item.status}
+            </Badge>
+            {healthBadge}
+          </div>
         </div>
         <div className="performance-work-row__title performance-work-row__title--wrap">
           {item.title}
         </div>
         <div className="performance-work-row__meta person-work-row__foot">
-          <span>
-            {item.stageAge} in {item.status.toLowerCase().includes("review") ? "review" : "stage"}
-          </span>
+          <span>{stageAgeLabel(item)}</span>
           <Tooltip content="Open in Jira">
             <button
               type="button"
@@ -49,15 +62,6 @@ export function PersonWorkRow({ item }: PersonWorkRowProps) {
           </Tooltip>
         </div>
       </div>
-      {item.healthVariant !== "neutral" ? (
-        <Badge variant={item.healthVariant} className="person-work-row__health">
-          {item.healthVariant === "danger"
-            ? "Problematic"
-            : item.healthVariant === "warning"
-              ? "At risk"
-              : "Active"}
-        </Badge>
-      ) : null}
     </div>
   );
 }

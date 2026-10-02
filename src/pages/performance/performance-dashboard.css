@@ -479,8 +479,15 @@
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: var(--space-1);
+  gap: 2px;
   max-width: 280px;
+}
+
+.performance-people-attention__line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
 }
 
 .performance-people-attention__key {
@@ -817,11 +824,54 @@
   color: var(--color-text-secondary);
 }
 
+.performance-metric-card__cycle-segments {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-top: var(--space-1);
+}
+
+.performance-metric-card__cycle-segment {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-2);
+  font-size: 13px;
+}
+
+.performance-metric-card__cycle-segment-label {
+  color: var(--color-text-tertiary);
+  font-weight: 500;
+}
+
+.performance-metric-card__cycle-segment-value {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
 .person-work-row__head {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: var(--space-2);
+}
+
+.person-work-row__head-badges {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.performance-work-row--attention {
+  grid-template-columns: minmax(0, 1fr);
+  width: 100%;
+}
+
+.performance-work-row--attention .performance-work-row__main {
+  width: 100%;
 }
 
 .person-work-row__foot {

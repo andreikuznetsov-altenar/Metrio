@@ -41,7 +41,7 @@ export function GroupedAttentionList({
         return (
           <div
             key={`${group.label}-${group.reason}`}
-            className="performance-work-row performance-work-row--drawer"
+            className="performance-work-row performance-work-row--drawer performance-work-row--attention"
           >
             <div className="performance-work-row__main">
               <div className="performance-attention-group__head">

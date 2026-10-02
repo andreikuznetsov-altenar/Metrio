@@ -13,6 +13,10 @@ import {
 } from "../../app/performanceAnalyticsContext";
 import type { AnalyticsEvidenceIssue } from "../../domain/analytics/analyticsEvidenceTypes";
 import type { WorkHistoryRow } from "../../domain/performance";
+import {
+  formatWorkHistoryGroupLabel,
+  formatWorkHistoryGroupSummary,
+} from "../../domain/personal/workHistoryDisplay";
 import { groupAttentionSignals, hiddenAttentionKeyCount } from "./groupAttentionSignals";
 import { AnalyticsIssueRow } from "./AnalyticsIssueRow";
 import { PersonWorkRow } from "./PersonWorkRow";
@@ -233,7 +237,7 @@ export function PersonDetailDrawer({
                   return (
                     <div
                       key={`${group.label}-${group.reason}`}
-                      className="performance-work-row performance-work-row--drawer"
+                      className="performance-work-row performance-work-row--drawer performance-work-row--attention"
                     >
                       <div className="performance-work-row__main">
                         <div className="performance-attention-group__head">
@@ -295,20 +299,22 @@ export function PersonDetailDrawer({
         label: "History",
         content: (
           <div className="person-detail-drawer__panel">
-            <div className="performance-section-head">
-              <p className="person-detail-drawer__context">{workspace.contextLine}</p>
-              <Select
-                aria-label="History period"
-                value={historyPeriod}
-                options={[
-                  { value: "week", label: "By week" },
-                  { value: "month", label: "By month" },
-                  { value: "quarter", label: "By quarter" },
-                ]}
-                onChange={(event) =>
-                  setHistoryPeriod(event.target.value as HistoryPeriod)
-                }
-              />
+            <p className="person-detail-drawer__context">{workspace.contextLine}</p>
+            <div className="person-detail-drawer__history-head">
+              <div className="person-detail-drawer__history-controls">
+                <Select
+                  aria-label="History period"
+                  value={historyPeriod}
+                  options={[
+                    { value: "week", label: "By week" },
+                    { value: "month", label: "By month" },
+                    { value: "quarter", label: "By quarter" },
+                  ]}
+                  onChange={(event) =>
+                    setHistoryPeriod(event.target.value as HistoryPeriod)
+                  }
+                />
+              </div>
             </div>
 
             {historyGroups.length === 0 ? (
@@ -322,9 +328,11 @@ export function PersonDetailDrawer({
                 return (
                   <div key={group.label} className="person-detail-drawer__history-group">
                     <h4 className="performance-subsection__title">
-                      {group.label} · {group.completedCount} completed ·{" "}
-                      {group.firstPassCount} first pass · {group.reviewReturns} returns
+                      {formatWorkHistoryGroupLabel(group.label, historyPeriod)}
                     </h4>
+                    <p className="performance-subsection__summary">
+                      {formatWorkHistoryGroupSummary(group)}
+                    </p>
                     <div className="person-detail-drawer__history-list">
                       {groupRows.map(({ row }) => (
                         <AnalyticsIssueRow
@@ -335,6 +343,7 @@ export function PersonDetailDrawer({
                             workspace.personName,
                           )}
                           showOutcome
+                          hidePerson
                         />
                       ))}
                     </div>

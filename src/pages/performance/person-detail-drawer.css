@@ -120,11 +120,17 @@
   gap: var(--space-1);
 }
 
-.performance-work-row--drawer {
-  grid-template-columns: 72px minmax(0, 1fr);
-  gap: var(--space-2);
+.performance-work-row--drawer,
+.performance-work-row--person {
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-1);
   padding: var(--space-2) var(--space-3);
-  align-items: start;
+  align-items: stretch;
+  min-height: 0;
+}
+
+.performance-work-row--drawer {
+  grid-template-columns: minmax(0, 1fr);
 }
 
 .performance-work-row__title--wrap {
@@ -158,16 +164,21 @@
 }
 
 .person-detail-drawer__trends {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-2);
 }
 
 .person-detail-drawer__trend-card {
   border: 1px solid var(--color-border);
   border-radius: var(--radius-control);
-  padding: var(--space-2) var(--space-3);
+  padding: var(--space-2);
   background: var(--color-surface-secondary);
+  min-height: 96px;
+  max-height: 110px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
 }
 
 .person-detail-drawer__trend-head {
@@ -181,10 +192,32 @@
   color: var(--color-text-secondary);
 }
 
-.person-detail-drawer__history-list {
+.person-detail-drawer__history-group .performance-subsection__title {
+  margin: 0 0 var(--space-1);
+}
+
+.person-detail-drawer__history-group .performance-subsection__summary {
+  margin: 0 0 var(--space-2);
+  font-size: 12px;
+  color: var(--color-text-tertiary);
+}
+
+.person-detail-drawer__history-head {
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
+  margin-bottom: var(--space-2);
+}
+
+.person-detail-drawer__history-controls {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-2);
+}
+
+.person-detail-drawer__history-controls .select-trigger {
+  width: min(180px, 100%);
 }
 
 .person-detail-drawer__history-group + .person-detail-drawer__history-group {

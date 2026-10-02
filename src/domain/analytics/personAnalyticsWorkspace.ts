@@ -6,7 +6,7 @@ import type { AuditIssue, ReportParams } from "../jira/types";
 import type { Person } from "../people/types";
 import { buildPlannedTimeOffRows } from "../people/plannedTimeOff";
 import {
-  avgCycleLabel,
+  avgCycleSegments,
   firstPassPercent,
   formatWorkloadLabel,
   personActiveCount,
@@ -301,7 +301,8 @@ export function buildPersonAnalyticsWorkspace(
     },
     {
       label: "Avg cycle",
-      value: avgCycleLabel(person),
+      value: avgCycleSegments(person)[0]?.value ?? "—",
+      cycleSegments: avgCycleSegments(person),
     },
   ];
 

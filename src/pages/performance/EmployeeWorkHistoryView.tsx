@@ -4,6 +4,10 @@ import { Select } from "../../components/Select/Select";
 import { SegmentedControl } from "../../components/SegmentedControl/SegmentedControl";
 import { usePerformanceExport } from "../../app/PerformanceExportContext";
 import { workHistoryEntryToEvidenceIssue } from "../../domain/analytics/personAnalyticsWorkspace";
+import {
+  formatWorkHistoryGroupLabel,
+  formatWorkHistoryGroupSummary,
+} from "../../domain/personal/workHistoryDisplay";
 import type { WorkHistoryGroupView, WorkHistoryRow } from "../../domain/performance";
 import { AnalyticsIssueRow } from "./AnalyticsIssueRow";
 
@@ -106,9 +110,11 @@ export function EmployeeWorkHistoryView({
             return (
               <div key={group.label} className="person-detail-drawer__history-group">
                 <h4 className="performance-subsection__title">
-                  {group.label} · {group.completedCount} completed ·{" "}
-                  {group.firstPassCount} first pass · {group.reviewReturns} rework
+                  {formatWorkHistoryGroupLabel(group.label, period)}
                 </h4>
+                <p className="performance-subsection__summary">
+                  {formatWorkHistoryGroupSummary(group)}
+                </p>
                 <div className="person-detail-drawer__history-list">
                   {groupRows.map(({ row }) => (
                       <AnalyticsIssueRow

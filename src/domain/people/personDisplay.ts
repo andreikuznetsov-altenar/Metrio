@@ -38,10 +38,30 @@ export function personAtRiskCount(person: Person, params: ReportParams | null): 
 export function avgCycleLabel(person: Person): string {
   const perf = person.performance;
   if (!perf) return '—';
-  const parts: string[] = [];
-  if (perf.avgProgressToReviewMs) parts.push(`P→R ${formatDuration(perf.avgProgressToReviewMs)}`);
-  if (perf.avgReviewToDoneMs) parts.push(`R→D ${formatDuration(perf.avgReviewToDoneMs)}`);
-  return parts.length ? parts.join(' · ') : '—';
+  const segments = avgCycleSegments(person);
+  if (!segments.length) return '—';
+  return segments.map((segment) => `${segment.label} ${segment.value}`).join(' · ');
+}
+
+export function avgCycleSegments(
+  person: Person,
+): { label: string; value: string }[] {
+  const perf = person.performance;
+  if (!perf) return [];
+  const segments: { label: string; value: string }[] = [];
+  if (perf.avgProgressToReviewMs) {
+    segments.push({
+      label: 'P → R',
+      value: formatDuration(perf.avgProgressToReviewMs),
+    });
+  }
+  if (perf.avgReviewToDoneMs) {
+    segments.push({
+      label: 'R → D',
+      value: formatDuration(perf.avgReviewToDoneMs),
+    });
+  }
+  return segments;
 }
 
 export function availabilityTagVariant(

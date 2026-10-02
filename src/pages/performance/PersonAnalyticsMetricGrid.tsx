@@ -11,7 +11,29 @@ const METRIC_HELP: Record<string, string> = {
   "First pass": performanceHelp.firstPass,
   Completed: performanceHelp.completed,
   Backflows: performanceHelp.backflows,
+  "Avg cycle":
+    "Average segment durations for active cycles: Progress → Review (P → R) and Review → Done (R → D).",
 };
+
+function metricValueBlock(metric: MetricCardData) {
+  if (metric.cycleSegments?.length) {
+    return (
+      <div className="performance-metric-card__cycle-segments">
+        {metric.cycleSegments.map((segment) => (
+          <div key={segment.label} className="performance-metric-card__cycle-segment">
+            <span className="performance-metric-card__cycle-segment-label">
+              {segment.label}
+            </span>
+            <span className="performance-metric-card__cycle-segment-value">
+              {segment.value}
+            </span>
+          </div>
+        ))}
+      </div>
+    );
+  }
+  return <div className="performance-metric-card__value">{metric.value}</div>;
+}
 
 const DRILLDOWN_LABELS = new Set(["Efficiency", "First pass", "Completed", "Backflows"]);
 
@@ -59,7 +81,7 @@ export function PersonAnalyticsMetricGrid({
                 aria-label={ariaLabel}
                 onClick={(event) => onOpenMetric(metric, event.currentTarget)}
               >
-                <div className="performance-metric-card__value">{metric.value}</div>
+                {metricValueBlock(metric)}
                 {metric.contextLabel ? (
                   <div
                     className={`performance-metric-card__context performance-metric-card__context--${metric.contextSemantic || "neutral"}`}
@@ -86,7 +108,7 @@ export function PersonAnalyticsMetricGrid({
               </button>
             ) : (
               <>
-                <div className="performance-metric-card__value">{metric.value}</div>
+                {metricValueBlock(metric)}
                 {metric.contextLabel ? (
                   <div
                     className={`performance-metric-card__context performance-metric-card__context--${metric.contextSemantic || "neutral"}`}
