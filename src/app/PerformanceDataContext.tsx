@@ -10,6 +10,7 @@ import {
 } from "react";
 import type { PerformanceReviewTarget } from "../domain/performance";
 import {
+  buildPerformanceDatasetKey,
   dateRangeKeyFromPerformanceRange,
   type PerformanceDateRange,
 } from "../domain/performance/performanceDateRange";
@@ -79,7 +80,10 @@ function errorMessageFromError(error: unknown): string {
 }
 
 export interface PerformanceDataProviderProps {
+  /** When false, skip fetch lifecycle (disconnected / gated shell). */
   enabled: boolean;
+  /** Visible loading overlay only on Performance surfaces. */
+  showLoadingOverlay?: boolean;
   dateRange: PerformanceDateRange;
   reviewTarget: PerformanceReviewTarget;
   audience: PerformanceAudience;
@@ -88,8 +92,11 @@ export interface PerformanceDataProviderProps {
   children: ReactNode;
 }
 
+type LoadMode = "initial" | "refresh" | "silent";
+
 export function PerformanceDataProvider({
   enabled,
+  showLoadingOverlay = true,
   dateRange,
   reviewTarget,
   audience,
@@ -111,6 +118,8 @@ export function PerformanceDataProvider({
   const viewModelsRef = useRef(viewModels);
   const managerTeamTrayRef = useRef(managerTeamTray);
   const requestSeqRef = useRef(0);
+  const initialLoadDoneRef = useRef(false);
+  const datasetKeyRef = useRef<string | null>(null);
   dataRef.current = data;
   viewModelsRef.current = viewModels;
   managerTeamTrayRef.current = managerTeamTray;
@@ -120,7 +129,7 @@ export function PerformanceDataProvider({
   }, []);
 
   const contentLoadingActive =
-    enabled && (status === "loading" || status === "refreshing");
+    showLoadingOverlay && enabled && (status === "loading" || status === "refreshing");
   const contentOverlayVisible = useMinimumVisibleDuration(
     contentLoadingActive,
     PERFORMANCE_OVERLAY_MIN_MS,
@@ -143,15 +152,18 @@ export function PerformanceDataProvider({
   }, [contentLoadingActive, dateRange, reviewTarget, audience]);
 
   const load = useCallback(
-    async (mode: "initial" | "refresh") => {
+    async (mode: LoadMode) => {
       if (!enabled) {
         return;
       }
       const requestId = ++requestSeqRef.current;
       const hasData = dataRef.current != null;
-      setStatus(hasData ? "refreshing" : "loading");
-      if (mode === "refresh" && hasData) {
-        setStale(false);
+      const showOverlay = mode !== "silent";
+      if (showOverlay) {
+        setStatus(hasData ? "refreshing" : "loading");
+        if (mode === "refresh" && hasData) {
+          setStale(false);
+        }
       }
       setErrorMessage(null);
 
@@ -195,7 +207,7 @@ export function PerformanceDataProvider({
             jira: /jira/i.test(message),
             bamboo: /bamboo/i.test(message),
           });
-        } else {
+        } else if (showOverlay) {
           setStatus("error");
         }
       }
@@ -209,21 +221,46 @@ export function PerformanceDataProvider({
     coalescedLoadRef.current = createCoalescedRefresh(() => load("refresh"));
   }, [load]);
 
+  const coalescedSilentRef = useRef(createCoalescedRefresh(() => load("silent")));
+
+  useEffect(() => {
+    coalescedSilentRef.current = createCoalescedRefresh(() => load("silent"));
+  }, [load]);
+
   const refresh = useCallback(async () => {
     await coalescedLoadRef.current();
   }, []);
 
+  const datasetKey = useMemo(
+    () =>
+      buildPerformanceDatasetKey({
+        dateRange,
+        reviewTarget,
+        audience,
+        selfPersonId,
+      }),
+    [audience, dateRange, reviewTarget, selfPersonId],
+  );
+
   useEffect(() => {
     if (!enabled) {
-      setStatus("idle");
       return;
     }
-    if (dataRef.current) {
-      void coalescedLoadRef.current();
-    } else {
+
+    const keyChanged = datasetKeyRef.current !== datasetKey;
+
+    if (!initialLoadDoneRef.current) {
+      initialLoadDoneRef.current = true;
+      datasetKeyRef.current = datasetKey;
       void load("initial");
+      return;
     }
-  }, [enabled, dateRange, reviewTarget, audience, selfPersonId, load]);
+
+    if (keyChanged) {
+      datasetKeyRef.current = datasetKey;
+      void coalescedLoadRef.current();
+    }
+  }, [datasetKey, enabled, load]);
 
   useEffect(() => {
     if (!enabled) {
@@ -234,7 +271,9 @@ export function PerformanceDataProvider({
 
     void (async () => {
       try {
-        const unsub = await registerCoalescedBackgroundRefresh(refresh);
+        const unsub = await registerCoalescedBackgroundRefresh(async () => {
+          await coalescedSilentRef.current();
+        });
         if (disposed) {
           unsub();
           return;
@@ -249,7 +288,7 @@ export function PerformanceDataProvider({
       disposed = true;
       unregister?.();
     };
-  }, [enabled, refresh]);
+  }, [enabled]);
 
   const loadingMessage =
     status === "loading" || status === "refreshing"

@@ -199,7 +199,7 @@ describe("PerformanceDataContext loading overlay", () => {
         },
       },
     ],
-    ["quarter preset", { dateRange: createPerformanceDateRange("quarter") }],
+    ["3m preset", { dateRange: createPerformanceDateRange("3m") }],
     ["review target", { reviewTarget: "sprint" as const }],
   ] as const)("shows overlay when %s changes", async (_label, change) => {
     const initialRange = createPerformanceDateRange("30d");
@@ -315,7 +315,7 @@ describe("PerformanceDataContext loading overlay", () => {
 
     mutableProviderProps.dateRange = createPerformanceDateRange("7d");
     rerender();
-    mutableProviderProps.dateRange = createPerformanceDateRange("quarter");
+    mutableProviderProps.dateRange = createPerformanceDateRange("3m");
     rerender();
 
     await waitFor(() => expect(pending.length).toBeGreaterThanOrEqual(2));

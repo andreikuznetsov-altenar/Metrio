@@ -73,28 +73,28 @@ export function AppLayout() {
     setReviewTarget(defaultReviewTarget(currentUser.person.role));
   }, [currentUser.person.id, currentUser.person.role]);
 
-  const performanceDataEnabled =
-    !settingsOpen && activeRoute === "performance";
+  const performanceAudience: "team" | "employee" =
+    isManagerRole(currentUser.person.role) && currentUser.team ? "team" : "employee";
 
-  const isEmployee = currentUser.person.role === "employee";
-  const showTeamPerformance =
-    performanceDataEnabled &&
-    isManagerRole(currentUser.person.role) &&
-    Boolean(currentUser.team);
+  const showTeamPerformanceToolbar =
+    isManagerRole(currentUser.person.role) && Boolean(currentUser.team);
+
+  const performanceSurfaceActive = activeRoute === "performance" && !settingsOpen;
 
   return (
     <>
       <RuntimeShellEffects />
       <PerformanceDataProvider
-        enabled={performanceDataEnabled}
+        enabled
+        showLoadingOverlay={performanceSurfaceActive}
         dateRange={dateRange}
         reviewTarget={reviewTarget}
-        audience={showTeamPerformance ? "team" : "employee"}
+        audience={performanceAudience}
         selfPersonId={currentUser.person.id}
-        managerTeamTray={showTeamPerformance}
+        managerTeamTray={performanceAudience === "team"}
       >
         <PerformanceExportProvider
-          audience={showTeamPerformance ? "team" : "employee"}
+          audience={performanceAudience}
           selfPersonId={currentUser.person.id}
         >
           <AppLayoutShell
@@ -108,9 +108,17 @@ export function AppLayout() {
           setDateRange={setDateRange}
           reviewTarget={reviewTarget}
           setReviewTarget={setReviewTarget}
-          performanceDataEnabled={performanceDataEnabled}
-          showTeamPerformance={showTeamPerformance}
-          showEmployeePerformance={performanceDataEnabled && isEmployee}
+          performanceDataEnabled={activeRoute === "performance" && !settingsOpen}
+          showTeamPerformance={
+            activeRoute === "performance" &&
+            !settingsOpen &&
+            showTeamPerformanceToolbar
+          }
+          showEmployeePerformance={
+            activeRoute === "performance" &&
+            !settingsOpen &&
+            currentUser.person.role === "employee"
+          }
         />
         </PerformanceExportProvider>
       </PerformanceDataProvider>
