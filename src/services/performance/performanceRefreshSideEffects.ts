@@ -1,61 +1,60 @@
-import { updateTrayFromSnapshot } from "../../platform/tray";
 import { processNotificationTransitions } from "../../platform/notifications";
 import { processIntegrationNotificationTransitions } from "../../platform/integrationNotificationTransitions";
 import { loadPreferences, savePreferences } from "../../platform/preferences";
-import type { TeamSnapshot } from "../../domain/people/types";
 import type { PerformanceFetchResult } from "./performanceTypes";
+import { getOperationalIssues } from "../../domain/people/ownedIssues";
+import {
+  processJiraAssignmentNotifications,
+  readJiraAssignmentState,
+} from "../../platform/jiraAssignmentNotifications";
+import {
+  pushTrayFromContext,
+  trayContextFromSelfPerson,
+} from "../../platform/trayActionCenter";
 
 export interface PerformanceSideEffectOptions {
-  /** When true, tray copy reflects manager team radar; otherwise personal My Week. */
-  managerTeamTray: boolean;
+  selfPersonId: string;
 }
 
-function traySnapshot(
+function resolveSelfPerson(
   result: PerformanceFetchResult,
-  managerTeamTray: boolean,
-): TeamSnapshot {
-  if (managerTeamTray && result.teamSnapshot.mode === "team") {
-    return result.teamSnapshot;
-  }
-  if (
-    result.teamSnapshot.mode === "personal" ||
-    result.teamSnapshot.mode === "personal_limited"
-  ) {
-    return result.teamSnapshot;
-  }
-  const self =
-    result.teamSnapshot.persons.find(
-      (person) => person.id === result.teamSnapshot.persons[0]?.id,
-    ) ?? result.teamSnapshot.persons[0];
-  if (!self) {
-    return result.teamSnapshot;
-  }
-  return {
-    mode: "personal",
-    persons: [self],
-    summary: result.teamSnapshot.summary,
-  };
+  selfPersonId: string,
+) {
+  return (
+    result.teamSnapshot.persons.find((person) => person.id === selfPersonId) ??
+    result.teamSnapshot.persons[0]
+  );
 }
 
 export async function applyPerformanceRefreshSideEffects(
   result: PerformanceFetchResult,
   options: PerformanceSideEffectOptions,
 ): Promise<void> {
-  const snapshot = traySnapshot(result, options.managerTeamTray);
   const params = result.reportParams;
+  const now = result.lastUpdatedAt || new Date().toISOString();
+  const self = resolveSelfPerson(result, options.selfPersonId);
 
-  try {
-    await updateTrayFromSnapshot(snapshot, params);
-  } catch {
-    // Desktop host only.
+  let prefs = await loadPreferences();
+
+  if (self && params) {
+    const issues = getOperationalIssues(self);
+    prefs = processJiraAssignmentNotifications(issues, prefs, now).nextPrefs;
+    const assignmentState = readJiraAssignmentState(prefs);
+    await pushTrayFromContext(
+      trayContextFromSelfPerson(self, params, assignmentState),
+    );
+  } else {
+    await pushTrayFromContext({
+      assignmentState: readJiraAssignmentState(prefs),
+      activeTaskCount: 0,
+      bambooActions: [],
+    });
   }
 
-  const prefs = await loadPreferences();
-  const now = result.lastUpdatedAt || new Date().toISOString();
-  let nextPrefs = prefs;
+  const notificationPersons = self ? [self] : [];
   try {
-    nextPrefs = await processNotificationTransitions(
-      snapshot.persons,
+    prefs = await processNotificationTransitions(
+      notificationPersons,
       prefs,
       params,
     );
@@ -63,15 +62,15 @@ export async function applyPerformanceRefreshSideEffects(
     // Notification plugin unavailable (web dev).
   }
 
-  nextPrefs = processIntegrationNotificationTransitions(nextPrefs, {
+  prefs = processIntegrationNotificationTransitions(prefs, {
     jiraStale: false,
     bambooStale: false,
   });
 
   await savePreferences({
-    ...nextPrefs,
+    ...prefs,
     sync: {
-      ...nextPrefs.sync,
+      ...prefs.sync,
       lastJiraSync: now,
       lastBambooSync: now,
       lastSnapshotAt: now,

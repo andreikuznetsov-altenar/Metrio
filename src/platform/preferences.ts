@@ -7,6 +7,7 @@ import {
 } from '../domain/workload/workloadEngine';
 import { applyProductConfig } from '../config/product';
 import type { JiraEmailVerification } from '../domain/setup/jiraIdentity';
+import type { JiraAssignmentState } from '../domain/jira/jiraAssignmentTracking';
 
 export const PREFERENCES_SCHEMA_VERSION = 6;
 
@@ -29,6 +30,7 @@ export interface NotificationState {
   workloadLevels: Record<string, string>;
   vacationNotified: Record<string, string>;
   problematicCounts: Record<string, number>;
+  jiraAssignment?: JiraAssignmentState;
   integrationHealth?: {
     jira?: "healthy" | "unhealthy";
     bamboo?: "healthy" | "unhealthy";
@@ -63,6 +65,7 @@ export interface AppPreferences {
     returns: boolean;
     workloadAlerts: boolean;
     problematicTaskAlerts: boolean;
+    jiraAssignmentAlerts: boolean;
   };
   general: {
     keepRunningInTray: boolean;
@@ -128,6 +131,7 @@ export const DEFAULT_PREFERENCES: AppPreferences = {
     returns: true,
     workloadAlerts: true,
     problematicTaskAlerts: true,
+    jiraAssignmentAlerts: true,
   },
   general: {
     keepRunningInTray: true,

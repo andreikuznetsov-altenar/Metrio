@@ -192,7 +192,7 @@ export function PerformanceDataProvider({
         setStale(false);
         setErrorMessage(null);
         await applyPerformanceRefreshSideEffects(next, {
-          managerTeamTray: managerTeamTrayRef.current,
+          selfPersonId,
         });
       } catch (error) {
         if (!isLatestPerformanceRequest(requestId, requestSeqRef.current)) {

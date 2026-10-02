@@ -217,6 +217,9 @@ export function nativeToggleForType(
       return "returns";
     case "task_attention":
       return "problematicTaskAlerts";
+    case "jira_assignment":
+    case "jira_reassignment":
+      return "jiraAssignmentAlerts";
     default:
       return null;
   }

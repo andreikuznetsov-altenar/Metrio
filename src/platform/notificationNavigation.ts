@@ -4,6 +4,7 @@ import { buildJiraIssueBrowseUrl } from "./jiraIssueUrl";
 import { openExternalUrl } from "./openExternal";
 import type { AppPreferences } from "./preferences";
 import { resolveJiraBaseUrl } from "../config/product";
+import { acknowledgeTrayJiraIssue } from "./trayActionCenter";
 
 export async function openNotificationTarget(
   target: NotificationTarget | undefined,
@@ -30,6 +31,7 @@ export async function openNotificationTarget(
     const baseUrl = resolveJiraBaseUrl(prefs);
     const url = buildJiraIssueBrowseUrl(baseUrl, target.issueKey);
     await openExternalUrl(url);
+    await acknowledgeTrayJiraIssue(target.issueKey);
     return;
   }
 

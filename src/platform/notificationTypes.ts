@@ -5,7 +5,11 @@ export type NotificationEventType =
   | "vacation_reminder"
   | "vacation_return"
   | "availability_change"
-  | "integration_problem";
+  | "integration_problem"
+  | "jira_assignment"
+  | "jira_reassignment"
+  | "bamboo_onboarding_action"
+  | "bamboo_document_action";
 
 export type NotificationTarget =
   | { kind: "person"; personId: string }
@@ -38,7 +42,11 @@ export type NotificationFilterId =
   | "time_off"
   | "system";
 
-const TASK_TYPES: NotificationEventType[] = ["task_attention"];
+const TASK_TYPES: NotificationEventType[] = [
+  "task_attention",
+  "jira_assignment",
+  "jira_reassignment",
+];
 const PEOPLE_TYPES: NotificationEventType[] = [
   "workload_change",
   "availability_change",
@@ -48,7 +56,11 @@ const TIME_OFF_TYPES: NotificationEventType[] = [
   "vacation_reminder",
   "vacation_return",
 ];
-const SYSTEM_TYPES: NotificationEventType[] = ["integration_problem"];
+const SYSTEM_TYPES: NotificationEventType[] = [
+  "integration_problem",
+  "bamboo_onboarding_action",
+  "bamboo_document_action",
+];
 
 export function notificationMatchesFilter(
   event: NotificationEvent,
@@ -68,6 +80,10 @@ export function severityForNotificationType(
     case "task_attention":
     case "workload_change":
     case "integration_problem":
+    case "jira_assignment":
+    case "jira_reassignment":
+    case "bamboo_onboarding_action":
+    case "bamboo_document_action":
       return "warning";
     case "vacation_return":
       return "success";
