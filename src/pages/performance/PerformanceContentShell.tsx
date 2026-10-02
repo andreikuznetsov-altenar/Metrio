@@ -10,7 +10,8 @@ export interface PerformanceContentShellProps {
 export function PerformanceContentShell({
   children,
 }: PerformanceContentShellProps) {
-  const { contentOverlayVisible, contentLoadingActive } = usePerformanceData();
+  const { contentOverlayVisible, contentLoadingActive, longLoadingMessage } =
+    usePerformanceData();
 
   const visualForceOverlay =
     import.meta.env.VITE_VISUAL_FIXTURE === "1" &&
@@ -30,7 +31,10 @@ export function PerformanceContentShell({
         {overlayVisible ? "Loading performance data" : ""}
       </span>
       {children}
-      <ContentLoadingOverlay visible={overlayVisible} />
+      <ContentLoadingOverlay
+        visible={overlayVisible}
+        label={longLoadingMessage ?? "Loading performance data..."}
+      />
     </div>
   );
 }

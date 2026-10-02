@@ -1,30 +1,54 @@
+import { Button } from "../../components/Button/Button";
 import { usePerformanceData } from "../../app/PerformanceDataContext";
 
 export function PerformanceStatusBanner() {
-  const { status, loadingMessage, errorMessage, stale, viewModels, data } =
-    usePerformanceData();
+  const {
+    status,
+    loadingMessage,
+    errorMessage,
+    stale,
+    viewModels,
+    data,
+    refresh,
+    uiState,
+    longLoadingMessage,
+  } = usePerformanceData();
 
-  if (status === "loading" && !viewModels) {
-    return (
-      <div className="performance-empty performance-status-banner" role="status">
-        {loadingMessage || "Fetching team data…"}
-      </div>
-    );
+  if (uiState === "initial-loading") {
+    return null;
   }
 
-  if (status === "error" && !viewModels) {
+  if (uiState === "error" && !viewModels) {
     return (
       <div
         className="performance-empty performance-status-banner performance-status-banner--error"
         role="alert"
       >
-        {errorMessage || "Couldn't refresh performance data."}
+        <p>{errorMessage || "Couldn't load performance data."}</p>
+        <Button type="button" variant="secondary" onClick={() => void refresh()}>
+          Retry
+        </Button>
+      </div>
+    );
+  }
+
+  if (status === "loading" && !viewModels && loadingMessage) {
+    return (
+      <div className="performance-empty performance-status-banner" role="status">
+        {longLoadingMessage || loadingMessage}
       </div>
     );
   }
 
   const messages: string[] = [];
   if (stale && errorMessage) {
+    messages.push(
+      "Couldn't refresh data. Showing the last successful result.",
+    );
+    if (errorMessage && !messages.includes(errorMessage)) {
+      messages.push(errorMessage);
+    }
+  } else if (errorMessage && stale) {
     messages.push(errorMessage);
   }
   if (viewModels?.statusMessage) {
@@ -44,7 +68,12 @@ export function PerformanceStatusBanner() {
       className="performance-empty performance-status-banner performance-status-banner--partial"
       role="status"
     >
-      {messages.join(" ")}
+      <p>{messages.join(" ")}</p>
+      {stale ? (
+        <Button type="button" variant="secondary" onClick={() => void refresh()}>
+          Retry
+        </Button>
+      ) : null}
     </div>
   );
 }

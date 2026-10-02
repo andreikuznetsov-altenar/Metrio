@@ -18,6 +18,10 @@ import {
   isLatestPerformanceRequest,
   PERFORMANCE_OVERLAY_MIN_MS,
 } from "./performanceLoadGuard";
+import {
+  derivePerformanceUiState,
+  type PerformanceUiState,
+} from "./performanceUiState";
 import { useMinimumVisibleDuration } from "./useMinimumVisibleDuration";
 import { fetchPerformanceData } from "../services/performance/performanceDataService";
 import {
@@ -52,6 +56,8 @@ export interface PerformanceDataContextValue {
   contentLoadingActive: boolean;
   contentOverlayVisible: boolean;
   performanceControlsDisabled: boolean;
+  uiState: PerformanceUiState;
+  longLoadingMessage: string | null;
 }
 
 const PerformanceDataContext =
@@ -94,6 +100,9 @@ export function PerformanceDataProvider({
   const [status, setStatus] = useState<PerformanceLoadStatus>("idle");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [stale, setStale] = useState(false);
+  const [longLoadingMessage, setLongLoadingMessage] = useState<string | null>(
+    null,
+  );
   const dataRef = useRef(data);
   const viewModelsRef = useRef(viewModels);
   const managerTeamTrayRef = useRef(managerTeamTray);
@@ -110,6 +119,20 @@ export function PerformanceDataProvider({
   );
   const performanceControlsDisabled =
     contentLoadingActive || contentOverlayVisible;
+
+  const uiState = derivePerformanceUiState({ status, viewModels, stale });
+
+  useEffect(() => {
+    if (!contentLoadingActive) {
+      setLongLoadingMessage(null);
+      return;
+    }
+    setLongLoadingMessage(null);
+    const timer = window.setTimeout(() => {
+      setLongLoadingMessage("Still loading Jira and Bamboo data…");
+    }, 5000);
+    return () => window.clearTimeout(timer);
+  }, [contentLoadingActive, dateRange, reviewTarget, audience]);
 
   const load = useCallback(
     async (mode: "initial" | "refresh") => {
@@ -238,6 +261,8 @@ export function PerformanceDataProvider({
       contentLoadingActive,
       contentOverlayVisible,
       performanceControlsDisabled,
+      uiState,
+      longLoadingMessage,
     }),
     [
       status,
@@ -251,6 +276,8 @@ export function PerformanceDataProvider({
       contentLoadingActive,
       contentOverlayVisible,
       performanceControlsDisabled,
+      uiState,
+      longLoadingMessage,
     ],
   );
 
