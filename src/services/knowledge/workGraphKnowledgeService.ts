@@ -87,6 +87,9 @@ export async function resolveIssueKnowledgeBatch(input: {
 
   const keysNeedingSearch = input.issueKeys.filter((key) => {
     const existing = byIssue.get(key) ?? [];
+    if (existing.some((link) => link.confidence === "explicit_link")) {
+      return false;
+    }
     return existing.length < 3;
   });
 
