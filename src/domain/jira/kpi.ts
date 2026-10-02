@@ -1,8 +1,8 @@
-import { buildCompletedCyclesFromSegments, getCycleSegments } from './cycles';
+import { getCycleSegments } from './cycles';
 import {
-  isCompletedCycleInReportingPeriod,
   isHoldSegmentInReportingPeriod,
 } from './cycleKpi';
+import { collectReportingPeriodCycles } from '../analytics/kpiCycleEvidence';
 import type { AuditIssue, KpiData, ReportParams } from './types';
 
 function averageMs(items: number[]): number | null {
@@ -12,14 +12,14 @@ function averageMs(items: number[]): number | null {
 }
 
 /** Port of legacy calculateEfficiencyIndex_ */
-export function calculateEfficiencyIndex(data: {
+export function getEfficiencyScoreBreakdown(data: {
   startedCount: number;
   completedCount: number;
   firstPassAcceptedCount: number;
   backflowCount: number;
   avgProgressToReviewMs: number | null;
   targetReviewDays: number;
-}): number {
+}) {
   const startedCount = Number(data.startedCount || 0);
   const completedCount = Number(data.completedCount || 0);
   const firstPassAcceptedCount = Number(data.firstPassAcceptedCount || 0);
@@ -28,7 +28,18 @@ export function calculateEfficiencyIndex(data: {
   const targetReviewHours = targetReviewDays * 24;
 
   if (startedCount <= 0 || completedCount <= 0) {
-    return 0;
+    return {
+      completionScore: 0,
+      firstPassScore: 0,
+      speedScore: 0,
+      backflowPenalty: 0,
+      total: 0,
+      completionRate: 0,
+      firstPassRate: 0,
+      backflowRate: 0,
+      progressToReviewHours: null as number | null,
+      targetReviewHours,
+    };
   }
 
   const completionRate = Math.min(1, completedCount / Math.max(startedCount, 1));
@@ -59,9 +70,31 @@ export function calculateEfficiencyIndex(data: {
   }
 
   const backflowPenalty = Math.min(20, Math.round(backflowRate * 20));
-  const rawScore = completionScore + firstPassScore + speedScore - backflowPenalty;
+  const total = Math.max(0, Math.min(100, Math.round(completionScore + firstPassScore + speedScore - backflowPenalty)));
 
-  return Math.max(0, Math.min(100, Math.round(rawScore)));
+  return {
+    completionScore,
+    firstPassScore,
+    speedScore,
+    backflowPenalty,
+    total,
+    completionRate,
+    firstPassRate,
+    backflowRate,
+    progressToReviewHours,
+    targetReviewHours,
+  };
+}
+
+export function calculateEfficiencyIndex(data: {
+  startedCount: number;
+  completedCount: number;
+  firstPassAcceptedCount: number;
+  backflowCount: number;
+  avgProgressToReviewMs: number | null;
+  targetReviewDays: number;
+}): number {
+  return getEfficiencyScoreBreakdown(data).total;
 }
 
 export function getEfficiencyStatus(score: number): string {
@@ -94,8 +127,8 @@ export function buildKpiFromIssues(
 
   (issues || []).forEach((issue) => {
     const segments = getCycleSegments(issue, params);
-    const completedCycles = buildCompletedCyclesFromSegments(segments).filter((cycle) =>
-      isCompletedCycleInReportingPeriod(cycle, params),
+    const completedCycles = collectReportingPeriodCycles([issue], params).map(
+      (record) => record.cycle,
     );
 
     segments.forEach((segment) => {
