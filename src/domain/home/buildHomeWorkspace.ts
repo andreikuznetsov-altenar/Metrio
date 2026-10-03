@@ -87,7 +87,7 @@ export function buildHomeWorkspace(input: BuildHomeWorkspaceInput): HomeWorkspac
   const now = input.now ?? new Date();
   const personal = buildPersonalSection(input, now);
   const team =
-    input.homeRole === "manager" && input.teamSnapshot
+    input.homeRole !== "employee" && input.teamSnapshot
       ? buildTeamSection(input, now)
       : undefined;
   const organization =

@@ -25,7 +25,10 @@ import { buildOrganizationModel } from "../../domain/organization/buildOrganizat
 import { summarizeFeedbackActions } from "../../domain/feedback/feedbackActionSummary";
 import { syncFeedbackInboxFromSummary } from "../../platform/feedbackInboxSync";
 import type { OrgResolutionResult } from "../../services/bamboo/orgResolver";
-import { loadPreferences } from "../../platform/preferences";
+import {
+  loadPreferences,
+  readVisualPreferencesSync,
+} from "../../platform/preferences";
 import { openExternalUrl } from "../../platform/openExternal";
 import { resolveJiraBaseUrl } from "../../config/product";
 import { buildJiraIssueBrowseUrl } from "../../platform/jiraIssueUrl";
@@ -58,13 +61,16 @@ import { syncOnboardingChecklistInbox } from "../../platform/onboardingChecklist
 import { listNotificationEvents } from "../../platform/notificationEvents";
 import { useUpcomingMeetings } from "../../hooks/useUpcomingMeetings";
 import { HomeUpcomingMeetings } from "./HomeUpcomingMeetings";
-import type { DateRangeKey } from "../../domain/performance";
+import type {
+  DateRangeKey,
+  TeamPerformanceSnapshot,
+} from "../../domain/performance";
 import "../performance/performance-dashboard.css";
 import "./home.css";
 
 export function HomePage() {
   const { currentUser } = useCurrentUser();
-  const { data, viewModels, uiState } = usePerformanceData();
+  const { data, viewModels, uiState, errorMessage } = usePerformanceData();
   const analytics = useOptionalPerformanceAnalytics();
   const surveyData = useFeedbackSurveyStore((state) => state.data);
   const feedbackSummary = useMemo(
@@ -78,7 +84,9 @@ export function HomePage() {
   const assignmentState = useJiraAssignmentState(data?.lastUpdatedAt);
   const resourceLibrary = useResourceLibrary();
   const [org, setOrg] = useState<OrgResolutionResult | null>(null);
-  const [calendarConnected, setCalendarConnected] = useState(false);
+  const [calendarConnected, setCalendarConnected] = useState(
+    () => readVisualPreferencesSync()?.google.calendarConnected ?? false,
+  );
   const [homeJiraBaseUrl, setHomeJiraBaseUrl] = useState("");
 
   useEffect(() => {
@@ -140,9 +148,37 @@ export function HomePage() {
     [graph.knowledgeByIssue, graph.knowledgeByProject],
   );
 
-  const selfPerson =
-    data?.teamSnapshot.persons.find((p) => p.id === currentUser.person.id) ??
-    data?.teamSnapshot.persons[0];
+  const selfPerson = useMemo(() => {
+    const persons = data?.teamSnapshot?.persons;
+    if (!persons?.length) return undefined;
+    return (
+      persons.find((p) => p.id === currentUser.person.id) ?? persons[0]
+    );
+  }, [data?.teamSnapshot?.persons, currentUser.person.id]);
+
+  const effectiveTeamSnapshot = useMemo((): TeamPerformanceSnapshot | null => {
+    if (teamSnapshot) return teamSnapshot;
+    if (homeRole === "employee") return null;
+    const persons = data?.teamSnapshot?.persons;
+    if (!persons?.length) return null;
+    return {
+      directReportIds: persons
+        .filter((p) => p.id !== currentUser.person.id)
+        .map((p) => p.id),
+      summary: [],
+      attention: [],
+      attentionTotalCount: 0,
+      trends: [],
+      workload: [],
+      timeOff: [],
+      personDetails: {},
+    };
+  }, [
+    teamSnapshot,
+    homeRole,
+    data?.teamSnapshot?.persons,
+    currentUser.person.id,
+  ]);
 
   const { rules: operationalRules } = useOperationalRules();
   const { digest: digestModel } = useDigestPreferences();
@@ -245,7 +281,7 @@ export function HomePage() {
       selfDisplayName: selfPerson.bamboo.displayName,
       workspace: workspace ?? null,
       employeeSnapshot: employeeSnapshot ?? null,
-      teamSnapshot: homeRole !== "employee" ? teamSnapshot ?? null : null,
+      teamSnapshot: homeRole !== "employee" ? effectiveTeamSnapshot : null,
       deliveryRisk: homeRole !== "employee" ? deliveryRisk : [],
       assignmentState,
       surveyData,
@@ -253,7 +289,7 @@ export function HomePage() {
       knowledgeLinks,
       knowledgeStatus: graph.status,
       reportParams: data?.reportParams,
-      teamPersons: data?.teamSnapshot.persons ?? [],
+      teamPersons: data?.teamSnapshot?.persons ?? [],
       operationalRules,
       personalOnboarding: selfOnboarding,
       teamOnboardingProgress,
@@ -266,7 +302,7 @@ export function HomePage() {
     currentUser.person.id,
     workspace,
     employeeSnapshot,
-    teamSnapshot,
+    effectiveTeamSnapshot,
     deliveryRisk,
     assignmentState,
     surveyData,
@@ -274,7 +310,7 @@ export function HomePage() {
     knowledgeLinks,
     graph.status,
     data?.reportParams,
-    data?.teamSnapshot.persons,
+    data?.teamSnapshot?.persons,
     operationalRules,
     selfOnboarding,
     teamOnboardingProgress,
@@ -305,17 +341,33 @@ export function HomePage() {
       <div className="home-page" data-testid="home-loading">
         <PerformanceStatusBanner />
         <div className="home-skeleton" aria-busy="true" />
+        <p className="home-empty-state__hint">Loading your workspace…</p>
       </div>
     );
   }
 
   if (!workspaceModel) {
     return (
-      <div className="home-page">
+      <div className="home-page" data-testid="home-blocked">
         <PerformanceStatusBanner />
-        <p className="performance-inline-empty" role="status">
-          Home will appear when your work data is ready.
-        </p>
+        <section className="home-empty-state" role="status">
+          {uiState === "error" ? (
+            <>
+              <h2 className="home-empty-state__title">Couldn’t load home data</h2>
+              <p className="home-empty-state__body">
+                {errorMessage || "Performance data is unavailable."}
+              </p>
+            </>
+          ) : (
+            <>
+              <h2 className="home-empty-state__title">Waiting for your profile</h2>
+              <p className="home-empty-state__body">
+                Home needs your person record from the latest Jira performance
+                sync. Check connections and refresh Performance data.
+              </p>
+            </>
+          )}
+        </section>
       </div>
     );
   }

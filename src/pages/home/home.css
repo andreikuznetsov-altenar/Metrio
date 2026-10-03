@@ -1,7 +1,35 @@
 .home-page {
-  max-width: 1120px;
+  max-width: 1320px;
   margin: 0 auto;
   padding: var(--space-4) var(--space-5) var(--space-6);
+}
+
+.home-empty-state {
+  margin-top: var(--space-6);
+  padding: var(--space-5);
+  border-radius: var(--radius-card);
+  border: 1px solid var(--color-border-subtle);
+  background: var(--color-surface-secondary);
+  max-width: 36rem;
+}
+
+.home-empty-state__title {
+  margin: 0 0 var(--space-2);
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.home-empty-state__body,
+.home-empty-state__hint {
+  margin: 0;
+  font-size: 13px;
+  color: var(--color-text-secondary);
+  line-height: 1.45;
+}
+
+.home-empty-state__hint {
+  margin-top: var(--space-3);
 }
 
 .home-header {

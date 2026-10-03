@@ -343,17 +343,22 @@ function isVisualFixtureBuild(): boolean {
   return import.meta.env.VITE_VISUAL_FIXTURE === "1";
 }
 
+/** Sync read for visual fixture boot (e.g. Home calendar gate on first paint). */
+export function readVisualPreferencesSync(): AppPreferences | null {
+  if (!isVisualFixtureBuild()) return null;
+  try {
+    const raw = localStorage.getItem(VISUAL_PREFS_STORAGE_KEY);
+    if (!raw) return DEFAULT_PREFERENCES;
+    return migratePreferences(JSON.parse(raw) as Partial<AppPreferences>);
+  } catch {
+    return DEFAULT_PREFERENCES;
+  }
+}
+
 export async function loadPreferencesOutcome(): Promise<PreferencesLoadOutcome> {
   if (isVisualFixtureBuild()) {
-    try {
-      const raw = localStorage.getItem(VISUAL_PREFS_STORAGE_KEY);
-      const prefs = raw
-        ? migratePreferences(JSON.parse(raw) as Partial<AppPreferences>)
-        : DEFAULT_PREFERENCES;
-      return { ok: true, prefs, source: "default" };
-    } catch {
-      return { ok: true, prefs: DEFAULT_PREFERENCES, source: "default" };
-    }
+    const prefs = readVisualPreferencesSync() ?? DEFAULT_PREFERENCES;
+    return { ok: true, prefs, source: "default" };
   }
 
   try {
