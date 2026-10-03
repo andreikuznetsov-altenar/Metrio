@@ -38,6 +38,9 @@ import {
   FeedbackReminderConfirmDrawer,
   FeedbackSendConfirmDrawer,
 } from './FeedbackConfirmDrawers';
+import { FeedbackSurveyDisconnected } from './FeedbackSurveyDisconnected';
+import { FeedbackGoogleSetupInstructions } from './FeedbackGoogleSetupInstructions';
+import { openSettingsSection } from '../../platform/settingsNavigation';
 
 function FeedbackPageSkeleton() {
   return (
@@ -106,6 +109,9 @@ export function FeedbackPage() {
   const [formDetailsOpen, setFormDetailsOpen] = useState(false);
   const [initializing, setInitializing] = useState(true);
   const [syncingResponses, setSyncingResponses] = useState(false);
+  const [googleConnecting, setGoogleConnecting] = useState(false);
+  const [setupInstructionsOpen, setSetupInstructionsOpen] = useState(false);
+  const [appsScriptSetupOpen, setAppsScriptSetupOpen] = useState(false);
   const lastSendSummaryRef = useRef<string | null>(null);
 
   useEffect(() => {
@@ -285,24 +291,14 @@ export function FeedbackPage() {
     );
   }
 
-  if (!googleLinked) {
-    return (
-      <div className="ds-feedback-page-shell">
-        <MetrioScrollArea className="ds-feedback-scroll">
-          <div className="metrio-canvas ds-feedback-canvas ds-feedback-canvas--connect">
-            <GoogleConnectionPanel
-              prefs={prefs}
-              loading={loading}
-              onConnect={handleGoogleConnect}
-              onReconnect={handleGoogleConnect}
-              onDisconnect={handleGoogleDisconnect}
-              onUpdatePrefs={async (patch) => updatePrefs({ google: { ...prefs.google, ...patch } })}
-            />
-          </div>
-        </MetrioScrollArea>
-      </div>
-    );
-  }
+  const runOAuthConnect = async () => {
+    setGoogleConnecting(true);
+    try {
+      await handleGoogleConnect({ webAppUrl: '', bridgeSecret: '' });
+    } finally {
+      setGoogleConnecting(false);
+    }
+  };
 
   const preparing = loading && tab === 'survey';
   const sending = loading && tab === 'delivery';
@@ -365,35 +361,44 @@ export function FeedbackPage() {
             <FeedbackPageSkeleton />
           ) : (
             <div className="ds-feedback-stack">
-              <GoogleConnectionPanel
-                prefs={prefs}
-                loading={loading}
-                mode="feedback"
-                onConnect={handleGoogleConnect}
-                onReconnect={handleGoogleConnect}
-                onDisconnect={handleGoogleDisconnect}
-                onUpdatePrefs={async (patch) => updatePrefs({ google: { ...prefs.google, ...patch } })}
-              />
+              {googleLinked ? (
+                <GoogleConnectionPanel
+                  prefs={prefs}
+                  loading={loading}
+                  mode="feedback"
+                  onConnect={handleGoogleConnect}
+                  onReconnect={handleGoogleConnect}
+                  onDisconnect={handleGoogleDisconnect}
+                  onUpdatePrefs={async (patch) => updatePrefs({ google: { ...prefs.google, ...patch } })}
+                />
+              ) : null}
 
-              {blockingMessage && (
+              {blockingMessage && googleLinked ? (
                 <StatusBanner tone="danger">{blockingMessage}</StatusBanner>
-              )}
+              ) : null}
 
-              {prepareIssues.length > 1 && (
+              {prepareIssues.length > 1 && googleSurveyReady ? (
                 <ul className="feedback-field-errors">
                   {prepareIssues.slice(1).map((issue) => (
                     <li key={issue.field}>{issue.message}</li>
                   ))}
                 </ul>
-              )}
+              ) : null}
 
-              {googleSurveyReady && (
-                <>
-                  <Segmented tabs={FEEDBACK_TABS} active={tab} onChange={(id) => setTab(id as FeedbackTab)} />
+              <>
+                <Segmented tabs={FEEDBACK_TABS} active={tab} onChange={(id) => setTab(id as FeedbackTab)} />
 
-                  {tab === 'cycles' ? <FeedbackCyclesView /> : null}
+                {tab === 'cycles' ? <FeedbackCyclesView /> : null}
 
-                  {tab === 'survey' && (
+                {tab === 'survey' && !googleSurveyReady ? (
+                  <FeedbackSurveyDisconnected
+                    connecting={googleConnecting}
+                    onConnectGoogle={() => void runOAuthConnect()}
+                    onOpenSetupInstructions={() => setSetupInstructionsOpen(true)}
+                  />
+                ) : null}
+
+                {tab === 'survey' && googleSurveyReady && (
                     <>
                       <FeedbackSurveySetup
                         dateFrom={dateFrom}
@@ -458,7 +463,11 @@ export function FeedbackPage() {
                     </>
                   )}
 
-                  {tab === 'delivery' && activeSurvey && counts && (
+                {tab === 'delivery' && !googleSurveyReady && (
+                  <p className="ds-feedback-empty-inline">Connect Google to send surveys.</p>
+                )}
+
+                {tab === 'delivery' && googleSurveyReady && activeSurvey && counts && (
                     <FeedbackDeliveryView
                       recipients={activeSurvey.recipients}
                       counts={counts}
@@ -472,19 +481,23 @@ export function FeedbackPage() {
                     />
                   )}
 
-                  {tab === 'delivery' && !activeSurvey && (
+                {tab === 'delivery' && googleSurveyReady && !activeSurvey && (
                     <p className="ds-feedback-empty-inline">Prepare a survey to track delivery.</p>
                   )}
 
-                  {tab === 'results' && metrics && metrics.respondentCount > 0 && (
+                {tab === 'results' && !googleSurveyReady && (
+                  <p className="ds-feedback-empty-inline">Connect Google to view survey results.</p>
+                )}
+
+                {tab === 'results' && googleSurveyReady && metrics && metrics.respondentCount > 0 && (
                     <FeedbackResultsView metrics={metrics} sentCount={counts?.delivered ?? 0} />
                   )}
 
-                  {tab === 'results' && (!metrics || metrics.respondentCount === 0) && (
+                {tab === 'results' && googleSurveyReady && (!metrics || metrics.respondentCount === 0) && (
                     <p className="ds-feedback-empty-inline">No survey responses yet.</p>
                   )}
 
-                  {tab === 'history' && (
+                {tab === 'history' && (
                     <FeedbackHistoryView
                       surveys={[...data.surveys].sort(
                         (a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt),
@@ -496,12 +509,42 @@ export function FeedbackPage() {
                       }}
                     />
                   )}
-                </>
-              )}
+              </>
             </div>
           )}
         </div>
       </MetrioScrollArea>
+
+      <FeedbackGoogleSetupInstructions
+        open={setupInstructionsOpen}
+        onClose={() => setSetupInstructionsOpen(false)}
+        onConnectGoogle={() => {
+          setSetupInstructionsOpen(false);
+          void runOAuthConnect();
+        }}
+        onOpenConnectionsSettings={() => {
+          setSetupInstructionsOpen(false);
+          openSettingsSection('connections');
+        }}
+        onOpenAppsScriptSetup={() => {
+          setSetupInstructionsOpen(false);
+          setAppsScriptSetupOpen(true);
+        }}
+      />
+
+      {!googleLinked ? (
+        <GoogleConnectionPanel
+          headless
+          prefs={prefs}
+          loading={loading}
+          openAppsScriptDrawer={appsScriptSetupOpen}
+          onAppsScriptDrawerOpenChange={setAppsScriptSetupOpen}
+          onConnect={handleGoogleConnect}
+          onReconnect={handleGoogleConnect}
+          onDisconnect={handleGoogleDisconnect}
+          onUpdatePrefs={async (patch) => updatePrefs({ google: { ...prefs.google, ...patch } })}
+        />
+      ) : null}
 
       {googleSurveyReady && !initializing && tab !== 'history' && (
         <StickyActionBar left={stickyLeft} right={footerAction} />

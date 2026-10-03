@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Mail } from 'lucide-react';
 import type { AppPreferences } from '../../platform/preferences';
 import { isSurveyGoogleConfigured, usesAppsScriptGoogle } from '../../services/survey/surveyGoogleClient';
@@ -27,6 +27,9 @@ export function GoogleConnectionPanel({
   message,
   mode = 'feedback',
   showAdvanced = false,
+  headless = false,
+  openAppsScriptDrawer = false,
+  onAppsScriptDrawerOpenChange,
   onConnect,
   onReconnect,
   onDisconnect,
@@ -37,6 +40,9 @@ export function GoogleConnectionPanel({
   message?: string | null;
   mode?: 'feedback' | 'settings';
   showAdvanced?: boolean;
+  headless?: boolean;
+  openAppsScriptDrawer?: boolean;
+  onAppsScriptDrawerOpenChange?: (open: boolean) => void;
   onConnect: (input: { webAppUrl: string; bridgeSecret: string }) => Promise<void>;
   onReconnect: (input: { webAppUrl: string; bridgeSecret: string }) => Promise<void>;
   onDisconnect: () => Promise<void>;
@@ -52,6 +58,17 @@ export function GoogleConnectionPanel({
   const appsScriptMode = usesAppsScriptGoogle(prefs);
   const oauthMode = isSurveyGoogleConfigured(prefs) && !appsScriptMode;
   const displayMessage = message || localMessage;
+
+  const closeConnectDrawer = () => {
+    setShowConnectDrawer(false);
+    onAppsScriptDrawerOpenChange?.(false);
+  };
+
+  useEffect(() => {
+    if (openAppsScriptDrawer) {
+      setShowConnectDrawer(true);
+    }
+  }, [openAppsScriptDrawer]);
 
   const runOAuthConnect = async () => {
     setLocalMessage(null);
@@ -73,7 +90,7 @@ export function GoogleConnectionPanel({
     setConnecting(true);
     try {
       await action({ webAppUrl: webAppUrl.trim(), bridgeSecret: bridgeSecret.trim() });
-      setShowConnectDrawer(false);
+      closeConnectDrawer();
       setBridgeSecret('');
     } catch (e) {
       const raw = e instanceof Error ? e.message : String(e);
@@ -88,10 +105,10 @@ export function GoogleConnectionPanel({
       open={showConnectDrawer}
       size="notification"
       title={linked ? 'Manage Google connection' : 'Connect Google Apps Script'}
-      onClose={() => setShowConnectDrawer(false)}
+      onClose={closeConnectDrawer}
       footer={
         <div className="ds-feedback-drawer-footer ds-feedback-drawer-footer--compact">
-          <Button variant="secondary" onClick={() => setShowConnectDrawer(false)}>Cancel</Button>
+          <Button variant="secondary" onClick={closeConnectDrawer}>Cancel</Button>
           <Button
             variant="secondary"
             disabled={connecting || !webAppUrl.trim() || !bridgeSecret.trim()}
@@ -189,6 +206,15 @@ export function GoogleConnectionPanel({
       </p>
     </Drawer>
   );
+
+  if (headless) {
+    return (
+      <>
+        {appsScriptConnectDrawer}
+        {disconnectDrawer}
+      </>
+    );
+  }
 
   if (!linked) {
     if (mode === 'feedback') {

@@ -313,6 +313,19 @@ function AppLayoutShell({
   }, [setActiveRoute, setSettingsOpen]);
 
   useEffect(() => {
+    const onSettings = (event: Event) => {
+      const section = (event as CustomEvent<{ section?: SettingsSection }>).detail
+        ?.section;
+      if (section) {
+        setSettingsSection(section);
+      }
+      setSettingsOpen(true);
+    };
+    window.addEventListener("metrio-open-settings", onSettings);
+    return () => window.removeEventListener("metrio-open-settings", onSettings);
+  }, [setSettingsOpen, setSettingsSection]);
+
+  useEffect(() => {
     if (!feedbackEnabled && activeRoute === "feedback") {
       setActiveRoute("home");
     }
