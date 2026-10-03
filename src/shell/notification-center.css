@@ -1,17 +1,11 @@
 .notification-center__header {
   display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
-  min-width: 0;
-  width: 100%;
-}
-
-.notification-center__header-row {
-  display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
   gap: var(--space-2);
+  min-width: 0;
   width: 100%;
+  padding-right: var(--space-6);
 }
 
 .notification-center__header-actions {
@@ -19,6 +13,17 @@
   align-items: center;
   gap: var(--space-1);
   flex-shrink: 0;
+  margin-left: auto;
+}
+
+.notification-center__header-actions .icon-btn {
+  width: 36px;
+  height: 36px;
+}
+
+.notification-center__mark-read {
+  min-height: 36px;
+  padding-inline: var(--space-2);
 }
 
 .notification-center__title {
@@ -68,8 +73,30 @@
   gap: var(--space-3);
 }
 
-.notification-center__body .segmented-control {
+.notification-center__filters {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding-bottom: var(--space-2);
+  background: var(--color-surface);
+  border-bottom: 1px solid color-mix(in srgb, var(--color-border) 50%, transparent);
+}
+
+.notification-center__filters .segmented-control {
   flex-shrink: 0;
+}
+
+.notification-center__filters .segmented-control:last-child .segmented-control__option {
+  padding: 4px 10px;
+  font-size: 12px;
+  min-height: 28px;
+}
+
+.notification-center__filters .segmented-control:first-child .segmented-control__option {
+  min-height: 34px;
 }
 
 .notification-center__groups {
@@ -97,9 +124,9 @@
   width: 100%;
   display: flex;
   align-items: flex-start;
-  gap: var(--space-2);
-  min-height: 64px;
-  padding: var(--space-2) var(--space-1);
+  gap: var(--space-3);
+  min-height: 72px;
+  padding: var(--space-3) var(--space-2);
   border: none;
   border-bottom: 1px solid color-mix(in srgb, var(--color-border) 65%, transparent);
   background: transparent;
@@ -135,6 +162,10 @@
 .notification-center__item:hover,
 .notification-center__item:has(.notification-center__item-main:hover) {
   background: color-mix(in srgb, var(--color-surface-secondary) 80%, transparent);
+}
+
+.notification-center__item.is-resolved {
+  opacity: 0.72;
 }
 
 .notification-center__item.is-unread {
@@ -199,6 +230,10 @@
 }
 
 .notification-center__item-source {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
   font-size: 11px;
   font-weight: 600;
   letter-spacing: 0.02em;

@@ -24,6 +24,7 @@ import { IconButton } from "../components/IconButton/IconButton";
 import { PersonAvatar } from "../components/PersonAvatar/PersonAvatar";
 import { SegmentedControl } from "../components/SegmentedControl/SegmentedControl";
 import { enrichInboxEvent } from "../domain/inbox/actionInboxModel";
+import { notificationActionLabel } from "../platform/notificationActionLabel";
 import { loadPreferences } from "../platform/preferences";
 import { openNotificationTarget } from "../platform/notificationNavigation";
 import {
@@ -64,21 +65,14 @@ const SOURCE_FILTER_OPTIONS: { value: InboxSourceFilterId; label: string }[] = [
 function inboxSourceLabel(source: string): string {
   switch (source) {
     case "jira":
-      return "Jira";
+      return "JIRA";
     case "bamboo":
-      return "BambooHR";
+      return "BAMBOO";
     case "feedback":
-      return "Feedback";
+      return "FEEDBACK";
     default:
-      return "Metrio";
+      return "METRIO";
   }
-}
-
-function inboxActionLabel(event: NotificationEvent): string {
-  if (event.type === "vacation_upcoming" || event.type === "vacation_reminder") {
-    return "View";
-  }
-  return "Open";
 }
 
 function eventIcon(type: NotificationEvent["type"]): ComponentType<{ size?: number; strokeWidth?: number }> {
@@ -218,15 +212,29 @@ export function NotificationCenter({
     }
   };
 
-  const handlePersonClick = (
-    event: NotificationEvent,
-    personId: string,
-    clickEvent: React.MouseEvent,
-  ) => {
-    clickEvent.stopPropagation();
-    void markActionInboxItemRead(event).then(() => refresh());
-    onOpenPerson(personId);
-    onClose();
+  const renderLeadingVisual = (event: NotificationEvent) => {
+    const personWorkload =
+      (event.type === "workload_change" || event.type === "availability_change") &&
+      event.personId &&
+      event.personName;
+    if (personWorkload) {
+      return (
+        <PersonAvatar
+          employeeId={event.personId!}
+          displayName={event.personName!}
+          size="sm"
+        />
+      );
+    }
+    const Icon = eventIcon(event.type);
+    return (
+      <span
+        className={`notification-center__icon notification-center__icon--${event.severity ?? "info"}`}
+        aria-hidden
+      >
+        <Icon size={16} strokeWidth={1.75} />
+      </span>
+    );
   };
 
   return (
@@ -238,60 +246,61 @@ export function NotificationCenter({
       className="drawer--notifications"
       header={
         <div className="notification-center__header">
-          <div className="notification-center__header-row">
-            <h2 className="notification-center__title">Notifications</h2>
-            <div className="notification-center__header-actions">
-              <Button
-                type="button"
-                variant="ghost"
-                disabled={unreadCount === 0}
-                onClick={() => {
-                  void markAllActionInboxItemsRead().then(() => refresh());
-                }}
+          <h2 className="notification-center__title">Notifications</h2>
+          <div className="notification-center__header-actions">
+            <Button
+              type="button"
+              variant="ghost"
+              className="notification-center__mark-read"
+              disabled={unreadCount === 0}
+              onClick={() => {
+                void markAllActionInboxItemsRead().then(() => refresh());
+              }}
+            >
+              Mark all as read
+            </Button>
+            <div className="notification-center__menu-wrap">
+              <IconButton
+                label="Notification options"
+                onClick={() => setMenuOpen((value) => !value)}
               >
-                Mark all as read
-              </Button>
-              <div className="notification-center__menu-wrap">
-                <IconButton
-                  label="Notification options"
-                  onClick={() => setMenuOpen((value) => !value)}
-                >
-                  <MoreHorizontal size={16} strokeWidth={1.75} />
-                </IconButton>
-                {menuOpen ? (
-                  <div className="notification-center__menu" role="menu">
-                    <button
-                      type="button"
-                      role="menuitem"
-                      className="notification-center__menu-item"
-                      onClick={() => {
-                        setMenuOpen(false);
-                        setConfirmClear(true);
-                      }}
-                    >
-                      Clear notifications
-                    </button>
-                  </div>
-                ) : null}
-              </div>
+                <MoreHorizontal size={16} strokeWidth={1.75} />
+              </IconButton>
+              {menuOpen ? (
+                <div className="notification-center__menu" role="menu">
+                  <button
+                    type="button"
+                    role="menuitem"
+                    className="notification-center__menu-item"
+                    onClick={() => {
+                      setMenuOpen(false);
+                      setConfirmClear(true);
+                    }}
+                  >
+                    Clear notifications
+                  </button>
+                </div>
+              ) : null}
             </div>
           </div>
         </div>
       }
     >
       <div ref={bodyRef} className="notification-center__body">
-        <SegmentedControl
-          ariaLabel="Notification filters"
-          value={filter}
-          options={FILTER_OPTIONS}
-          onChange={setFilter}
-        />
-        <SegmentedControl
-          ariaLabel="Notification source filter"
-          value={sourceFilter}
-          options={SOURCE_FILTER_OPTIONS}
-          onChange={setSourceFilter}
-        />
+        <div className="notification-center__filters">
+          <SegmentedControl
+            ariaLabel="Notification filters"
+            value={filter}
+            options={FILTER_OPTIONS}
+            onChange={setFilter}
+          />
+          <SegmentedControl
+            ariaLabel="Notification source filter"
+            value={sourceFilter}
+            options={SOURCE_FILTER_OPTIONS}
+            onChange={setSourceFilter}
+          />
+        </div>
         {confirmClear ? (
           <div className="notification-center__confirm" role="alertdialog" aria-label="Clear notifications">
             <p className="notification-center__confirm-text">
@@ -345,106 +354,48 @@ export function NotificationCenter({
                 <ul className="notification-center__list">
                   {group.items.map((event) => {
                     const item = enrichInboxEvent(event);
-                    const Icon = eventIcon(event.type);
                     const unread = !event.readAt;
-                    const showAvatar =
-                      Boolean(event.personId && event.personName) &&
-                      event.type !== "task_attention";
                     const itemClass = unread
                       ? "notification-center__item is-unread"
                       : "notification-center__item";
-                    const iconEl = (
-                      <span
-                        className={`notification-center__icon notification-center__icon--${event.severity ?? "info"}`}
-                        aria-hidden
-                      >
-                        <Icon size={16} strokeWidth={1.75} />
-                      </span>
-                    );
-                    const avatarEl =
-                      showAvatar && event.personId && event.personName ? (
-                        <PersonAvatar
-                          employeeId={event.personId}
-                          displayName={event.personName}
-                          size="sm"
-                        />
-                      ) : null;
-                    const timeEl = (
-                      <time
-                        className="notification-center__item-time"
-                        dateTime={event.createdAt}
-                        title={formatNotificationExactTime(event.createdAt)}
-                      >
-                        {formatNotificationRelativeTime(event.createdAt)}
-                      </time>
-                    );
-                    const sourceEl = (
-                      <span className="notification-center__item-source">
-                        {inboxSourceLabel(item.source)}
-                      </span>
-                    );
-                    const actionEl = event.target ? (
-                      <span className="notification-center__item-action">
-                        {inboxActionLabel(event)}
-                      </span>
-                    ) : null;
-                    const isTaskWithPersonLink =
-                      event.type === "task_attention" &&
-                      Boolean(event.personId && event.personName);
-
-                    if (isTaskWithPersonLink) {
-                      return (
-                        <li key={event.id}>
-                          <div className={itemClass}>
-                            {iconEl}
-                            <div className="notification-center__content">
-                              <button
-                                type="button"
-                                className="notification-center__item-main"
-                                onClick={() => void handleActivate(event)}
-                              >
-                                {sourceEl}
-                                <span className="notification-center__item-title">{event.title}</span>
-                                <span className="notification-center__item-message">{event.message}</span>
-                                <span className="notification-center__item-meta">
-                                  {timeEl}
-                                  {actionEl}
-                                </span>
-                              </button>
-                              <button
-                                type="button"
-                                className="notification-center__person-link"
-                                onClick={(clickEvent) =>
-                                  handlePersonClick(event, event.personId!, clickEvent)
-                                }
-                              >
-                                {event.personName}
-                              </button>
-                            </div>
-                            {unread ? (
-                              <span className="notification-center__unread-dot" aria-hidden />
-                            ) : null}
-                          </div>
-                        </li>
-                      );
-                    }
+                    const actionLabel = notificationActionLabel(event, event.target);
+                    const resolvedInactive =
+                      Boolean(item.resolvedAt) &&
+                      item.type === "integration_problem";
 
                     return (
                       <li key={event.id}>
                         <button
                           type="button"
-                          className={itemClass}
+                          className={
+                            resolvedInactive
+                              ? `${itemClass} is-resolved`
+                              : itemClass
+                          }
                           onClick={() => void handleActivate(event)}
                         >
-                          {iconEl}
-                          {avatarEl}
+                          {renderLeadingVisual(event)}
                           <span className="notification-center__content">
-                            {sourceEl}
+                            <span className="notification-center__item-source">
+                              {inboxSourceLabel(item.source)}
+                            </span>
                             <span className="notification-center__item-title">{event.title}</span>
-                            <span className="notification-center__item-message">{event.message}</span>
+                            <span className="notification-center__item-message">
+                              {event.message}
+                            </span>
                             <span className="notification-center__item-meta">
-                              {timeEl}
-                              {actionEl}
+                              <time
+                                className="notification-center__item-time"
+                                dateTime={event.createdAt}
+                                title={formatNotificationExactTime(event.createdAt)}
+                              >
+                                {formatNotificationRelativeTime(event.createdAt)}
+                              </time>
+                              {actionLabel ? (
+                                <span className="notification-center__item-action">
+                                  {actionLabel}
+                                </span>
+                              ) : null}
                             </span>
                           </span>
                           {unread ? (

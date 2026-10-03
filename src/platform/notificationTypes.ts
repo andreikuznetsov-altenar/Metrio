@@ -107,6 +107,13 @@ export function inboxMatchesFilter(
 ): boolean {
   const item = enrichInboxEvent(event);
   if (item.resolvedAt && filter === "actions") return false;
+  if (
+    item.resolvedAt &&
+    item.type === "integration_problem" &&
+    item.dedupeKey?.endsWith(":unhealthy")
+  ) {
+    return false;
+  }
   if (filter === "unread" && item.readAt) return false;
   if (filter === "actions" && !item.actionRequired) return false;
   const source = item.source ?? inboxSourceForType(item.type);
