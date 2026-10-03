@@ -30,7 +30,7 @@ export function buildPersonBriefPdfPayload(
       title: "Current work",
       rowHeaders: ["Issue", "Title", "Status"],
       rows: brief.currentWork.topTasks.map((task) => ({
-        cells: [task.issueKey, task.title, task.status],
+        cells: [task.key, task.title, task.status],
       })),
       emptyText: "No active tasks in scope.",
     },

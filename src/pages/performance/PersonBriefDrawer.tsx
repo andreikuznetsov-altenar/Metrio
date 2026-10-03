@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { Badge } from "../../components/Badge/Badge";
 import { Button } from "../../components/Button/Button";
 import { Drawer } from "../../components/Drawer/Drawer";
-import { PersonAvatar } from "../../components/PersonAvatar/PersonAvatar";
 import { PersonCycleTimeCard } from "../../components/PersonCycleTimeCard/PersonCycleTimeCard";
 import { ResourceRow } from "../../components/ResourceRow/ResourceRow";
 import { Select } from "../../components/Select/Select";
@@ -24,7 +23,10 @@ import { useToast } from "../../components/Toast/ToastContext";
 import { PersonAnalyticsMetricGrid } from "./PersonAnalyticsMetricGrid";
 import { PersonWorkRow } from "./PersonWorkRow";
 import { AnalyticsIssueRow } from "./AnalyticsIssueRow";
+import { PersonIdentityHeader } from "./PersonIdentityHeader";
 import "./person-brief-drawer.css";
+import "./person-identity-header.css";
+import "./person-work-card.css";
 
 const PERIOD_OPTIONS: { value: DateRangeKey; label: string }[] = [
   { value: "7d", label: "Last 7 days" },
@@ -58,7 +60,7 @@ export function PersonBriefDrawer({
   prepForOneOnOne = false,
 }: PersonBriefDrawerProps) {
   const { currentUser } = useCurrentUser();
-  const { data } = usePerformanceData();
+  const { data, viewModels } = usePerformanceData();
   const surveyData = useFeedbackSurveyStore((state) => state.data);
   const graph = useWorkGraph();
   const { success: toastSuccess, error: toastError } = useToast();
@@ -92,6 +94,8 @@ export function PersonBriefDrawer({
     knowledgeLinks,
     jiraBaseUrl,
   });
+
+  const person = personId ? viewModels?.getPerson(personId) : undefined;
 
   if (!open || !personId || !allowed) {
     return null;
@@ -127,23 +131,15 @@ export function PersonBriefDrawer({
       className="drawer--person-brief"
       header={
         brief ? (
-          <div className="person-brief__header">
-            <PersonAvatar
-              employeeId={brief.personId}
-              displayName={brief.personName}
-              size="md"
-            />
-            <div className="person-brief__header-text">
-              <h2 className="person-brief__title">{brief.personName}</h2>
-              <p className="person-brief__role">{brief.role}</p>
-              <p className="person-brief__meta">
-                {brief.availability} · {brief.periodLabel}
-              </p>
-              {prepForOneOnOne ? (
-                <p className="person-brief__prep">Prepare for 1:1</p>
-              ) : null}
-            </div>
-          </div>
+          <PersonIdentityHeader
+            personId={brief.personId}
+            displayName={brief.personName}
+            jobTitle={brief.role}
+            person={person}
+            availabilityLabel={brief.availability}
+            workloadLabel={brief.workload}
+            contextNote={prepForOneOnOne ? "Prepare for 1:1" : undefined}
+          />
         ) : null
       }
     >
@@ -156,7 +152,7 @@ export function PersonBriefDrawer({
           <div className="person-brief__toolbar">
             <div className="person-brief__period">
               <Select
-                label="Period"
+                aria-label="Brief period"
                 value={periodPreset}
                 options={PERIOD_OPTIONS}
                 onChange={(event) =>
@@ -174,13 +170,86 @@ export function PersonBriefDrawer({
             </div>
           </div>
 
+          <p className="person-brief__period-context">{brief.periodLabel}</p>
+
           {brief.newStarter ? (
             <p className="person-brief__note">{brief.newStarter.limitedHistoryNote}</p>
           ) : null}
 
+          <section className="person-brief__section-card">
+            <h3 className="person-brief__section-title">Recent performance</h3>
+            <PersonAnalyticsMetricGrid
+              metrics={brief.performanceKpis}
+              className="performance-metrics performance-metrics--brief"
+            />
+            <PersonCycleTimeCard segments={brief.cycleTime} />
+          </section>
+
+          {brief.currentWork.topTasks.length > 0 ? (
+            <section className="person-brief__section-card">
+              <h3 className="person-brief__section-title">Current work</h3>
+              <p className="person-brief__muted">
+                {brief.currentWork.activeCount} active · {brief.currentWork.inReviewCount} in
+                review · {brief.currentWork.problematicCount} at risk
+              </p>
+              <div className="person-brief__work-list">
+                {brief.currentWork.topTasks.map((task) => (
+                  <PersonWorkRow key={task.key} item={task} variant="inline" />
+                ))}
+              </div>
+            </section>
+          ) : null}
+
+          {brief.completedWork.length > 0 ? (
+            <section className="person-brief__section-card">
+              <h3 className="person-brief__section-title">Recently completed</h3>
+              <div className="person-brief__history-list">
+                {brief.completedWork.map((item) => (
+                  <AnalyticsIssueRow
+                    key={item.issueKey}
+                    hidePerson
+                    showOutcome
+                    variant="card"
+                    jiraAction="secondary-button"
+                    metaLine={item.metaLine}
+                    issue={{
+                      issueKey: item.issueKey,
+                      title: item.title,
+                      personId: brief.personId,
+                      personName: brief.personName,
+                      outcome: item.firstPass ? "first_pass" : "rework",
+                    }}
+                  />
+                ))}
+              </div>
+            </section>
+          ) : null}
+
+          {brief.attention.length ? (
+            <section className="person-brief__section-card">
+              <h3 className="person-brief__section-title">Attention</h3>
+              <ul className="person-brief__attention-list">
+                {brief.attention.map((group) => (
+                  <li key={`${group.label}-${group.reason}`} className="person-brief__attention-row">
+                    <div>
+                      <Badge variant={group.variant}>{group.label}</Badge>
+                      <span className="person-brief__muted">
+                        {group.taskCount} task{group.taskCount === 1 ? "" : "s"}
+                      </span>
+                    </div>
+                    <Badge variant="neutral">{group.reason}</Badge>
+                    <span className="person-brief__muted person-brief__attention-keys">
+                      {attentionIssuePreview(group)}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          ) : null}
+
           {brief.timeOff ? (
-            <section className="person-brief__section">
-              <h3 className="person-brief__section-title">Upcoming time off</h3>
+            <section className="person-brief__section-card">
+              <h3 className="person-brief__section-title">Time off</h3>
               <p className="person-brief__section-lead">
                 {brief.timeOff.headline}
                 {brief.timeOff.rangeLabel ? ` · ${brief.timeOff.rangeLabel}` : ""}
@@ -193,86 +262,8 @@ export function PersonBriefDrawer({
             </section>
           ) : null}
 
-          <section className="person-brief__section">
-            <h3 className="person-brief__section-title">Recent performance</h3>
-            <PersonAnalyticsMetricGrid
-              metrics={brief.performanceKpis}
-              className="performance-metrics performance-metrics--brief"
-            />
-            <PersonCycleTimeCard segments={brief.cycleTime} />
-          </section>
-
-          <section className="person-brief__section">
-            <h3 className="person-brief__section-title">Current work</h3>
-            <p className="person-brief__muted">
-              {brief.currentWork.activeCount} active · {brief.currentWork.inReviewCount} in
-              review · {brief.currentWork.problematicCount} at risk
-            </p>
-            <div className="person-brief__work-list">
-              {brief.currentWork.topTasks.map((task) => (
-                <PersonWorkRow
-                  key={task.issueKey}
-                  item={{
-                    key: task.issueKey,
-                    title: task.title,
-                    status: task.status,
-                    stageAge: task.stageAge,
-                    healthVariant: "neutral",
-                  }}
-                />
-              ))}
-            </div>
-          </section>
-
-          <section className="person-brief__section">
-            <h3 className="person-brief__section-title">Recently completed</h3>
-            {brief.completedWork.length === 0 ? (
-              <p className="person-brief__muted">No completed work in this period.</p>
-            ) : (
-              <div className="person-brief__history-list">
-                {brief.completedWork.map((item) => (
-                  <AnalyticsIssueRow
-                    key={item.issueKey}
-                    hidePerson
-                    showOutcome
-                    metaLine={item.metaLine}
-                    issue={{
-                      issueKey: item.issueKey,
-                      title: item.title,
-                      personId: brief.personId,
-                      personName: brief.personName,
-                      outcome: item.firstPass ? "first_pass" : "rework",
-                    }}
-                  />
-                ))}
-              </div>
-            )}
-          </section>
-
-          {brief.attention.length ? (
-            <section className="person-brief__section">
-              <h3 className="person-brief__section-title">Attention</h3>
-              <ul className="person-brief__attention-list">
-                {brief.attention.map((group) => (
-                  <li key={`${group.label}-${group.reason}`} className="person-brief__attention-row">
-                    <div>
-                      <span className="person-brief__attention-label">{group.label}</span>
-                      <span className="person-brief__muted">
-                        {group.taskCount} task{group.taskCount === 1 ? "" : "s"}
-                      </span>
-                    </div>
-                    <Badge variant={group.variant}>{group.reason}</Badge>
-                    <span className="person-brief__muted person-brief__attention-keys">
-                      {attentionIssuePreview(group)}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            </section>
-          ) : null}
-
           {brief.feedbackLines.length ? (
-            <section className="person-brief__section">
+            <section className="person-brief__section-card">
               <h3 className="person-brief__section-title">Feedback</h3>
               <ul className="person-brief__plain-list">
                 {brief.feedbackLines.map((line) => (
@@ -283,7 +274,7 @@ export function PersonBriefDrawer({
           ) : null}
 
           {brief.resources.length ? (
-            <section className="person-brief__section">
+            <section className="person-brief__section-card">
               <h3 className="person-brief__section-title">Knowledge</h3>
               {brief.resources.map((resource) =>
                 resource.url.startsWith("http") ? (
@@ -301,7 +292,7 @@ export function PersonBriefDrawer({
           ) : null}
 
           {brief.prompts.length ? (
-            <section className="person-brief__section person-brief__section--prompts">
+            <section className="person-brief__section-card person-brief__section--prompts">
               <h3 className="person-brief__section-title">Discussion prompts</h3>
               <p className="person-brief__muted">Neutral prompts based on facts above.</p>
               <ul className="person-brief__prompt-list">

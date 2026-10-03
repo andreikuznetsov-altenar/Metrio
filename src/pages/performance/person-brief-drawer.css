@@ -1,52 +1,32 @@
-.person-brief__header {
+.person-brief__body {
   display: flex;
-  gap: var(--space-3);
-  align-items: flex-start;
-  min-width: 0;
-  padding-right: var(--space-2);
+  flex-direction: column;
+  gap: var(--space-4);
 }
 
-.person-brief__header-text {
-  min-width: 0;
-}
-
-.person-brief__title {
+.person-brief__period-context {
   margin: 0;
-  font-size: 16px;
-  font-weight: 600;
-  letter-spacing: -0.02em;
-}
-
-.person-brief__role {
-  margin: 2px 0 0;
-  font-size: 13px;
-  color: var(--color-text-secondary);
-}
-
-.person-brief__meta,
-.person-brief__prep {
-  margin: 4px 0 0;
   font-size: 12px;
   color: var(--color-text-tertiary);
 }
 
-.person-brief__prep {
-  color: var(--color-accent);
-  font-weight: 500;
-}
-
-.person-brief__body {
+.person-brief__section-card {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-control);
+  padding: var(--space-4);
+  background: var(--color-surface-secondary);
   display: flex;
   flex-direction: column;
-  gap: var(--space-5);
+  gap: var(--space-3);
 }
 
 .person-brief__toolbar {
   display: flex;
   flex-wrap: wrap;
-  align-items: flex-end;
+  align-items: center;
   justify-content: space-between;
-  gap: var(--space-3);
+  gap: var(--space-2);
+  width: 100%;
 }
 
 .person-brief__period {

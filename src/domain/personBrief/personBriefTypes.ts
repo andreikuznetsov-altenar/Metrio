@@ -1,3 +1,4 @@
+import type { PersonWorkRowData } from "../analytics/personAnalyticsWorkspace";
 import type { DateRangeKey, MetricCardData } from "../performance";
 import type { GroupedAttentionSignal } from "../../pages/performance/groupAttentionSignals";
 import type { PersonBriefPrompt } from "./buildPersonBriefPrompts";
@@ -33,12 +34,7 @@ export interface PersonBriefModel {
     activeCount: number;
     inReviewCount: number;
     problematicCount: number;
-    topTasks: {
-      issueKey: string;
-      title: string;
-      status: string;
-      stageAge: string;
-    }[];
+    topTasks: PersonWorkRowData[];
   };
   completedWork: PersonBriefCompletedItem[];
   attention: GroupedAttentionSignal[];

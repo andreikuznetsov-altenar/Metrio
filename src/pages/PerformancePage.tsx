@@ -3,6 +3,7 @@ import { usePerformanceData } from "../app/PerformanceDataContext";
 import { useCurrentUser } from "../app/CurrentUserContext";
 import {
   PerformanceAnalyticsProvider,
+  PERSON_DRAWER_CLOSE_EVENT,
   usePerformanceAnalytics,
   type PersonDrawerTab,
 } from "../app/performanceAnalyticsContext";
@@ -87,6 +88,15 @@ function PerformancePageBody({ reviewTarget }: PerformancePageProps) {
     window.addEventListener("metrio-open-person", handler);
     return () => window.removeEventListener("metrio-open-person", handler);
   }, [openPersonDrawer]);
+
+  useEffect(() => {
+    const onClosePerson = () => {
+      closePersonDrawer();
+      clearPersonDrawer();
+    };
+    window.addEventListener(PERSON_DRAWER_CLOSE_EVENT, onClosePerson);
+    return () => window.removeEventListener(PERSON_DRAWER_CLOSE_EVENT, onClosePerson);
+  }, [closePersonDrawer, clearPersonDrawer]);
 
   let content;
 

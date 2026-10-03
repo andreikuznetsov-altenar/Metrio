@@ -298,8 +298,23 @@ export function PerformanceAnalyticsProvider({
   );
 }
 
+export const PERSON_DRAWER_CLOSE_EVENT = "metrio-close-person-drawer";
+
+export function dispatchClosePersonDrawer(): void {
+  window.dispatchEvent(new CustomEvent(PERSON_DRAWER_CLOSE_EVENT));
+}
+
 export function dispatchOpenPersonDetail(
   detail: string | { personId: string; tab?: PersonDrawerTab },
 ): void {
   window.dispatchEvent(new CustomEvent("metrio-open-person", { detail }));
+}
+
+export function dispatchOpenPersonBrief(detail: {
+  personId: string;
+  periodPreset?: import("../domain/performance").DateRangeKey;
+  prepForOneOnOne?: boolean;
+}): void {
+  dispatchClosePersonDrawer();
+  window.dispatchEvent(new CustomEvent("metrio-open-person-brief", { detail }));
 }

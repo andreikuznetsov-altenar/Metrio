@@ -29,7 +29,7 @@ export function formatPersonBriefPlainText(brief: PersonBriefModel): string {
     `Current work: ${brief.currentWork.activeCount} active · ${brief.currentWork.inReviewCount} in review · ${brief.currentWork.problematicCount} at risk`,
   );
   for (const task of brief.currentWork.topTasks) {
-    lines.push(`- ${task.issueKey} · ${task.title} · ${task.status}`);
+    lines.push(`- ${task.key} · ${task.title} · ${task.status}`);
   }
   if (brief.completedWork.length) {
     lines.push("", "Recently completed");

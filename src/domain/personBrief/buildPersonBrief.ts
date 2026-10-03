@@ -150,12 +150,7 @@ export function buildPersonBrief(input: BuildPersonBriefInput): PersonBriefModel
       activeCount: workspace.activeWorkCount,
       inReviewCount: countInReview(workspace),
       problematicCount: workspace.problematicWork.length,
-      topTasks: workspace.workRows.slice(0, 5).map((row) => ({
-        issueKey: row.key,
-        title: row.title,
-        status: row.status,
-        stageAge: row.stageAge,
-      })),
+      topTasks: workspace.workRows.slice(0, 5),
     },
     completedWork: extractCompletedWork(workspace),
     attention,
