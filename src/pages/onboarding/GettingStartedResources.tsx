@@ -7,6 +7,7 @@ import type { MatchedOnboardingResources } from "../../domain/onboarding/resourc
 import type { ResolvedEmployee } from "../../services/bamboo/orgResolver";
 import { openOnboardingResourceTarget } from "../../platform/openOnboardingResource";
 import { Button } from "../../components/Button/Button";
+import { ResourceRow } from "../../components/ResourceRow/ResourceRow";
 
 export interface GettingStartedResourcesProps {
   bamboo: ResolvedEmployee;
@@ -26,7 +27,7 @@ export function GettingStartedResources({
     return null;
   }
 
-  const items = matched.preview;
+  const items = matched.preview.slice(0, compact ? 3 : 6);
   if (!items.length) {
     return null;
   }
@@ -43,23 +44,22 @@ export function GettingStartedResources({
       {!compact ? (
         <p className="performance-employee-context">
           {bamboo.jobTitle || bamboo.department || "Team member"}
+          {bamboo.department && bamboo.jobTitle ? ` · ${bamboo.department}` : ""}
           <br />
           {formatHireDateLabel(hireDate)}
         </p>
       ) : null}
-      <ul className="performance-getting-started__links">
+      <div className="getting-started__resource-list">
         {items.map((item) => (
-          <li key={item.id}>
-            <button
-              type="button"
-              className="performance-link-button"
-              onClick={() => void openOnboardingResourceTarget(item.target)}
-            >
-              {item.title}
-            </button>
-          </li>
+          <ResourceRow
+            key={item.id}
+            title={item.title}
+            subtitle={item.description}
+            source={item.source}
+            onOpen={() => void openOnboardingResourceTarget(item.target)}
+          />
         ))}
-      </ul>
+      </div>
       {matched.all.length > items.length ? (
         <Button variant="ghost" onClick={onViewAll}>
           View all resources
