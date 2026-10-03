@@ -31,6 +31,8 @@ export interface HomeKnowledgeItem {
   title: string;
   url: string;
   relatedIssueKey?: string;
+  /** Confluence space or project label for secondary line */
+  contextLabel?: string;
 }
 
 export interface HomeDeliverySummary {

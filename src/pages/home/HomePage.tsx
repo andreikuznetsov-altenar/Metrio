@@ -44,6 +44,11 @@ import { canOpenPersonBrief } from "../../domain/personAccess";
 import { ActionQueueSection } from "../performance/ActionQueueSection";
 import { PerformanceStatusBanner } from "../performance/PerformanceStatusBanner";
 import { Button } from "../../components/Button/Button";
+import { ResourceRow } from "../../components/ResourceRow/ResourceRow";
+import {
+  applyVisualHomeOverrides,
+  readHomeVisualState,
+} from "../../fixtures/homeVisualFixture";
 import { useEffect, useState } from "react";
 import { useOnboardingResources } from "../../hooks/useOnboardingResources";
 import { useResourceLibrary } from "../../hooks/useResourceLibrary";
@@ -336,6 +341,22 @@ export function HomePage() {
     await openExternalUrl(url);
   };
 
+  const visualHomeState = readHomeVisualState();
+
+  if (visualHomeState === "blocked") {
+    return (
+      <div className="home-page" data-testid="home-blocked">
+        <PerformanceStatusBanner />
+        <section className="home-empty-state" role="status">
+          <h2 className="home-empty-state__title">Waiting for your profile</h2>
+          <p className="home-empty-state__body">
+            Home needs your person record from the latest Jira performance sync.
+          </p>
+        </section>
+      </div>
+    );
+  }
+
   if (uiState === "initial-loading" && !workspaceModel) {
     return (
       <div className="home-page" data-testid="home-loading">
@@ -372,14 +393,17 @@ export function HomePage() {
     );
   }
 
-  const { personal, team, organization } = workspaceModel;
+  const displayWorkspace = applyVisualHomeOverrides(workspaceModel);
+  const { personal, team, organization } = displayWorkspace;
+  const homeReadyTestId =
+    visualHomeState === "partial" ? "home-partial" : "home-ready";
 
   return (
-    <div className="home-page" data-testid="home-ready">
+    <div className="home-page" data-testid={homeReadyTestId}>
       <PerformanceStatusBanner />
       <header className="home-header">
-        <h1 className="home-header__title">{workspaceModel.greeting}</h1>
-        <p className="home-header__context">{workspaceModel.contextLine}</p>
+        <h1 className="home-header__title">{displayWorkspace.greeting}</h1>
+        <p className="home-header__context">{displayWorkspace.contextLine}</p>
       </header>
 
       {calendarConnected && upcomingMeetings?.meetings.length ? (
@@ -558,28 +582,36 @@ export function HomePage() {
             </section>
           ) : null}
 
-          <section className="home-card" aria-label="Relevant knowledge">
+          <section
+            className="home-card home-card--knowledge"
+            aria-label="Relevant knowledge"
+            data-testid="home-relevant-knowledge"
+          >
             <h2 className="home-card__title">Relevant knowledge</h2>
             {personal.knowledgeStatus === "unavailable" ? (
-              <p className="home-card__empty">Knowledge unavailable.</p>
+              <p className="home-card__empty" role="status">Knowledge unavailable.</p>
             ) : personal.knowledgeStatus === "loading" ? (
               <p className="home-card__meta" aria-busy="true">Loading knowledge…</p>
             ) : personal.knowledge.length === 0 ? (
-              <p className="home-card__empty">Open Performance to load project knowledge.</p>
+              <p className="home-card__empty" role="status">
+                No related knowledge found.
+              </p>
             ) : (
-              <ul className="home-link-list">
+              <div className="home-knowledge-rows">
                 {personal.knowledge.map((item) => (
-                  <li key={item.id}>
-                    <button
-                      type="button"
-                      className="home-link-list__button"
-                      onClick={() => void openExternalUrl(item.url)}
-                    >
-                      {item.title}
-                    </button>
-                  </li>
+                  <ResourceRow
+                    key={item.id}
+                    title={item.title}
+                    source="confluence"
+                    subtitle={
+                      item.contextLabel ||
+                      (item.relatedIssueKey ? `Related to ${item.relatedIssueKey}` : undefined)
+                    }
+                    externalLabel="Open in Confluence"
+                    onOpen={() => void openExternalUrl(item.url)}
+                  />
                 ))}
-              </ul>
+              </div>
             )}
           </section>
 

@@ -333,11 +333,17 @@ function mapKnowledge(links: WorkKnowledgeLink[]): HomeKnowledgeItem[] {
     const id = link.page.id || link.id;
     if (seen.has(id)) continue;
     seen.add(id);
+    const contextLabel = link.issueKey
+      ? "Related to current work"
+      : link.page.spaceName ||
+        link.projectKey ||
+        link.page.spaceKey;
     items.push({
       id,
       title: link.page.title,
       url: link.page.url,
       relatedIssueKey: link.issueKey,
+      contextLabel,
     });
     if (items.length >= 3) break;
   }
