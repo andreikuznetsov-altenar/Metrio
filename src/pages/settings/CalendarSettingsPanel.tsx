@@ -8,9 +8,11 @@ import { GOOGLE_CALENDAR_READONLY_SCOPE_DOC } from "../../config/google";
 export function CalendarSettingsPanel({
   prefs,
   onUpdatePrefs,
+  embedded = false,
 }: {
   prefs: AppPreferences;
   onUpdatePrefs: (patch: Partial<AppPreferences["google"]>) => Promise<void>;
+  embedded?: boolean;
 }) {
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
@@ -56,9 +58,11 @@ export function CalendarSettingsPanel({
   };
 
   return (
-    <div className="settings-panel">
-      <h2 className="settings-panel__title">Google Calendar</h2>
-      <p className="settings-intro">
+    <div className={embedded ? "settings-card__body" : "settings-panel"}>
+      {!embedded ? <h2 className="settings-panel__title">Google Calendar</h2> : (
+        <h3 className="settings-card__title">Google Calendar</h3>
+      )}
+      <p className={embedded ? "settings-card__description" : "settings-intro"}>
         Optional read-only access to upcoming meetings for 1:1 preparation on
         Home. Metrio does not store your full calendar history or use meeting
         attendance in performance scoring.
@@ -71,7 +75,7 @@ export function CalendarSettingsPanel({
           Connect Google for Feedback first, then enable Calendar here.
         </p>
       ) : (
-        <div className="settings-inline-actions">
+        <div className="settings-button-group settings-button-group--inline">
           <span
             className={
               calendarOn

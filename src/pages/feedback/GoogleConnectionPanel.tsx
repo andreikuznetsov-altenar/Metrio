@@ -17,6 +17,9 @@ import {
   StatusBanner,
 } from './design-system';
 import { hasGoogleAccount } from './feedbackUi';
+import { openExternalUrl } from '../../platform/openExternal';
+
+const GOOGLE_APPS_SCRIPT_HOME = 'https://script.google.com/home';
 
 export function GoogleConnectionPanel({
   prefs,
@@ -87,8 +90,15 @@ export function GoogleConnectionPanel({
       title={linked ? 'Manage Google connection' : 'Connect Google Apps Script'}
       onClose={() => setShowConnectDrawer(false)}
       footer={
-        <div className="ds-feedback-drawer-footer">
+        <div className="ds-feedback-drawer-footer ds-feedback-drawer-footer--compact">
           <Button variant="secondary" onClick={() => setShowConnectDrawer(false)}>Cancel</Button>
+          <Button
+            variant="secondary"
+            disabled={connecting || !webAppUrl.trim() || !bridgeSecret.trim()}
+            onClick={() => runConnect(linked ? onReconnect : onConnect)}
+          >
+            {connecting ? 'Testing…' : 'Test connection'}
+          </Button>
           <Button
             disabled={connecting || !webAppUrl.trim() || !bridgeSecret.trim()}
             onClick={() => runConnect(linked ? onReconnect : onConnect)}
@@ -98,9 +108,44 @@ export function GoogleConnectionPanel({
         </div>
       }
     >
-      <p className="ds-feedback-connect__body">
-        Legacy Apps Script setup. Use only if directed by your administrator.
-      </p>
+      <div className="ds-apps-script-setup" data-testid="google-apps-script-setup">
+        <p className="ds-feedback-connect__body">
+          Legacy Google Apps Script bridge. Use only when your administrator provides
+          a Metrio deployment — not the standard Google OAuth flow.
+        </p>
+        <ol className="ds-apps-script-setup__steps">
+          <li>
+            Your administrator shares a Google Apps Script project (or deployment
+            package) that exposes Metrio survey endpoints for your organization.
+          </li>
+          <li>
+            In that project, deploy as a <strong>Web app</strong> (Execute as: Me,
+            Who has access: Anyone with the link, or per admin instructions). Copy
+            the deployment URL ending in <code>/exec</code>.
+          </li>
+          <li>
+            Open the script editor, run <code>setupMetrio()</code> once (or follow
+            your admin runbook) and copy the connection key it prints.
+          </li>
+          <li>
+            Paste the Web App URL and connection key below, then test the connection
+            before saving.
+          </li>
+          <li>
+            After a successful test, choose Connect. Metrio stores credentials
+            locally using the same secure path as other integrations.
+          </li>
+        </ol>
+        <div className="settings-button-group">
+          <Button
+            variant="secondary"
+            type="button"
+            onClick={() => void openExternalUrl(GOOGLE_APPS_SCRIPT_HOME)}
+          >
+            Open Google Apps Script
+          </Button>
+        </div>
+      </div>
       <Input
         label="Web App URL"
         value={webAppUrl}

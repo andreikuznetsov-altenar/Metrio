@@ -24,9 +24,9 @@ export function MetrioCloudSettingsPanel() {
   }, []);
 
   return (
-    <div className="settings-integration" data-testid="metrio-cloud-settings">
-      <div className="settings-integration__head">
-        <span className="settings-row__label">Metrio Cloud</span>
+    <div className="settings-card__body" data-testid="metrio-cloud-settings">
+      <div className="settings-card__head">
+        <h3 className="settings-card__title">Metrio shared services</h3>
         <span
           className={
             status.state === "connected"
@@ -44,7 +44,7 @@ export function MetrioCloudSettingsPanel() {
       {status.lastError ? (
         <p className="settings-row__hint">{status.lastError}</p>
       ) : null}
-      <div className="settings-panel__actions">
+      <div className="settings-button-group">
         <Button
           variant="secondary"
           disabled={!apiUrl || !bambooId}
@@ -56,7 +56,7 @@ export function MetrioCloudSettingsPanel() {
         >
           Connect (dev)
         </Button>
-        <Button variant="ghost" onClick={() => disconnectMetrioCloud()}>
+        <Button variant="secondary" onClick={() => disconnectMetrioCloud()}>
           Disconnect
         </Button>
       </div>
