@@ -124,21 +124,31 @@
 
 .app-header__bell-badge {
   position: absolute;
-  top: 2px;
-  right: 2px;
-  min-width: 15px;
-  height: 15px;
+  top: 50%;
+  right: 4px;
+  transform: translateY(-50%);
+  min-width: 16px;
+  height: 16px;
   padding: 0 4px;
   border-radius: 999px;
   background: var(--color-danger, #dc2626);
   color: #fff;
-  font-size: 9px;
+  font-size: 10px;
   font-weight: 700;
-  line-height: 14px;
+  line-height: 16px;
   text-align: center;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   border: 1.5px solid var(--color-surface);
   pointer-events: none;
   z-index: 1;
+  box-sizing: border-box;
+}
+
+.app-header__bell-badge--wide {
+  padding: 0 3px;
+  font-size: 9px;
 }
 
 .app-header__nav-link:focus-visible {

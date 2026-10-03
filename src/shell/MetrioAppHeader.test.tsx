@@ -28,6 +28,11 @@ describe("MetrioAppHeader", () => {
     expect(screen.getByRole("button", { name: "Feedback" })).toBeInTheDocument();
   });
 
+  it("labels main nav Home route as Dashboard", () => {
+    renderHeader(true);
+    expect(screen.getByRole("button", { name: "Dashboard" })).toBeInTheDocument();
+  });
+
   it("marks no main nav item active when activeRoute is null", () => {
     render(
       <ThemeProvider>

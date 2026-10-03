@@ -27,7 +27,7 @@ async function bootMetrioFeedback(page: Page, theme: "light" | "dark" = "light")
 }
 
 async function openPerformanceFromHome(page: Page) {
-  await expect(page.getByTestId("home-ready")).toBeVisible({ timeout: 30_000 });
+  await expect(page.getByTestId("dashboard-ready")).toBeVisible({ timeout: 30_000 });
   await page.locator(".app-header__nav-link").filter({ hasText: "Performance" }).click();
   await expect(page.getByTestId("performance-dashboard-ready")).toBeVisible({
     timeout: 30_000,
@@ -62,7 +62,7 @@ async function bootMetrioWithNotificationFixture(
   }, eventsJson);
   await page.goto("/");
   await expect(page.getByTestId("app-shell")).toBeVisible({ timeout: 30_000 });
-  await expect(page.getByTestId("home-ready")).toBeVisible({ timeout: 30_000 });
+  await expect(page.getByTestId("dashboard-ready")).toBeVisible({ timeout: 30_000 });
   await page.evaluate((payload: string) => {
     localStorage.setItem("metrio-notification-events", payload);
     window.dispatchEvent(new CustomEvent("metrio-notification-events-changed"));
@@ -422,7 +422,7 @@ test.describe("Metrio visual regression", () => {
       localStorage.setItem("metrio-theme", "light");
     }, "lead");
     await page.goto("/");
-    await expect(page.getByTestId("home-ready")).toBeVisible({ timeout: 30_000 });
+    await expect(page.getByTestId("dashboard-ready")).toBeVisible({ timeout: 30_000 });
     await expect(page.getByRole("navigation", { name: "Main" })).toBeVisible();
     await expect(page).toHaveScreenshot("app-header-nav.png", {
       fullPage: false,
@@ -457,7 +457,7 @@ test.describe("Metrio visual regression", () => {
       { fixtureId: fixture, themeId: theme, prefs: prefsJson },
     );
     await page.goto("/");
-    await expect(page.getByTestId("home-ready")).toBeVisible({ timeout: 30_000 });
+    await expect(page.getByTestId("dashboard-ready")).toBeVisible({ timeout: 30_000 });
   }
 
   async function openDigestDrawer(page: Page, digestKind: "daily" | "weekly") {
@@ -530,7 +530,7 @@ test.describe("Metrio visual regression", () => {
       { fixtureId: fixture, themeId: theme, goals: goalsJson },
     );
     await page.goto("/");
-    await expect(page.getByTestId("home-ready")).toBeVisible({ timeout: 30_000 });
+    await expect(page.getByTestId("dashboard-ready")).toBeVisible({ timeout: 30_000 });
     await page.locator(".app-header__nav-link").filter({ hasText: "Performance" }).click();
     await expect(page.getByTestId("performance-dashboard-ready")).toBeVisible({
       timeout: 30_000,
@@ -597,7 +597,7 @@ test.describe("Metrio visual regression", () => {
       localStorage.setItem("metrio-theme", "light");
     }, "lead");
     await page.goto("/");
-    await expect(page.getByTestId("home-ready")).toBeVisible({ timeout: 30_000 });
+    await expect(page.getByTestId("dashboard-ready")).toBeVisible({ timeout: 30_000 });
     await page.getByRole("button", { name: "Settings" }).click();
     await clickSettingsSection(page, /attention rules/i);
     await expect(page.getByTestId("operational-rules-settings")).toBeVisible();
@@ -663,7 +663,7 @@ test.describe("Metrio visual regression", () => {
       localStorage.setItem("metrio-theme", "light");
     }, "lead");
     await page.goto("/");
-    await expect(page.getByTestId("home-ready")).toBeVisible({ timeout: 30_000 });
+    await expect(page.getByTestId("dashboard-ready")).toBeVisible({ timeout: 30_000 });
     await page.keyboard.press("Meta+k");
     await expect(page.getByTestId("command-palette")).toBeVisible();
     await expect(page).toHaveScreenshot("command-palette-empty.png", {
@@ -690,7 +690,7 @@ test.describe("Metrio visual regression", () => {
       localStorage.setItem("metrio-theme", "dark");
     }, "lead");
     await page.goto("/");
-    await expect(page.getByTestId("home-ready")).toBeVisible({ timeout: 30_000 });
+    await expect(page.getByTestId("dashboard-ready")).toBeVisible({ timeout: 30_000 });
     await page.keyboard.press("Meta+k");
     await expect(page.getByTestId("command-palette")).toBeVisible();
     await expect(page).toHaveScreenshot("command-palette-dark.png", {
@@ -793,7 +793,7 @@ test.describe("Metrio visual regression", () => {
       localStorage.setItem("metrio-notification-events", payload);
     }, eventsJson);
     await page.goto("/");
-    await expect(page.getByTestId("home-ready")).toBeVisible({ timeout: 30_000 });
+    await expect(page.getByTestId("dashboard-ready")).toBeVisible({ timeout: 30_000 });
     await page.getByRole("button", { name: /Notifications, 6 unread/i }).click();
     await expect(page.locator(".drawer--notifications")).toBeVisible();
     await expect(page).toHaveScreenshot("notification-sidebar-dark.png", {
@@ -947,7 +947,7 @@ test.describe("Metrio visual regression", () => {
       localStorage.setItem("metrio-theme", "light");
     }, "employee");
     await page.goto("/");
-    await expect(page.getByTestId("home-ready")).toBeVisible({ timeout: 30_000 });
+    await expect(page.getByTestId("dashboard-ready")).toBeVisible({ timeout: 30_000 });
     await expect(page).toHaveScreenshot("home-employee.png", {
       fullPage: true,
       maxDiffPixelRatio: 0.02,
@@ -961,7 +961,7 @@ test.describe("Metrio visual regression", () => {
       localStorage.setItem("metrio-theme", "light");
     }, "lead");
     await page.goto("/");
-    await expect(page.getByTestId("home-ready")).toBeVisible({ timeout: 30_000 });
+    await expect(page.getByTestId("dashboard-ready")).toBeVisible({ timeout: 30_000 });
     await expect(page).toHaveScreenshot("home-manager.png", {
       fullPage: true,
       maxDiffPixelRatio: 0.02,
@@ -975,7 +975,7 @@ test.describe("Metrio visual regression", () => {
       localStorage.setItem("metrio-theme", "light");
     }, "lead");
     await page.goto("/");
-    await expect(page.getByTestId("home-ready")).toBeVisible({ timeout: 30_000 });
+    await expect(page.getByTestId("dashboard-ready")).toBeVisible({ timeout: 30_000 });
     await page.getByRole("button", { name: "Open resource library", exact: true }).click();
     await expect(page.getByTestId("resource-library")).toBeVisible();
     await expect(page).toHaveScreenshot("home-resource-library.png", {
@@ -991,7 +991,7 @@ test.describe("Metrio visual regression", () => {
       localStorage.setItem("metrio-theme", "dark");
     }, "lead");
     await page.goto("/");
-    await expect(page.getByTestId("home-ready")).toBeVisible({ timeout: 30_000 });
+    await expect(page.getByTestId("dashboard-ready")).toBeVisible({ timeout: 30_000 });
     await expect(page).toHaveScreenshot("home-dark.png", {
       fullPage: true,
       maxDiffPixelRatio: 0.02,
@@ -1007,7 +1007,7 @@ test.describe("Metrio visual regression", () => {
       localStorage.setItem("metrio-visual-onboarding-checklist", payload);
     }, onboardingJson);
     await page.goto("/");
-    await expect(page.getByTestId("home-ready")).toBeVisible({ timeout: 30_000 });
+    await expect(page.getByTestId("dashboard-ready")).toBeVisible({ timeout: 30_000 });
     await expect(page.getByTestId("onboarding-checklist-card")).toBeVisible();
     await expect(page).toHaveScreenshot("onboarding-checklist-home.png", {
       fullPage: true,
@@ -1068,7 +1068,7 @@ test.describe("Metrio visual regression", () => {
       { payload: calendarJson, prefs: prefsJson },
     );
     await page.goto("/");
-    await expect(page.getByTestId("home-ready")).toBeVisible({ timeout: 30_000 });
+    await expect(page.getByTestId("dashboard-ready")).toBeVisible({ timeout: 30_000 });
     await expect(page.getByTestId("home-upcoming-meetings")).toBeVisible();
     await expect(page.getByText("Team Weekly")).toBeVisible();
     await expect(page).toHaveScreenshot("home-manager-calendar-1-1.png", {
@@ -1084,8 +1084,8 @@ test.describe("Metrio visual regression", () => {
       localStorage.setItem("metrio-theme", "light");
     }, "lead");
     await page.goto("/?visualHomeState=blocked");
-    await expect(page.getByTestId("home-blocked")).toBeVisible({ timeout: 30_000 });
-    await expect(page).toHaveScreenshot("home-blocked.png", {
+    await expect(page.getByTestId("dashboard-blocked")).toBeVisible({ timeout: 30_000 });
+    await expect(page).toHaveScreenshot("dashboard-blocked.png", {
       fullPage: true,
       maxDiffPixelRatio: 0.02,
     });
@@ -1098,8 +1098,8 @@ test.describe("Metrio visual regression", () => {
       localStorage.setItem("metrio-theme", "light");
     }, "lead");
     await page.goto("/?visualHomeState=partial");
-    await expect(page.getByTestId("home-partial")).toBeVisible({ timeout: 30_000 });
-    await expect(page).toHaveScreenshot("home-partial.png", {
+    await expect(page.getByTestId("dashboard-partial")).toBeVisible({ timeout: 30_000 });
+    await expect(page).toHaveScreenshot("dashboard-partial.png", {
       fullPage: true,
       maxDiffPixelRatio: 0.02,
     });
@@ -1112,7 +1112,7 @@ test.describe("Metrio visual regression", () => {
       localStorage.setItem("metrio-theme", "light");
     }, "employee");
     await page.goto("/?visualHomeKnowledge=1");
-    await expect(page.getByTestId("home-ready")).toBeVisible({ timeout: 30_000 });
+    await expect(page.getByTestId("dashboard-ready")).toBeVisible({ timeout: 30_000 });
     await expect(page.getByTestId("home-relevant-knowledge")).toBeVisible();
     await expect(page.getByText("UX Team Handbook")).toBeVisible();
     await expect(page).toHaveScreenshot("home-relevant-knowledge.png", {
@@ -1159,7 +1159,7 @@ test.describe("Metrio visual regression", () => {
   test("jira open external tooltip", async ({ page }) => {
     await bootMetrio(page, "lead");
     await clickSubnav(page, /delivery risk/i);
-    const jiraAction = page.getByRole("button", { name: "Open in Jira" }).first();
+    const jiraAction = page.getByRole("button", { name: "Open Jira" }).first();
     await expect(jiraAction).toBeVisible({ timeout: 15_000 });
     await jiraAction.hover();
     await page.waitForTimeout(300);
@@ -1176,11 +1176,131 @@ test.describe("Metrio visual regression", () => {
       localStorage.setItem("metrio-theme", "dark");
     }, "lead");
     await page.goto("/");
-    await expect(page.getByTestId("home-ready")).toBeVisible({ timeout: 30_000 });
+    await expect(page.getByTestId("dashboard-ready")).toBeVisible({ timeout: 30_000 });
     await page.getByRole("button", { name: "Open resource library", exact: true }).click();
     await expect(page.getByTestId("resource-library")).toBeVisible();
     await expect(page).toHaveScreenshot("home-resource-library-dark.png", {
       fullPage: true,
+      maxDiffPixelRatio: 0.02,
+    });
+  });
+
+  test("dashboard manager 1440", async ({ page }) => {
+    await page.addInitScript((fixtureId: string) => {
+      localStorage.setItem("metrio-connection-connected", "true");
+      localStorage.setItem("metrio-dev-fixture", fixtureId);
+      localStorage.setItem("metrio-theme", "light");
+    }, "lead");
+    await page.goto("/");
+    await expect(page.getByTestId("dashboard-ready")).toBeVisible({ timeout: 30_000 });
+    await expect(page).toHaveScreenshot("dashboard-manager-1440.png", {
+      fullPage: true,
+      maxDiffPixelRatio: 0.02,
+    });
+  });
+
+  test("dashboard manager 1728", async ({ page }) => {
+    await page.setViewportSize({ width: 1728, height: 900 });
+    await page.addInitScript((fixtureId: string) => {
+      localStorage.setItem("metrio-connection-connected", "true");
+      localStorage.setItem("metrio-dev-fixture", fixtureId);
+      localStorage.setItem("metrio-theme", "light");
+    }, "lead");
+    await page.goto("/");
+    await expect(page.getByTestId("dashboard-ready")).toBeVisible({ timeout: 30_000 });
+    await expect(page).toHaveScreenshot("dashboard-manager-1728.png", {
+      fullPage: true,
+      maxDiffPixelRatio: 0.02,
+    });
+  });
+
+  test("dashboard dark", async ({ page }) => {
+    await page.addInitScript((fixtureId: string) => {
+      localStorage.setItem("metrio-connection-connected", "true");
+      localStorage.setItem("metrio-dev-fixture", fixtureId);
+      localStorage.setItem("metrio-theme", "dark");
+    }, "lead");
+    await page.goto("/");
+    await expect(page.getByTestId("dashboard-ready")).toBeVisible({ timeout: 30_000 });
+    await expect(page).toHaveScreenshot("dashboard-dark.png", {
+      fullPage: true,
+      maxDiffPixelRatio: 0.02,
+    });
+  });
+
+  test("delivery risk table 1440", async ({ page }) => {
+    await bootMetrio(page, "lead");
+    await clickSubnav(page, /delivery risk/i);
+    await expect(page.getByTestId("delivery-risk-view")).toBeVisible();
+    await expect(page).toHaveScreenshot("delivery-risk-1440.png", {
+      fullPage: true,
+      maxDiffPixelRatio: 0.02,
+    });
+  });
+
+  test("goals populated manager", async ({ page }) => {
+    await bootGoalsVisual(page, "lead", "light");
+    await expect(page.getByTestId("goals-list")).toBeVisible({ timeout: 15_000 });
+    await expect(page).toHaveScreenshot("goals-populated.png", {
+      fullPage: true,
+      maxDiffPixelRatio: 0.02,
+    });
+  });
+
+  test("goals empty manager", async ({ page }) => {
+    await page.addInitScript((fixtureId: string) => {
+      localStorage.setItem("metrio-connection-connected", "true");
+      localStorage.setItem("metrio-dev-fixture", fixtureId);
+      localStorage.setItem("metrio-theme", "light");
+      localStorage.setItem("metrio-visual-goals", "[]");
+    }, "lead");
+    await page.goto("/");
+    await openPerformanceFromHome(page);
+    await clickSubnav(page, /^goals$/i);
+    await expect(page.getByTestId("goals-empty-state")).toBeVisible({ timeout: 15_000 });
+    await expect(page).toHaveScreenshot("goals-empty.png", {
+      fullPage: true,
+      maxDiffPixelRatio: 0.02,
+    });
+  });
+
+  test("goal drawer", async ({ page }) => {
+    await bootGoalsVisual(page, "lead", "light");
+    await page.getByTestId("goal-list-row").first().getByRole("button", { name: "Open goal" }).click();
+    await expect(page.getByTestId("goal-detail-drawer")).toBeVisible();
+    await expect(page).toHaveScreenshot("goal-drawer.png", {
+      fullPage: true,
+      maxDiffPixelRatio: 0.02,
+    });
+  });
+
+  test("notification badge unread", async ({ page }) => {
+    await bootMetrioWithNotificationFixture(page, 6);
+    await expect(page.getByTestId("notification-unread-badge")).toHaveText("6");
+    await expect(page.locator(".app-header")).toHaveScreenshot("notification-badge-single.png", {
+      maxDiffPixelRatio: 0.02,
+    });
+  });
+
+  test("notification badge nine plus", async ({ page }) => {
+    const eventsJson = serializeNotificationFixtureForPlaywright();
+    await page.addInitScript((payload: string) => {
+      localStorage.setItem("metrio-connection-connected", "true");
+      localStorage.setItem("metrio-dev-fixture", "lead");
+      localStorage.setItem("metrio-theme", "light");
+      const parsed = JSON.parse(payload) as Array<Record<string, unknown>>;
+      const expanded = Array.from({ length: 12 }, (_, index) => ({
+        ...parsed[0],
+        id: `visual-unread-${index}`,
+        readAt: undefined,
+        dedupeKey: `visual-unread-${index}`,
+      }));
+      localStorage.setItem("metrio-notification-events", JSON.stringify(expanded));
+    }, eventsJson);
+    await page.goto("/");
+    await expect(page.getByTestId("dashboard-ready")).toBeVisible({ timeout: 30_000 });
+    await expect(page.getByTestId("notification-unread-badge")).toHaveText("9+");
+    await expect(page.locator(".app-header")).toHaveScreenshot("notification-badge-9plus.png", {
       maxDiffPixelRatio: 0.02,
     });
   });
