@@ -1,8 +1,13 @@
 export type SettingsSection =
-  | "general"
+  | "preferences"
   | "connections"
-  | "notifications"
   | "operational-rules"
+  | "company-app";
+
+/** @deprecated Legacy ids — use normalizeSettingsSection() */
+export type LegacySettingsSection =
+  | "general"
+  | "notifications"
   | "digests"
   | "company"
   | "diagnostics"

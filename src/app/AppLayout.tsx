@@ -87,7 +87,7 @@ export function AppLayout() {
   const [activeRoute, setActiveRoute] = useState<AppRoute>("home");
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [settingsSection, setSettingsSection] =
-    useState<SettingsSection>("general");
+    useState<SettingsSection>("preferences");
   const [dateRange, setDateRangeState] = useState<PerformanceDateRange>(() =>
     readSessionPerformanceDateRange(),
   );
@@ -209,7 +209,7 @@ function AppLayoutShell({
   const { currentUser } = useCurrentUser();
   const openAboutSettings = useCallback(() => {
     setSettingsOpen(true);
-    setSettingsSection("about");
+    setSettingsSection("company-app");
   }, [setSettingsOpen, setSettingsSection]);
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
   const [personBriefPersonId, setPersonBriefPersonId] = useState<string | null>(
@@ -336,7 +336,7 @@ function AppLayoutShell({
   );
 
   const onOpenSettings = useCallback(
-    (section: SettingsSection = "general") => {
+    (section: SettingsSection = "preferences") => {
       setSettingsSection(section);
       setSettingsOpen(true);
     },
@@ -347,7 +347,7 @@ function AppLayoutShell({
     () => ({
       refresh: onRefresh,
       openNotifications: () => setNotificationsOpen(true),
-      openSettings: () => onOpenSettings("general"),
+      openSettings: () => onOpenSettings("preferences"),
       openPerson: (personId: string) => {
         window.dispatchEvent(
           new CustomEvent("metrio-open-person", { detail: personId }),
@@ -500,7 +500,7 @@ function AppLayoutShell({
             activeRoute={settingsOpen ? null : activeRoute}
             feedbackEnabled={feedbackEnabled}
             onNavigate={onNavigate}
-            onOpenSettings={() => onOpenSettings("general")}
+            onOpenSettings={() => onOpenSettings("preferences")}
             onOpenNotifications={() => setNotificationsOpen(true)}
             onOpenCommandPalette={() => setCommandPaletteOpen(true)}
             notificationUnreadCount={notificationUnread}

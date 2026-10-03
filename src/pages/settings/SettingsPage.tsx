@@ -1,11 +1,8 @@
-import { useCallback, useEffect, useState, type ReactNode } from "react";
-import { Laptop, Moon, Sun } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
 import { readSavedConnection, type SavedConnection } from "../../app/connectionStorage";
 import { setFeedbackPrefsSnapshot } from "../../app/feedbackPrefsBridge";
 import { useFeedbackSurveyStore } from "../../app/feedbackSurveyStore";
 import { Button } from "../../components/Button/Button";
-import { SegmentedControl } from "../../components/SegmentedControl/SegmentedControl";
-import { Switch } from "../../components/Switch/Switch";
 import { Input } from "../../components/Input/Input";
 import { useToast } from "../../components/Toast/ToastContext";
 import { syncGeneralPreferencesToNative } from "../../platform/generalPreferencesSync";
@@ -23,133 +20,39 @@ import {
   savePreferences,
   type AppPreferences,
 } from "../../platform/preferences";
-import { useTheme } from "../../theme/ThemeProvider";
-import type { ThemePreference } from "../../theme/theme";
 import { PageSubnav } from "../../shell/PageSubnav";
 import type { SettingsSection } from "./types";
+import { normalizeSettingsSection } from "./settingsSection";
 import { GoogleConnectionPanel } from "../feedback/GoogleConnectionPanel";
 import { CalendarSettingsPanel } from "./CalendarSettingsPanel";
 import { disconnectCalendarCache } from "../../hooks/useUpcomingMeetings";
 import { SettingsCredentialField } from "./SettingsCredentialField";
 import "../page-content.css";
 import { OperationalRulesSettingsPanel } from "./OperationalRulesSettingsPanel";
-import { DigestSettingsPanel } from "./DigestSettingsPanel";
-import { AboutSettingsPanel } from "./AboutSettingsPanel";
-import { CompanySettingsPanel } from "./CompanySettingsPanel";
+import { PreferencesSettingsPanel } from "./PreferencesSettingsPanel";
+import { CompanyAppSettingsPanel } from "./CompanyAppSettingsPanel";
 import { MetrioCloudSettingsPanel } from "./MetrioCloudSettingsPanel";
-import { DiagnosticsSettingsPanel } from "./DiagnosticsSettingsPanel";
 import "./settings.css";
 
 const SECTIONS: { id: SettingsSection; label: string }[] = [
-  { id: "general", label: "General" },
+  { id: "preferences", label: "Preferences" },
   { id: "connections", label: "Connections" },
-  { id: "notifications", label: "Notifications" },
   { id: "operational-rules", label: "Attention rules" },
-  { id: "digests", label: "Briefs" },
-  { id: "company", label: "Company" },
-  { id: "diagnostics", label: "Diagnostics" },
-  { id: "about", label: "About" },
-];
-
-const THEME_OPTIONS: {
-  value: ThemePreference;
-  label: ReactNode;
-}[] = [
-  {
-    value: "light",
-    label: (
-      <>
-        <Sun size={14} strokeWidth={1.75} aria-hidden /> Light
-      </>
-    ),
-  },
-  {
-    value: "dark",
-    label: (
-      <>
-        <Moon size={14} strokeWidth={1.75} aria-hidden /> Dark
-      </>
-    ),
-  },
-  {
-    value: "system",
-    label: (
-      <>
-        <Laptop size={14} strokeWidth={1.75} aria-hidden /> System
-      </>
-    ),
-  },
-];
-
-const NOTIFICATION_ROWS: {
-  key: keyof AppPreferences["notifications"];
-  label: string;
-  description: string;
-}[] = [
-  {
-    key: "jiraAssignmentAlerts",
-    label: "New Jira assignments",
-    description: "When a Jira issue is newly assigned to you.",
-  },
-  {
-    key: "problematicTaskAlerts",
-    label: "Task attention",
-    description: "When a task needs attention or becomes problematic.",
-  },
-  {
-    key: "bambooActionAlerts",
-    label: "Bamboo actions",
-    description: "When BambooHR requires a document or onboarding step.",
-  },
-  {
-    key: "vacationReminder",
-    label: "Vacation reminders",
-    description: "Reminders at 7, 3, and 1 day before leave (and on the day).",
-  },
-  {
-    key: "vacationStarts",
-    label: "Vacation starting soon",
-    description: "When a team member's leave is about to start.",
-  },
-  {
-    key: "returns",
-    label: "Return from time off",
-    description: "When someone returns to the team.",
-  },
-  {
-    key: "workloadAlerts",
-    label: "Workload alerts",
-    description: "When workload becomes heavy or overloaded.",
-  },
-  {
-    key: "feedbackActionAlerts",
-    label: "Feedback actions",
-    description: "Delivery failures and surveys that need your action.",
-  },
-  {
-    key: "calendarOneOnOnePrep",
-    label: "1:1 preparation reminders",
-    description:
-      "Optional Metrio reminder 30–60 minutes before a 1:1 (off by default).",
-  },
-  {
-    key: "integrationProblemAlerts",
-    label: "Integration problems",
-    description: "When Jira or BambooHR data cannot be refreshed.",
-  },
+  { id: "company-app", label: "Company & App" },
 ];
 
 export interface SettingsPageProps {
   onReconnect?: () => void;
-  initialSection?: SettingsSection;
+  initialSection?: SettingsSection | string;
 }
 
 export function SettingsPage({
-  initialSection = "general",
+  initialSection = "preferences",
 }: SettingsPageProps) {
-  const { preference, setPreference } = useTheme();
   const toast = useToast();
-  const [section, setSection] = useState<SettingsSection>(initialSection);
+  const [section, setSection] = useState<SettingsSection>(() =>
+    normalizeSettingsSection(initialSection),
+  );
   const [prefs, setPrefs] = useState<AppPreferences>(DEFAULT_PREFERENCES);
   const [connection, setConnection] = useState<SavedConnection | null>(null);
   const [busy, setBusy] = useState(false);
@@ -160,7 +63,7 @@ export function SettingsPage({
   }, []);
 
   useEffect(() => {
-    setSection(initialSection);
+    setSection(normalizeSettingsSection(initialSection));
   }, [initialSection]);
 
   useEffect(() => {
@@ -293,78 +196,30 @@ export function SettingsPage({
         ariaLabel="Settings sections"
       />
 
-      {section === "general" ? (
-        <div className="settings-panel">
-          <p className="settings-intro">Appearance and startup behavior.</p>
-          <div className="settings-group">
-            <span className="settings-row__label">Theme</span>
-            <SegmentedControl
-              ariaLabel="Theme preference"
-              value={preference}
-              options={THEME_OPTIONS}
-              onChange={(value) => {
-                setPreference(value);
-                toast.success("Settings saved");
-              }}
-            />
-          </div>
-
-          <div className="settings-toggle-row">
-            <div className="settings-toggle-row__text">
-              <span className="settings-toggle-row__label">Launch Metrio at login</span>
-            </div>
-            <Switch
-              aria-label="Launch Metrio at login"
-              checked={prefs.general.launchAtLogin}
-              onCheckedChange={(checked) => {
-                void persistPrefs({
-                  ...prefs,
-                  general: { ...prefs.general, launchAtLogin: checked },
-                });
-              }}
-            />
-          </div>
-
-          <div className="settings-toggle-row">
-            <div className="settings-toggle-row__text">
-              <span className="settings-toggle-row__label">
-                Keep running in the menu bar when the window is closed
-              </span>
-            </div>
-            <Switch
-              aria-label="Keep running in the menu bar when the window is closed"
-              checked={prefs.general.keepRunningInTray}
-              onCheckedChange={(checked) => {
-                void persistPrefs({
-                  ...prefs,
-                  general: { ...prefs.general, keepRunningInTray: checked },
-                });
-              }}
-            />
-          </div>
-        </div>
+      {section === "preferences" ? (
+        <PreferencesSettingsPanel prefs={prefs} onPersist={persistPrefs} />
       ) : null}
 
       {section === "connections" ? (
-        <div className="settings-panel">
+        <div className="settings-panel" data-testid="connections-settings">
           <p className="settings-intro">
             Manage secure credentials for your company integrations.
           </p>
 
-          <div className="settings-group">
-            <span className="settings-row__label">Work email</span>
+          <section className="settings-card">
+            <h3 className="settings-card__title">Work email</h3>
+            <p className="settings-card__description">
+              Used to match your Metrio account with Jira and Bamboo.
+            </p>
             <Input
               readOnly
               value={connection?.workEmail || prefs.workEmail || "—"}
             />
-            <p className="settings-row__hint">
-              Used to match your Metrio account with Jira and Bamboo.
-            </p>
-          </div>
+          </section>
 
-          <div className="settings-integration">
-            <div className="settings-integration__head">
-              <span className="settings-row__label">Jira</span>
+          <section className="settings-card">
+            <div className="settings-card__head">
+              <h3 className="settings-card__title">Jira</h3>
               <span
                 className={
                   connection?.hasJiraToken
@@ -376,19 +231,21 @@ export function SettingsPage({
               </span>
             </div>
             <SettingsCredentialField
-              label="Token"
+              label="API token"
               hasValue={Boolean(connection?.hasJiraToken)}
               busy={busy}
               onSave={onSaveJiraToken}
             />
-            <Button type="button" variant="secondary" disabled={busy} onClick={() => void onTestJira()}>
-              Test connection
-            </Button>
-          </div>
+            <div className="settings-button-group">
+              <Button type="button" variant="secondary" disabled={busy} onClick={() => void onTestJira()}>
+                Test connection
+              </Button>
+            </div>
+          </section>
 
-          <div className="settings-integration">
-            <div className="settings-integration__head">
-              <span className="settings-row__label">BambooHR</span>
+          <section className="settings-card">
+            <div className="settings-card__head">
+              <h3 className="settings-card__title">BambooHR</h3>
               <span
                 className={
                   connection?.hasBambooApiKey
@@ -405,46 +262,36 @@ export function SettingsPage({
               busy={busy}
               onSave={onSaveBambooKey}
             />
-            <Button type="button" variant="secondary" disabled={busy} onClick={() => void onTestBamboo()}>
-              Test connection
-            </Button>
-          </div>
+            <div className="settings-button-group">
+              <Button type="button" variant="secondary" disabled={busy} onClick={() => void onTestBamboo()}>
+                Test connection
+              </Button>
+            </div>
+          </section>
 
-          <MetrioCloudSettingsPanel />
+          <section className="settings-card">
+            <MetrioCloudSettingsPanel />
+          </section>
 
-          <GoogleConnectionPanel
-            prefs={prefs}
-            loading={googleBusy}
-            message={null}
-            mode="settings"
-            showAdvanced={false}
-            onConnect={handleGoogleConnect}
-            onReconnect={handleGoogleConnect}
-            onDisconnect={handleGoogleDisconnect}
-            onUpdatePrefs={patchGooglePrefs}
-          />
+          <section className="settings-card settings-card--google">
+            <GoogleConnectionPanel
+              prefs={prefs}
+              loading={googleBusy}
+              message={null}
+              mode="settings"
+              showAdvanced={false}
+              onConnect={handleGoogleConnect}
+              onReconnect={handleGoogleConnect}
+              onDisconnect={handleGoogleDisconnect}
+              onUpdatePrefs={patchGooglePrefs}
+            />
+          </section>
 
-          <CalendarSettingsPanel prefs={prefs} onUpdatePrefs={patchGooglePrefs} />
+          <section className="settings-card">
+            <CalendarSettingsPanel prefs={prefs} onUpdatePrefs={patchGooglePrefs} embedded />
+          </section>
         </div>
       ) : null}
-
-      {section === "digests" ? (
-        <DigestSettingsPanel
-          prefs={prefs}
-          onPersist={(next) => persistPrefs(next)}
-        />
-      ) : null}
-
-      {section === "company" ? <CompanySettingsPanel /> : null}
-
-      {section === "diagnostics" ? (
-        <DiagnosticsSettingsPanel
-          prefs={prefs}
-          onPersist={(next) => persistPrefs(next)}
-        />
-      ) : null}
-
-      {section === "about" ? <AboutSettingsPanel /> : null}
 
       {section === "operational-rules" ? (
         <OperationalRulesSettingsPanel
@@ -453,38 +300,8 @@ export function SettingsPage({
         />
       ) : null}
 
-      {section === "notifications" ? (
-        <div className="settings-panel">
-          <p className="settings-intro">
-            Choose which notifications Metrio may send to macOS. In-app activity
-            history stays available in the Notification Center.
-          </p>
-          <div className="settings-notification-list">
-            {NOTIFICATION_ROWS.map((row) => (
-              <div key={row.key} className="settings-notification-row">
-                <div className="settings-notification-row__text">
-                  <span className="settings-notification-row__label">{row.label}</span>
-                  <span className="settings-notification-row__description">
-                    {row.description}
-                  </span>
-                </div>
-                <Switch
-                  aria-label={row.label}
-                  checked={prefs.notifications[row.key]}
-                  onCheckedChange={(checked) => {
-                    void persistPrefs({
-                      ...prefs,
-                      notifications: {
-                        ...prefs.notifications,
-                        [row.key]: checked,
-                      },
-                    });
-                  }}
-                />
-              </div>
-            ))}
-          </div>
-        </div>
+      {section === "company-app" ? (
+        <CompanyAppSettingsPanel prefs={prefs} onPersist={persistPrefs} />
       ) : null}
     </div>
   );

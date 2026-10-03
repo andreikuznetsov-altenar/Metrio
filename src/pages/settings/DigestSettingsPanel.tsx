@@ -43,20 +43,19 @@ export interface DigestSettingsPanelProps {
   onPersist: (next: AppPreferences) => Promise<void>;
 }
 
-export function DigestSettingsPanel({ prefs, onPersist }: DigestSettingsPanelProps) {
+export function DigestSettingsCard({ prefs, onPersist }: DigestSettingsPanelProps) {
   return (
-    <div className="settings-panel" data-testid="digest-settings">
-      <p className="settings-intro">
+    <section className="settings-card" data-testid="digest-settings">
+      <h3 className="settings-card__title">Briefs</h3>
+      <p className="settings-card__description">
         Deterministic summaries from loaded Metrio data. No generative AI.
       </p>
-      <div className="settings-notification-list">
+      <div className="settings-toggle-stack">
         {ROWS.map((row) => (
-          <div key={row.key} className="settings-notification-row">
-            <div className="settings-notification-row__text">
-              <span className="settings-notification-row__label">{row.label}</span>
-              <span className="settings-notification-row__description">
-                {row.description}
-              </span>
+          <div key={row.key} className="settings-toggle-row settings-toggle-row--stacked">
+            <div className="settings-toggle-row__text">
+              <span className="settings-toggle-row__label">{row.label}</span>
+              <span className="settings-toggle-row__description">{row.description}</span>
             </div>
             <Switch
               aria-label={row.label}
@@ -71,6 +70,15 @@ export function DigestSettingsPanel({ prefs, onPersist }: DigestSettingsPanelPro
           </div>
         ))}
       </div>
+    </section>
+  );
+}
+
+/** @deprecated Use DigestSettingsCard inside Preferences */
+export function DigestSettingsPanel(props: DigestSettingsPanelProps) {
+  return (
+    <div className="settings-panel">
+      <DigestSettingsCard {...props} />
     </div>
   );
 }
