@@ -16,7 +16,7 @@ describe("matchOnboardingResources", () => {
       { department: "Unknown", projects: [], confluenceLinks: [] },
       JIRA,
     );
-    expect(result.all.some((r) => r.id === "company-handbook")).toBe(true);
+    expect(result.all.some((r) => r.id === "bamboo-hr-portal")).toBe(true);
     expect(result.preview.length).toBeLessThanOrEqual(NEW_STARTER_PREVIEW_LIMIT);
   });
 
@@ -25,7 +25,7 @@ describe("matchOnboardingResources", () => {
       { department: "Design", jobTitle: "Product Designer", projects: [], confluenceLinks: [] },
       JIRA,
     );
-    expect(result.all.some((r) => r.id === "design-handbook")).toBe(true);
+    expect(result.all.some((r) => r.id === "design-jira")).toBe(true);
   });
 
   it("does not grant access from jobTitle alone without department", () => {
@@ -33,7 +33,7 @@ describe("matchOnboardingResources", () => {
       { jobTitle: "Product Designer", projects: [], confluenceLinks: [] },
       JIRA,
     );
-    expect(result.all.some((r) => r.id === "design-handbook")).toBe(false);
+    expect(result.all.some((r) => r.id === "design-jira")).toBe(false);
   });
 
   it("includes jira project resources for relevant projects", () => {
@@ -84,12 +84,12 @@ describe("matchOnboardingResources", () => {
     expect(result.all.some((r) => r.id === "confluence-99")).toBe(true);
   });
 
-  it("matches location when provided", () => {
+  it("does not ship guessed location wiki URLs from curated catalog", () => {
     const result = matchOnboardingResources(
       { location: "Malta - St Julian's", projects: [], confluenceLinks: [] },
       JIRA,
     );
-    expect(result.all.some((r) => r.id === "location-malta")).toBe(true);
+    expect(result.all.some((r) => r.id === "location-malta")).toBe(false);
   });
 
   it("dedupes by id keeping higher priority", () => {
@@ -111,7 +111,9 @@ describe("matchOnboardingResources", () => {
 
   it("filters locally by title", () => {
     const result = matchOnboardingResources({ projects: [], confluenceLinks: [] }, JIRA);
-    const filtered = filterOnboardingResources(result.all, "handbook");
-    expect(filtered.every((r) => r.title.toLowerCase().includes("handbook"))).toBe(true);
+    const filtered = filterOnboardingResources(result.all, "bamboo");
+    expect(filtered.every((r) => r.title.toLowerCase().includes("bamboo"))).toBe(
+      true,
+    );
   });
 });

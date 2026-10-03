@@ -120,7 +120,11 @@ export function searchLocalCommandPalette(
     for (const [index, recent] of input.recents.slice(0, 8).entries()) {
       results.push(recentToResult(recent, index));
     }
-    results.push(...searchPaletteCommands(""));
+    results.push(
+      ...searchPaletteCommands("", {
+        feedbackEnabled: input.feedbackEnabled,
+      }),
+    );
     return mergeAndSort(results).slice(0, 12);
   }
 
@@ -232,7 +236,9 @@ export function searchLocalCommandPalette(
     });
   }
 
-  results.push(...searchPaletteCommands(query));
+  results.push(
+    ...searchPaletteCommands(query, { feedbackEnabled: input.feedbackEnabled }),
+  );
   results.push(...curatedResourceResults(query, input.jiraBaseUrl));
 
   if (

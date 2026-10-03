@@ -2,6 +2,7 @@ import {
   CURATED_ONBOARDING_RESOURCES,
   materializeCuratedResource,
 } from "../../config/onboardingResources";
+import { VISUAL_CURATED_ONBOARDING_RESOURCES } from "../../fixtures/onboardingResourcesVisual";
 import {
   NEW_STARTER_PREVIEW_LIMIT,
   type MatchedOnboardingResources,
@@ -61,17 +62,47 @@ function groupResources(
   return byGroup;
 }
 
+function catalogForBuild(
+  catalog: typeof CURATED_ONBOARDING_RESOURCES,
+): typeof CURATED_ONBOARDING_RESOURCES {
+  if (import.meta.env.VITE_VISUAL_FIXTURE === "1") {
+    return [...catalog, ...VISUAL_CURATED_ONBOARDING_RESOURCES];
+  }
+  return catalog;
+}
+
+function hasResolvableTarget(
+  resource: OnboardingResource,
+  jiraBaseUrl: string,
+): boolean {
+  const target = resource.target;
+  if (target.kind === "external") {
+    return Boolean(target.url?.trim().startsWith("http"));
+  }
+  if (target.kind === "jira_project") {
+    return Boolean(target.url?.trim() || jiraBaseUrl.trim());
+  }
+  if (target.kind === "confluence_space" || target.kind === "confluence_page") {
+    return Boolean(target.url?.trim());
+  }
+  if (target.kind === "bamboo_portal") {
+    return true;
+  }
+  return true;
+}
+
 export function matchOnboardingResources(
   input: OnboardingResourceMatchInput,
   jiraBaseUrl: string,
   catalog: typeof CURATED_ONBOARDING_RESOURCES = CURATED_ONBOARDING_RESOURCES,
 ): MatchedOnboardingResources {
+  const defs = catalogForBuild(catalog);
   const dept = normalize(input.department);
   const location = normalize(input.location);
   const team = normalize(input.teamLabel);
   const matched: OnboardingResource[] = [];
 
-  for (const def of catalog) {
+  for (const def of defs) {
     let include = false;
     let priority = def.priority + jobTitleBoost(def, input.jobTitle);
 
@@ -134,12 +165,16 @@ export function matchOnboardingResources(
     });
   }
 
-  const all = sortResources(dedupeResources(matched));
+  const filtered = dedupeResources(matched).filter((r) =>
+    hasResolvableTarget(r, jiraBaseUrl),
+  );
+  const all = sortResources(filtered);
   const companyDefaults = sortResources(
     dedupeResources(
-      catalog.filter((d) => d.audience === "company").map((d) =>
-        materializeCuratedResource(d, jiraBaseUrl),
-      ),
+      defs
+        .filter((d) => d.audience === "company")
+        .map((d) => materializeCuratedResource(d, jiraBaseUrl))
+        .filter((r) => hasResolvableTarget(r, jiraBaseUrl)),
     ),
   );
 

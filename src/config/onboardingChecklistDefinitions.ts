@@ -37,7 +37,6 @@ export const ONBOARDING_CHECKLIST_DEFINITIONS: ChecklistItemDefinition[] = [
     completionMode: "confluence_explicit",
     phase: "first_week",
     dueDay: 7,
-    resourceId: "company-handbook",
     audience: "company",
     addedInVersion: 1,
   },

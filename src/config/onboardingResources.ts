@@ -30,58 +30,25 @@ export interface CuratedOnboardingResourceDef {
     | { kind: "confluence_space_key"; spaceKey: string; url: string };
 }
 
-function deptKey(name: string): string {
+export function deptKey(name: string): string {
   return name.trim().toLowerCase();
 }
 
+/**
+ * Production-safe curated entries only — no guessed Confluence space URLs.
+ * Admin CompanyConfig resources and API-discovered links supply handbook URLs.
+ */
 export const CURATED_ONBOARDING_RESOURCES: CuratedOnboardingResourceDef[] = [
   {
-    id: "company-handbook",
-    title: "Company handbook",
-    description: "Policies and how we work",
-    group: "company",
-    audience: "company",
-    source: "curated",
-    priority: 100,
-    tags: ["policies", "onboarding"],
-    target: {
-      kind: "external",
-      url: "https://altenar.atlassian.net/wiki/spaces/HANDBOOK",
-    },
-  },
-  {
-    id: "company-benefits",
-    title: "Benefits overview",
-    group: "policies",
-    audience: "company",
-    source: "curated",
-    priority: 95,
-    tags: ["benefits"],
-    target: { kind: "bamboo_portal" },
-  },
-  {
-    id: "bamboo-time-off",
-    title: "Time off & HR",
+    id: "bamboo-hr-portal",
+    title: "Open BambooHR",
+    description: "Time off, HR, and your employee profile",
     group: "tools",
     audience: "company",
     source: "bamboo",
-    priority: 90,
-    tags: ["bamboo", "time off"],
+    priority: 95,
+    tags: ["bamboo", "hr"],
     target: { kind: "bamboo_portal" },
-  },
-  {
-    id: "design-handbook",
-    title: "Design handbook",
-    group: "department",
-    audience: "department",
-    audienceKey: deptKey("Design"),
-    source: "curated",
-    priority: 80,
-    jobTitleHints: ["design", "ux", "product designer"],
-    target: {
-      kind: "external",
-      url: "https://altenar.atlassian.net/wiki/spaces/DESIGN",
-    },
   },
   {
     id: "design-jira",
@@ -91,49 +58,8 @@ export const CURATED_ONBOARDING_RESOURCES: CuratedOnboardingResourceDef[] = [
     audienceKey: deptKey("Design"),
     source: "jira",
     priority: 75,
-    jobTitleHints: ["design", "ux"],
+    jobTitleHints: ["design", "ux", "product designer"],
     target: { kind: "jira_project_key", projectKey: "UX" },
-  },
-  {
-    id: "engineering-handbook",
-    title: "Engineering handbook",
-    group: "department",
-    audience: "department",
-    audienceKey: deptKey("Engineering"),
-    source: "curated",
-    priority: 80,
-    jobTitleHints: ["engineer", "developer", "devops"],
-    target: {
-      kind: "external",
-      url: "https://altenar.atlassian.net/wiki/spaces/ENG",
-    },
-  },
-  {
-    id: "engineering-workflow",
-    title: "Development workflow",
-    group: "department",
-    audience: "department",
-    audienceKey: deptKey("Engineering"),
-    source: "curated",
-    priority: 70,
-    target: {
-      kind: "external",
-      url: "https://altenar.atlassian.net/wiki/spaces/ENG/pages/workflow",
-    },
-  },
-  {
-    id: "location-malta",
-    title: "Malta office guide",
-    group: "company",
-    audience: "location",
-    audienceKey: "malta",
-    source: "curated",
-    priority: 65,
-    tags: ["office"],
-    target: {
-      kind: "external",
-      url: "https://altenar.atlassian.net/wiki/spaces/OFFICE/pages/malta",
-    },
   },
 ];
 
@@ -148,6 +74,9 @@ export function resolveCuratedTarget(
       return { kind: "bamboo_portal" };
     case "jira_project_key": {
       const base = jiraBaseUrl.replace(/\/+$/, "");
+      if (!base) {
+        return { kind: "jira_project", projectKey: def.target.projectKey, url: "" };
+      }
       return {
         kind: "jira_project",
         projectKey: def.target.projectKey,

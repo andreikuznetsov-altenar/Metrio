@@ -81,14 +81,21 @@ export const PALETTE_COMMANDS: PaletteCommandDef[] = [
   },
 ];
 
-export function searchPaletteCommands(query: string): CommandResult[] {
+export function searchPaletteCommands(
+  query: string,
+  options?: { feedbackEnabled?: boolean },
+): CommandResult[] {
+  const commands =
+    options?.feedbackEnabled === false
+      ? PALETTE_COMMANDS.filter((c) => c.commandId !== "navigate-feedback")
+      : PALETTE_COMMANDS;
   const q = query.trim().toLowerCase();
   if (!q) {
-    return PALETTE_COMMANDS.slice(0, 4).map((command, index) =>
+    return commands.slice(0, 4).map((command, index) =>
       commandToResult(command, 200 - index),
     );
   }
-  return PALETTE_COMMANDS
+  return commands
     .map((command) => {
       const haystack = [
         command.title,
