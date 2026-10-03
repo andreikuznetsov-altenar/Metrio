@@ -3,6 +3,7 @@ import {
   useCallback,
   useContext,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
@@ -29,6 +30,7 @@ const ToastContext = createContext<ToastContextValue | null>(null);
 
 export function ToastProvider({ children }: { children: ReactNode }) {
   const [toasts, setToasts] = useState<ToastRecord[]>([]);
+  const timeoutRef = useRef<number | null>(null);
 
   const dismiss = useCallback((id: string) => {
     setToasts((current) => current.filter((toast) => toast.id !== id));
@@ -46,9 +48,16 @@ export function ToastProvider({ children }: { children: ReactNode }) {
         variant,
         durationMs: input.durationMs ?? DEFAULT_DURATION[variant],
       };
-      setToasts((current) => [...current, record]);
+      if (timeoutRef.current != null) {
+        window.clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
+      }
+      setToasts([record]);
       if (record.durationMs > 0) {
-        window.setTimeout(() => dismiss(id), record.durationMs);
+        timeoutRef.current = window.setTimeout(() => {
+          dismiss(id);
+          timeoutRef.current = null;
+        }, record.durationMs);
       }
       return id;
     },
