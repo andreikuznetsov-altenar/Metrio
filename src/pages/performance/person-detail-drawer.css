@@ -207,6 +207,7 @@
 }
 
 .person-detail-drawer__history-group .performance-subsection__title {
+  font-size: 17px;
   margin: 0 0 var(--space-1);
 }
 
@@ -234,8 +235,16 @@
   width: min(180px, 100%);
 }
 
+.history-period-select {
+  width: min(168px, 100%);
+}
+
+.history-period-select .select-trigger {
+  min-height: 36px;
+}
+
 .person-detail-drawer__history-group + .person-detail-drawer__history-group {
-  margin-top: var(--space-3);
+  margin-top: var(--space-6);
 }
 
 .person-detail-drawer__time-off {

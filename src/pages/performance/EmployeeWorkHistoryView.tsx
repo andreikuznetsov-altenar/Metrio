@@ -7,6 +7,7 @@ import { workHistoryEntryToEvidenceIssue } from "../../domain/analytics/personAn
 import {
   formatWorkHistoryGroupLabel,
   formatWorkHistoryGroupSummary,
+  formatWorkHistoryRowMeta,
 } from "../../domain/personal/workHistoryDisplay";
 import type { WorkHistoryGroupView, WorkHistoryRow } from "../../domain/performance";
 import { AnalyticsIssueRow } from "./AnalyticsIssueRow";
@@ -76,6 +77,7 @@ export function EmployeeWorkHistoryView({
           Work history
         </h3>
         <Select
+          className="history-period-select"
           aria-label="History period"
           value={period}
           options={[
@@ -134,6 +136,7 @@ export function EmployeeWorkHistoryView({
                         )}
                         showOutcome
                         hidePerson
+                        metaLine={formatWorkHistoryRowMeta(row)}
                       />
                     ))}
                 </div>

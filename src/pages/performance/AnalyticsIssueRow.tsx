@@ -27,6 +27,8 @@ export interface AnalyticsIssueRowProps {
   showOutcome?: boolean;
   showBackflowSummary?: boolean;
   hidePerson?: boolean;
+  /** When set (e.g. work history), replaces default meta composition. */
+  metaLine?: string;
   expanded?: boolean;
   onToggleExpand?: () => void;
 }
@@ -37,6 +39,7 @@ export function AnalyticsIssueRow({
   showOutcome = true,
   showBackflowSummary = false,
   hidePerson = false,
+  metaLine,
   expanded = false,
   onToggleExpand,
 }: AnalyticsIssueRowProps) {
@@ -47,14 +50,21 @@ export function AnalyticsIssueRow({
     : null;
   const durationLabel = formatCycleDurationShort(issue.cycleDurationMs);
   const hasBackflowDetails = (issue.backflowEvents?.length ?? 0) > 0;
-  const metaParts = [
-    issue.cycleLabel,
-    completedLabel,
-    durationLabel ? `${durationLabel} cycle` : null,
-    showBackflowSummary && (issue.backflowCount ?? 0) > 0
-      ? `${issue.backflowCount} backflow${(issue.backflowCount ?? 0) === 1 ? "" : "s"}`
-      : null,
-  ].filter(Boolean) as string[];
+  const metaParts =
+    metaLine !== undefined
+      ? metaLine
+        ? [metaLine]
+        : []
+      : (
+          [
+            issue.cycleLabel && issue.cycleLabel !== "—" ? issue.cycleLabel : null,
+            completedLabel,
+            durationLabel ? `Cycle ${durationLabel}` : null,
+            showBackflowSummary && (issue.backflowCount ?? 0) > 0
+              ? `${issue.backflowCount} backflow${(issue.backflowCount ?? 0) === 1 ? "" : "s"}`
+              : null,
+          ].filter(Boolean) as string[]
+        );
 
   return (
     <article className="analytics-issue-row">

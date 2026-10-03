@@ -1,5 +1,7 @@
 import { format } from 'date-fns';
 import type { WorkHistoryPeriod } from './workHistory';
+import { formatCycleDurationShort } from '../../pages/performance/analyticsDrawerPresentation';
+import type { WorkHistoryRow } from '../performance';
 
 export function formatWorkHistoryGroupLabel(
   periodKey: string,
@@ -35,4 +37,38 @@ export function formatWorkHistoryGroupSummary(group: {
   reviewReturns: number;
 }): string {
   return `${group.completedCount} completed · ${group.firstPassCount} first pass · ${group.reviewReturns} rework`;
+}
+
+function isPlaceholderToken(value: string | undefined | null): boolean {
+  if (!value) return true;
+  const trimmed = value.trim();
+  return trimmed === '' || trimmed === '—' || trimmed === '–' || trimmed === '-';
+}
+
+/** Structured history row metadata without orphan separators. */
+export function formatWorkHistoryRowMeta(row: WorkHistoryRow): string {
+  const parts: string[] = [];
+
+  if (!isPlaceholderToken(row.completedOn)) {
+    parts.push(row.completedOn.trim());
+  } else if (row.completedAtIso) {
+    const isoDate = row.completedAtIso.slice(0, 10);
+    if (isoDate) {
+      parts.push(format(new Date(isoDate), 'd MMM yyyy'));
+    }
+  }
+
+  const cycleFromMs = formatCycleDurationShort(row.cycleMs);
+  if (cycleFromMs) {
+    parts.push(`Cycle ${cycleFromMs}`);
+  } else if (!isPlaceholderToken(row.cycle)) {
+    const cycle = row.cycle.trim();
+    if (/^cycle\b/i.test(cycle)) {
+      parts.push(cycle);
+    } else {
+      parts.push(`Cycle ${cycle}`);
+    }
+  }
+
+  return parts.join(' · ');
 }
