@@ -98,120 +98,142 @@ export function OperationalRulesSettingsPanel({
     <div className="settings-panel" data-testid="operational-rules-settings">
       <p className="settings-intro">
         Attention rules control when Metrio highlights operational risk. They do
-        not change performance KPI definitions (Completed, First pass, Backflows,
-        Avg cycle, Efficiency).
+        not change performance KPI definitions.
       </p>
 
-      <div className="settings-group">
-        <span className="settings-row__label">Review attention (days)</span>
-        <Input
-          type="number"
-          min={1}
-          max={30}
-          value={String(draft.taskAttention.reviewAttentionDays)}
-          onChange={(e) =>
-            patchTask({ reviewAttentionDays: Number(e.target.value) })
-          }
-        />
-        <p className="settings-row__hint">
-          Highlights tasks in Review longer than this. Currently matches:{" "}
-          {reviewPreview} tasks
+      <section className="settings-card">
+        <h3 className="settings-card__title">Attention thresholds</h3>
+        <p className="settings-card__description">
+          Tune when tasks appear in attention signals and Team Actions.
         </p>
-      </div>
-
-      <div className="settings-group">
-        <span className="settings-row__label">Long review highlight (days)</span>
-        <Input
-          type="number"
-          min={2}
-          max={45}
-          value={String(draft.taskAttention.longReviewHighlightDays)}
-          onChange={(e) =>
-            patchTask({ longReviewHighlightDays: Number(e.target.value) })
-          }
-        />
-        <p className="settings-row__hint">
-          Used for Home delivery summary and Team Actions stale review.
-        </p>
-      </div>
-
-      <div className="settings-group">
-        <span className="settings-row__label">No activity (days)</span>
-        <Input
-          type="number"
-          min={1}
-          max={30}
-          value={String(draft.taskAttention.noActivityDays)}
-          onChange={(e) => patchTask({ noActivityDays: Number(e.target.value) })}
-        />
-        <p className="settings-row__hint">
-          Highlights active work with no detected Jira activity for this many days.
-          Currently matches: {activityPreview} tasks
-        </p>
-      </div>
-
-      <div className="settings-group">
-        <span className="settings-row__label">Vacation soon window (days)</span>
-        <Input
-          type="number"
-          min={1}
-          max={21}
-          value={String(draft.vacation.soonWithinDays)}
-          onChange={(e) =>
-            setDraft((prev) => ({
-              ...prev,
-              vacation: {
-                ...prev.vacation,
-                soonWithinDays: Number(e.target.value),
-              },
-            }))
-          }
-        />
-      </div>
-
-      <div className="settings-group">
-        <span className="settings-row__label">Vacation reminder milestones</span>
-        <ul className="settings-milestone-list">
-          {MILESTONE_OPTIONS.map((opt) => (
-            <li key={opt.value}>
-              <Switch
-                aria-label={opt.label}
-                checked={draft.vacation.reminderMilestones.includes(opt.value)}
-                onCheckedChange={() => toggleMilestone(opt.value)}
-              />
-              <span>{opt.label}</span>
-            </li>
-          ))}
-        </ul>
-      </div>
-
-      <div className="settings-group">
-        <span className="settings-row__label">Team Actions visibility</span>
-        {(
-          [
-            ["showWorkload", "Workload"],
-            ["showUpcomingLeave", "Upcoming leave"],
-            ["showFeedback", "Feedback"],
-            ["showKnowledge", "Knowledge"],
-          ] as const
-        ).map(([key, label]) => (
-          <div key={key} className="settings-toggle-row">
-            <span className="settings-toggle-row__label">{label}</span>
-            <Switch
-              aria-label={label}
-              checked={draft.actions[key]}
-              onCheckedChange={(checked) =>
-                setDraft((prev) => ({
-                  ...prev,
-                  actions: { ...prev.actions, [key]: checked },
-                }))
+        <div className="settings-field-grid settings-field-grid--3">
+          <div className="settings-field">
+            <label className="settings-field__label" htmlFor="review-attention-days">
+              Review attention
+            </label>
+            <Input
+              id="review-attention-days"
+              type="number"
+              min={1}
+              max={30}
+              value={String(draft.taskAttention.reviewAttentionDays)}
+              onChange={(e) =>
+                patchTask({ reviewAttentionDays: Number(e.target.value) })
               }
             />
+            <p className="settings-field__hint">
+              Matches {reviewPreview} tasks in review now
+            </p>
           </div>
-        ))}
+          <div className="settings-field">
+            <label className="settings-field__label" htmlFor="no-activity-days">
+              No activity
+            </label>
+            <Input
+              id="no-activity-days"
+              type="number"
+              min={1}
+              max={30}
+              value={String(draft.taskAttention.noActivityDays)}
+              onChange={(e) => patchTask({ noActivityDays: Number(e.target.value) })}
+            />
+            <p className="settings-field__hint">
+              Matches {activityPreview} tasks without activity
+            </p>
+          </div>
+          <div className="settings-field">
+            <label className="settings-field__label" htmlFor="long-review-days">
+              Long review highlight
+            </label>
+            <Input
+              id="long-review-days"
+              type="number"
+              min={2}
+              max={45}
+              value={String(draft.taskAttention.longReviewHighlightDays)}
+              onChange={(e) =>
+                patchTask({ longReviewHighlightDays: Number(e.target.value) })
+              }
+            />
+            <p className="settings-field__hint">Home delivery summary threshold</p>
+          </div>
+        </div>
+        <div className="settings-field settings-field--narrow">
+          <label className="settings-field__label" htmlFor="vacation-soon-days">
+            Vacation soon window (days)
+          </label>
+          <Input
+            id="vacation-soon-days"
+            type="number"
+            min={1}
+            max={21}
+            value={String(draft.vacation.soonWithinDays)}
+            onChange={(e) =>
+              setDraft((prev) => ({
+                ...prev,
+                vacation: {
+                  ...prev.vacation,
+                  soonWithinDays: Number(e.target.value),
+                },
+              }))
+            }
+          />
+        </div>
+      </section>
+
+      <div className="settings-card-duo">
+        <section className="settings-card">
+          <h3 className="settings-card__title">Vacation reminder milestones</h3>
+          <p className="settings-card__description">
+            Choose when Metrio should remind you before your upcoming time off.
+          </p>
+          <ul className="settings-milestone-list">
+            {MILESTONE_OPTIONS.map((opt) => (
+              <li key={opt.value} className="settings-toggle-row">
+                <span className="settings-toggle-row__label">{opt.label}</span>
+                <Switch
+                  aria-label={opt.label}
+                  checked={draft.vacation.reminderMilestones.includes(opt.value)}
+                  onCheckedChange={() => toggleMilestone(opt.value)}
+                />
+              </li>
+            ))}
+          </ul>
+        </section>
+
+        <section className="settings-card">
+          <h3 className="settings-card__title">Team Actions visibility</h3>
+          <p className="settings-card__description">
+            Choose which informational signals may appear in Team Actions.
+          </p>
+          <div className="settings-toggle-stack">
+            {(
+              [
+                ["showWorkload", "Workload"],
+                ["showUpcomingLeave", "Upcoming leave"],
+                ["showFeedback", "Feedback"],
+                ["showKnowledge", "Knowledge"],
+              ] as const
+            ).map(([key, label]) => (
+              <div key={key} className="settings-toggle-row">
+                <span className="settings-toggle-row__label">{label}</span>
+                <Switch
+                  aria-label={label}
+                  checked={draft.actions[key]}
+                  onCheckedChange={(checked) =>
+                    setDraft((prev) => ({
+                      ...prev,
+                      actions: { ...prev.actions, [key]: checked },
+                    }))
+                  }
+                />
+              </div>
+            ))}
+          </div>
+        </section>
       </div>
 
-      <div className="settings-actions-row">
+      <div className="settings-button-group">
         <Button type="button" variant="primary" onClick={save}>
           Save attention rules
         </Button>
