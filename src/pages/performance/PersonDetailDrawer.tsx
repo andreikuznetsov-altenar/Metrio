@@ -3,14 +3,15 @@ import { Badge } from "../../components/Badge/Badge";
 import { Button } from "../../components/Button/Button";
 import { Drawer } from "../../components/Drawer/Drawer";
 import { Select } from "../../components/Select/Select";
+import { SegmentedControl } from "../../components/SegmentedControl/SegmentedControl";
 import { Tabs } from "../../components/Tabs/Tabs";
-import { PersonAvatar } from "../../components/PersonAvatar/PersonAvatar";
 import { usePerformanceData } from "../../app/PerformanceDataContext";
 import { useCurrentUser } from "../../app/CurrentUserContext";
 import { canOpenPersonBrief } from "../../domain/personAccess";
 import { useOnboardingResources } from "../../hooks/useOnboardingResources";
 import { ManagerNewStarterContext } from "../onboarding/ManagerNewStarterContext";
 import {
+  dispatchOpenPersonBrief,
   useOptionalPerformanceAnalytics,
   type PersonDrawerTab,
 } from "../../app/performanceAnalyticsContext";
@@ -23,6 +24,7 @@ import {
 import { groupAttentionSignals, hiddenAttentionKeyCount } from "./groupAttentionSignals";
 import { AnalyticsIssueRow } from "./AnalyticsIssueRow";
 import { PersonWorkRow } from "./PersonWorkRow";
+import { PersonIdentityHeader } from "./PersonIdentityHeader";
 import { PersonPerformanceMetrics } from "./PersonPerformanceMetrics";
 import { TrendMiniChart } from "./TrendMiniChart";
 import { TrendValue } from "./TrendValue";
@@ -31,6 +33,8 @@ import {
   buildTrendDrilldownRequest,
 } from "./analyticsDrilldownModel";
 import "./person-detail-drawer.css";
+import "./person-identity-header.css";
+import "./person-work-card.css";
 import "./performance-dashboard.css";
 
 const HISTORY_PAGE_SIZE = 15;
@@ -45,6 +49,13 @@ export interface PersonDetailDrawerProps {
 }
 
 type HistoryPeriod = "week" | "month" | "quarter";
+type HistoryFilter = "all" | "first_pass" | "rework";
+
+function rowMatchesFilter(row: WorkHistoryRow, filter: HistoryFilter): boolean {
+  if (filter === "all") return true;
+  if (filter === "first_pass") return /first pass/i.test(row.outcome);
+  return /rework/i.test(row.outcome);
+}
 
 function historyRowToIssue(
   row: WorkHistoryRow,
@@ -88,13 +99,14 @@ export function PersonDetailDrawer({
     knowledgeLinks: [],
   });
   const [historyPeriod, setHistoryPeriod] = useState<HistoryPeriod>("month");
+  const [historyFilter, setHistoryFilter] = useState<HistoryFilter>("all");
   const [historyVisibleCount, setHistoryVisibleCount] = useState(HISTORY_PAGE_SIZE);
 
   useEffect(() => {
     if (open) {
       setHistoryVisibleCount(HISTORY_PAGE_SIZE);
     }
-  }, [open, personId, historyPeriod]);
+  }, [open, personId, historyPeriod, historyFilter]);
 
   const groupedAttention = useMemo(
     () => (workspace ? groupAttentionSignals(workspace.attention) : []),
@@ -111,9 +123,11 @@ export function PersonDetailDrawer({
   const flatHistoryRows = useMemo(
     () =>
       historyGroups.flatMap((group) =>
-        group.rows.map((row) => ({ groupLabel: group.label, row })),
+        group.rows
+          .filter((row) => rowMatchesFilter(row, historyFilter))
+          .map((row) => ({ groupLabel: group.label, row })),
       ),
-    [historyGroups],
+    [historyFilter, historyGroups],
   );
 
   const visibleHistoryRows = flatHistoryRows.slice(0, historyVisibleCount);
@@ -157,11 +171,6 @@ export function PersonDetailDrawer({
         content: (
           <div className="person-detail-drawer__panel">
             <p className="person-detail-drawer__context">{workspace.contextLine}</p>
-            <div className="person-detail-drawer__context-meta">
-              <span>{workspace.role}</span>
-              <span>{workspace.availability}</span>
-              {workspace.timeOff ? <span>{workspace.timeOff.rangeLabel}</span> : null}
-            </div>
             <PersonPerformanceMetrics
               kpis={workspace.performanceKpis}
               cycleTime={workspace.cycleTime}
@@ -292,7 +301,7 @@ export function PersonDetailDrawer({
             <p className="person-performance-metrics__active" data-testid="person-work-active-summary">
               Active work: <strong>{workspace.activeWorkCount}</strong>
             </p>
-            <div className="performance-work-list">
+            <div className="person-detail-drawer__work-list">
               {workspace.workRows.length === 0 ? (
                 <p className="person-detail-drawer__empty">No active work in this period.</p>
               ) : (
@@ -302,7 +311,7 @@ export function PersonDetailDrawer({
             {workspace.problematicWork.length > 0 ? (
               <>
                 <h3 className="person-detail-drawer__section-title">Problematic tasks</h3>
-                <div className="performance-work-list">
+                <div className="person-detail-drawer__work-list">
                   {workspace.problematicWork.map((item) => (
                     <PersonWorkRow key={`problem-${item.key}`} item={item} />
                   ))}
@@ -321,6 +330,7 @@ export function PersonDetailDrawer({
             <div className="person-detail-drawer__history-head">
               <div className="person-detail-drawer__history-controls">
                 <Select
+                  className="history-period-select"
                   aria-label="History period"
                   value={historyPeriod}
                   options={[
@@ -331,6 +341,16 @@ export function PersonDetailDrawer({
                   onChange={(event) =>
                     setHistoryPeriod(event.target.value as HistoryPeriod)
                   }
+                />
+                <SegmentedControl
+                  ariaLabel="History outcome filter"
+                  value={historyFilter}
+                  onChange={setHistoryFilter}
+                  options={[
+                    { value: "all", label: "All" },
+                    { value: "first_pass", label: "First pass" },
+                    { value: "rework", label: "Rework" },
+                  ]}
                 />
               </div>
             </div>
@@ -362,6 +382,8 @@ export function PersonDetailDrawer({
                           )}
                           showOutcome
                           hidePerson
+                          variant="card"
+                          jiraAction="secondary-button"
                         />
                       ))}
                     </div>
@@ -373,7 +395,7 @@ export function PersonDetailDrawer({
             {historyVisibleCount < flatHistoryRows.length ? (
               <Button
                 type="button"
-                variant="ghost"
+                variant="secondary"
                 onClick={() =>
                   setHistoryVisibleCount((count) => count + HISTORY_PAGE_SIZE)
                 }
@@ -390,8 +412,12 @@ export function PersonDetailDrawer({
     flatHistoryRows.length,
     groupedAttention,
     historyGroups,
+    historyFilter,
     historyPeriod,
     historyVisibleCount,
+    isDirectReport,
+    managerOnboarding,
+    person,
     visibleHistoryRows,
     workspace,
   ]);
@@ -410,33 +436,27 @@ export function PersonDetailDrawer({
       onClosed={onClosed}
       ariaLabel={`Person detail for ${displayName}`}
       size="person"
+      className="drawer--person-detail"
       header={
-        <div className="person-detail-drawer__identity">
-          <PersonAvatar employeeId={personId} displayName={displayName} size="md" />
-          <div className="person-detail-drawer__identity-text">
-            <div className="person-detail-drawer__name">{displayName}</div>
-            <div className="person-detail-drawer__role">{jobTitle}</div>
-            <div className="person-detail-drawer__meta">
-              {workspace.availability} · {workspace.workload} workload
-            </div>
-          </div>
-          {showBriefAction ? (
-            <Button
-              type="button"
-              variant="secondary"
-              className="person-detail-drawer__brief-btn"
-              onClick={() => {
-                window.dispatchEvent(
-                  new CustomEvent("metrio-open-person-brief", {
-                    detail: { personId },
-                  }),
-                );
-              }}
-            >
-              Brief
-            </Button>
-          ) : null}
-        </div>
+        <PersonIdentityHeader
+          personId={personId}
+          displayName={displayName}
+          jobTitle={jobTitle}
+          person={person}
+          availabilityLabel={workspace.availability}
+          workloadLabel={workspace.workload}
+          action={
+            showBriefAction ? (
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={() => dispatchOpenPersonBrief({ personId })}
+              >
+                Brief
+              </Button>
+            ) : null
+          }
+        />
       }
     >
       <Tabs
