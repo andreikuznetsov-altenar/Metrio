@@ -39,6 +39,7 @@ export interface TrendCardData {
   sparkline?: number[];
   chartSeries?: { date: string; value: number }[];
   insufficientHistory?: boolean;
+  insufficientHistoryMessage?: string;
   historyRecordedDays?: number;
   historyRecommendedDays?: number;
   trendMetricKind?: "count" | "percent" | "duration";

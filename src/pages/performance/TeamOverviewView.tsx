@@ -345,12 +345,7 @@ export function TeamOverviewView({
                     onOpenTrendDrilldown?.(trend, point, source)
                   }
                 />
-              ) : trend.insufficientHistory ? (
-                <TrendInsufficientHistory
-                  recorded={trend.historyRecordedDays}
-                  recommended={trend.historyRecommendedDays}
-                />
-              ) : (
+              ) : trend.insufficientHistory ? null : (
                 <div className="performance-trend-card__sparkline-empty" aria-hidden />
               )}
             </Card>

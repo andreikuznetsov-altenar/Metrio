@@ -12,9 +12,9 @@ function arrowForDirection(
 export function TrendValue({ trend }: { trend: TrendCardData }) {
   if (trend.insufficientHistory) {
     return (
-      <div className="performance-trend-card__value performance-trend-card__value--unknown">
-        <span>{trend.value}</span>
-      </div>
+      <p className="performance-trend-card__insufficient">
+        {trend.insufficientHistoryMessage ?? "Not enough history"}
+      </p>
     );
   }
 

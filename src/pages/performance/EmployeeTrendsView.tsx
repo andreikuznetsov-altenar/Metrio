@@ -1,6 +1,6 @@
 import type { TrendCardData } from "../../domain/performance";
 import { useOptionalPerformanceAnalytics } from "../../app/performanceAnalyticsContext";
-import { TrendInsufficientHistory, TrendMiniChart } from "./TrendMiniChart";
+import { TrendMiniChart } from "./TrendMiniChart";
 import { TrendValue } from "./TrendValue";
 import { buildTrendDrilldownRequest } from "./analyticsDrilldownModel";
 
@@ -40,12 +40,7 @@ export function EmployeeTrendsView({
                     : undefined
                 }
               />
-            ) : trend.insufficientHistory ? (
-              <TrendInsufficientHistory
-                recorded={trend.historyRecordedDays}
-                recommended={trend.historyRecommendedDays}
-              />
-            ) : (
+            ) : trend.insufficientHistory ? null : (
               <div className="performance-trend-card__sparkline-empty" aria-hidden />
             )}
           </div>

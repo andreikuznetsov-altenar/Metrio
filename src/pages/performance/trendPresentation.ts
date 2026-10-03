@@ -56,7 +56,8 @@ export function buildTrendCardData(
   const sparkline = options?.sparkline;
   return {
     label,
-    value: sufficient ? comparison.label : "Not enough history",
+    value: sufficient ? comparison.label : "",
+    insufficientHistoryMessage: sufficient ? undefined : "Not enough history",
     sparkline:
       sufficient && sparkline && sparkline.length >= 2 ? sparkline : undefined,
     chartSeries:
@@ -84,9 +85,11 @@ export function metricContextFromComparison(
   import("../../domain/performance").MetricCardData,
   "contextLabel" | "contextSemantic" | "contextCaption"
 > {
-  if (!comparison.sufficient) return {};
+  if (!comparison.sufficient || comparison.unknown) return {};
+  const label = comparison.label.trim();
+  if (!label || label === "—" || label === "N/A") return {};
   return {
-    contextLabel: comparison.label,
+    contextLabel: label,
     contextSemantic: trendSemanticFromComparison(comparison),
     contextCaption: captionOverride ?? trendComparisonCaption(dateRangeKey),
   };

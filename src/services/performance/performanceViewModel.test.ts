@@ -205,7 +205,10 @@ describe("buildPerformanceViewModels", () => {
     );
     expect(vm.employee?.historyMonth.length).toBeGreaterThanOrEqual(0);
     expect(vm.employee?.trends).toHaveLength(4);
-    expect(vm.employee?.trends[0].value).toContain("Not enough history");
+    expect(vm.employee?.trends[0].insufficientHistory).toBe(true);
+    expect(vm.employee?.trends[0].insufficientHistoryMessage).toContain(
+      "Not enough history",
+    );
   });
 
   it("builds person drawer snapshot with Bamboo name and history project column", () => {

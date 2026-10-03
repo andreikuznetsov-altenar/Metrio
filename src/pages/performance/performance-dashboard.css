@@ -719,41 +719,57 @@
 
 .performance-table--delivery-risk th:nth-child(1),
 .performance-table--delivery-risk td:nth-child(1) {
-  width: minmax(0, 1fr);
+  width: 44%;
 }
 
 .performance-table--delivery-risk th:nth-child(2),
 .performance-table--delivery-risk td:nth-child(2) {
-  width: 170px;
+  width: 15%;
 }
 
 .performance-table--delivery-risk th:nth-child(3),
 .performance-table--delivery-risk td:nth-child(3) {
-  width: 84px;
+  width: 8%;
 }
 
 .performance-table--delivery-risk th:nth-child(4),
 .performance-table--delivery-risk td:nth-child(4) {
-  width: 180px;
+  width: 18%;
 }
 
 .performance-table--delivery-risk th:nth-child(5),
 .performance-table--delivery-risk td:nth-child(5) {
-  width: 112px;
+  width: 10%;
 }
 
 .performance-table--delivery-risk th:nth-child(6),
 .performance-table--delivery-risk td:nth-child(6) {
-  width: 56px;
+  width: 44px;
+}
+
+.performance-table--delivery-risk tbody tr {
+  height: 56px;
+}
+
+.performance-table--delivery-risk .icon-btn {
+  width: 34px;
+  height: 34px;
 }
 
 .performance-delivery-risk__issue {
   display: flex;
-  align-items: center;
-  gap: var(--space-2);
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
   min-width: 0;
-  white-space: nowrap;
   overflow: hidden;
+}
+
+.performance-trend-card__insufficient {
+  margin: var(--space-1) 0 0;
+  font-size: 13px;
+  line-height: 1.35;
+  color: var(--color-text-secondary);
 }
 
 .performance-delivery-risk__title {
