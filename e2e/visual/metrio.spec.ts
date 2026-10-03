@@ -193,7 +193,7 @@ test.describe("Metrio visual regression", () => {
   test("person drawer", async ({ page }) => {
     await bootMetrio(page, "lead");
     await openFirstAttentionPerson(page);
-    await expect(page.locator(".drawer--person")).toBeVisible();
+    await expect(page.locator(".drawer--person-detail")).toBeVisible();
     await expect(page).toHaveScreenshot("person-drawer.png", {
       fullPage: true,
       maxDiffPixelRatio: 0.02,
@@ -307,7 +307,7 @@ test.describe("Metrio visual regression", () => {
   test("person drawer overview grouped", async ({ page }) => {
     await bootMetrio(page, "lead");
     await openFirstAttentionPerson(page);
-    await expect(page.locator(".drawer--person")).toBeVisible();
+    await expect(page.locator(".drawer--person-detail")).toBeVisible();
     await expect(page.locator(".person-detail-drawer__context")).toBeVisible();
     await expect(page).toHaveScreenshot("person-drawer-overview.png", {
       fullPage: true,
@@ -318,7 +318,7 @@ test.describe("Metrio visual regression", () => {
   test("person drawer work tab", async ({ page }) => {
     await bootMetrio(page, "lead");
     await openFirstAttentionPerson(page);
-    await page.locator(".drawer--person").getByRole("tab", { name: "Work" }).click();
+    await page.locator(".drawer--person-detail").getByRole("tab", { name: "Work" }).click();
     await expect(page.locator(".person-detail-drawer__context")).toBeVisible();
     await expect(page).toHaveScreenshot("person-drawer-work.png", {
       fullPage: true,
@@ -329,7 +329,7 @@ test.describe("Metrio visual regression", () => {
   test("person drawer history tab", async ({ page }) => {
     await bootMetrio(page, "lead");
     await openFirstAttentionPerson(page);
-    await page.locator(".drawer--person").getByRole("tab", { name: "History" }).click();
+    await page.locator(".drawer--person-detail").getByRole("tab", { name: "History" }).click();
     await expect(page.locator(".person-detail-drawer__context")).toBeVisible();
     await expect(page).toHaveScreenshot("person-drawer-history.png", {
       fullPage: true,
@@ -650,7 +650,107 @@ test.describe("Metrio visual regression", () => {
     await openFirstAttentionPerson(page);
     await page.getByRole("button", { name: "Brief" }).click();
     await expect(page.getByTestId("person-brief-drawer")).toBeVisible();
+    await expect(page.locator(".drawer--person-detail")).toHaveCount(0);
+    await expect(page.locator(".drawer-root__backdrop")).toHaveCount(1);
     await expect(page).toHaveScreenshot("person-brief-standard.png", {
+      fullPage: true,
+      maxDiffPixelRatio: 0.02,
+    });
+  });
+
+  test("person brief from person flow single backdrop", async ({ page }) => {
+    await bootMetrio(page, "lead");
+    await openFirstAttentionPerson(page);
+    await expect(page.locator(".drawer--person-detail")).toHaveCount(1);
+    await page.getByRole("button", { name: "Brief" }).click();
+    await expect(page.getByTestId("person-brief-drawer")).toBeVisible();
+    await expect(page.locator(".drawer--person-detail")).toHaveCount(0);
+    await expect(page.locator(".drawer-root__backdrop")).toHaveCount(1);
+    await expect(page).toHaveScreenshot("person-brief-from-person.png", {
+      fullPage: true,
+      maxDiffPixelRatio: 0.02,
+    });
+  });
+
+  test("person work dark", async ({ page }) => {
+    await page.addInitScript((fixtureId: string) => {
+      localStorage.setItem("metrio-connection-connected", "true");
+      localStorage.setItem("metrio-dev-fixture", fixtureId);
+      localStorage.setItem("metrio-theme", "dark");
+    }, "lead");
+    await page.goto("/");
+    await openPerformanceFromHome(page);
+    await openFirstAttentionPerson(page);
+    await page.locator(".drawer--person-detail").getByRole("tab", { name: "Work" }).click();
+    await expect(page.getByTestId("person-work-card").first()).toBeVisible();
+    await expect(page).toHaveScreenshot("person-drawer-work-dark.png", {
+      fullPage: true,
+      maxDiffPixelRatio: 0.02,
+    });
+  });
+
+  test("person history dark", async ({ page }) => {
+    await page.addInitScript((fixtureId: string) => {
+      localStorage.setItem("metrio-connection-connected", "true");
+      localStorage.setItem("metrio-dev-fixture", fixtureId);
+      localStorage.setItem("metrio-theme", "dark");
+    }, "lead");
+    await page.goto("/");
+    await openPerformanceFromHome(page);
+    await openFirstAttentionPerson(page);
+    await page.locator(".drawer--person-detail").getByRole("tab", { name: "History" }).click();
+    await expect(page.getByLabel("History period")).toBeVisible();
+    await expect(page).toHaveScreenshot("person-drawer-history-dark.png", {
+      fullPage: true,
+      maxDiffPixelRatio: 0.02,
+    });
+  });
+
+  test("person brief dark", async ({ page }) => {
+    await page.addInitScript((fixtureId: string) => {
+      localStorage.setItem("metrio-connection-connected", "true");
+      localStorage.setItem("metrio-dev-fixture", fixtureId);
+      localStorage.setItem("metrio-theme", "dark");
+    }, "lead");
+    await page.goto("/");
+    await openPerformanceFromHome(page);
+    await page.evaluate(() => {
+      window.dispatchEvent(
+        new CustomEvent("metrio-open-person-brief", {
+          detail: { personId: "person-01" },
+        }),
+      );
+    });
+    await expect(page.getByTestId("person-brief-drawer")).toBeVisible();
+    await expect(page).toHaveScreenshot("person-brief-dark.png", {
+      fullPage: true,
+      maxDiffPixelRatio: 0.02,
+    });
+  });
+
+  test("person drawer overloaded workload", async ({ page }) => {
+    await bootMetrio(page, "lead");
+    await page.evaluate(() => {
+      window.dispatchEvent(
+        new CustomEvent("metrio-open-person", { detail: "person-01" }),
+      );
+    });
+    await expect(page.getByTestId("person-workload-badge")).toHaveText("Overloaded");
+    await expect(page).toHaveScreenshot("person-drawer-overloaded.png", {
+      fullPage: true,
+      maxDiffPixelRatio: 0.02,
+    });
+  });
+
+  test("person drawer balanced workload", async ({ page }) => {
+    await bootMetrio(page, "lead");
+    await page.evaluate(() => {
+      window.dispatchEvent(
+        new CustomEvent("metrio-open-person", { detail: "person-sam" }),
+      );
+    });
+    await expect(page.getByTestId("person-workload-badge")).toHaveText("Balanced");
+    await expect(page).toHaveScreenshot("person-drawer-balanced.png", {
       fullPage: true,
       maxDiffPixelRatio: 0.02,
     });
@@ -733,7 +833,7 @@ test.describe("Metrio visual regression", () => {
     await page.getByRole("button", { name: /Notifications, 1 unread/i }).click();
     await page.getByRole("button", { name: /Workload changed/i }).click();
     await expect(page.locator(".drawer--notifications")).toHaveCount(0);
-    await expect(page.locator(".person-detail-drawer__name")).toContainText("Mia");
+    await expect(page.locator(".person-identity-header__name")).toContainText("Mia");
   });
 
   test("notification task opens Jira issue", async ({ page }) => {
