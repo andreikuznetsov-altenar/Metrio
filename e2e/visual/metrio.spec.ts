@@ -1050,6 +1050,7 @@ test.describe("Metrio visual regression", () => {
   });
 
   test("home manager calendar 1:1", async ({ page }) => {
+    await page.clock.install({ time: new Date("2026-10-03T09:30:00+02:00") });
     const calendarJson = serializeCalendarVisualFixtureForPlaywright();
     const prefsJson = serializeFeedbackVisualPrefsForPlaywright();
     await page.addInitScript(
