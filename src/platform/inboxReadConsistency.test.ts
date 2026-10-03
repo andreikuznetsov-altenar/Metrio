@@ -5,7 +5,11 @@ import {
   recordNotificationEvent,
   seedNotificationEventsForTests,
 } from "./notificationEvents";
-import { markActionInboxItemRead, markAllActionInboxItemsRead } from "./inboxReadSync";
+import {
+  clearActionInboxHistory,
+  markActionInboxItemRead,
+  markAllActionInboxItemsRead,
+} from "./inboxReadSync";
 import {
   EMPTY_JIRA_ASSIGNMENT_STATE,
   unreadJiraAssignments,
@@ -110,6 +114,29 @@ describe("inbox read consistency", () => {
     await markAllActionInboxItemsRead();
 
     expect(listNotificationEvents().every((event) => event.readAt)).toBe(true);
+    const saved = savePreferences.mock.calls.at(-1)?.[0] as {
+      notificationState: { jiraAssignment: typeof EMPTY_JIRA_ASSIGNMENT_STATE };
+    };
+    expect(
+      unreadJiraAssignments(saved.notificationState.jiraAssignment),
+    ).toHaveLength(0);
+  });
+
+  it("clear all history reconciles tray Jira assignment read state", async () => {
+    seedNotificationEventsForTests([
+      {
+        id: "j1",
+        type: "jira_assignment",
+        createdAt: "2026-10-02T10:05:00.000Z",
+        title: "A",
+        message: "B",
+        issueKey: "UX-6124",
+      },
+    ]);
+
+    await clearActionInboxHistory();
+
+    expect(listNotificationEvents()).toHaveLength(0);
     const saved = savePreferences.mock.calls.at(-1)?.[0] as {
       notificationState: { jiraAssignment: typeof EMPTY_JIRA_ASSIGNMENT_STATE };
     };

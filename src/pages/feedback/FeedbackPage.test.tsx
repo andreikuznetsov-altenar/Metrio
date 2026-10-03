@@ -99,14 +99,14 @@ describe('FeedbackPage', () => {
     container.remove();
   });
 
-  it('shows connect state when Google is not linked', async () => {
+  it('shows survey tabs and disconnected placeholder when Google is not linked', async () => {
     await act(async () => {
       await Promise.resolve();
     });
-    expect(container.textContent).toContain(
-      'Create and send team feedback surveys using Google Forms and Gmail',
-    );
-    expect(container.querySelector('.performance-subnav')).toBeFalsy();
+    expect(container.querySelector('.performance-subnav')).toBeTruthy();
+    expect(container.querySelector('[data-testid="feedback-survey-disconnected"]')).toBeTruthy();
+    expect(container.textContent).toContain('Connect Google to create and send surveys');
+    expect(container.textContent).toContain('Setup instructions');
   });
 
   it('shows team-only message outside team mode', async () => {

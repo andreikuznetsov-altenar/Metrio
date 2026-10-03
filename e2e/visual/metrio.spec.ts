@@ -1,6 +1,9 @@
 import { test, expect, type Page } from "@playwright/test";
 import { serializeNotificationFixtureForPlaywright } from "../../src/fixtures/notificationCenterVisualFixture";
-import { serializeFeedbackVisualPrefsForPlaywright } from "../../src/fixtures/feedbackWorkflowFixture";
+import {
+  serializeFeedbackDisconnectedPrefsForPlaywright,
+  serializeFeedbackVisualPrefsForPlaywright,
+} from "../../src/fixtures/feedbackWorkflowFixture";
 import { serializeDigestVisualPrefsForPlaywright } from "../../src/fixtures/digestVisualFixture";
 import { serializeGoalsVisualFixtureForPlaywright } from "../../src/fixtures/goalsVisualFixture";
 import { serializeOnboardingChecklistVisualFixtureForPlaywright } from "../../src/fixtures/onboardingChecklistVisualFixture";
@@ -9,6 +12,24 @@ import {
   serializeCompanyConfigVisualFixtureForPlaywright,
 } from "../../src/fixtures/companyConfigVisualFixture";
 import { serializeCalendarVisualFixtureForPlaywright } from "../../src/fixtures/calendarVisualFixture";
+
+async function bootMetrioFeedbackDisconnected(
+  page: Page,
+  theme: "light" | "dark" = "light",
+) {
+  const prefsJson = serializeFeedbackDisconnectedPrefsForPlaywright();
+  await page.addInitScript(
+    ({ fixtureId, themeId, prefs }: { fixtureId: string; themeId: string; prefs: string }) => {
+      localStorage.setItem("metrio-connection-connected", "true");
+      localStorage.setItem("metrio-dev-fixture", fixtureId);
+      localStorage.setItem("metrio-theme", themeId);
+      localStorage.setItem("metrio-visual-preferences", prefs);
+    },
+    { fixtureId: "lead", themeId: theme, prefs: prefsJson },
+  );
+  await page.goto("/");
+  await expect(page.getByTestId("app-shell")).toBeVisible({ timeout: 30_000 });
+}
 
 async function bootMetrioFeedback(page: Page, theme: "light" | "dark" = "light") {
   const prefsJson = serializeFeedbackVisualPrefsForPlaywright();
@@ -590,6 +611,53 @@ test.describe("Metrio visual regression", () => {
     });
   });
 
+  test("feedback survey disconnected", async ({ page }) => {
+    await bootMetrioFeedbackDisconnected(page, "light");
+    await page.locator(".app-header__nav-link").filter({ hasText: "Feedback" }).click();
+    await expect(page.getByTestId("feedback-survey-disconnected")).toBeVisible({
+      timeout: 15_000,
+    });
+    await expect(page).toHaveScreenshot("feedback-disconnected.png", {
+      fullPage: true,
+      maxDiffPixelRatio: 0.02,
+    });
+  });
+
+  test("feedback disconnected dark", async ({ page }) => {
+    await bootMetrioFeedbackDisconnected(page, "dark");
+    await page.locator(".app-header__nav-link").filter({ hasText: "Feedback" }).click();
+    await expect(page.getByTestId("feedback-survey-disconnected")).toBeVisible({
+      timeout: 15_000,
+    });
+    await expect(page).toHaveScreenshot("feedback-disconnected-dark.png", {
+      fullPage: true,
+      maxDiffPixelRatio: 0.02,
+    });
+  });
+
+  test("feedback google setup instructions", async ({ page }) => {
+    await bootMetrioFeedbackDisconnected(page, "light");
+    await page.locator(".app-header__nav-link").filter({ hasText: "Feedback" }).click();
+    await page.getByRole("button", { name: "Setup instructions" }).click();
+    await expect(page.getByTestId("feedback-google-setup-instructions")).toBeVisible();
+    await expect(page).toHaveScreenshot("feedback-instructions.png", {
+      fullPage: true,
+      maxDiffPixelRatio: 0.02,
+    });
+  });
+
+  test("feedback google apps script advanced", async ({ page }) => {
+    await bootMetrioFeedbackDisconnected(page, "light");
+    await page.locator(".app-header__nav-link").filter({ hasText: "Feedback" }).click();
+    await page.getByRole("button", { name: "Setup instructions" }).click();
+    await page.getByRole("button", { name: "Apps Script setup" }).click();
+    await expect(page.getByTestId("google-apps-script-setup")).toBeVisible();
+    await expect(page).toHaveScreenshot("feedback-apps-script-advanced.png", {
+      fullPage: true,
+      maxDiffPixelRatio: 0.02,
+    });
+  });
+
   test("operational rules settings", async ({ page }) => {
     await page.addInitScript((fixtureId: string) => {
       localStorage.setItem("metrio-connection-connected", "true");
@@ -756,7 +824,7 @@ test.describe("Metrio visual regression", () => {
     });
   });
 
-  test("command palette empty", async ({ page }) => {
+  test("search open", async ({ page }) => {
     await page.addInitScript((fixtureId: string) => {
       localStorage.setItem("metrio-connection-connected", "true");
       localStorage.setItem("metrio-dev-fixture", fixtureId);
@@ -766,7 +834,7 @@ test.describe("Metrio visual regression", () => {
     await expect(page.getByTestId("dashboard-ready")).toBeVisible({ timeout: 30_000 });
     await page.keyboard.press("Meta+k");
     await expect(page.getByTestId("command-palette")).toBeVisible();
-    await expect(page).toHaveScreenshot("command-palette-empty.png", {
+    await expect(page).toHaveScreenshot("search-open.png", {
       fullPage: true,
       maxDiffPixelRatio: 0.02,
     });
@@ -783,7 +851,7 @@ test.describe("Metrio visual regression", () => {
     });
   });
 
-  test("command palette dark", async ({ page }) => {
+  test("search dark", async ({ page }) => {
     await page.addInitScript((fixtureId: string) => {
       localStorage.setItem("metrio-connection-connected", "true");
       localStorage.setItem("metrio-dev-fixture", fixtureId);
@@ -793,7 +861,7 @@ test.describe("Metrio visual regression", () => {
     await expect(page.getByTestId("dashboard-ready")).toBeVisible({ timeout: 30_000 });
     await page.keyboard.press("Meta+k");
     await expect(page.getByTestId("command-palette")).toBeVisible();
-    await expect(page).toHaveScreenshot("command-palette-dark.png", {
+    await expect(page).toHaveScreenshot("search-dark.png", {
       fullPage: true,
       maxDiffPixelRatio: 0.02,
     });
@@ -831,7 +899,7 @@ test.describe("Metrio visual regression", () => {
       window.dispatchEvent(new CustomEvent("metrio-notification-events-changed"));
     });
     await page.getByRole("button", { name: /Notifications, 1 unread/i }).click();
-    await page.getByRole("button", { name: /Workload changed/i }).click();
+    await page.getByRole("button", { name: "View person" }).click();
     await expect(page.locator(".drawer--notifications")).toHaveCount(0);
     await expect(page.locator(".person-identity-header__name")).toContainText("Mia");
   });
@@ -857,29 +925,71 @@ test.describe("Metrio visual regression", () => {
       window.dispatchEvent(new CustomEvent("metrio-notification-events-changed"));
     });
     await page.getByRole("button", { name: /Notifications, 1 unread/i }).click();
-    await page.getByRole("button", { name: /Task needs attention/i }).click();
+    await page.getByRole("button", { name: "Open Jira" }).click();
     const opened = await page.evaluate(
       () => (window as unknown as { __metrioLastOpenedUrl?: string }).__metrioLastOpenedUrl,
     );
     expect(opened).toContain("/browse/UX-5446");
   });
 
-  test("notification inbox unread filter", async ({ page }) => {
+  test("notifications mixed read unread", async ({ page }) => {
     await bootMetrioWithNotificationFixture(page, 6);
     await page.getByRole("button", { name: /Notifications, 6 unread/i }).click();
-    await page.getByRole("button", { name: "Unread", exact: true }).click();
-    await expect(page).toHaveScreenshot("notification-inbox-unread.png", {
+    await expect(page.locator(".drawer--notifications")).toBeVisible();
+    await expect(page).toHaveScreenshot("notifications-mixed-read-unread.png", {
       fullPage: true,
       maxDiffPixelRatio: 0.02,
     });
   });
 
-  test("notification inbox actions filter", async ({ page }) => {
+  test("notifications jira source", async ({ page }) => {
     await bootMetrioWithNotificationFixture(page, 6);
     await page.getByRole("button", { name: /Notifications, 6 unread/i }).click();
-    await page.getByRole("button", { name: "Actions" }).click();
-    await expect(page).toHaveScreenshot("notification-inbox-actions.png", {
+    await page.getByRole("button", { name: "Jira", exact: true }).click();
+    await expect(page).toHaveScreenshot("notifications-jira.png", {
       fullPage: true,
+      maxDiffPixelRatio: 0.02,
+    });
+  });
+
+  test("notifications bamboo source", async ({ page }) => {
+    await bootMetrioWithNotificationFixture(page, 6);
+    await page.getByRole("button", { name: /Notifications, 6 unread/i }).click();
+    await page.getByRole("button", { name: "BambooHR" }).click();
+    await expect(page).toHaveScreenshot("notifications-bamboohr.png", {
+      fullPage: true,
+      maxDiffPixelRatio: 0.02,
+    });
+  });
+
+  test("notifications feedback source", async ({ page }) => {
+    await bootMetrioWithNotificationFixture(page, 6);
+    await page.getByRole("button", { name: /Notifications, 6 unread/i }).click();
+    await page.getByRole("button", { name: "Feedback" }).click();
+    await expect(page).toHaveScreenshot("notifications-feedback.png", {
+      fullPage: true,
+      maxDiffPixelRatio: 0.02,
+    });
+  });
+
+  test("notifications metrio source", async ({ page }) => {
+    await bootMetrioWithNotificationFixture(page, 6);
+    await page.getByRole("button", { name: /Notifications, 6 unread/i }).click();
+    await page.getByRole("button", { name: "Metrio", exact: true }).click();
+    await expect(page).toHaveScreenshot("notifications-metrio.png", {
+      fullPage: true,
+      maxDiffPixelRatio: 0.02,
+    });
+  });
+
+  test("bell badge centered", async ({ page }) => {
+    await bootMetrioWithNotificationFixture(page, 6);
+    const badge = page.locator(".app-header__bell-badge");
+    await expect(badge).toBeVisible();
+    await expect(badge).toHaveCSS("display", "flex");
+    await expect(badge).toHaveCSS("align-items", "center");
+    await expect(badge).toHaveCSS("justify-content", "center");
+    await expect(page.locator(".app-header__bell-wrap")).toHaveScreenshot("bell-badge.png", {
       maxDiffPixelRatio: 0.02,
     });
   });
@@ -896,7 +1006,7 @@ test.describe("Metrio visual regression", () => {
     await expect(page.getByTestId("dashboard-ready")).toBeVisible({ timeout: 30_000 });
     await page.getByRole("button", { name: /Notifications, 6 unread/i }).click();
     await expect(page.locator(".drawer--notifications")).toBeVisible();
-    await expect(page).toHaveScreenshot("notification-sidebar-dark.png", {
+    await expect(page).toHaveScreenshot("notifications-dark.png", {
       fullPage: true,
       maxDiffPixelRatio: 0.02,
     });
@@ -906,7 +1016,7 @@ test.describe("Metrio visual regression", () => {
     await bootMetrioWithNotificationFixture(page, 6);
     await page.getByRole("button", { name: /Notifications, 6 unread/i }).click();
     await page.getByRole("button", { name: "Notification options" }).click();
-    await page.getByRole("menuitem", { name: "Clear notifications" }).click();
+    await page.getByRole("menuitem", { name: "Clear all" }).click();
     await page.getByRole("button", { name: "Clear" }).click();
     await expect(page.getByText("No notifications yet")).toBeVisible();
     await expect(page.getByRole("button", { name: /^Notifications$/i })).toBeVisible();

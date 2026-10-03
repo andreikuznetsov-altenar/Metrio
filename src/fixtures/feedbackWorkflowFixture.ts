@@ -56,3 +56,31 @@ export function serializeFeedbackVisualPrefsForPlaywright(): string {
   };
   return JSON.stringify(prefs);
 }
+
+/** Team lead Feedback page without Google connection (Survey tab still visible). */
+export function serializeFeedbackDisconnectedPrefsForPlaywright(): string {
+  const prefs: AppPreferences = {
+    ...DEFAULT_PREFERENCES,
+    schemaVersion: PREFERENCES_SCHEMA_VERSION,
+    teamDetection: {
+      mode: 'team',
+      ok: true,
+      employee: null,
+      fullTeam: [],
+      directReports: [],
+      missingFields: [],
+      restrictedFields: [],
+      diagnostics: [],
+      reportingSource: 'bamboo',
+      ambiguousSupervisorNames: [],
+    } as unknown as AppPreferences['teamDetection'],
+    google: {
+      ...DEFAULT_PREFERENCES.google,
+      accountEmail: '',
+      formsConnected: false,
+      gmailConnected: false,
+      appsScriptWebAppUrl: '',
+    },
+  };
+  return JSON.stringify(prefs);
+}
