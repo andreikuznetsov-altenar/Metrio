@@ -27,37 +27,56 @@
   margin: 0;
 }
 
-.goal-drawer__body {
+.goals-view__intro {
+  margin-bottom: var(--space-4);
+}
+
+.goals-view__title {
+  margin: 0 0 var(--space-2);
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.goals-view__description {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.45;
+  color: var(--color-text-secondary);
+  max-width: 42rem;
+}
+
+.goals-view__toolbar {
+  margin-bottom: var(--space-4);
+}
+
+.goals-list {
   display: flex;
   flex-direction: column;
-  gap: var(--space-4);
+  gap: var(--space-2);
 }
 
-.goal-drawer__section h3 {
+.goals-list__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-card);
+  background: var(--color-surface);
+  min-height: 64px;
+}
+
+.goals-list__title {
+  margin: 0 0 var(--space-1);
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.goals-list__meta {
+  margin: 0;
   font-size: 13px;
-  margin: 0 0 var(--space-2);
-}
-
-.goal-drawer__facts {
-  font-size: 12px;
   color: var(--color-text-secondary);
-}
-
-.goal-drawer__link-row {
-  display: flex;
-  gap: var(--space-2);
-  margin-top: var(--space-2);
-}
-
-.goal-drawer__history {
-  font-size: 12px;
-  color: var(--color-text-secondary);
-}
-
-.manager-goals__create {
-  display: flex;
-  gap: var(--space-2);
-  margin-top: var(--space-4);
 }
 
 .goals-empty-state {
@@ -66,7 +85,24 @@
   max-width: 28rem;
   border-radius: var(--radius-card);
   border: 1px solid var(--color-border-subtle);
-  background: var(--color-surface-secondary);
+  background: var(--color-surface);
+}
+
+.goals-empty-state--centered {
+  margin-left: auto;
+  margin-right: auto;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 240px;
+  justify-content: center;
+}
+
+.goals-empty-state__icon {
+  color: var(--color-text-tertiary);
+  margin-bottom: var(--space-1);
 }
 
 .goals-empty-state__title {
@@ -82,15 +118,116 @@
   line-height: 1.45;
 }
 
-.manager-goals__create-form {
-  margin-top: var(--space-4);
-  max-width: 28rem;
+.goal-drawer__header-row {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+}
+
+.goal-drawer__title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.goal-drawer__body {
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
 }
 
+.goal-drawer__status-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.goal-drawer__review-meta {
+  font-size: 13px;
+  color: var(--color-text-secondary);
+}
+
+.goal-drawer__card {
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-card);
+  background: var(--color-surface);
+  padding: var(--space-4);
+}
+
+.goal-drawer__card-title {
+  margin: 0 0 var(--space-2);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.goal-drawer__card-desc,
+.goal-drawer__card-body {
+  margin: 0 0 var(--space-2);
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--color-text-secondary);
+}
+
+.goal-drawer__empty-linked {
+  margin: 0 0 var(--space-2);
+  font-size: 13px;
+  color: var(--color-text-primary);
+}
+
+.goal-drawer__facts {
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  margin: 0 0 var(--space-2);
+}
+
+.goal-drawer__linked-list {
+  margin: 0 0 var(--space-2);
+  padding-left: var(--space-4);
+  font-size: 13px;
+}
+
+.goal-drawer__search-row {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+}
+
+.goal-drawer__search-row .field,
+.goal-drawer__search-row .input {
+  flex: 1;
+  min-width: 0;
+}
+
+.goal-drawer__search-results {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+}
+
+.goal-drawer__history {
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  margin: 0;
+  padding-left: var(--space-4);
+}
+
+.manager-goals__create {
+  display: flex;
+  gap: var(--space-2);
+  margin-top: var(--space-4);
+}
+
 .manager-goals__create-actions {
   display: flex;
   gap: var(--space-2);
+  margin-top: var(--space-2);
+}
+
+.drawer--goal .drawer__header {
+  align-items: center;
 }
