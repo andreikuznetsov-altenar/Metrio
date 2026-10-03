@@ -227,7 +227,8 @@
 .person-detail-drawer__history-controls {
   display: flex;
   align-items: center;
-  justify-content: flex-end;
+  justify-content: flex-start;
+  flex-wrap: wrap;
   gap: var(--space-2);
 }
 

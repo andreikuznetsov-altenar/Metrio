@@ -1,5 +1,6 @@
 import { ExternalLink } from "lucide-react";
 import { Badge } from "../../components/Badge/Badge";
+import { Button } from "../../components/Button/Button";
 import { PersonAvatar } from "../../components/PersonAvatar/PersonAvatar";
 import { Tooltip } from "../../components/Tooltip/Tooltip";
 import type { AnalyticsEvidenceIssue } from "../../domain/analytics/analyticsEvidenceTypes";
@@ -31,6 +32,8 @@ export interface AnalyticsIssueRowProps {
   metaLine?: string;
   expanded?: boolean;
   onToggleExpand?: () => void;
+  variant?: "list" | "card";
+  jiraAction?: "icon" | "secondary-button";
 }
 
 export function AnalyticsIssueRow({
@@ -42,6 +45,8 @@ export function AnalyticsIssueRow({
   metaLine,
   expanded = false,
   onToggleExpand,
+  variant = "list",
+  jiraAction = "icon",
 }: AnalyticsIssueRowProps) {
   const badge = showOutcome ? outcomeBadge(issue.outcome) : null;
   const personLabel = displayPersonName(issue.personName);
@@ -66,8 +71,24 @@ export function AnalyticsIssueRow({
           ].filter(Boolean) as string[]
         );
 
+  const rowClass =
+    variant === "card"
+      ? "analytics-issue-row analytics-issue-row--card"
+      : "analytics-issue-row";
+
+  const openJira = () => {
+    void (async () => {
+      const prefs = await loadPreferences();
+      const url = buildJiraIssueBrowseUrl(
+        resolveJiraBaseUrl(prefs),
+        issue.issueKey,
+      );
+      await openExternalUrl(url);
+    })();
+  };
+
   return (
-    <article className="analytics-issue-row">
+    <article className={rowClass} data-testid={variant === "card" ? "person-history-card" : undefined}>
       <div className="analytics-issue-row__top">
         <div className="analytics-issue-row__key-line">
           <span className="analytics-issue-row__key">{issue.issueKey}</span>
@@ -109,25 +130,22 @@ export function AnalyticsIssueRow({
           ) : null}
         </div>
 
-        <Tooltip content="Open in Jira">
-          <button
-            type="button"
-            className="analytics-issue-row__jira"
-            aria-label={`Open ${issue.issueKey} in Jira`}
-            onClick={() => {
-              void (async () => {
-                const prefs = await loadPreferences();
-                const url = buildJiraIssueBrowseUrl(
-                  resolveJiraBaseUrl(prefs),
-                  issue.issueKey,
-                );
-                await openExternalUrl(url);
-              })();
-            }}
-          >
-            <ExternalLink size={15} strokeWidth={1.75} aria-hidden />
-          </button>
-        </Tooltip>
+        {jiraAction === "secondary-button" ? (
+          <Button type="button" variant="secondary" onClick={openJira}>
+            Open Jira
+          </Button>
+        ) : (
+          <Tooltip content="Open in Jira">
+            <button
+              type="button"
+              className="analytics-issue-row__jira"
+              aria-label={`Open ${issue.issueKey} in Jira`}
+              onClick={openJira}
+            >
+              <ExternalLink size={15} strokeWidth={1.75} aria-hidden />
+            </button>
+          </Tooltip>
+        )}
       </div>
 
       {hasBackflowDetails && onToggleExpand ? (
