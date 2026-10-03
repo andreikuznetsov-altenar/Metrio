@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { useCurrentUser } from "../../app/CurrentUserContext";
 import { usePerformanceData } from "../../app/PerformanceDataContext";
+import { digestCardContent } from "../../domain/home/digestCardContent";
 import { useFeedbackSurveyStore } from "../../app/feedbackSurveyStore";
 import { useWorkGraph } from "../../app/WorkGraphContext";
 import { useOperationalRules } from "../../app/OperationalRulesContext";
@@ -75,7 +76,9 @@ import "./home.css";
 
 export function HomePage() {
   const { currentUser } = useCurrentUser();
-  const { data, viewModels, uiState, errorMessage } = usePerformanceData();
+  const { data, viewModels, uiState, errorMessage, refresh, status } =
+    usePerformanceData();
+  const dashboardRefreshing = status === "loading" || status === "refreshing";
   const analytics = useOptionalPerformanceAnalytics();
   const surveyData = useFeedbackSurveyStore((state) => state.data);
   const feedbackSummary = useMemo(
@@ -345,7 +348,7 @@ export function HomePage() {
 
   if (visualHomeState === "blocked") {
     return (
-      <div className="home-page" data-testid="home-blocked">
+      <div className="home-page" data-testid="dashboard-blocked">
         <PerformanceStatusBanner />
         <section className="home-empty-state" role="status">
           <h2 className="home-empty-state__title">Waiting for your profile</h2>
@@ -369,7 +372,7 @@ export function HomePage() {
 
   if (!workspaceModel) {
     return (
-      <div className="home-page" data-testid="home-blocked">
+      <div className="home-page" data-testid="dashboard-blocked">
         <PerformanceStatusBanner />
         <section className="home-empty-state" role="status">
           {uiState === "error" ? (
@@ -395,16 +398,26 @@ export function HomePage() {
 
   const displayWorkspace = applyVisualHomeOverrides(workspaceModel);
   const { personal, team, organization } = displayWorkspace;
-  const homeReadyTestId =
-    visualHomeState === "partial" ? "home-partial" : "home-ready";
+  const dashboardReadyTestId =
+    visualHomeState === "partial" ? "dashboard-partial" : "dashboard-ready";
 
   return (
-    <div className="home-page" data-testid={homeReadyTestId}>
+    <div className="home-page dashboard-page" data-testid={dashboardReadyTestId}>
       <PerformanceStatusBanner />
-      <header className="home-header">
-        <h1 className="home-header__title">{displayWorkspace.greeting}</h1>
-        <p className="home-header__context">{displayWorkspace.contextLine}</p>
-      </header>
+      <div className="dashboard-greeting-row">
+        <div className="dashboard-greeting-row__text">
+          <h1 className="dashboard-greeting-row__title">{displayWorkspace.greeting}</h1>
+          <p className="dashboard-greeting-row__summary">{displayWorkspace.contextLine}</p>
+        </div>
+        <Button
+          type="button"
+          variant="secondary"
+          disabled={dashboardRefreshing}
+          onClick={() => void refresh()}
+        >
+          Refresh
+        </Button>
+      </div>
 
       {calendarConnected && upcomingMeetings?.meetings.length ? (
         <HomeUpcomingMeetings
@@ -429,31 +442,58 @@ export function HomePage() {
         />
       ) : null}
 
-      {digestModel?.prefs.showDailyOnHome && digestModel.daily ? (
-        <section className="home-card home-card--brief" aria-label="Today's brief" data-testid="home-daily-brief">
-          <h2 className="home-card__title">
-            {team ? "Team brief" : "Today's brief"}
-          </h2>
-          <p className="home-card__meta">{digestModel.daily.summaryLine}</p>
-          <Button
-            variant="secondary"
-            onClick={() => openDigest("daily")}
-          >
-            View details
-          </Button>
-        </section>
-      ) : null}
-
-      {digestModel?.prefs.showWeeklyOnHome &&
-      digestModel.weekly &&
-      team ? (
-        <section className="home-card" aria-label="Weekly digest" data-testid="home-weekly-digest">
-          <h2 className="home-card__title">Weekly digest</h2>
-          <p className="home-card__meta">{digestModel.weekly.summaryLine}</p>
-          <Button variant="ghost" onClick={() => openDigest("weekly")}>
-            View details
-          </Button>
-        </section>
+      {(digestModel?.prefs.showDailyOnHome && digestModel.daily) ||
+      (digestModel?.prefs.showWeeklyOnHome && digestModel.weekly && team) ? (
+        <div className="dashboard-digest-row">
+          {digestModel?.prefs.showDailyOnHome && digestModel.daily ? (
+            <section
+              className="home-card dashboard-digest-card"
+              aria-label={team ? "Team brief" : "Today's brief"}
+              data-testid="dashboard-team-brief"
+            >
+              <h2 className="home-card__title home-card__title--section">
+                {team ? "Team brief" : "Today's brief"}
+              </h2>
+              {(() => {
+                const content = digestCardContent(digestModel.daily);
+                return (
+                  <>
+                    <p className="dashboard-digest-card__headline">{content.headline}</p>
+                    <p className="dashboard-digest-card__detail">{content.detail}</p>
+                  </>
+                );
+              })()}
+              <div className="home-card__actions">
+                <Button variant="secondary" onClick={() => openDigest("daily")}>
+                  View details
+                </Button>
+              </div>
+            </section>
+          ) : null}
+          {digestModel?.prefs.showWeeklyOnHome && digestModel.weekly && team ? (
+            <section
+              className="home-card dashboard-digest-card"
+              aria-label="Weekly digest"
+              data-testid="dashboard-weekly-digest"
+            >
+              <h2 className="home-card__title home-card__title--section">Weekly digest</h2>
+              {(() => {
+                const content = digestCardContent(digestModel.weekly);
+                return (
+                  <>
+                    <p className="dashboard-digest-card__headline">{content.headline}</p>
+                    <p className="dashboard-digest-card__detail">{content.detail}</p>
+                  </>
+                );
+              })()}
+              <div className="home-card__actions">
+                <Button variant="secondary" onClick={() => openDigest("weekly")}>
+                  View details
+                </Button>
+              </div>
+            </section>
+          ) : null}
+        </div>
       ) : null}
 
       {goalsFeatureOn &&
@@ -492,8 +532,6 @@ export function HomePage() {
 
       <div className="home-layout">
         <div className="home-column home-column--personal">
-          <p className="home-section-label">My work</p>
-
           {selfPerson?.bamboo.hireDate && isNewStarter(selfPerson.bamboo.hireDate) ? (
             selfOnboarding ? (
               <OnboardingChecklistCard
@@ -517,6 +555,7 @@ export function HomePage() {
             emptyMessage="Nothing needs your attention right now."
             onOpen={handleAction}
             openLabel={actionOpenLabel}
+            variant="dashboard"
           />
 
           <section className="home-card" aria-label="New assignments">
@@ -539,7 +578,7 @@ export function HomePage() {
               </ul>
             )}
             <Button
-              variant="ghost"
+              variant="secondary"
               onClick={() => {
                 dispatchAppRoute("performance");
                 dispatchEmployeeView("my-week");
@@ -573,7 +612,7 @@ export function HomePage() {
                   View work
                 </Button>
                 <Button
-                  variant="ghost"
+                  variant="secondary"
                   onClick={() => void openExternalUrl(bambooEmployeePortalUrl())}
                 >
                   Open BambooHR
@@ -637,7 +676,7 @@ export function HomePage() {
               <p className="home-card__meta">
                 {onboardingMatched.all.length} links for your team and role
               </p>
-              <Button variant="ghost" onClick={resourceLibrary.openLibrary}>
+              <Button variant="secondary" onClick={resourceLibrary.openLibrary}>
                 Open resource library
               </Button>
             </section>
@@ -646,14 +685,13 @@ export function HomePage() {
 
         {team ? (
           <div className="home-column home-column--team">
-            <p className="home-section-label">Team</p>
-
             <ActionQueueSection
               title="Team actions"
               items={team.actions}
               emptyMessage="No high-priority team actions right now."
               onOpen={handleAction}
               openLabel={actionOpenLabel}
+              variant="dashboard"
             />
 
             {team.dependencySignals.length ? (
@@ -730,7 +768,7 @@ export function HomePage() {
                 ))}
               </ul>
               <Button
-                variant="ghost"
+                variant="secondary"
                 onClick={() => {
                   dispatchAppRoute("performance");
                   dispatchPerformanceTab("overview");
@@ -762,7 +800,7 @@ export function HomePage() {
                       {canOpenPersonBrief(currentUser, row.personId) ? (
                         <Button
                           type="button"
-                          variant="ghost"
+                          variant="secondary"
                           onClick={() => {
                             window.dispatchEvent(
                               new CustomEvent("metrio-open-person-brief", {
@@ -803,7 +841,6 @@ export function HomePage() {
 
         {organization ? (
           <div className="home-column home-column--org">
-            <p className="home-section-label">Organization</p>
             <section className="home-card" aria-label="Organization signals">
               <h2 className="home-card__title">Organization signals</h2>
               <p className="home-card__meta">

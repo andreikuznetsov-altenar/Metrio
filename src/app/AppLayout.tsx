@@ -36,7 +36,6 @@ import { readCalendarCache } from "../platform/calendarCache";
 import { buildJiraIssueBrowseUrl } from "../platform/jiraIssueUrl";
 import { isCommandPaletteShortcut } from "../platform/commandPaletteShortcut";
 import { PageToolbar } from "../shell/PageToolbar";
-import { Button } from "../components/Button/Button";
 import { PerformanceToolbar } from "../shell/PerformanceToolbar";
 import { NotificationCenter } from "../shell/NotificationCenter";
 import {
@@ -63,8 +62,8 @@ import {
 function toolbarCopy(route: AppRoute) {
   if (route === "home") {
     return {
-      title: "Home",
-      subtitle: "What matters to you right now",
+      title: "Dashboard",
+      subtitle: "",
     };
   }
   if (route === "performance") {
@@ -447,22 +446,7 @@ function AppLayoutShell({
       );
     }
     if (activeRoute === "home") {
-      const copy = toolbarCopy("home");
-      return (
-        <PageToolbar
-          title={copy.title}
-          subtitle={copy.subtitle}
-          actions={
-            <Button
-              variant="secondary"
-              disabled={homeActive && performanceControlsDisabled}
-              onClick={onRefresh}
-            >
-              Refresh
-            </Button>
-          }
-        />
-      );
+      return null;
     }
     if (activeRoute === "performance") {
       const copy = toolbarCopy("performance");

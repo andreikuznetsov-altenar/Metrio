@@ -45,6 +45,11 @@ import type {
 import type { WorkKnowledgeLink } from "../workGraph/workGraphTypes";
 import type { DeliveryDependencyIndex } from "../dependencies/dependencyTypes";
 import { buildHomeDependencySignals } from "../dependencies/buildHomeDependencySignals";
+import {
+  buildDashboardContextSummary,
+  parseActiveJiraCount,
+} from "./dashboardContextSummary";
+import { formatDashboardGreeting } from "./dashboardGreeting";
 
 export interface BuildHomeWorkspaceInput {
   role: UserRole;
@@ -96,26 +101,19 @@ export function buildHomeWorkspace(input: BuildHomeWorkspaceInput): HomeWorkspac
       : undefined;
 
   const unread = unreadJiraAssignments(input.assignmentState);
-  const active =
+  const activeValue =
     input.employeeSnapshot?.myWeek.summary.find((m) => m.label === "Active")
       ?.value ?? "0";
   const vacationPart = vacationContextLine(input.selfPerson, now);
 
-  const contextParts: string[] = [];
-  if (unread.length > 0) {
-    contextParts.push(
-      `${unread.length} new task${unread.length === 1 ? "" : "s"}`,
-    );
-  }
-  contextParts.push(`${active} active`);
-  if (vacationPart) contextParts.push(vacationPart);
-
-  const greetingName = input.selfDisplayName.split(" ")[0] || input.selfDisplayName;
-
   return {
     role: input.homeRole,
-    greeting: `${greetingForHour(now)}, ${greetingName}`,
-    contextLine: contextParts.join(" · "),
+    greeting: formatDashboardGreeting(input.selfDisplayName, now),
+    contextLine: buildDashboardContextSummary({
+      newJiraAssignmentCount: unread.length,
+      activeJiraTaskCount: parseActiveJiraCount(activeValue),
+      vacationLine: vacationPart,
+    }),
     personal,
     team,
     organization,
@@ -348,13 +346,6 @@ function mapKnowledge(links: WorkKnowledgeLink[]): HomeKnowledgeItem[] {
     if (items.length >= 3) break;
   }
   return items;
-}
-
-function greetingForHour(now: Date): string {
-  const hour = now.getHours();
-  if (hour < 12) return "Good morning";
-  if (hour < 17) return "Good afternoon";
-  return "Good evening";
 }
 
 function vacationContextLine(person: Person, now: Date): string | null {

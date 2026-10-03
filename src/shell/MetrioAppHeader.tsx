@@ -6,7 +6,7 @@ import { ProfileMenu } from "./ProfileMenu";
 import "./AppHeader.css";
 
 const NAV_ITEMS: { route: AppRoute; label: string }[] = [
-  { route: "home", label: "Home" },
+  { route: "home", label: "Dashboard" },
   { route: "performance", label: "Performance" },
   { route: "feedback", label: "Feedback" },
 ];
@@ -87,7 +87,15 @@ export function MetrioAppHeader({
               <Bell size={16} strokeWidth={1.7} />
             </IconButton>
             {notificationUnreadCount > 0 ? (
-              <span className="app-header__bell-badge" aria-hidden>
+              <span
+                className={
+                  notificationUnreadCount > 9
+                    ? "app-header__bell-badge app-header__bell-badge--wide"
+                    : "app-header__bell-badge"
+                }
+                data-testid="notification-unread-badge"
+                aria-hidden
+              >
                 {notificationUnreadCount > 9 ? "9+" : notificationUnreadCount}
               </span>
             ) : null}
