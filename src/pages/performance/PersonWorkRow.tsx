@@ -1,6 +1,5 @@
-import { ExternalLink } from "lucide-react";
 import { Badge } from "../../components/Badge/Badge";
-import { Tooltip } from "../../components/Tooltip/Tooltip";
+import { Button } from "../../components/Button/Button";
 import type { PersonWorkRowData } from "../../domain/analytics/personAnalyticsWorkspace";
 import { resolveJiraBaseUrl } from "../../config/product";
 import { loadPreferences } from "../../platform/preferences";
@@ -9,10 +8,13 @@ import { openExternalUrl } from "../../platform/openExternal";
 
 import { KnowledgePopover } from "./KnowledgePopover";
 import type { WorkKnowledgeLink } from "../../domain/workGraph/workGraphTypes";
+import "./person-work-card.css";
 
 export interface PersonWorkRowProps {
   item: PersonWorkRowData;
   knowledgeLinks?: WorkKnowledgeLink[];
+  /** Card layout for person work tab and brief sections. */
+  variant?: "card" | "inline";
 }
 
 function stageAgeLabel(item: PersonWorkRowData): string {
@@ -20,55 +22,83 @@ function stageAgeLabel(item: PersonWorkRowData): string {
   return `${item.stageAge} in ${inReview ? "review" : "stage"}`;
 }
 
-export function PersonWorkRow({ item, knowledgeLinks }: PersonWorkRowProps) {
-  const healthBadge =
-    item.healthVariant === "danger" ? (
-      <Badge variant="danger">Problematic</Badge>
-    ) : item.healthVariant === "warning" ? (
-      <Badge variant="warning">At risk</Badge>
-    ) : null;
+async function openIssueInJira(issueKey: string) {
+  const prefs = await loadPreferences();
+  const url = buildJiraIssueBrowseUrl(resolveJiraBaseUrl(prefs), issueKey);
+  await openExternalUrl(url);
+}
 
-  return (
-    <div className="performance-work-row performance-work-row--person">
-      <div className="performance-work-row__main">
-        <div className="person-work-row__head">
-          <span className="performance-work-row__key">{item.key}</span>
-          <div className="person-work-row__head-badges">
-            <Badge variant="neutral" className="person-work-row__status">
-              {item.status}
-            </Badge>
-            {healthBadge}
+export function PersonWorkRow({
+  item,
+  knowledgeLinks,
+  variant = "card",
+}: PersonWorkRowProps) {
+  const attentionBadge = item.attentionLabel ? (
+    <Badge variant={item.healthVariant}>{item.attentionLabel}</Badge>
+  ) : null;
+
+  const openJira = () => void openIssueInJira(item.key);
+
+  if (variant === "inline") {
+    return (
+      <div className="performance-work-row performance-work-row--person">
+        <div className="performance-work-row__main">
+          <div className="person-work-row__head">
+            <button
+              type="button"
+              className="performance-entity-link performance-work-row__key"
+              onClick={openJira}
+            >
+              {item.key}
+            </button>
+            <div className="person-work-row__head-badges">
+              <Badge variant="neutral" className="person-work-row__status">
+                {item.status}
+              </Badge>
+            </div>
+          </div>
+          <div className="performance-work-row__title performance-work-row__title--wrap">
+            {item.title}
+          </div>
+          <div className="performance-work-row__meta person-work-row__foot">
+            <span>{stageAgeLabel(item)}</span>
+            {knowledgeLinks?.length ? (
+              <KnowledgePopover issueKey={item.key} links={knowledgeLinks} />
+            ) : null}
+            <Button type="button" variant="secondary" onClick={openJira}>
+              Open Jira
+            </Button>
           </div>
         </div>
-        <div className="performance-work-row__title performance-work-row__title--wrap">
-          {item.title}
-        </div>
-        <div className="performance-work-row__meta person-work-row__foot">
+      </div>
+    );
+  }
+
+  return (
+    <article className="person-work-card" data-testid="person-work-card">
+      <div className="person-work-card__head">
+        <button
+          type="button"
+          className="performance-entity-link person-work-card__key"
+          onClick={openJira}
+        >
+          {item.key}
+        </button>
+        <Badge variant="neutral">{item.status}</Badge>
+      </div>
+      <h4 className="person-work-card__title" title={item.title}>{item.title}</h4>
+      <div className="person-work-card__foot">
+        <div className="person-work-card__meta">
           <span>{stageAgeLabel(item)}</span>
+          {attentionBadge}
           {knowledgeLinks?.length ? (
             <KnowledgePopover issueKey={item.key} links={knowledgeLinks} />
           ) : null}
-          <Tooltip content="Open in Jira">
-            <button
-              type="button"
-              className="person-work-row__jira"
-              aria-label={`Open ${item.key} in Jira`}
-              onClick={() => {
-                void (async () => {
-                  const prefs = await loadPreferences();
-                  const url = buildJiraIssueBrowseUrl(
-                    resolveJiraBaseUrl(prefs),
-                    item.key,
-                  );
-                  await openExternalUrl(url);
-                })();
-              }}
-            >
-              <ExternalLink size={15} strokeWidth={1.75} aria-hidden />
-            </button>
-          </Tooltip>
         </div>
+        <Button type="button" variant="secondary" onClick={openJira}>
+          Open Jira
+        </Button>
       </div>
-    </div>
+    </article>
   );
 }

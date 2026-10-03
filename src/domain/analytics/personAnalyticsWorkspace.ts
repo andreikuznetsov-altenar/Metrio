@@ -67,6 +67,8 @@ export interface PersonWorkRowData {
   status: string;
   stageAge: string;
   healthVariant: BadgeVariant;
+  /** First health reason when task needs attention (display only). */
+  attentionLabel?: string;
 }
 
 export interface PersonAnalyticsWorkspace {
@@ -158,6 +160,10 @@ export function auditIssueToPersonWorkRow(
   now: Date,
 ): PersonWorkRowData {
   const health = classifyTaskHealth({ issue, params, now });
+  const needsAttention =
+    health.status === "problematic" ||
+    health.status === "at_risk" ||
+    health.status === "no_activity";
   return {
     key: issue.issueKey,
     title: issue.issueSummary,
@@ -166,9 +172,10 @@ export function auditIssueToPersonWorkRow(
     healthVariant:
       health.status === "problematic"
         ? "danger"
-        : health.status === "at_risk"
+        : health.status === "at_risk" || health.status === "no_activity"
           ? "warning"
           : "neutral",
+    attentionLabel: needsAttention ? health.reasons[0] : undefined,
   };
 }
 
