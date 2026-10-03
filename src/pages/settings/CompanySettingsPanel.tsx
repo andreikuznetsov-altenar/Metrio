@@ -9,7 +9,7 @@ import { Switch } from "../../components/Switch/Switch";
 
 type AdminTab = "general" | "resources" | "onboarding" | "feedback" | "defaults" | "features";
 
-export function CompanySettingsPanel() {
+export function CompanySettingsPanel({ embedded = false }: { embedded?: boolean }) {
   const { effective, cache, publishConfig, tryRemoteRefresh } = useCompanyConfig();
   const [tab, setTab] = useState<AdminTab>("general");
   const [draftFeatures, setDraftFeatures] = useState(effective.features);
@@ -22,8 +22,11 @@ export function CompanySettingsPanel() {
 
   if (!effective.isCompanyAdmin) {
     return (
-      <section className="settings-panel" data-testid="company-config-readonly">
-        <h2 className="settings-panel__title">Company</h2>
+      <section
+        className={embedded ? "settings-card__body" : "settings-panel"}
+        data-testid="company-config-readonly"
+      >
+        {!embedded ? <h2 className="settings-panel__title">Company</h2> : null}
         <p className="settings-panel__description">
           {effective.publicInfo.displayName}
         </p>
@@ -69,8 +72,11 @@ export function CompanySettingsPanel() {
   };
 
   return (
-    <section className="settings-panel" data-testid="company-config-admin">
-      <h2 className="settings-panel__title">Company configuration</h2>
+    <section
+      className={embedded ? "settings-card__body" : "settings-panel"}
+      data-testid="company-config-admin"
+    >
+      {!embedded ? <h2 className="settings-panel__title">Company configuration</h2> : null}
       <p className="settings-panel__description">
         v{effective.company.configVersion} · {effective.company.updatedAt}
       </p>

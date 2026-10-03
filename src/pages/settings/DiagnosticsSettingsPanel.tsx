@@ -27,9 +27,11 @@ import { openLogsFolder } from "../../platform/logger";
 export function DiagnosticsSettingsPanel({
   prefs,
   onPersist,
+  embedded = false,
 }: {
   prefs: AppPreferences;
   onPersist: (next: AppPreferences) => Promise<void>;
+  embedded?: boolean;
 }) {
   const { success, error: toastError } = useToast();
   const surveyData = useFeedbackSurveyStore((s) => s.data);
@@ -94,13 +96,18 @@ export function DiagnosticsSettingsPanel({
   };
 
   return (
-    <div className="settings-panel" data-testid="diagnostics-settings">
-      <h2 className="settings-panel__title">Diagnostics</h2>
-      <p className="settings-intro">
+    <div
+      className={embedded ? "settings-card__body" : "settings-panel"}
+      data-testid="diagnostics-settings"
+    >
+      {!embedded ? <h2 className="settings-panel__title">Diagnostics</h2> : null}
+      <p className={embedded ? "settings-card__description" : "settings-intro"}>
         Technical health for support. No surveillance telemetry is sent automatically.
       </p>
 
-      <p className="settings-panel__lead">{formatBuildLabel(buildInfo)}</p>
+      {!embedded ? (
+        <p className="settings-panel__lead">{formatBuildLabel(buildInfo)}</p>
+      ) : null}
 
       <ul className="diagnostics-status-list">
         <li>
@@ -122,11 +129,11 @@ export function DiagnosticsSettingsPanel({
         </li>
       </ul>
 
-      <div className="settings-inline-actions">
+      <div className="settings-button-group">
         <Button type="button" variant="secondary" disabled={checking} onClick={() => void runChecks()}>
           Run connection checks
         </Button>
-        <Button type="button" variant="ghost" onClick={() => void openLogsFolder()}>
+        <Button type="button" variant="secondary" onClick={() => void openLogsFolder()}>
           Open logs folder
         </Button>
       </div>
@@ -143,10 +150,10 @@ export function DiagnosticsSettingsPanel({
         </ul>
       ) : null}
 
-      <div className="settings-notification-row">
-        <div className="settings-notification-row__text">
-          <span className="settings-notification-row__label">Debug logging</span>
-          <span className="settings-notification-row__description">
+      <div className="settings-toggle-row settings-toggle-row--stacked">
+        <div className="settings-toggle-row__text">
+          <span className="settings-toggle-row__label">Debug logging</span>
+          <span className="settings-toggle-row__description">
             Verbose local logs (still redacted). Off by default.
           </span>
         </div>
@@ -162,7 +169,7 @@ export function DiagnosticsSettingsPanel({
         />
       </div>
 
-      <div className="settings-inline-actions">
+      <div className="settings-button-group">
         <Button
           type="button"
           variant="secondary"
@@ -174,7 +181,7 @@ export function DiagnosticsSettingsPanel({
         </Button>
         <Button
           type="button"
-          variant="ghost"
+          variant="secondary"
           onClick={() => {
             resetRecreatableCaches();
             success("Temporary caches cleared");
@@ -184,7 +191,7 @@ export function DiagnosticsSettingsPanel({
         </Button>
         <Button
           type="button"
-          variant="ghost"
+          variant="secondary"
           onClick={async () => {
             try {
               await navigator.clipboard.writeText(summaryText);
@@ -200,7 +207,7 @@ export function DiagnosticsSettingsPanel({
 
       <Button
         type="button"
-        variant="ghost"
+        variant="secondary"
         onClick={() => setAdvancedOpen((v) => !v)}
       >
         {advancedOpen ? "Hide advanced details" : "Show advanced details"}

@@ -3,7 +3,7 @@ import { useOptionalMetrioUpdate } from "../../app/UpdateContext";
 import { getBuildInfo } from "../../config/build";
 import { formatBuildLabel } from "../../config/build";
 
-export function AboutSettingsPanel() {
+export function AboutSettingsPanel({ embedded = false }: { embedded?: boolean }) {
   const update = useOptionalMetrioUpdate();
   const buildInfo = update?.buildInfo ?? getBuildInfo();
   const checkResult = update?.checkResult ?? {
@@ -39,10 +39,13 @@ export function AboutSettingsPanel() {
       : [];
 
   return (
-    <div className="settings-panel" data-testid="about-settings">
-      <h2 className="settings-panel__title">About Metrio</h2>
-      <p className="settings-panel__lead">
-        {formatBuildLabel(buildInfo)}
+    <div
+      className={embedded ? "settings-card__body" : "settings-panel"}
+      data-testid="about-settings"
+    >
+      {!embedded ? <h2 className="settings-panel__title">About Metrio</h2> : null}
+      <p className={embedded ? "settings-card__description" : "settings-panel__lead"}>
+        Metrio · {formatBuildLabel(buildInfo)}
       </p>
 
       <div className="about-update" aria-live="polite">
