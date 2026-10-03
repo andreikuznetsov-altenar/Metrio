@@ -11,9 +11,9 @@ export interface PaletteCommandDef {
 export const PALETTE_COMMANDS: PaletteCommandDef[] = [
   {
     id: "cmd-home",
-    title: "Go to Home",
+    title: "Go to Dashboard",
     subtitle: "Metrio navigation",
-    keywords: ["home", "start"],
+    keywords: ["dashboard", "home", "start"],
     commandId: "navigate-home",
   },
   {
@@ -75,7 +75,7 @@ export const PALETTE_COMMANDS: PaletteCommandDef[] = [
   {
     id: "cmd-today-meetings",
     title: "Open today's meetings",
-    subtitle: "Go to Home upcoming calendar",
+    subtitle: "Go to Dashboard upcoming calendar",
     keywords: ["meetings", "calendar", "today"],
     commandId: "open-today-meetings",
   },

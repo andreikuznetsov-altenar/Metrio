@@ -18,12 +18,12 @@ const ROWS: {
   },
   {
     key: "showDailyOnHome",
-    label: "Show daily brief on Home",
+    label: "Show daily brief on Dashboard",
     description: "Compact card with a link to the full brief.",
   },
   {
     key: "showWeeklyOnHome",
-    label: "Show weekly digest on Home",
+    label: "Show weekly digest on Dashboard",
     description: "Managers only.",
   },
   {

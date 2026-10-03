@@ -1,6 +1,7 @@
-import { AlertCircle, Info } from "lucide-react";
+import { Badge } from "../../components/Badge/Badge";
 import { Button } from "../../components/Button/Button";
 import type { ActionItem } from "../../domain/actions/actionTypes";
+import { buildDashboardActionRow } from "../../domain/actions/actionPresentation";
 import "./action-queue.css";
 
 export interface ActionQueueSectionProps {
@@ -10,13 +11,7 @@ export interface ActionQueueSectionProps {
   onOpen: (item: ActionItem) => void;
   openLabel?: (item: ActionItem) => string;
   footerAction?: { label: string; onClick: () => void };
-}
-
-function severityIcon(severity: ActionItem["severity"]) {
-  if (severity === "critical" || severity === "warning") {
-    return <AlertCircle size={16} strokeWidth={1.75} aria-hidden />;
-  }
-  return <Info size={16} strokeWidth={1.75} aria-hidden />;
+  variant?: "default" | "dashboard";
 }
 
 export function ActionQueueSection({
@@ -26,19 +21,63 @@ export function ActionQueueSection({
   onOpen,
   openLabel = () => "Open",
   footerAction,
+  variant = "default",
 }: ActionQueueSectionProps) {
+  if (variant === "dashboard") {
+    return (
+      <section className="home-card action-queue action-queue--dashboard" aria-label={title}>
+        <h2 className="home-card__title home-card__title--section">{title}</h2>
+        {items.length === 0 ? (
+          <p className="home-card__empty" role="status">{emptyMessage}</p>
+        ) : (
+          <ul className="action-queue__dashboard-list">
+            {items.map((item) => {
+              const row = buildDashboardActionRow(item);
+              return (
+                <li key={item.id} className="action-queue__dashboard-row">
+                  <span className="action-queue__dashboard-subject">{row.subject}</span>
+                  {row.statusLabel ? (
+                    <span className="action-queue__dashboard-status">{row.statusLabel}</span>
+                  ) : null}
+                  <Badge variant="neutral">
+                    {row.reasonTag}
+                  </Badge>
+                  {row.contextLine ? (
+                    <span className="action-queue__dashboard-context">{row.contextLine}</span>
+                  ) : null}
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    className="action-queue__dashboard-cta"
+                    onClick={() => onOpen(item)}
+                  >
+                    {openLabel(item)}
+                  </Button>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+        {footerAction ? (
+          <div className="home-card__actions">
+            <Button type="button" variant="secondary" onClick={footerAction.onClick}>
+              {footerAction.label}
+            </Button>
+          </div>
+        ) : null}
+      </section>
+    );
+  }
+
   return (
     <section className="action-queue" aria-label={title}>
       <h3 className="action-queue__title">{title}</h3>
       {items.length === 0 ? (
-        <p className="action-queue__empty" role="status">
-          {emptyMessage}
-        </p>
+        <p className="action-queue__empty" role="status">{emptyMessage}</p>
       ) : (
         <ul className="action-queue__list">
           {items.map((item) => (
             <li key={item.id} className={`action-queue__row action-queue__row--${item.severity}`}>
-              <span className="action-queue__icon">{severityIcon(item.severity)}</span>
               <div className="action-queue__body">
                 <div className="action-queue__head">
                   <span className="action-queue__item-title">{item.title}</span>
@@ -49,7 +88,7 @@ export function ActionQueueSection({
               </div>
               <Button
                 type="button"
-                variant="ghost"
+                variant="secondary"
                 className="action-queue__open"
                 onClick={() => onOpen(item)}
               >

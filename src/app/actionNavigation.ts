@@ -89,6 +89,8 @@ export function actionOpenLabel(item: ActionItem): string {
   if (item.target.kind === "confluence") return "Open";
   if (item.target.kind === "feedback") return "Open Feedback";
   if (item.target.kind === "delivery-risk") return "Open Delivery Risk";
-  if (item.target.kind === "person") return "Open";
-  return "View";
+  if (item.target.kind === "person") return "View person";
+  if (item.target.kind === "person_brief") return "View person";
+  if (item.target.kind === "performance") return "View details";
+  return "View details";
 }
