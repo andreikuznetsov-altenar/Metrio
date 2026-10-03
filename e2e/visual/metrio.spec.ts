@@ -912,11 +912,23 @@ test.describe("Metrio visual regression", () => {
     await expect(page.getByRole("button", { name: /^Notifications$/i })).toBeVisible();
   });
 
-  test("settings general theme picker", async ({ page }) => {
+  test("profile menu theme", async ({ page }) => {
+    await bootMetrio(page, "lead");
+    await page.locator(".profile-menu__avatar").click();
+    await expect(page.getByTestId("profile-menu-theme")).toBeVisible();
+    await expect(page).toHaveScreenshot("profile-menu-theme.png", {
+      fullPage: true,
+      maxDiffPixelRatio: 0.02,
+    });
+  });
+
+  test("settings preferences section", async ({ page }) => {
     await bootMetrio(page, "lead");
     await page.getByRole("button", { name: /^settings$/i }).click();
-    await expect(page.getByRole("button", { name: /^general$/i })).toBeVisible();
-    await expect(page).toHaveScreenshot("settings-general.png", {
+    await expect(page.getByRole("button", { name: /^preferences$/i })).toBeVisible();
+    await expect(page.getByTestId("preferences-settings")).toBeVisible();
+    await expect(page.getByLabel("Theme preference")).toHaveCount(0);
+    await expect(page).toHaveScreenshot("settings-preferences.png", {
       fullPage: true,
       maxDiffPixelRatio: 0.02,
     });
@@ -926,17 +938,16 @@ test.describe("Metrio visual regression", () => {
     await bootMetrio(page, "lead");
     await page.getByRole("button", { name: /^settings$/i }).click();
     await clickSettingsSection(page, /^connections$/i);
-    await expect(page.getByText(/^Token$/i)).toBeVisible();
+    await expect(page.getByText(/^API token$/i)).toBeVisible();
     await expect(page).toHaveScreenshot("settings-connections.png", {
       fullPage: true,
       maxDiffPixelRatio: 0.02,
     });
   });
 
-  test("settings notifications switches", async ({ page }) => {
+  test("settings preferences notifications card", async ({ page }) => {
     await bootMetrio(page, "lead");
     await page.getByRole("button", { name: /^settings$/i }).click();
-    await clickSettingsSection(page, /^notifications$/i);
     await expect(page.getByRole("switch", { name: /Vacation starting soon/i })).toBeVisible();
     await expect(page).toHaveScreenshot("settings-notifications.png", {
       fullPage: true,
@@ -953,7 +964,7 @@ test.describe("Metrio visual regression", () => {
     await page.goto("/");
     await expect(page.getByTestId("app-shell")).toBeVisible({ timeout: 30_000 });
     await page.getByRole("button", { name: /^settings$/i }).click();
-    await clickSettingsSection(page, /^diagnostics$/i);
+    await clickSettingsSection(page, /company & app/i);
     await expect(page.getByTestId("diagnostics-settings")).toBeVisible();
     await expect(page.getByTestId("diagnostics-checks")).toBeVisible({
       timeout: 15_000,
@@ -973,7 +984,7 @@ test.describe("Metrio visual regression", () => {
     await page.goto("/");
     await expect(page.getByTestId("app-shell")).toBeVisible({ timeout: 30_000 });
     await page.getByRole("button", { name: /^settings$/i }).click();
-    await clickSettingsSection(page, /^diagnostics$/i);
+    await clickSettingsSection(page, /company & app/i);
     await page.getByRole("button", { name: /Show advanced details/i }).click();
     await expect(page.getByTestId("diagnostics-advanced")).toBeVisible();
     await expect(page).toHaveScreenshot("settings-diagnostics-advanced-dark.png", {
@@ -990,6 +1001,78 @@ test.describe("Metrio visual regression", () => {
     await expect(page.locator(".metrio-toast-host")).toHaveScreenshot("toast-settings-saved.png", {
       maxDiffPixelRatio: 0.02,
     });
+  });
+
+  test("settings company and app", async ({ page }) => {
+    await bootMetrio(page, "lead");
+    await page.getByRole("button", { name: /^settings$/i }).click();
+    await clickSettingsSection(page, /company & app/i);
+    await expect(page.getByTestId("company-app-settings")).toBeVisible();
+    await expect(page).toHaveScreenshot("settings-company-app.png", {
+      fullPage: true,
+      maxDiffPixelRatio: 0.02,
+    });
+  });
+
+  test("settings dark", async ({ page }) => {
+    await page.addInitScript((fixtureId: string) => {
+      localStorage.setItem("metrio-connection-connected", "true");
+      localStorage.setItem("metrio-dev-fixture", fixtureId);
+      localStorage.setItem("metrio-theme", "dark");
+    }, "lead");
+    await page.goto("/");
+    await openPerformanceFromHome(page);
+    await page.getByRole("button", { name: /^settings$/i }).click();
+    await expect(page.getByTestId("preferences-settings")).toBeVisible();
+    await expect(page).toHaveScreenshot("settings-dark.png", {
+      fullPage: true,
+      maxDiffPixelRatio: 0.02,
+    });
+  });
+
+  test("settings connections dark", async ({ page }) => {
+    await page.addInitScript((fixtureId: string) => {
+      localStorage.setItem("metrio-connection-connected", "true");
+      localStorage.setItem("metrio-dev-fixture", fixtureId);
+      localStorage.setItem("metrio-theme", "dark");
+    }, "lead");
+    await page.goto("/");
+    await openPerformanceFromHome(page);
+    await page.getByRole("button", { name: /^settings$/i }).click();
+    await clickSettingsSection(page, /^connections$/i);
+    await expect(page.getByTestId("connections-settings")).toBeVisible();
+    await expect(page).toHaveScreenshot("settings-connections-dark.png", {
+      fullPage: true,
+      maxDiffPixelRatio: 0.02,
+    });
+  });
+
+  test("settings toggle close-up", async ({ page }) => {
+    await bootMetrio(page, "lead");
+    await page.getByRole("button", { name: /^settings$/i }).click();
+    const toggle = page.getByRole("switch", { name: /Launch Metrio at login/i });
+    await expect(toggle).toHaveScreenshot("settings-toggle-off.png", {
+      maxDiffPixelRatio: 0.02,
+    });
+    await toggle.click();
+    await expect(toggle).toHaveScreenshot("settings-toggle-on.png", {
+      maxDiffPixelRatio: 0.02,
+    });
+  });
+
+  test("google apps script setup drawer", async ({ page }) => {
+    await bootMetrio(page, "lead");
+    await page.getByRole("button", { name: /^settings$/i }).click();
+    await clickSettingsSection(page, /^connections$/i);
+    const connectGoogle = page.getByRole("button", { name: /^connect google$/i });
+    if ((await connectGoogle.count()) > 0) {
+      await connectGoogle.click();
+      await expect(page.getByTestId("google-apps-script-setup")).toBeVisible();
+      await expect(page).toHaveScreenshot("google-apps-script-setup.png", {
+        fullPage: true,
+        maxDiffPixelRatio: 0.02,
+      });
+    }
   });
 
   test("drawer close keeps dialog during exit", async ({ page }) => {
@@ -1141,7 +1224,7 @@ test.describe("Metrio visual regression", () => {
     await page.goto("/");
     await expect(page.getByTestId("app-shell")).toBeVisible({ timeout: 30_000 });
     await page.getByRole("button", { name: "Settings" }).click();
-    await clickSettingsSection(page, /^company$/i);
+    await clickSettingsSection(page, /company & app/i);
     await expect(page.getByTestId("company-config-admin")).toBeVisible();
     await expect(page).toHaveScreenshot("company-settings-admin.png", {
       fullPage: true,
