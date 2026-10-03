@@ -183,3 +183,54 @@
   font-size: 13px;
   color: var(--color-danger, #c0392b);
 }
+
+.diagnostics-status-list {
+  margin: 0;
+  padding-left: 1.1rem;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--color-text-secondary);
+}
+
+.diagnostics-check-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  font-size: 13px;
+}
+
+.diagnostics-check-list li {
+  display: grid;
+  grid-template-columns: 7rem 8rem 1fr;
+  gap: var(--space-2);
+  align-items: baseline;
+}
+
+.diagnostics-check-list__label {
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.diagnostics-check-list__state {
+  color: var(--color-text-secondary);
+}
+
+.diagnostics-check-list__detail {
+  color: var(--color-text-secondary);
+  word-break: break-word;
+}
+
+.diagnostics-advanced {
+  margin: 0;
+  padding: var(--space-3);
+  font-size: 11px;
+  line-height: 1.45;
+  border-radius: var(--radius-md, 8px);
+  background: var(--color-surface-secondary, rgba(0, 0, 0, 0.04));
+  overflow: auto;
+  max-height: 280px;
+  white-space: pre-wrap;
+}

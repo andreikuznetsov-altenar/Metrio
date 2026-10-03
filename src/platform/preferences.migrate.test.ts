@@ -4,7 +4,7 @@ import { DEFAULT_PREFERENCES, getWorkEmail, migratePreferences, syncWorkEmailFie
 describe('preferences migration', () => {
   it('adds schemaVersion for legacy files', () => {
     const migrated = migratePreferences({ jiraBaseUrl: 'https://x.atlassian.net' });
-    expect(migrated.schemaVersion).toBe(8);
+    expect(migrated.schemaVersion).toBe(9);
     expect(migrated.setup.completed).toBe(false);
   });
 
@@ -69,7 +69,7 @@ describe('preferences migration', () => {
     const migrated = migratePreferences({ schemaVersion: 4, appearance: { theme: 'dark' } });
     expect(migrated.appearance.displayTimezone).toBe('system');
     expect(migrated.appearance.hideFractionalTimezones).toBe(false);
-    expect(migrated.schemaVersion).toBe(8);
+    expect(migrated.schemaVersion).toBe(9);
   });
 
   it('adds Apps Script web app URL for legacy google prefs', () => {
@@ -85,7 +85,7 @@ describe('preferences migration', () => {
       },
     });
     expect(migrated.google.appsScriptWebAppUrl).toBe('');
-    expect(migrated.schemaVersion).toBe(8);
+    expect(migrated.schemaVersion).toBe(9);
   });
 
   it('marks credentials configured for completed legacy setups without keychain reads', () => {

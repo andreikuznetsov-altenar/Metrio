@@ -2,6 +2,7 @@ import type {
   DeliveryRiskRow,
   TeamPerformanceSnapshot,
 } from "../performance";
+import type { DeliveryDependencyIndex } from "../dependencies/dependencyTypes";
 import type { FeedbackActionSummary } from "../feedback/feedbackActionSummary";
 import type { ActionItem } from "./actionTypes";
 import type { OperationalRules } from "../operationalRules/operationalRulesTypes";
@@ -14,6 +15,7 @@ const MAX_TEAM = 7;
 export interface BuildTeamActionsInput {
   snapshot: TeamPerformanceSnapshot;
   deliveryRisk: DeliveryRiskRow[];
+  dependencyIndex?: DeliveryDependencyIndex | null;
   feedback?: FeedbackActionSummary;
   now?: Date;
   operationalRules?: OperationalRules;
@@ -124,6 +126,20 @@ export function buildTeamActions(input: BuildTeamActionsInput): ActionItem[] {
       count: feedback.deliveryFailureCount,
       target: { kind: "feedback", tab: "delivery" },
       source: "feedback",
+    });
+  }
+
+  const fanOut = input.dependencyIndex?.fanOut ?? [];
+  for (const row of fanOut.slice(0, 2)) {
+    items.push({
+      id: `dependency-${row.blockerIssueKey}`,
+      kind: "delivery_dependency",
+      severity: row.blockedActiveCount >= 3 ? "warning" : "info",
+      title: `${row.blockedActiveCount} team tasks blocked by ${row.blockerProject}`,
+      description: `${row.blockerIssueKey} · ${row.blockerSummary}`,
+      count: row.blockedActiveCount,
+      target: { kind: "delivery-risk" },
+      source: "jira",
     });
   }
 

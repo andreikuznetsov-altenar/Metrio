@@ -3,6 +3,7 @@ import type { JiraAssignmentRecord } from "../jira/jiraAssignmentTracking";
 import type { MetricCardData } from "../performance";
 import type { OrganizationOverviewModel } from "../organization/organizationTypes";
 import type { ManagerAvailabilityRow } from "../availability/teamAvailabilityContext";
+import type { HomeDependencySignal } from "../dependencies/dependencyTypes";
 
 export type HomeRoleVariant = "employee" | "manager" | "director";
 
@@ -74,6 +75,7 @@ export interface HomeTeamWorkspace {
   availabilityPreview: ManagerAvailabilityRow[];
   newStarters: HomeNewStarterTeamRow[];
   feedback: HomeFeedbackCard | null;
+  dependencySignals: HomeDependencySignal[];
 }
 
 export interface HomeOrganizationWorkspace {

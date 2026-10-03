@@ -16,12 +16,29 @@ import type { CurrentUser, UserRole } from "../../domain/types";
 import { loadGoalsData } from "../goals/goalsPersistence";
 import { syncGoalReviewNotifications } from "../../platform/goalReviewNotifications";
 import type { PerformanceViewModels } from "./performanceViewModel";
+import { readCalendarCache } from "../../platform/calendarCache";
+import { formatMeetingTime } from "../../domain/calendar/formatMeetingTime";
+import {
+  noteRefreshCompleted,
+  recordIntegrationRefresh,
+} from "../../platform/observability/observabilityStore";
 
 export interface PerformanceSideEffectOptions {
   selfPersonId: string;
   role: UserRole;
   viewModels?: PerformanceViewModels | null;
   currentUser?: CurrentUser | null;
+}
+
+function nextTrayOneOnOnePrep() {
+  const cached = readCalendarCache();
+  const meeting = cached?.oneOnOnes[0];
+  if (!meeting?.otherPersonId) return undefined;
+  const name = meeting.otherPersonName ?? "1:1";
+  return {
+    personId: meeting.otherPersonId,
+    label: `1:1 with ${name} · ${formatMeetingTime(meeting.start)} · Prepare`,
+  };
 }
 
 function resolveSelfPerson(
@@ -38,6 +55,7 @@ export async function applyPerformanceRefreshSideEffects(
   result: PerformanceFetchResult,
   options: PerformanceSideEffectOptions,
 ): Promise<void> {
+  const started = performance.now();
   const params = result.reportParams;
   const now = result.lastUpdatedAt || new Date().toISOString();
   const self = resolveSelfPerson(result, options.selfPersonId);
@@ -48,9 +66,13 @@ export async function applyPerformanceRefreshSideEffects(
     const issues = getOperationalIssues(self);
     prefs = processJiraAssignmentNotifications(issues, prefs, now).nextPrefs;
     const assignmentState = readJiraAssignmentState(prefs);
-    await pushTrayFromContext(
-      trayContextFromSelfPerson(self, params, assignmentState),
-    );
+    const trayBase = trayContextFromSelfPerson(self, params, assignmentState);
+    await pushTrayFromContext({
+      ...trayBase,
+      nextOneOnOne: prefs.google.calendarConnected
+        ? nextTrayOneOnOnePrep()
+        : undefined,
+    });
   } else {
     await pushTrayFromContext({
       assignmentState: readJiraAssignmentState(prefs),
@@ -104,6 +126,19 @@ export async function applyPerformanceRefreshSideEffects(
       bambooStale: false,
     },
   });
+
+  const durationMs = Math.round(performance.now() - started);
+  const partial = result.partialWarnings.length > 0;
+  recordIntegrationRefresh(
+    "jira",
+    "Jira",
+    partial ? "partial" : "success",
+    durationMs,
+    undefined,
+    partial ? result.partialWarnings.join("; ") : undefined,
+  );
+  recordIntegrationRefresh("bamboo", "BambooHR", partial ? "partial" : "success", durationMs);
+  noteRefreshCompleted();
 }
 
 export async function markPerformanceIntegrationsStale(

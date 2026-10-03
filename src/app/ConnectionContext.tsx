@@ -13,6 +13,7 @@ import {
   SESSION_STORAGE_ERROR_MESSAGE,
 } from "./appSession";
 import { bootLog, bootLogError, getLastBootStage } from "./bootDiagnostics";
+import { recordStartupPhase } from "../platform/observability/observabilityStore";
 import {
   registerSessionInvalidator,
   unregisterSessionInvalidator,
@@ -94,6 +95,7 @@ export function ConnectionProvider({ children }: { children: ReactNode }) {
     }
 
     const runId = ++bootstrapRunRef.current;
+    const bootstrapStarted = performance.now();
     setStartupError(null);
     setGate("bootstrapping");
     bootLog("06", "bootstrap started");
@@ -116,6 +118,10 @@ export function ConnectionProvider({ children }: { children: ReactNode }) {
           return;
         }
         window.clearTimeout(timeoutId);
+        recordStartupPhase(
+          "bootstrap",
+          Math.round(performance.now() - bootstrapStarted),
+        );
         applyBootstrapResult(result);
       })
       .catch((error) => {

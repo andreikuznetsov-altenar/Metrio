@@ -7,6 +7,7 @@ export interface SurveyGoogleStatus {
   account_email: string;
   forms_connected: boolean;
   gmail_connected: boolean;
+  calendar_connected?: boolean;
 }
 
 export interface SurveyGoogleClient {

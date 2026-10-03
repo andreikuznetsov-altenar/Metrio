@@ -32,6 +32,7 @@ import { useWorkGraph } from "./WorkGraphContext";
 import { useTheme } from "../theme/ThemeProvider";
 import { resolveJiraBaseUrl } from "../config/product";
 import { loadPreferences } from "../platform/preferences";
+import { readCalendarCache } from "../platform/calendarCache";
 import { buildJiraIssueBrowseUrl } from "../platform/jiraIssueUrl";
 import { isCommandPaletteShortcut } from "../platform/commandPaletteShortcut";
 import { PageToolbar } from "../shell/PageToolbar";
@@ -215,6 +216,10 @@ function AppLayoutShell({
   const [personBriefPersonId, setPersonBriefPersonId] = useState<string | null>(
     null,
   );
+  const [personBriefPeriod, setPersonBriefPeriod] = useState<
+    import("../domain/performance").DateRangeKey | undefined
+  >(undefined);
+  const [personBriefPrepOneOnOne, setPersonBriefPrepOneOnOne] = useState(false);
   const [projectCockpitKey, setProjectCockpitKey] = useState<string | null>(
     null,
   );
@@ -254,9 +259,17 @@ function AppLayoutShell({
 
   useEffect(() => {
     const onBrief = (event: Event) => {
-      const detail = (event as CustomEvent<{ personId: string }>).detail;
+      const detail = (
+        event as CustomEvent<{
+          personId: string;
+          periodPreset?: import("../domain/performance").DateRangeKey;
+          prepForOneOnOne?: boolean;
+        }>
+      ).detail;
       if (detail?.personId) {
         setPersonBriefPersonId(detail.personId);
+        setPersonBriefPeriod(detail.periodPreset);
+        setPersonBriefPrepOneOnOne(Boolean(detail.prepForOneOnOne));
       }
     };
     window.addEventListener("metrio-open-person-brief", onBrief);
@@ -352,6 +365,25 @@ function AppLayoutShell({
       feedbackEnabled,
       resolveJiraUrl: (issueKey: string) =>
         buildJiraIssueBrowseUrl(paletteJiraBaseUrl, issueKey),
+      prepareNextOneOnOne: () => {
+        const next = readCalendarCache()?.oneOnOnes[0];
+        if (next?.otherPersonId) {
+          window.dispatchEvent(
+            new CustomEvent("metrio-open-person-brief", {
+              detail: {
+                personId: next.otherPersonId,
+                prepForOneOnOne: true,
+                periodPreset: "30d",
+              },
+            }),
+          );
+          return;
+        }
+        setActiveRoute("home");
+      },
+      openTodayMeetings: () => {
+        setActiveRoute("home");
+      },
     }),
     [
       onRefresh,
@@ -360,6 +392,7 @@ function AppLayoutShell({
       setPreference,
       feedbackEnabled,
       paletteJiraBaseUrl,
+      setActiveRoute,
     ],
   );
 
@@ -520,7 +553,13 @@ function AppLayoutShell({
       <PersonBriefDrawer
         personId={personBriefPersonId}
         open={personBriefPersonId != null}
-        onClose={() => setPersonBriefPersonId(null)}
+        onClose={() => {
+          setPersonBriefPersonId(null);
+          setPersonBriefPeriod(undefined);
+          setPersonBriefPrepOneOnOne(false);
+        }}
+        initialPeriodPreset={personBriefPeriod}
+        prepForOneOnOne={personBriefPrepOneOnOne}
       />
       <ProjectCockpitDrawer
         projectKey={projectCockpitKey}

@@ -29,6 +29,8 @@ import { DEFAULT_OPERATIONAL_RULES } from "../operationalRules/operationalRulesD
 import { taskHealthThresholdsFromRules } from "../operationalRules/normalizeOperationalRules";
 import { comparisonPeriodLabel, type PerformanceDateRange } from "../performance/performanceDateRange";
 import { formatAttentionHealthLabel } from "../../pages/performance/trendPresentation";
+import { buildProjectDependencySection } from "../dependencies/buildProjectDependencies";
+import type { DeliveryDependencyIndex } from "../dependencies/dependencyTypes";
 
 export interface BuildProjectCockpitInput {
   scope: ProjectCockpitScope;
@@ -41,6 +43,7 @@ export interface BuildProjectCockpitInput {
   currentUser: CurrentUser;
   jiraBaseUrl: string;
   operationalRules?: OperationalRules;
+  dependencyIndex?: DeliveryDependencyIndex | null;
 }
 
 function findProjectMeta(
@@ -360,6 +363,10 @@ export function buildProjectCockpit(input: BuildProjectCockpitInput): ProjectCoc
       input.knowledgeLinks,
       input.knowledgeUnavailable ?? false,
       input.jiraBaseUrl,
+    ),
+    dependencies: buildProjectDependencySection(
+      projectKey,
+      input.dependencyIndex,
     ),
   };
 }

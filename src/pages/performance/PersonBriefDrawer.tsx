@@ -30,12 +30,16 @@ export interface PersonBriefDrawerProps {
   personId: string | null;
   open: boolean;
   onClose: () => void;
+  initialPeriodPreset?: DateRangeKey;
+  prepForOneOnOne?: boolean;
 }
 
 export function PersonBriefDrawer({
   personId,
   open,
   onClose,
+  initialPeriodPreset,
+  prepForOneOnOne = false,
 }: PersonBriefDrawerProps) {
   const { currentUser } = useCurrentUser();
   const { data } = usePerformanceData();
@@ -47,10 +51,13 @@ export function PersonBriefDrawer({
 
   useEffect(() => {
     if (!open) return;
+    if (initialPeriodPreset) {
+      setPeriodPreset(initialPeriodPreset);
+    }
     void loadPreferences().then((prefs) => {
       setJiraBaseUrl(resolveJiraBaseUrl(prefs));
     });
-  }, [open]);
+  }, [open, initialPeriodPreset]);
 
   const allowed =
     personId != null && canOpenPersonBrief(currentUser, personId);
@@ -117,6 +124,11 @@ export function PersonBriefDrawer({
             />
             <div>
               <h2 className="person-brief__title">{brief.personName}</h2>
+              {prepForOneOnOne ? (
+                <p className="person-brief__meta person-brief__meta--prep">
+                  Prepare for 1:1
+                </p>
+              ) : null}
               <p className="person-brief__meta">
                 {brief.role} · {brief.periodLabel}
               </p>

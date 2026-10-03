@@ -1,3 +1,8 @@
+import {
+  noteRefreshCoalesced,
+  noteRefreshRequested,
+} from "../../platform/observability/observabilityStore";
+
 /** Coalesce overlapping refresh requests (background events, manual refresh, resume). */
 export function createCoalescedRefresh(
   runRefresh: () => Promise<void>,
@@ -6,8 +11,10 @@ export function createCoalescedRefresh(
   let scheduled = false;
 
   return async () => {
+    noteRefreshRequested();
     if (inFlight) {
       scheduled = true;
+      noteRefreshCoalesced();
       return inFlight;
     }
 

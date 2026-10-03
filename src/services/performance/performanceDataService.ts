@@ -49,6 +49,10 @@ import type {
   PerformanceFetchResult,
   PerformanceIdentityResolution,
 } from "./performanceTypes";
+import {
+  buildDeliveryDependencyGraph,
+  collectLinkedIssueKeys,
+} from "../../domain/dependencies/buildDeliveryDependencyGraph";
 
 export type { PerformanceFetchResult, PerformanceIdentityResolution } from "./performanceTypes";
 
@@ -220,7 +224,17 @@ export async function fetchPerformanceData(
   });
 
   const jql = buildJql(fetchParams);
-  const issues = await jira.fetchAllIssues(jql);
+  let issues = await jira.fetchAllIssues(jql);
+  const knownKeys = new Set(issues.map(issueKeyFromRaw).filter(Boolean));
+  const linkedKeys = collectLinkedIssueKeys(issues).filter((k) => !knownKeys.has(k));
+  if (linkedKeys.length) {
+    const linkedIssues = await jira.fetchIssuesByKeys(linkedKeys.slice(0, 200));
+    issues = [...issues, ...linkedIssues];
+    for (const issue of linkedIssues) {
+      const key = issueKeyFromRaw(issue);
+      if (key) knownKeys.add(key);
+    }
+  }
   const issueKeys = issues.map(issueKeyFromRaw).filter(Boolean);
   const changelogByIssue = await jira.fetchAllChangelogsBatch(issueKeys);
 
@@ -316,6 +330,8 @@ export async function fetchPerformanceData(
     partialWarnings.push("no_jira_issues_in_period");
   }
 
+  const dependencyIndex = buildDeliveryDependencyGraph(issues, teamSnapshot);
+
   return {
     teamSnapshot,
     historyTeamSnapshot,
@@ -329,5 +345,6 @@ export async function fetchPerformanceData(
     partialWarnings,
     lastUpdatedAt: new Date().toISOString(),
     historicalBootstrapRan,
+    dependencyIndex,
   };
 }

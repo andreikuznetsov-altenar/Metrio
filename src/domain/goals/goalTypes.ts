@@ -43,6 +43,8 @@ export interface Goal {
   employeeMayEditManualProgress: boolean;
   createdAt: string;
   updatedAt: string;
+  /** Optimistic concurrency for Metrio Cloud */
+  revision?: number;
 }
 
 export interface GoalHistoryEntry {

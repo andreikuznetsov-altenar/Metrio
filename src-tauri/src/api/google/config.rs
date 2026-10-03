@@ -14,3 +14,11 @@ pub fn google_oauth_client_id() -> String {
 /// - drive.file: manage responder access on Forms the app creates (permissions API)
 pub const GOOGLE_OAUTH_SCOPES: &str =
     "openid email https://www.googleapis.com/auth/forms.body https://www.googleapis.com/auth/forms.responses.readonly https://www.googleapis.com/auth/gmail.send https://www.googleapis.com/auth/drive.file";
+
+/// Read-only upcoming events — granted only via explicit `google_oauth_enable_calendar`.
+pub const GOOGLE_CALENDAR_READONLY_SCOPE: &str =
+    "https://www.googleapis.com/auth/calendar.events.readonly";
+
+pub fn google_oauth_scopes_with_calendar() -> String {
+    format!("{} {}", GOOGLE_OAUTH_SCOPES, GOOGLE_CALENDAR_READONLY_SCOPE)
+}

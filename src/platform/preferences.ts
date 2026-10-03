@@ -18,7 +18,7 @@ import {
   type DigestUserPreferences,
 } from './digestPreferences';
 
-export const PREFERENCES_SCHEMA_VERSION = 8;
+export const PREFERENCES_SCHEMA_VERSION = 9;
 
 export const PREFERENCES_SAVED_EVENT = 'metrio-preferences-saved';
 
@@ -83,6 +83,7 @@ export interface AppPreferences {
     bambooActionAlerts: boolean;
     feedbackActionAlerts: boolean;
     integrationProblemAlerts: boolean;
+    calendarOneOnOnePrep: boolean;
   };
   general: {
     keepRunningInTray: boolean;
@@ -102,6 +103,7 @@ export interface AppPreferences {
     accountEmail: string;
     formsConnected: boolean;
     gmailConnected: boolean;
+    calendarConnected: boolean;
     appsScriptWebAppUrl: string;
     oauthClientId: string;
     emailCollectionMode: 'VERIFIED' | 'RESPONDER_INPUT';
@@ -109,6 +111,9 @@ export interface AppPreferences {
   };
   beta: {
     feedbackUrl: string;
+  };
+  diagnostics: {
+    debugLoggingEnabled: boolean;
   };
 }
 
@@ -155,6 +160,7 @@ export const DEFAULT_PREFERENCES: AppPreferences = {
     bambooActionAlerts: true,
     feedbackActionAlerts: true,
     integrationProblemAlerts: true,
+    calendarOneOnOnePrep: false,
   },
   general: {
     keepRunningInTray: true,
@@ -174,6 +180,7 @@ export const DEFAULT_PREFERENCES: AppPreferences = {
     accountEmail: '',
     formsConnected: false,
     gmailConnected: false,
+    calendarConnected: false,
     appsScriptWebAppUrl: '',
     oauthClientId: '',
     emailCollectionMode: 'RESPONDER_INPUT',
@@ -181,6 +188,9 @@ export const DEFAULT_PREFERENCES: AppPreferences = {
   },
   beta: {
     feedbackUrl: '',
+  },
+  diagnostics: {
+    debugLoggingEnabled: false,
   },
 };
 
@@ -265,6 +275,7 @@ export function migratePreferences(raw: Partial<AppPreferences> & { schemaVersio
     google: { ...DEFAULT_PREFERENCES.google, ...raw.google },
     reportFilters: { ...DEFAULT_PREFERENCES.reportFilters, ...raw.reportFilters },
     beta: { ...DEFAULT_PREFERENCES.beta, ...raw.beta },
+    diagnostics: { ...DEFAULT_PREFERENCES.diagnostics, ...raw.diagnostics },
     schemaVersion: PREFERENCES_SCHEMA_VERSION,
   };
 

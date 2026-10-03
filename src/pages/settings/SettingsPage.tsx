@@ -28,12 +28,16 @@ import type { ThemePreference } from "../../theme/theme";
 import { PageSubnav } from "../../shell/PageSubnav";
 import type { SettingsSection } from "./types";
 import { GoogleConnectionPanel } from "../feedback/GoogleConnectionPanel";
+import { CalendarSettingsPanel } from "./CalendarSettingsPanel";
+import { disconnectCalendarCache } from "../../hooks/useUpcomingMeetings";
 import { SettingsCredentialField } from "./SettingsCredentialField";
 import "../page-content.css";
 import { OperationalRulesSettingsPanel } from "./OperationalRulesSettingsPanel";
 import { DigestSettingsPanel } from "./DigestSettingsPanel";
 import { AboutSettingsPanel } from "./AboutSettingsPanel";
 import { CompanySettingsPanel } from "./CompanySettingsPanel";
+import { MetrioCloudSettingsPanel } from "./MetrioCloudSettingsPanel";
+import { DiagnosticsSettingsPanel } from "./DiagnosticsSettingsPanel";
 import "./settings.css";
 
 const SECTIONS: { id: SettingsSection; label: string }[] = [
@@ -43,6 +47,7 @@ const SECTIONS: { id: SettingsSection; label: string }[] = [
   { id: "operational-rules", label: "Attention rules" },
   { id: "digests", label: "Briefs" },
   { id: "company", label: "Company" },
+  { id: "diagnostics", label: "Diagnostics" },
   { id: "about", label: "About" },
 ];
 
@@ -120,6 +125,12 @@ const NOTIFICATION_ROWS: {
     key: "feedbackActionAlerts",
     label: "Feedback actions",
     description: "Delivery failures and surveys that need your action.",
+  },
+  {
+    key: "calendarOneOnOnePrep",
+    label: "1:1 preparation reminders",
+    description:
+      "Optional Metrio reminder 30–60 minutes before a 1:1 (off by default).",
   },
   {
     key: "integrationProblemAlerts",
@@ -205,6 +216,7 @@ export function SettingsPage({
 
   const handleGoogleDisconnect = useCallback(async () => {
     await disconnectGoogle();
+    disconnectCalendarCache();
     await persistPrefs(
       {
         ...prefs,
@@ -214,6 +226,7 @@ export function SettingsPage({
           accountEmail: "",
           formsConnected: false,
           gmailConnected: false,
+          calendarConnected: false,
         },
       },
       "Google disconnected",
@@ -397,6 +410,8 @@ export function SettingsPage({
             </Button>
           </div>
 
+          <MetrioCloudSettingsPanel />
+
           <GoogleConnectionPanel
             prefs={prefs}
             loading={googleBusy}
@@ -408,6 +423,8 @@ export function SettingsPage({
             onDisconnect={handleGoogleDisconnect}
             onUpdatePrefs={patchGooglePrefs}
           />
+
+          <CalendarSettingsPanel prefs={prefs} onUpdatePrefs={patchGooglePrefs} />
         </div>
       ) : null}
 
@@ -419,6 +436,13 @@ export function SettingsPage({
       ) : null}
 
       {section === "company" ? <CompanySettingsPanel /> : null}
+
+      {section === "diagnostics" ? (
+        <DiagnosticsSettingsPanel
+          prefs={prefs}
+          onPersist={(next) => persistPrefs(next)}
+        />
+      ) : null}
 
       {section === "about" ? <AboutSettingsPanel /> : null}
 

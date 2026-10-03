@@ -13,7 +13,10 @@ interface ChangelogBatchItem {
   error?: { code: string; message: string; status?: number };
 }
 
+import { incrementApiRequest } from '../../platform/observability/observabilityStore';
+
 async function invokeJira<T>(command: string, args: Record<string, unknown>): Promise<T> {
+  incrementApiRequest('jira');
   try {
     return await invoke<T>(command, args);
   } catch (e) {
@@ -48,7 +51,18 @@ export class JiraClient {
   }
 
   getBaseFields(): string[] {
-    const fields = ['summary', 'assignee', 'status', 'created', 'issuetype', 'parent', 'reporter', 'project'];
+    const fields = [
+      'summary',
+      'assignee',
+      'status',
+      'created',
+      'issuetype',
+      'parent',
+      'reporter',
+      'project',
+      'issuelinks',
+      'duedate',
+    ];
     if (JIRA_CONFIG.CONTENT_TYPE_FIELD) fields.push(JIRA_CONFIG.CONTENT_TYPE_FIELD);
     if (JIRA_CONFIG.EPIC_LINK_FIELD) fields.push(JIRA_CONFIG.EPIC_LINK_FIELD);
     return fields;
@@ -170,6 +184,20 @@ export class JiraClient {
       },
     );
     return response.issues ?? [];
+  }
+
+  async fetchIssuesByKeys(issueKeys: string[]): Promise<unknown[]> {
+    const unique = [...new Set(issueKeys.map((k) => k.trim()).filter(Boolean))];
+    if (!unique.length) return [];
+    const chunkSize = 50;
+    const all: unknown[] = [];
+    for (let i = 0; i < unique.length; i += chunkSize) {
+      const chunk = unique.slice(i, i + chunkSize);
+      const jql = `key in (${chunk.map((k) => `"${k.replace(/"/g, "")}"`).join(",")})`;
+      const issues = await this.fetchAllIssues(jql);
+      all.push(...issues);
+    }
+    return all;
   }
 
   async fetchIssueByKey(issueKey: string): Promise<unknown> {

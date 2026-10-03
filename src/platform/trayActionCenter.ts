@@ -27,6 +27,7 @@ export interface TrayBuildContext {
   activeTaskCount: number;
   bambooActions: TrayActionSnapshot["bambooActions"];
   upcomingVacation?: TrayActionSnapshot["upcomingVacation"];
+  nextOneOnOne?: TrayActionSnapshot["nextOneOnOne"];
   softwareUpdateAvailable?: boolean;
 }
 

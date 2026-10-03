@@ -4,6 +4,7 @@ import type { PersonIdentityDiagnostics } from "../../domain/people/types";
 import type { TeamSnapshot } from "../../domain/people/types";
 import type { KpiSnapshotFile } from "../../domain/snapshots/types";
 import type { PerformanceReportRanges } from "../../domain/performance/reportParams";
+import type { DeliveryDependencyIndex } from "../../domain/dependencies/dependencyTypes";
 
 export interface PerformanceIdentityResolution {
   employeeId: string;
@@ -27,4 +28,5 @@ export interface PerformanceFetchResult {
   partialWarnings: string[];
   lastUpdatedAt: string;
   historicalBootstrapRan: boolean;
+  dependencyIndex: DeliveryDependencyIndex;
 }

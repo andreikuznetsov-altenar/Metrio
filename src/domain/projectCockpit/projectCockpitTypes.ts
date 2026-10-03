@@ -1,5 +1,6 @@
 import type { MetricCardData } from "../performance";
 import type { KnowledgePage } from "../workGraph/workGraphTypes";
+import type { ProjectDependencySection } from "../dependencies/dependencyTypes";
 
 export type ProjectCockpitScope =
   | { kind: "project"; projectKey: string }
@@ -98,4 +99,5 @@ export interface ProjectCockpitModel {
   };
   capacityNote?: string;
   knowledge: ProjectKnowledgeContext;
+  dependencies: ProjectDependencySection;
 }

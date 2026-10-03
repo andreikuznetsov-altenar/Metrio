@@ -187,6 +187,7 @@ export function buildPerformanceViewModels(
     params,
     undefined,
     operationalRules,
+    data.dependencyIndex,
   );
 
   const teamKpi = reportData.teamKpi;

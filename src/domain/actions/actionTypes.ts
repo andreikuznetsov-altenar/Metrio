@@ -8,7 +8,8 @@ export type ActionKind =
   | "leave_delivery_risk"
   | "feedback_pending"
   | "knowledge"
-  | "knowledge_gap";
+  | "knowledge_gap"
+  | "delivery_dependency";
 
 export type ActionTarget =
   | { kind: "person"; personId: string; tab?: "overview" | "work" | "history" }

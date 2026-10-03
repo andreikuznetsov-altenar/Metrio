@@ -65,6 +65,20 @@ export const PALETTE_COMMANDS: PaletteCommandDef[] = [
     keywords: ["theme", "dark", "light"],
     commandId: "switch-theme",
   },
+  {
+    id: "cmd-prepare-1-1",
+    title: "Prepare for next 1:1",
+    subtitle: "Open Person Brief for your upcoming 1:1",
+    keywords: ["1:1", "prepare", "calendar", "meeting"],
+    commandId: "prepare-next-one-on-one",
+  },
+  {
+    id: "cmd-today-meetings",
+    title: "Open today's meetings",
+    subtitle: "Go to Home upcoming calendar",
+    keywords: ["meetings", "calendar", "today"],
+    commandId: "open-today-meetings",
+  },
 ];
 
 export function searchPaletteCommands(query: string): CommandResult[] {

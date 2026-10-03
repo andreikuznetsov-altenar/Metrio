@@ -126,6 +126,13 @@ pub fn handle_tray_menu_event(app: &AppHandle, menu_id: &str) {
             let vacation_id = id.trim_start_matches("vacation:");
             let _ = app.emit("tray-vacation", vacation_id);
         }
+        id if id.starts_with("one-on-one-prep:") => {
+            let person_id = id.trim_start_matches("one-on-one-prep:");
+            let _ = app.emit(
+                "tray-one-on-one-prep",
+                serde_json::json!({ "personId": person_id }),
+            );
+        }
         _ => {}
     }
 }

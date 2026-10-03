@@ -1,4 +1,6 @@
-use super::config::{google_oauth_client_id, GOOGLE_OAUTH_SCOPES};
+use super::config::{
+    google_oauth_client_id, google_oauth_scopes_with_calendar, GOOGLE_OAUTH_SCOPES,
+};
 use super::credentials::{
     delete_google_credentials, get_access_token, has_refresh_token, read_account_email,
     store_account_email, store_refresh_token, GoogleAuthState,
@@ -200,6 +202,7 @@ pub struct GoogleAuthStatus {
     pub account_email: String,
     pub forms_connected: bool,
     pub gmail_connected: bool,
+    pub calendar_connected: bool,
     pub oauth_client_configured: bool,
 }
 
@@ -232,7 +235,7 @@ async fn probe_authed_endpoint(
     }
 }
 
-fn resolve_oauth_client_id(client_id: Option<String>) -> String {
+pub(crate) fn resolve_oauth_client_id(client_id: Option<String>) -> String {
     client_id
         .filter(|s| !s.trim().is_empty())
         .unwrap_or_else(google_oauth_client_id)
@@ -259,6 +262,7 @@ pub async fn google_get_status(
             account_email,
             forms_connected: false,
             gmail_connected: false,
+            calendar_connected: false,
             oauth_client_configured,
         });
     }
@@ -269,6 +273,7 @@ pub async fn google_get_status(
             account_email,
             forms_connected: false,
             gmail_connected: false,
+            calendar_connected: false,
             oauth_client_configured,
         });
     }
@@ -280,6 +285,7 @@ pub async fn google_get_status(
             account_email,
             forms_connected: false,
             gmail_connected: false,
+            calendar_connected: false,
             oauth_client_configured,
         });
     }
@@ -298,12 +304,20 @@ pub async fn google_get_status(
         true,
     )
     .await;
+    let calendar_connected = probe_authed_endpoint(
+        &state,
+        &client_id,
+        "https://www.googleapis.com/calendar/v3/calendars/primary/events?maxResults=1&singleEvents=true",
+        false,
+    )
+    .await;
 
     Ok(GoogleAuthStatus {
         connected: true,
         account_email,
         forms_connected,
         gmail_connected,
+        calendar_connected,
         oauth_client_configured,
     })
 }
@@ -318,20 +332,12 @@ pub struct GoogleOAuthConnectResult {
     pub account_email: String,
 }
 
-#[tauri::command]
-pub async fn google_oauth_connect(
+async fn run_google_oauth_flow(
     state: State<'_, GoogleAuthState>,
-    params: GoogleOAuthConnectParams,
+    client_id: String,
+    scopes: &str,
+    include_granted_scopes: bool,
 ) -> Result<GoogleOAuthConnectResult, ApiError> {
-    let client_id = resolve_oauth_client_id(params.client_id);
-
-    if client_id.trim().is_empty() {
-        return Err(ApiError::new(
-            "oauth_error",
-            "Google OAuth Client ID is not configured for this build.",
-        ));
-    }
-
     let listener = TcpListener::bind("127.0.0.1:0")
         .map_err(|e| ApiError::new("oauth_error", e.to_string()))?;
     let port = listener
@@ -353,12 +359,18 @@ pub async fn google_oauth_connect(
         });
     }
 
+    let granted = if include_granted_scopes {
+        "&include_granted_scopes=true"
+    } else {
+        ""
+    };
     let auth_url = format!(
-        "https://accounts.google.com/o/oauth2/v2/auth?client_id={}&redirect_uri={}&response_type=code&scope={}&code_challenge={}&code_challenge_method=S256&access_type=offline&prompt=consent&state={}",
+        "https://accounts.google.com/o/oauth2/v2/auth?client_id={}&redirect_uri={}&response_type=code&scope={}&code_challenge={}&code_challenge_method=S256&access_type=offline&prompt=consent{}&state={}",
         urlencoding::encode(&client_id),
         urlencoding::encode(&redirect_uri),
-        urlencoding::encode(GOOGLE_OAUTH_SCOPES),
+        urlencoding::encode(scopes),
         urlencoding::encode(&challenge),
+        granted,
         urlencoding::encode(&oauth_state),
     );
 
@@ -472,6 +484,41 @@ pub async fn google_oauth_connect(
     }
 
     Ok(GoogleOAuthConnectResult { account_email: email })
+}
+
+#[tauri::command]
+pub async fn google_oauth_connect(
+    state: State<'_, GoogleAuthState>,
+    params: GoogleOAuthConnectParams,
+) -> Result<GoogleOAuthConnectResult, ApiError> {
+    let client_id = resolve_oauth_client_id(params.client_id);
+
+    if client_id.trim().is_empty() {
+        return Err(ApiError::new(
+            "oauth_error",
+            "Google OAuth Client ID is not configured for this build.",
+        ));
+    }
+
+    run_google_oauth_flow(state, client_id, GOOGLE_OAUTH_SCOPES, false).await
+}
+
+#[tauri::command]
+pub async fn google_oauth_enable_calendar(
+    state: State<'_, GoogleAuthState>,
+    params: GoogleOAuthConnectParams,
+) -> Result<GoogleOAuthConnectResult, ApiError> {
+    let client_id = resolve_oauth_client_id(params.client_id);
+
+    if client_id.trim().is_empty() {
+        return Err(ApiError::new(
+            "oauth_error",
+            "Google OAuth Client ID is not configured for this build.",
+        ));
+    }
+
+    let scopes = google_oauth_scopes_with_calendar();
+    run_google_oauth_flow(state, client_id, &scopes, true).await
 }
 
 #[tauri::command]

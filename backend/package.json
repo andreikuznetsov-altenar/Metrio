@@ -1,0 +1,21 @@
+{
+  "name": "@metrio/api",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "start": "tsx src/server.ts",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@hono/node-server": "^1.14.0",
+    "hono": "^4.7.4",
+    "jose": "^6.0.10"
+  },
+  "devDependencies": {
+    "tsx": "^4.19.3",
+    "typescript": "~6.0.3",
+    "vitest": "^3.0.5"
+  }
+}

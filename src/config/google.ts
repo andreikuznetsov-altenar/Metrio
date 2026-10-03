@@ -89,3 +89,6 @@ export function getGoogleConfigBannerMessage(): string | null {
  */
 export const GOOGLE_OAUTH_SCOPES_DOC =
   'openid, email, forms.body, forms.responses.readonly, gmail.send, drive.file';
+
+/** Granted only via explicit Calendar enable in Settings (Phase 39). */
+export const GOOGLE_CALENDAR_READONLY_SCOPE_DOC = 'calendar.events.readonly';

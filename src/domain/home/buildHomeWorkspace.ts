@@ -43,6 +43,8 @@ import type {
   HomeWorkspace,
 } from "./homeTypes";
 import type { WorkKnowledgeLink } from "../workGraph/workGraphTypes";
+import type { DeliveryDependencyIndex } from "../dependencies/dependencyTypes";
+import { buildHomeDependencySignals } from "../dependencies/buildHomeDependencySignals";
 
 export interface BuildHomeWorkspaceInput {
   role: UserRole;
@@ -65,6 +67,7 @@ export interface BuildHomeWorkspaceInput {
   operationalRules?: OperationalRules;
   personalOnboarding?: OnboardingChecklistModel | null;
   teamOnboardingProgress?: Record<string, ManagerOnboardingProgressRow>;
+  dependencyIndex?: DeliveryDependencyIndex | null;
 }
 
 export function resolveHomeRoleVariant(
@@ -207,6 +210,7 @@ function buildTeamSection(
   const actionsInput = {
     snapshot,
     deliveryRisk: input.deliveryRisk,
+    dependencyIndex: input.dependencyIndex,
     feedback: feedbackSummary,
     now,
     operationalRules: rules,
@@ -249,6 +253,7 @@ function buildTeamSection(
     availabilityPreview: availabilityRows.slice(0, 3),
     newStarters,
     feedback: buildFeedbackCard(input.surveyData, feedbackSummary),
+    dependencySignals: buildHomeDependencySignals(input.dependencyIndex),
   };
 }
 

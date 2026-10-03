@@ -17,7 +17,12 @@ import {
 import { applyCompanyConfigForDevAdmin } from "../domain/companyConfig/companyAdmin";
 import type { CompanyConfigCacheFile } from "../domain/companyConfig/companyConfigTypes";
 import { configureNewStarterWindow } from "../domain/onboarding/newStarter";
-import { loadPreferences, PREFERENCES_SAVED_EVENT, type AppPreferences } from "../platform/preferences";
+import {
+  DEFAULT_PREFERENCES,
+  loadPreferences,
+  PREFERENCES_SAVED_EVENT,
+  type AppPreferences,
+} from "../platform/preferences";
 import {
   loadCompanyConfigCache,
   saveCompanyConfigCache,
@@ -40,8 +45,12 @@ const CompanyConfigContext = createContext<CompanyConfigContextValue | null>(nul
 
 function buildCapabilities(prefs: AppPreferences): IntegrationCapabilities {
   return {
-    jiraConfigured: Boolean(prefs.jiraBaseUrl?.trim() || prefs.credentials.jiraConfigured),
-    bambooConfigured: Boolean(prefs.bambooSubdomain?.trim() || prefs.credentials.bambooConfigured),
+    jiraConfigured: Boolean(
+      prefs.jiraBaseUrl?.trim() || prefs.credentials?.jiraConfigured,
+    ),
+    bambooConfigured: Boolean(
+      prefs.bambooSubdomain?.trim() || prefs.credentials?.bambooConfigured,
+    ),
     googleFeedbackConfigured: prefs.google.formsConnected && prefs.google.gmailConnected,
   };
 }
@@ -90,7 +99,7 @@ export function CompanyConfigProvider({ children }: { children: ReactNode }) {
 
   const effective = useMemo((): EffectiveConfig => {
     const company = cache?.active ?? buildDefaultCompanyConfig();
-    const p = prefs ?? ({} as AppPreferences);
+    const p = prefs ?? DEFAULT_PREFERENCES;
     const user = currentUser?.currentUser ?? {
       person: { id: "anonymous", name: "User", role: "employee" },
     };

@@ -8,6 +8,7 @@ import {
   serializeCompanyConfigAdminEmailsForPlaywright,
   serializeCompanyConfigVisualFixtureForPlaywright,
 } from "../../src/fixtures/companyConfigVisualFixture";
+import { serializeCalendarVisualFixtureForPlaywright } from "../../src/fixtures/calendarVisualFixture";
 
 async function bootMetrioFeedback(page: Page, theme: "light" | "dark" = "light") {
   const prefsJson = serializeFeedbackVisualPrefsForPlaywright();
@@ -27,7 +28,7 @@ async function bootMetrioFeedback(page: Page, theme: "light" | "dark" = "light")
 
 async function openPerformanceFromHome(page: Page) {
   await expect(page.getByTestId("home-ready")).toBeVisible({ timeout: 30_000 });
-  await page.getByRole("button", { name: "Performance" }).click();
+  await page.locator(".app-header__nav-link").filter({ hasText: "Performance" }).click();
   await expect(page.getByTestId("performance-dashboard-ready")).toBeVisible({
     timeout: 30_000,
   });
@@ -257,9 +258,7 @@ test.describe("Metrio visual regression", () => {
       localStorage.setItem("metrio-theme", "dark");
     }, "employee");
     await page.goto("/");
-    await expect(page.getByTestId("performance-dashboard-ready")).toBeVisible({
-      timeout: 30_000,
-    });
+    await openPerformanceFromHome(page);
     await expect(page).toHaveScreenshot("employee-dark.png", {
       fullPage: true,
       maxDiffPixelRatio: 0.02,
@@ -290,12 +289,15 @@ test.describe("Metrio visual regression", () => {
   test("settings nav inactive while settings open", async ({ page }) => {
     await bootMetrio(page, "lead");
     await page.getByRole("button", { name: /^settings$/i }).click();
-    await expect(page.getByRole("button", { name: /^performance$/i })).not.toHaveClass(
-      /is-active/,
-    );
-    await expect(page.getByRole("button", { name: /^feedback$/i })).not.toHaveClass(
-      /is-active/,
-    );
+    await expect(
+      page.locator(".app-header__nav-link").filter({ hasText: "Performance" }),
+    ).not.toHaveClass(/is-active/);
+    const feedbackNav = page
+      .locator(".app-header__nav-link")
+      .filter({ hasText: "Feedback" });
+    if ((await feedbackNav.count()) > 0) {
+      await expect(feedbackNav).not.toHaveClass(/is-active/);
+    }
     await expect(page).toHaveScreenshot("settings-nav-inactive.png", {
       fullPage: true,
       maxDiffPixelRatio: 0.02,
@@ -344,6 +346,7 @@ test.describe("Metrio visual regression", () => {
 
     await page.goto("/?visualSkeleton=1");
     await expect(page.getByTestId("app-shell")).toBeVisible({ timeout: 30_000 });
+    await page.locator(".app-header__nav-link").filter({ hasText: "Performance" }).click();
     await expect(page.getByTestId("performance-overview-skeleton")).toBeVisible({
       timeout: 30_000,
     });
@@ -528,7 +531,7 @@ test.describe("Metrio visual regression", () => {
     );
     await page.goto("/");
     await expect(page.getByTestId("home-ready")).toBeVisible({ timeout: 30_000 });
-    await page.getByRole("button", { name: "Performance" }).click();
+    await page.locator(".app-header__nav-link").filter({ hasText: "Performance" }).click();
     await expect(page.getByTestId("performance-dashboard-ready")).toBeVisible({
       timeout: 30_000,
     });
@@ -567,6 +570,7 @@ test.describe("Metrio visual regression", () => {
 
   test("feedback cycles tab", async ({ page }) => {
     await bootMetrioFeedback(page, "light");
+    await page.locator(".app-header__nav-link").filter({ hasText: "Feedback" }).click();
     await page.getByRole("button", { name: /^Cycles$/i }).click();
     await expect(page.getByTestId("feedback-cycles")).toBeVisible({ timeout: 15_000 });
     await expect(page).toHaveScreenshot("feedback-cycles.png", {
@@ -577,6 +581,7 @@ test.describe("Metrio visual regression", () => {
 
   test("feedback cycles dark mode", async ({ page }) => {
     await bootMetrioFeedback(page, "dark");
+    await page.locator(".app-header__nav-link").filter({ hasText: "Feedback" }).click();
     await page.getByRole("button", { name: /^Cycles$/i }).click();
     await expect(page.getByTestId("feedback-cycles")).toBeVisible({ timeout: 15_000 });
     await expect(page).toHaveScreenshot("feedback-cycles-dark.png", {
@@ -594,10 +599,7 @@ test.describe("Metrio visual regression", () => {
     await page.goto("/");
     await expect(page.getByTestId("home-ready")).toBeVisible({ timeout: 30_000 });
     await page.getByRole("button", { name: "Settings" }).click();
-    await page
-      .locator(".page-subnav")
-      .getByRole("button", { name: /attention rules/i })
-      .click();
+    await clickSettingsSection(page, /attention rules/i);
     await expect(page.getByTestId("operational-rules-settings")).toBeVisible();
     await expect(page).toHaveScreenshot("operational-rules-settings.png", {
       fullPage: true,
@@ -645,8 +647,7 @@ test.describe("Metrio visual regression", () => {
 
   test("person brief drawer", async ({ page }) => {
     await bootMetrio(page, "lead");
-    await clickSubnav(page, /^people$/i);
-    await page.locator(".performance-table--people tbody tr").first().click();
+    await openFirstAttentionPerson(page);
     await page.getByRole("button", { name: "Brief" }).click();
     await expect(page.getByTestId("person-brief-drawer")).toBeVisible();
     await expect(page).toHaveScreenshot("person-brief-standard.png", {
@@ -674,7 +675,7 @@ test.describe("Metrio visual regression", () => {
   test("command palette search issue", async ({ page }) => {
     await bootMetrio(page, "lead");
     await page.keyboard.press("Meta+k");
-    await page.getByLabel("Quick find").fill("UX-");
+    await page.getByRole("textbox", { name: "Quick find" }).fill("UX-");
     await expect(page.getByTestId("command-palette")).toBeVisible();
     await expect(page).toHaveScreenshot("command-palette-search-issue.png", {
       fullPage: true,
@@ -766,7 +767,7 @@ test.describe("Metrio visual regression", () => {
   test("notification inbox unread filter", async ({ page }) => {
     await bootMetrioWithNotificationFixture(page, 6);
     await page.getByRole("button", { name: /Notifications, 6 unread/i }).click();
-    await page.getByRole("button", { name: "Unread" }).click();
+    await page.getByRole("button", { name: "Unread", exact: true }).click();
     await expect(page).toHaveScreenshot("notification-inbox-unread.png", {
       fullPage: true,
       maxDiffPixelRatio: 0.02,
@@ -838,6 +839,44 @@ test.describe("Metrio visual regression", () => {
     await clickSettingsSection(page, /^notifications$/i);
     await expect(page.getByRole("switch", { name: /Vacation starting soon/i })).toBeVisible();
     await expect(page).toHaveScreenshot("settings-notifications.png", {
+      fullPage: true,
+      maxDiffPixelRatio: 0.02,
+    });
+  });
+
+  test("settings diagnostics healthy", async ({ page }) => {
+    await page.addInitScript((fixtureId: string) => {
+      localStorage.setItem("metrio-connection-connected", "true");
+      localStorage.setItem("metrio-dev-fixture", fixtureId);
+      localStorage.setItem("metrio-theme", "light");
+    }, "lead");
+    await page.goto("/");
+    await expect(page.getByTestId("app-shell")).toBeVisible({ timeout: 30_000 });
+    await page.getByRole("button", { name: /^settings$/i }).click();
+    await clickSettingsSection(page, /^diagnostics$/i);
+    await expect(page.getByTestId("diagnostics-settings")).toBeVisible();
+    await expect(page.getByTestId("diagnostics-checks")).toBeVisible({
+      timeout: 15_000,
+    });
+    await expect(page).toHaveScreenshot("settings-diagnostics.png", {
+      fullPage: true,
+      maxDiffPixelRatio: 0.02,
+    });
+  });
+
+  test("settings diagnostics advanced dark", async ({ page }) => {
+    await page.addInitScript((fixtureId: string) => {
+      localStorage.setItem("metrio-connection-connected", "true");
+      localStorage.setItem("metrio-dev-fixture", fixtureId);
+      localStorage.setItem("metrio-theme", "dark");
+    }, "lead");
+    await page.goto("/");
+    await expect(page.getByTestId("app-shell")).toBeVisible({ timeout: 30_000 });
+    await page.getByRole("button", { name: /^settings$/i }).click();
+    await clickSettingsSection(page, /^diagnostics$/i);
+    await page.getByRole("button", { name: /Show advanced details/i }).click();
+    await expect(page.getByTestId("diagnostics-advanced")).toBeVisible();
+    await expect(page).toHaveScreenshot("settings-diagnostics-advanced-dark.png", {
       fullPage: true,
       maxDiffPixelRatio: 0.02,
     });
@@ -934,10 +973,10 @@ test.describe("Metrio visual regression", () => {
       localStorage.setItem("metrio-connection-connected", "true");
       localStorage.setItem("metrio-dev-fixture", fixtureId);
       localStorage.setItem("metrio-theme", "light");
-    }, "employee");
+    }, "lead");
     await page.goto("/");
     await expect(page.getByTestId("home-ready")).toBeVisible({ timeout: 30_000 });
-    await page.getByRole("button", { name: /Open resource library/i }).click();
+    await page.getByRole("button", { name: "Open resource library", exact: true }).click();
     await expect(page.getByTestId("resource-library")).toBeVisible();
     await expect(page).toHaveScreenshot("home-resource-library.png", {
       fullPage: true,
@@ -985,22 +1024,53 @@ test.describe("Metrio visual regression", () => {
   test("company settings admin", async ({ page }) => {
     const cacheJson = serializeCompanyConfigVisualFixtureForPlaywright();
     const adminEmails = serializeCompanyConfigAdminEmailsForPlaywright();
+    const prefsJson = serializeFeedbackVisualPrefsForPlaywright();
     await page.addInitScript(
-      ({ cache, admins }: { cache: string; admins: string }) => {
+      ({ cache, admins, prefs }: { cache: string; admins: string; prefs: string }) => {
         localStorage.setItem("metrio-connection-connected", "true");
         localStorage.setItem("metrio-dev-fixture", "lead");
         localStorage.setItem("metrio-theme", "light");
         localStorage.setItem("metrio-visual-company-config", cache);
         localStorage.setItem("metrio-company-config-dev-admin-emails", admins);
+        const parsed = JSON.parse(prefs) as { workEmail?: string };
+        parsed.workEmail = "person-sam@visual.metrio";
+        localStorage.setItem("metrio-visual-preferences", JSON.stringify(parsed));
       },
-      { cache: cacheJson, admins: adminEmails },
+      { cache: cacheJson, admins: adminEmails, prefs: prefsJson },
     );
     await page.goto("/");
     await expect(page.getByTestId("app-shell")).toBeVisible({ timeout: 30_000 });
     await page.getByRole("button", { name: "Settings" }).click();
-    await page.getByRole("button", { name: "Company" }).click();
+    await clickSettingsSection(page, /^company$/i);
     await expect(page.getByTestId("company-config-admin")).toBeVisible();
     await expect(page).toHaveScreenshot("company-settings-admin.png", {
+      fullPage: true,
+      maxDiffPixelRatio: 0.02,
+    });
+  });
+
+  test("home manager calendar 1:1", async ({ page }) => {
+    const calendarJson = serializeCalendarVisualFixtureForPlaywright();
+    const prefsJson = serializeFeedbackVisualPrefsForPlaywright();
+    await page.addInitScript(
+      ({ payload, prefs }: { payload: string; prefs: string }) => {
+        localStorage.setItem("metrio-connection-connected", "true");
+        localStorage.setItem("metrio-dev-fixture", "lead");
+        localStorage.setItem("metrio-theme", "light");
+        localStorage.setItem("metrio-calendar-visual-fixture", payload);
+        const parsed = JSON.parse(prefs) as {
+          google: Record<string, unknown>;
+        };
+        parsed.google = { ...parsed.google, calendarConnected: true };
+        localStorage.setItem("metrio-visual-preferences", JSON.stringify(parsed));
+      },
+      { payload: calendarJson, prefs: prefsJson },
+    );
+    await page.goto("/");
+    await expect(page.getByTestId("home-ready")).toBeVisible({ timeout: 30_000 });
+    await expect(page.getByTestId("home-upcoming-meetings")).toBeVisible();
+    await expect(page.getByText("Team Weekly")).toBeVisible();
+    await expect(page).toHaveScreenshot("home-manager-calendar-1-1.png", {
       fullPage: true,
       maxDiffPixelRatio: 0.02,
     });

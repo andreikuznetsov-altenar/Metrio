@@ -1,4 +1,5 @@
 mod api;
+mod diagnostics_bundle;
 mod logs;
 mod persistence;
 mod tray_action;
@@ -26,9 +27,9 @@ use api::apps_script::{
     apps_script_is_configured,
 };
 use api::google::{
-    google_disconnect, google_drive_set_responder_access, google_get_status, google_gmail_send,
-    google_forms_create, google_forms_list_responses, google_forms_publish, google_forms_update,
-    google_oauth_connect,
+    google_calendar_list_events, google_disconnect, google_drive_set_responder_access,
+    google_get_status, google_gmail_send, google_forms_create, google_forms_list_responses,
+    google_forms_publish, google_forms_update, google_oauth_connect, google_oauth_enable_calendar,
 };
 use api::google::credentials::GoogleAuthState;
 use api::google::oauth::GoogleTokenState;
@@ -43,6 +44,7 @@ use api::company_config_store::{
     company_config_cache_save,
 };
 use keyring::Entry;
+use diagnostics_bundle::{logs_read_tail, support_bundle_export};
 use logs::{log_write, logs_get_path, logs_open_folder, write_setup_log};
 use persistence::{atomic_write_json, load_json_file, PREFERENCES_SCHEMA_VERSION};
 use serde::{Deserialize, Serialize};
@@ -503,6 +505,8 @@ pub fn run() {
             storage_get_warnings,
             app_get_build_info,
             diagnostics_export_file,
+            support_bundle_export,
+            logs_read_tail,
             log_write,
             logs_get_path,
             logs_open_folder,
@@ -533,6 +537,8 @@ pub fn run() {
             apps_script_invoke,
             google_get_status,
             google_oauth_connect,
+            google_oauth_enable_calendar,
+            google_calendar_list_events,
             google_disconnect,
             google_forms_create,
             google_forms_update,

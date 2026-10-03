@@ -15,6 +15,11 @@ export interface TrayVacationItem {
   url: string;
 }
 
+export interface TrayOneOnOnePrepItem {
+  personId: string;
+  label: string;
+}
+
 export interface TrayActionSnapshot {
   /** macOS menu bar title: digits only when >0 unread Jira assignments */
   trayTitle?: string;
@@ -25,6 +30,8 @@ export interface TrayActionSnapshot {
   activeTaskCount: number;
   bambooActions: TrayBambooActionItem[];
   upcomingVacation?: TrayVacationItem;
+  /** Optional 1:1 prep row — does not affect numeric tray badge */
+  nextOneOnOne?: TrayOneOnOnePrepItem;
 }
 
 export interface TrayMenuItemPayload {
@@ -64,6 +71,13 @@ export function trayMenuItemsFromSnapshot(snapshot: TrayActionSnapshot): TrayMen
     items.push({
       id: `vacation:${snapshot.upcomingVacation.id}`,
       label: snapshot.upcomingVacation.label,
+    });
+  }
+
+  if (snapshot.nextOneOnOne) {
+    items.push({
+      id: `one-on-one-prep:${snapshot.nextOneOnOne.personId}`,
+      label: snapshot.nextOneOnOne.label,
     });
   }
 

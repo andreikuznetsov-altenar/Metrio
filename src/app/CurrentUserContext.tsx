@@ -21,6 +21,7 @@ import {
   logWorkspaceBootstrap,
 } from "./appSession";
 import { bootLog } from "./bootDiagnostics";
+import { recordStartupPhase } from "../platform/observability/observabilityStore";
 import {
   type WorkspaceStatus,
 } from "./workspaceSession";
@@ -105,8 +106,11 @@ export function CurrentUserProvider({ children }: { children: ReactNode }) {
     setWorkspaceStatus("initializing");
     setWorkspaceError(null);
     bootLog("15", "initializeWorkspace started");
+    const workspaceStarted = performance.now();
 
+    const prefsStarted = performance.now();
     const outcome = await loadPreferencesOutcome();
+    recordStartupPhase("preferences", Math.round(performance.now() - prefsStarted));
     if (!outcome.ok) {
       logWorkspaceBootstrap({
         connectionMarkerPresent: true,
@@ -143,6 +147,10 @@ export function CurrentUserProvider({ children }: { children: ReactNode }) {
     setProductionUser(user);
     setWorkspaceStatus("ready");
     setBootstrapGeneration((value) => value + 1);
+    recordStartupPhase(
+      "workspace_ready",
+      Math.round(performance.now() - workspaceStarted),
+    );
     bootLog("16", "initializeWorkspace finished status=ready");
   }, []);
 

@@ -34,3 +34,8 @@ CertificateSigningRequest.*
 *.key
 metrio-updater
 release-artifacts/
+backend/node_modules/
+backend/.data/
+
+# Local porting scratch (not product source)
+*.ported

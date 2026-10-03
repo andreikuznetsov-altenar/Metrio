@@ -39,6 +39,11 @@ import { DEFAULT_OPERATIONAL_RULES } from "../domain/operationalRules/operationa
 import { useOptionalCurrentUser } from "./CurrentUserContext";
 import type { OperationalRules } from "../domain/operationalRules/operationalRulesTypes";
 import { createCoalescedRefresh } from "../services/refresh/refreshCoordinator";
+import { categorizeError } from "../platform/observability/errorCategory";
+import {
+  noteRefreshFailed,
+  recordIntegrationRefresh,
+} from "../platform/observability/observabilityStore";
 import {
   installKpiReconciliationDevTools,
   registerKpiReconciliationDataSource,
@@ -211,6 +216,14 @@ export function PerformanceDataProvider({
           return;
         }
         const message = errorMessageFromError(error);
+        noteRefreshFailed();
+        const category = categorizeError(error);
+        if (/jira/i.test(message)) {
+          recordIntegrationRefresh("jira", "Jira", "failed", 0, category);
+        }
+        if (/bamboo/i.test(message)) {
+          recordIntegrationRefresh("bamboo", "BambooHR", "failed", 0, category);
+        }
         setErrorMessage(message);
         if (dataRef.current) {
           setStale(true);

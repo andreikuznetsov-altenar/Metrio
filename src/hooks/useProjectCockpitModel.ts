@@ -41,6 +41,7 @@ export function useProjectCockpitModel(input: {
       currentUser: input.currentUser,
       jiraBaseUrl: input.jiraBaseUrl,
       operationalRules: input.operationalRules,
+      dependencyIndex: input.data.dependencyIndex,
     });
     setCachedProjectCockpit(cacheKey, model);
     return model;

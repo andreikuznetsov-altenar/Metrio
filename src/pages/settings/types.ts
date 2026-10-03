@@ -5,4 +5,5 @@ export type SettingsSection =
   | "operational-rules"
   | "digests"
   | "company"
+  | "diagnostics"
   | "about";

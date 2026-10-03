@@ -19,6 +19,8 @@ export interface CommandPaletteActionHandlers {
   switchTheme: () => void;
   feedbackEnabled: boolean;
   resolveJiraUrl: (issueKey: string) => string;
+  prepareNextOneOnOne: () => void;
+  openTodayMeetings: () => void;
 }
 
 export function executeCommandPaletteTarget(
@@ -100,6 +102,12 @@ function runCommand(commandId: string, handlers: CommandPaletteActionHandlers): 
       return;
     case "switch-theme":
       handlers.switchTheme();
+      return;
+    case "prepare-next-one-on-one":
+      handlers.prepareNextOneOnOne();
+      return;
+    case "open-today-meetings":
+      handlers.openTodayMeetings();
       return;
     default:
       return;

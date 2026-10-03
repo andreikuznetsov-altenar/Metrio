@@ -134,6 +134,7 @@ export function runDigestCycle(input: RunDigestCycleInput): RunDigestCycleOutput
         const teamActions = buildTeamActions({
           snapshot: teamSnapshot,
           deliveryRisk,
+          dependencyIndex: input.result.dependencyIndex,
           feedback,
           operationalRules: rules,
           now,
@@ -206,6 +207,7 @@ export function runDigestCycle(input: RunDigestCycleInput): RunDigestCycleOutput
         kpiSnapshots: input.result.kpiSnapshots,
         team: home.team,
         deliveryRisk,
+        dependencyIndex: input.result.dependencyIndex,
         previousMetrics,
         operationalRules: rules,
         now,

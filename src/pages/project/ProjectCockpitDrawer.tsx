@@ -15,6 +15,9 @@ import { loadPreferences } from "../../platform/preferences";
 import { openExternalUrl } from "../../platform/openExternal";
 import { buildJiraProjectBrowseUrl } from "../../platform/atlassianUrls";
 import { buildJiraIssueBrowseUrl } from "../../platform/jiraIssueUrl";
+import { DependencyDetailDrawer } from "./DependencyDetailDrawer";
+import type { WorkDependency } from "../../domain/dependencies/dependencyTypes";
+import type { AuditIssue } from "../../domain/jira/types";
 import "./project-cockpit.css";
 
 const FILTER_OPTIONS: { value: ProjectWorkFilter; label: string }[] = [
@@ -44,6 +47,9 @@ export function ProjectCockpitDrawer({
   const { rules: operationalRules } = useOperationalRules();
   const [filter, setFilter] = useState<ProjectWorkFilter>("all");
   const [jiraBaseUrl, setJiraBaseUrl] = useState("");
+  const [selectedDependency, setSelectedDependency] = useState<WorkDependency | null>(
+    null,
+  );
 
   const knowledgeLinks = useMemo(
     () =>
@@ -76,6 +82,17 @@ export function ProjectCockpitDrawer({
     () => (model ? filterProjectWorkRows(model.workRows, filter) : []),
     [model, filter],
   );
+
+  const issueByKey = useMemo(() => {
+    const map = new Map<string, AuditIssue>();
+    if (!data?.teamSnapshot) return map;
+    for (const person of data.teamSnapshot.persons) {
+      for (const issue of [...person.issues, ...person.ownedIssues]) {
+        map.set(issue.issueKey, issue);
+      }
+    }
+    return map;
+  }, [data?.teamSnapshot]);
 
   if (!open || !projectKey) return null;
 
@@ -155,6 +172,33 @@ export function ProjectCockpitDrawer({
                 {model.deliverySignals.map((signal) => (
                   <li key={signal.id}>
                     {signal.count} · {signal.label}
+                  </li>
+                ))}
+              </ul>
+            ) : null}
+          </section>
+
+          <section
+            className="project-cockpit__section"
+            data-testid="project-cockpit-dependencies"
+          >
+            <h3>Dependencies</h3>
+            <p className="project-cockpit__muted">{model.dependencies.summaryLine}</p>
+            {model.dependencies.blocked.length ? (
+              <ul className="project-cockpit__signals">
+                {model.dependencies.blocked.map((row) => (
+                  <li key={row.dependency.id}>
+                    <button
+                      type="button"
+                      className="project-cockpit__link"
+                      onClick={() => setSelectedDependency(row.dependency)}
+                    >
+                      {row.dependency.sourceIssueKey} blocked by{" "}
+                      {row.dependency.targetIssueKey}
+                      {row.dependency.crossProject
+                        ? ` · ${row.dependency.sourceProject}→${row.dependency.targetProject}`
+                        : ""}
+                    </button>
                   </li>
                 ))}
               </ul>
@@ -304,6 +348,14 @@ export function ProjectCockpitDrawer({
           </section>
         </div>
       )}
+      <DependencyDetailDrawer
+        dependency={selectedDependency}
+        index={data?.dependencyIndex ?? null}
+        jiraBaseUrl={jiraBaseUrl}
+        issueByKey={issueByKey}
+        open={selectedDependency != null}
+        onClose={() => setSelectedDependency(null)}
+      />
     </Drawer>
   );
 }

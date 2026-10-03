@@ -21,6 +21,7 @@ import { testKpi, testWorkload } from "../domain/testFixtures";
 import { filterOwnedIssues } from "../domain/people/ownedIssues";
 import { getPerson } from "./people";
 import type { PerformanceFetchResult } from "../services/performance/performanceTypes";
+import { emptyDependencyIndex } from "../domain/dependencies/buildDeliveryDependencyGraph";
 
 const VISUAL_TEAM_IDS = [
   "person-sam",
@@ -312,5 +313,6 @@ export function buildVisualPerformanceFetchResult(
     partialWarnings: [],
     lastUpdatedAt: new Date().toISOString(),
     historicalBootstrapRan: false,
+    dependencyIndex: emptyDependencyIndex(),
   };
 }

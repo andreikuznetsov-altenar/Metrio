@@ -8,6 +8,7 @@
     "build": "tsc && vite build",
     "preview": "vite preview",
     "test": "vitest run",
+    "test:backend": "cd backend && npm install && npm test",
     "test:visual": "playwright test",
     "test:visual:update": "playwright test --update-snapshots",
     "reconcile:kpi": "METRIO_REAL_RECONCILE=1 vitest run src/domain/analytics/kpiReconciliation.real.test.ts",

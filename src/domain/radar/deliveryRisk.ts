@@ -10,6 +10,7 @@ import {
 import type { DeliveryRiskItem, RadarSeverity } from './types';
 import type { OperationalRules } from '../operationalRules/operationalRulesTypes';
 import { DEFAULT_OPERATIONAL_RULES } from '../operationalRules/operationalRulesDefaults';
+import type { DeliveryDependencyIndex } from '../dependencies/dependencyTypes';
 
 function maxSeverity(a: RadarSeverity, b: RadarSeverity): RadarSeverity {
   const order = { critical: 0, warning: 1, info: 2 };
@@ -21,6 +22,7 @@ export function buildDeliveryRiskItems(
   params: ReportParams,
   now = new Date(),
   rules: OperationalRules = DEFAULT_OPERATIONAL_RULES,
+  dependencyIndex?: DeliveryDependencyIndex | null,
 ): DeliveryRiskItem[] {
   const items: DeliveryRiskItem[] = [];
 
@@ -42,6 +44,16 @@ export function buildDeliveryRiskItems(
       ) {
         severity = maxSeverity(severity, 'critical');
         reason = `${reason}; owner vacation soon`;
+      }
+
+      const blockers = dependencyIndex?.activeBlockersByIssue[issue.issueKey];
+      const primaryBlocker = blockers?.[0];
+      if (primaryBlocker) {
+        severity = maxSeverity(severity, 'warning');
+        const blockReason = `Blocked by ${primaryBlocker.targetIssueKey}`;
+        reason = reason.includes('Blocked by')
+          ? reason
+          : `${reason}; ${blockReason}`;
       }
 
       items.push({

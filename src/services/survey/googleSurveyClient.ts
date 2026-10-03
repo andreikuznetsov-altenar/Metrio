@@ -15,6 +15,7 @@ export interface GoogleAuthStatus {
   account_email: string;
   forms_connected: boolean;
   gmail_connected: boolean;
+  calendar_connected: boolean;
   oauth_client_configured: boolean;
 }
 
@@ -33,6 +34,12 @@ export class GoogleSurveyClient {
 
   async connect(): Promise<{ account_email: string }> {
     return invokeGoogle('google_oauth_connect', {
+      params: { client_id: this.clientId || null },
+    });
+  }
+
+  async enableCalendar(): Promise<{ account_email: string }> {
+    return invokeGoogle('google_oauth_enable_calendar', {
       params: { client_id: this.clientId || null },
     });
   }

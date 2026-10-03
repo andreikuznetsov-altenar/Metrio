@@ -2,6 +2,8 @@ import { useMemo, useState } from "react";
 import { useCompanyConfig } from "../../app/CompanyConfigContext";
 import { buildDefaultCompanyConfig } from "../../domain/companyConfig/buildDefaultCompanyConfig";
 import { isManagedField } from "../../domain/companyConfig/buildEffectiveConfig";
+import { publishCompanyConfigToCloud } from "../../services/metrioCloud/metrioCloudClient";
+import { isMetrioCloudConfigured } from "../../services/metrioCloud/metrioCloudClient";
 import { Button } from "../../components/Button/Button";
 import { Switch } from "../../components/Switch/Switch";
 
@@ -36,6 +38,19 @@ export function CompanySettingsPanel() {
       </section>
     );
   }
+
+  const publishToCloud = async () => {
+    if (!isMetrioCloudConfigured()) {
+      setStatus("Connect Metrio Cloud in Connections first.");
+      return;
+    }
+    try {
+      await publishCompanyConfigToCloud(cache.active);
+      setStatus("Published to Metrio Cloud.");
+    } catch {
+      setStatus("Publish failed.");
+    }
+  };
 
   const saveFeatures = async () => {
     const next = {
@@ -143,6 +158,9 @@ export function CompanySettingsPanel() {
       ) : null}
 
       <div className="settings-panel__actions">
+        <Button variant="secondary" onClick={() => void publishToCloud()}>
+          Publish to Metrio Cloud
+        </Button>
         <Button variant="ghost" onClick={() => void resetBuiltin()}>
           Restore builtin defaults
         </Button>

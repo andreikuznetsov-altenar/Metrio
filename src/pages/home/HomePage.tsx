@@ -56,6 +56,9 @@ import { getAccountState } from "../../domain/onboardingChecklist/normalizeOnboa
 import { buildManagerOnboardingRow } from "../../domain/onboardingChecklist/managerChecklistView";
 import { syncOnboardingChecklistInbox } from "../../platform/onboardingChecklistNotifications";
 import { listNotificationEvents } from "../../platform/notificationEvents";
+import { useUpcomingMeetings } from "../../hooks/useUpcomingMeetings";
+import { HomeUpcomingMeetings } from "./HomeUpcomingMeetings";
+import type { DateRangeKey } from "../../domain/performance";
 import "../performance/performance-dashboard.css";
 import "./home.css";
 
@@ -75,9 +78,15 @@ export function HomePage() {
   const assignmentState = useJiraAssignmentState(data?.lastUpdatedAt);
   const resourceLibrary = useResourceLibrary();
   const [org, setOrg] = useState<OrgResolutionResult | null>(null);
+  const [calendarConnected, setCalendarConnected] = useState(false);
+  const [homeJiraBaseUrl, setHomeJiraBaseUrl] = useState("");
 
   useEffect(() => {
-    void loadPreferences().then((prefs) => setOrg(prefs.teamDetection ?? null));
+    void loadPreferences().then((prefs) => {
+      setOrg(prefs.teamDetection ?? null);
+      setCalendarConnected(prefs.google.calendarConnected);
+      setHomeJiraBaseUrl(resolveJiraBaseUrl(prefs));
+    });
   }, [data?.lastUpdatedAt]);
 
   const organizationModel = useMemo(() => {
@@ -211,6 +220,21 @@ export function HomePage() {
     bambooStale,
   ]);
 
+  const managerPersonId = useMemo(() => {
+    const supervisorId = selfPerson?.bamboo.supervisorId;
+    if (!supervisorId || !data?.teamSnapshot) return undefined;
+    return data.teamSnapshot.persons.find((p) => p.bamboo.id === supervisorId)?.id;
+  }, [selfPerson, data?.teamSnapshot]);
+
+  const { model: upcomingMeetings } = useUpcomingMeetings({
+    enabled: calendarConnected,
+    selfEmail: selfPerson?.bamboo.workEmail ?? "",
+    selfPersonId: currentUser.person.id,
+    teamPersons: data?.teamSnapshot.persons ?? [],
+    directReportIds: teamSnapshot?.directReportIds ?? [],
+    managerPersonId,
+  });
+
   const workspaceModel = useMemo(() => {
     if (!selfPerson) return null;
     return buildHomeWorkspace({
@@ -233,6 +257,7 @@ export function HomePage() {
       operationalRules,
       personalOnboarding: selfOnboarding,
       teamOnboardingProgress,
+      dependencyIndex: data?.dependencyIndex,
     });
   }, [
     selfPerson,
@@ -253,6 +278,7 @@ export function HomePage() {
     operationalRules,
     selfOnboarding,
     teamOnboardingProgress,
+    data?.dependencyIndex,
   ]);
 
   const openPerson = (personId: string, tab?: "overview" | "work" | "history") => {
@@ -303,6 +329,29 @@ export function HomePage() {
         <h1 className="home-header__title">{workspaceModel.greeting}</h1>
         <p className="home-header__context">{workspaceModel.contextLine}</p>
       </header>
+
+      {calendarConnected && upcomingMeetings?.meetings.length ? (
+        <HomeUpcomingMeetings
+          meetings={upcomingMeetings.meetings}
+          managerView={Boolean(team)}
+          jiraBaseUrl={homeJiraBaseUrl}
+          onPrepareOneOnOne={(personId, periodPreset: DateRangeKey) => {
+            window.dispatchEvent(
+              new CustomEvent("metrio-open-person-brief", {
+                detail: {
+                  personId,
+                  periodPreset,
+                  prepForOneOnOne: true,
+                },
+              }),
+            );
+          }}
+          onOpenTeamOverview={() => {
+            dispatchAppRoute("performance");
+            dispatchPerformanceTab("overview");
+          }}
+        />
+      ) : null}
 
       {digestModel?.prefs.showDailyOnHome && digestModel.daily ? (
         <section className="home-card home-card--brief" aria-label="Today's brief" data-testid="home-daily-brief">
@@ -522,6 +571,24 @@ export function HomePage() {
               onOpen={handleAction}
               openLabel={actionOpenLabel}
             />
+
+            {team.dependencySignals.length ? (
+              <section
+                className="home-card"
+                aria-label="Delivery dependencies"
+                data-testid="home-dependency-signals"
+              >
+                <h2 className="home-card__title">Dependencies</h2>
+                <ul className="home-calendar-list">
+                  {team.dependencySignals.map((signal) => (
+                    <li key={signal.id} className="home-calendar-row">
+                      <span className="home-calendar-row__title">{signal.title}</span>
+                      <span className="home-calendar-row__meta">{signal.description}</span>
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            ) : null}
 
             <section className="home-card" aria-label="Delivery summary">
               <h2 className="home-card__title">Delivery summary</h2>

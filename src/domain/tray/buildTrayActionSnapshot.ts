@@ -9,6 +9,7 @@ export function buildTrayActionSnapshot(input: {
   activeTaskCount: number;
   bambooActions: TrayActionSnapshot["bambooActions"];
   upcomingVacation?: TrayActionSnapshot["upcomingVacation"];
+  nextOneOnOne?: TrayActionSnapshot["nextOneOnOne"];
 }): TrayActionSnapshot {
   const unread = unreadJiraAssignments(input.assignmentState);
   const count = unread.length;
@@ -22,5 +23,6 @@ export function buildTrayActionSnapshot(input: {
     activeTaskCount: input.activeTaskCount,
     bambooActions: input.bambooActions,
     upcomingVacation: input.upcomingVacation,
+    nextOneOnOne: input.nextOneOnOne,
   };
 }

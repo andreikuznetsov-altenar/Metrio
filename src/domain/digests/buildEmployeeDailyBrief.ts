@@ -12,6 +12,7 @@ export interface BuildEmployeeDailyBriefInput {
   employeeSnapshot: EmployeePerformanceSnapshot | null;
   assignmentState: JiraAssignmentState;
   onboardingActionDue?: string;
+  todayMeetingLines?: string[];
   now?: Date;
 }
 
@@ -23,6 +24,14 @@ export function buildEmployeeDailyBrief(
   const newAssignments = unreadJiraAssignments(input.assignmentState);
   const attention = input.employeeSnapshot?.myWeek.needsAttention ?? [];
   const sections = [];
+
+  if (input.todayMeetingLines?.length) {
+    sections.push({
+      id: "meetings",
+      title: "Today's meetings",
+      lines: input.todayMeetingLines.slice(0, 4),
+    });
+  }
 
   sections.push({
     id: "assignments",

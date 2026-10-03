@@ -62,6 +62,18 @@ export function TrayMenuEffects({
       .then((fn) => unsubs.push(fn))
       .catch(() => undefined);
 
+    void listen<{ personId: string }>("tray-one-on-one-prep", (event) => {
+      const personId = event.payload?.personId;
+      if (!personId) return;
+      window.dispatchEvent(
+        new CustomEvent("metrio-open-person-brief", {
+          detail: { personId, prepForOneOnOne: true, periodPreset: "30d" },
+        }),
+      );
+    })
+      .then((fn) => unsubs.push(fn))
+      .catch(() => undefined);
+
     return () => {
       for (const unsub of unsubs) unsub();
     };

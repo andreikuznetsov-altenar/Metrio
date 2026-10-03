@@ -16,6 +16,7 @@ import type { FeedbackActionSummary } from "../feedback/feedbackActionSummary";
 import type { OperationalRules } from "../operationalRules/operationalRulesTypes";
 import { DEFAULT_OPERATIONAL_RULES } from "../operationalRules/operationalRulesDefaults";
 import type { DeliveryRiskRow } from "../performance";
+import type { DeliveryDependencyIndex } from "../dependencies/dependencyTypes";
 
 export interface BuildWeeklyManagerDigestInput {
   snapshot: TeamSnapshot;
@@ -27,6 +28,7 @@ export interface BuildWeeklyManagerDigestInput {
   previousMetrics?: DigestMetrics;
   feedback?: FeedbackActionSummary;
   operationalRules?: OperationalRules;
+  dependencyIndex?: DeliveryDependencyIndex | null;
   now?: Date;
 }
 
@@ -119,6 +121,20 @@ export function buildWeeklyManagerDigest(
       lines: buildFeedbackLines(input.feedback),
     },
   ];
+
+  if (input.dependencyIndex?.summary.blockedActiveCount) {
+    sections.splice(sections.length - 1, 0, {
+      id: "dependencies",
+      title: "Delivery dependencies",
+      lines: [
+        `${input.dependencyIndex.summary.blockedActiveCount} active blocked tasks`,
+        `${input.dependencyIndex.summary.crossProjectCount} cross-project blockers`,
+        input.dependencyIndex.fanOut[0]
+          ? `${input.dependencyIndex.fanOut[0].blockerIssueKey} blocks ${input.dependencyIndex.fanOut[0].blockedActiveCount} tasks`
+          : "No shared blocker fan-out",
+      ],
+    });
+  }
 
   const weekKey = getLocalWeekKey(now);
   return finalizeDigest({

@@ -59,10 +59,18 @@ interface SurveyState {
   saveDefaults: (patch: Partial<SurveyDataFile['defaults']>) => Promise<void>;
   syncGoogleClientId: (prefs: AppPreferences) => void;
   connectGoogle: (input: { webAppUrl: string; bridgeSecret: string }) => Promise<
-    Pick<AppPreferences['google'], 'accountEmail' | 'formsConnected' | 'gmailConnected'>
+    Pick<
+      AppPreferences['google'],
+      'accountEmail' | 'formsConnected' | 'gmailConnected' | 'calendarConnected'
+    >
   >;
   disconnectGoogle: () => Promise<void>;
-  refreshGoogleStatus: () => Promise<Pick<AppPreferences['google'], 'accountEmail' | 'formsConnected' | 'gmailConnected'>>;
+  refreshGoogleStatus: () => Promise<
+    Pick<
+      AppPreferences['google'],
+      'accountEmail' | 'formsConnected' | 'gmailConnected' | 'calendarConnected'
+    >
+  >;
 
   prepareSurvey: (input: {
     prefs: AppPreferences;
@@ -164,6 +172,7 @@ export const useFeedbackSurveyStore = create<SurveyState>((set, get) => ({
           accountEmail: status.account_email,
           formsConnected: status.forms_connected,
           gmailConnected: status.gmail_connected,
+          calendarConnected: status.calendar_connected ?? false,
         };
       }
 
@@ -175,6 +184,7 @@ export const useFeedbackSurveyStore = create<SurveyState>((set, get) => ({
         accountEmail: status.account_email,
         formsConnected: status.forms_connected,
         gmailConnected: status.gmail_connected,
+        calendarConnected: status.calendar_connected,
       };
     } catch (e) {
       set({ loading: false, error: e instanceof Error ? e.message : String(e) });
@@ -192,6 +202,7 @@ export const useFeedbackSurveyStore = create<SurveyState>((set, get) => ({
       accountEmail: status.account_email,
       formsConnected: status.forms_connected,
       gmailConnected: status.gmail_connected,
+      calendarConnected: status.calendar_connected ?? false,
     };
   },
 
