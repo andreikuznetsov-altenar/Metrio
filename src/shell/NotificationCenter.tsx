@@ -17,7 +17,6 @@ import {
   useState,
   type ComponentType,
 } from "react";
-import { isToday, isYesterday, parseISO } from "date-fns";
 import { Drawer } from "../components/Drawer/Drawer";
 import { Button } from "../components/Button/Button";
 import { IconButton } from "../components/IconButton/IconButton";
@@ -32,34 +31,30 @@ import {
   formatNotificationRelativeTime,
 } from "../platform/notificationRelativeTime";
 import type { NotificationEvent } from "../platform/notificationTypes";
+import type { InboxSourceFilterId } from "../platform/notificationTypes";
 import {
-  inboxMatchesFilter,
-  type InboxFilterId,
-  type InboxSourceFilterId,
-} from "../platform/notificationTypes";
+  emptyNotificationsMessage,
+  filterNotificationsBySource,
+  groupNotificationsForInbox,
+} from "../platform/notificationInboxDisplay";
 import {
-  clearNotificationHistory,
   listNotificationEventsOrThrow,
   NOTIFICATION_EVENTS_CHANGED,
 } from "../platform/notificationEvents";
 import {
+  clearActionInboxHistory,
   markActionInboxItemRead,
   markAllActionInboxItemsRead,
 } from "../platform/inboxReadSync";
 import type { SettingsSection } from "../pages/settings/types";
 import "./notification-center.css";
 
-const FILTER_OPTIONS: { value: InboxFilterId; label: string }[] = [
-  { value: "all", label: "All" },
-  { value: "unread", label: "Unread" },
-  { value: "actions", label: "Actions" },
-];
-
 const SOURCE_FILTER_OPTIONS: { value: InboxSourceFilterId; label: string }[] = [
   { value: "all", label: "All sources" },
   { value: "jira", label: "Jira" },
-  { value: "bamboo", label: "Bamboo" },
+  { value: "bamboo", label: "BambooHR" },
   { value: "feedback", label: "Feedback" },
+  { value: "metrio", label: "Metrio" },
 ];
 
 function inboxSourceLabel(source: string): string {
@@ -98,20 +93,6 @@ function eventIcon(type: NotificationEvent["type"]): ComponentType<{ size?: numb
   }
 }
 
-function groupLabel(dateIso: string): "Today" | "Yesterday" | "Earlier" {
-  const date = parseISO(dateIso);
-  if (isToday(date)) return "Today";
-  if (isYesterday(date)) return "Yesterday";
-  return "Earlier";
-}
-
-function emptyMessage(filter: InboxFilterId, sourceFilter: InboxSourceFilterId): string {
-  if (filter === "unread") return "No unread notifications";
-  if (filter === "actions") return "No actions right now";
-  if (sourceFilter !== "all") return `No ${sourceFilter} notifications`;
-  return "No notifications yet";
-}
-
 export interface NotificationCenterProps {
   open: boolean;
   onClose: () => void;
@@ -128,9 +109,9 @@ export function NotificationCenter({
   onUnreadChange,
 }: NotificationCenterProps) {
   const bodyRef = useRef<HTMLDivElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
   const [events, setEvents] = useState<NotificationEvent[]>([]);
   const [loadError, setLoadError] = useState(false);
-  const [filter, setFilter] = useState<InboxFilterId>("all");
   const [sourceFilter, setSourceFilter] = useState<InboxSourceFilterId>("all");
   const [confirmClear, setConfirmClear] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -173,31 +154,29 @@ export function NotificationCenter({
     }
   }, [open, refresh]);
 
+  useEffect(() => {
+    if (!menuOpen) return;
+    const onPointerDown = (event: MouseEvent) => {
+      if (!menuRef.current?.contains(event.target as Node)) {
+        setMenuOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", onPointerDown);
+    return () => document.removeEventListener("mousedown", onPointerDown);
+  }, [menuOpen]);
+
   const filtered = useMemo(
-    () =>
-      events.filter((event) => inboxMatchesFilter(event, filter, sourceFilter)),
-    [events, filter, sourceFilter],
+    () => filterNotificationsBySource(events, sourceFilter),
+    [events, sourceFilter],
   );
 
-  const grouped = useMemo(() => {
-    const map = new Map<string, NotificationEvent[]>();
-    for (const event of filtered) {
-      const label = groupLabel(event.createdAt);
-      const bucket = map.get(label) ?? [];
-      bucket.push(event);
-      map.set(label, bucket);
-    }
-    const order: Array<"Today" | "Yesterday" | "Earlier"> = [
-      "Today",
-      "Yesterday",
-      "Earlier",
-    ];
-    return order
-      .filter((label) => map.has(label))
-      .map((label) => ({ label, items: map.get(label)! }));
-  }, [filtered]);
+  const grouped = useMemo(
+    () => groupNotificationsForInbox(filtered),
+    [filtered],
+  );
 
   const unreadCount = events.filter((event) => !event.readAt).length;
+  const hasNotifications = events.length > 0;
 
   const handleActivate = async (event: NotificationEvent) => {
     await markActionInboxItemRead(event);
@@ -247,53 +226,48 @@ export function NotificationCenter({
       header={
         <div className="notification-center__header">
           <h2 className="notification-center__title">Notifications</h2>
-          <div className="notification-center__header-actions">
-            <Button
-              type="button"
-              variant="ghost"
-              className="notification-center__mark-read"
-              disabled={unreadCount === 0}
-              onClick={() => {
-                void markAllActionInboxItemsRead().then(() => refresh());
-              }}
+          <div className="notification-center__header-actions" ref={menuRef}>
+            <IconButton
+              label="Notification options"
+              data-testid="notification-overflow"
+              onClick={() => setMenuOpen((value) => !value)}
             >
-              Mark all as read
-            </Button>
-            <div className="notification-center__menu-wrap">
-              <IconButton
-                label="Notification options"
-                onClick={() => setMenuOpen((value) => !value)}
-              >
-                <MoreHorizontal size={16} strokeWidth={1.75} />
-              </IconButton>
-              {menuOpen ? (
-                <div className="notification-center__menu" role="menu">
-                  <button
-                    type="button"
-                    role="menuitem"
-                    className="notification-center__menu-item"
-                    onClick={() => {
-                      setMenuOpen(false);
-                      setConfirmClear(true);
-                    }}
-                  >
-                    Clear notifications
-                  </button>
-                </div>
-              ) : null}
-            </div>
+              <MoreHorizontal size={16} strokeWidth={1.75} />
+            </IconButton>
+            {menuOpen ? (
+              <div className="notification-center__menu" role="menu">
+                <button
+                  type="button"
+                  role="menuitem"
+                  className="notification-center__menu-item"
+                  disabled={unreadCount === 0}
+                  onClick={() => {
+                    setMenuOpen(false);
+                    void markAllActionInboxItemsRead().then(() => refresh());
+                  }}
+                >
+                  Mark all as read
+                </button>
+                <button
+                  type="button"
+                  role="menuitem"
+                  className="notification-center__menu-item"
+                  disabled={!hasNotifications}
+                  onClick={() => {
+                    setMenuOpen(false);
+                    setConfirmClear(true);
+                  }}
+                >
+                  Clear all
+                </button>
+              </div>
+            ) : null}
           </div>
         </div>
       }
     >
       <div ref={bodyRef} className="notification-center__body">
         <div className="notification-center__filters">
-          <SegmentedControl
-            ariaLabel="Notification filters"
-            value={filter}
-            options={FILTER_OPTIONS}
-            onChange={setFilter}
-          />
           <SegmentedControl
             ariaLabel="Notification source filter"
             value={sourceFilter}
@@ -318,9 +292,10 @@ export function NotificationCenter({
                 type="button"
                 variant="danger"
                 onClick={() => {
-                  clearNotificationHistory();
-                  refresh();
-                  setConfirmClear(false);
+                  void clearActionInboxHistory().then(() => {
+                    refresh();
+                    setConfirmClear(false);
+                  });
                 }}
               >
                 Clear
@@ -339,8 +314,10 @@ export function NotificationCenter({
         ) : filtered.length === 0 ? (
           <div className="notification-center__empty">
             <CircleAlert size={20} strokeWidth={1.75} aria-hidden />
-            <p className="notification-center__empty-title">{emptyMessage(filter, sourceFilter)}</p>
-            {filter === "all" && sourceFilter === "all" ? (
+            <p className="notification-center__empty-title">
+              {emptyNotificationsMessage(sourceFilter)}
+            </p>
+            {sourceFilter === "all" ? (
               <p className="notification-center__empty-copy">
                 Important workload, task, and availability changes will appear here.
               </p>
@@ -355,9 +332,9 @@ export function NotificationCenter({
                   {group.items.map((event) => {
                     const item = enrichInboxEvent(event);
                     const unread = !event.readAt;
-                    const itemClass = unread
-                      ? "notification-center__item is-unread"
-                      : "notification-center__item";
+                    const cardClass = unread
+                      ? "notification-center__card is-unread"
+                      : "notification-center__card";
                     const actionLabel = notificationActionLabel(event, event.target);
                     const resolvedInactive =
                       Boolean(item.resolvedAt) &&
@@ -365,25 +342,24 @@ export function NotificationCenter({
 
                     return (
                       <li key={event.id}>
-                        <button
-                          type="button"
+                        <article
                           className={
                             resolvedInactive
-                              ? `${itemClass} is-resolved`
-                              : itemClass
+                              ? `${cardClass} is-resolved`
+                              : cardClass
                           }
-                          onClick={() => void handleActivate(event)}
+                          data-testid="notification-card"
                         >
-                          {renderLeadingVisual(event)}
-                          <span className="notification-center__content">
-                            <span className="notification-center__item-source">
-                              {inboxSourceLabel(item.source)}
-                            </span>
-                            <span className="notification-center__item-title">{event.title}</span>
-                            <span className="notification-center__item-message">
-                              {event.message}
-                            </span>
-                            <span className="notification-center__item-meta">
+                          <div className="notification-center__card-top">
+                            {renderLeadingVisual(event)}
+                            <div className="notification-center__content">
+                              <span className="notification-center__item-source">
+                                {inboxSourceLabel(item.source)}
+                              </span>
+                              <span className="notification-center__item-title">{event.title}</span>
+                              <span className="notification-center__item-message">
+                                {event.message}
+                              </span>
                               <time
                                 className="notification-center__item-time"
                                 dateTime={event.createdAt}
@@ -391,17 +367,21 @@ export function NotificationCenter({
                               >
                                 {formatNotificationRelativeTime(event.createdAt)}
                               </time>
-                              {actionLabel ? (
-                                <span className="notification-center__item-action">
-                                  {actionLabel}
-                                </span>
-                              ) : null}
-                            </span>
-                          </span>
-                          {unread ? (
-                            <span className="notification-center__unread-dot" aria-hidden />
+                            </div>
+                          </div>
+                          {actionLabel ? (
+                            <div className="notification-center__card-actions">
+                              <Button
+                                type="button"
+                                variant="secondary"
+                                className="notification-center__cta"
+                                onClick={() => void handleActivate(event)}
+                              >
+                                {actionLabel}
+                              </Button>
+                            </div>
                           ) : null}
-                        </button>
+                        </article>
                       </li>
                     );
                   })}

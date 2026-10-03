@@ -1,6 +1,7 @@
 import { isJiraAssignmentInboxType } from "../domain/inbox/actionInboxModel";
 import type { NotificationEvent } from "./notificationTypes";
 import {
+  clearNotificationHistory,
   markAllJiraAssignmentInboxEventsRead,
   markAllNotificationEventsRead,
   markNotificationEventRead,
@@ -22,6 +23,13 @@ export async function markActionInboxItemRead(
 
 export async function markAllActionInboxItemsRead(): Promise<void> {
   markAllNotificationEventsRead();
+  markAllJiraAssignmentInboxEventsRead();
+  await markAllTrayJiraAssignmentsRead();
+}
+
+/** Clears notification center history and reconciles tray Jira unread state. */
+export async function clearActionInboxHistory(): Promise<void> {
+  clearNotificationHistory();
   markAllJiraAssignmentInboxEventsRead();
   await markAllTrayJiraAssignmentsRead();
 }

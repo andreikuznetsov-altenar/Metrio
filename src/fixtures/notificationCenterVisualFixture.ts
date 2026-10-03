@@ -72,6 +72,17 @@ export function notificationCenterVisualFixture(): NotificationEvent[] {
       createdAt: days(3),
       readAt: days(2),
     }),
+    {
+      id: "visual-metrio-digest",
+      type: "daily_brief_ready",
+      createdAt: hours(5),
+      readAt: hours(4),
+      title: "Daily brief ready",
+      message: "Your team summary for today is available",
+      target: { kind: "digest", digestKind: "daily" },
+      severity: "info",
+      source: "metrio",
+    },
   ];
 }
 
