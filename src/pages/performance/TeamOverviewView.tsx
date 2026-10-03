@@ -70,6 +70,11 @@ const visualInsufficientHistoryFixture =
   typeof window !== "undefined" &&
   new URLSearchParams(window.location.search).get("visualInsufficientHistory") === "1";
 
+const visualKpiNoComparisonFixture =
+  import.meta.env.VITE_VISUAL_FIXTURE === "1" &&
+  typeof window !== "undefined" &&
+  new URLSearchParams(window.location.search).get("visualKpiNoComparison") === "1";
+
 export function TeamOverviewView({
   snapshot,
   secondary,
@@ -121,6 +126,20 @@ export function TeamOverviewView({
     });
   };
 
+  const summaryMetrics = useMemo(() => {
+    if (!visualKpiNoComparisonFixture) return snapshot.summary;
+    return snapshot.summary.map((metric, index) =>
+      index === 0
+        ? {
+            ...metric,
+            contextLabel: undefined,
+            contextSemantic: undefined,
+            contextCaption: undefined,
+          }
+        : metric,
+    );
+  }, [snapshot.summary]);
+
   return (
     <>
       <ActionQueueSection
@@ -132,7 +151,7 @@ export function TeamOverviewView({
       />
       <section aria-label="Summary metrics">
         <div className="performance-metrics">
-          {snapshot.summary.map((metric) => {
+          {summaryMetrics.map((metric, metricIndex) => {
             const drilldownEnabled = Boolean(onOpenMetricDrilldown) &&
               ["Efficiency", "First pass", "Completed", "Backflows"].includes(metric.label);
             const cardClass = drilldownEnabled
@@ -142,9 +161,13 @@ export function TeamOverviewView({
             const ariaLabel = drilldownEnabled
               ? `View ${metric.label} details, ${valueText}`
               : undefined;
+            const kpiTestId =
+              visualKpiNoComparisonFixture && metricIndex === 0
+                ? "visual-kpi-no-comparison"
+                : undefined;
 
             return (
-            <Card key={metric.label} className={cardClass}>
+            <Card key={metric.label} className={cardClass} data-testid={kpiTestId}>
               <div className="performance-metric-card__label">
                 {metric.label}
                 {METRIC_HELP[metric.label] ? (

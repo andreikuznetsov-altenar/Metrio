@@ -310,7 +310,13 @@ export function buildVisualPerformanceFetchResult(
       warnings: [],
     })),
     timeOffEntries,
-    partialWarnings: [],
+    partialWarnings:
+      import.meta.env.VITE_VISUAL_FIXTURE === "1" &&
+      typeof window !== "undefined" &&
+      new URLSearchParams(window.location.search).get("visualHomeState") ===
+        "partial"
+        ? ["bamboo_time_off_unavailable"]
+        : [],
     lastUpdatedAt: new Date().toISOString(),
     historicalBootstrapRan: false,
     dependencyIndex: emptyDependencyIndex(),

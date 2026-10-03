@@ -1077,6 +1077,114 @@ test.describe("Metrio visual regression", () => {
     });
   });
 
+  test("home blocked visual state", async ({ page }) => {
+    await page.addInitScript((fixtureId: string) => {
+      localStorage.setItem("metrio-connection-connected", "true");
+      localStorage.setItem("metrio-dev-fixture", fixtureId);
+      localStorage.setItem("metrio-theme", "light");
+    }, "lead");
+    await page.goto("/?visualHomeState=blocked");
+    await expect(page.getByTestId("home-blocked")).toBeVisible({ timeout: 30_000 });
+    await expect(page).toHaveScreenshot("home-blocked.png", {
+      fullPage: true,
+      maxDiffPixelRatio: 0.02,
+    });
+  });
+
+  test("home partial data visual state", async ({ page }) => {
+    await page.addInitScript((fixtureId: string) => {
+      localStorage.setItem("metrio-connection-connected", "true");
+      localStorage.setItem("metrio-dev-fixture", fixtureId);
+      localStorage.setItem("metrio-theme", "light");
+    }, "lead");
+    await page.goto("/?visualHomeState=partial");
+    await expect(page.getByTestId("home-partial")).toBeVisible({ timeout: 30_000 });
+    await expect(page).toHaveScreenshot("home-partial.png", {
+      fullPage: true,
+      maxDiffPixelRatio: 0.02,
+    });
+  });
+
+  test("home relevant knowledge resource rows", async ({ page }) => {
+    await page.addInitScript((fixtureId: string) => {
+      localStorage.setItem("metrio-connection-connected", "true");
+      localStorage.setItem("metrio-dev-fixture", fixtureId);
+      localStorage.setItem("metrio-theme", "light");
+    }, "employee");
+    await page.goto("/?visualHomeKnowledge=1");
+    await expect(page.getByTestId("home-ready")).toBeVisible({ timeout: 30_000 });
+    await expect(page.getByTestId("home-relevant-knowledge")).toBeVisible();
+    await expect(page.getByText("UX Team Handbook")).toBeVisible();
+    await expect(page).toHaveScreenshot("home-relevant-knowledge.png", {
+      fullPage: false,
+      maxDiffPixelRatio: 0.02,
+    });
+  });
+
+  test("performance toolbar at 1440", async ({ page }) => {
+    await bootMetrio(page, "lead");
+    await expect(page.locator(".performance-toolbar")).toBeVisible();
+    await expect(page.locator(".performance-toolbar")).toHaveScreenshot(
+      "performance-toolbar-1440.png",
+      { maxDiffPixelRatio: 0.02 },
+    );
+  });
+
+  test("performance toolbar at 1728", async ({ page }) => {
+    await page.setViewportSize({ width: 1728, height: 900 });
+    await bootMetrio(page, "lead");
+    await expect(page.locator(".performance-toolbar")).toBeVisible();
+    await expect(page.locator(".performance-toolbar")).toHaveScreenshot(
+      "performance-toolbar-1728.png",
+      { maxDiffPixelRatio: 0.02 },
+    );
+  });
+
+  test("performance kpi without period comparison", async ({ page }) => {
+    await page.addInitScript((fixtureId: string) => {
+      localStorage.setItem("metrio-connection-connected", "true");
+      localStorage.setItem("metrio-dev-fixture", fixtureId);
+      localStorage.setItem("metrio-theme", "light");
+    }, "lead");
+    await page.goto("/?visualKpiNoComparison=1");
+    await expect(page.getByTestId("app-shell")).toBeVisible({ timeout: 30_000 });
+    await openPerformanceFromHome(page);
+    await expect(page.getByTestId("visual-kpi-no-comparison")).toBeVisible();
+    await expect(page).toHaveScreenshot("performance-kpi-no-comparison.png", {
+      fullPage: false,
+      maxDiffPixelRatio: 0.02,
+    });
+  });
+
+  test("jira open external tooltip", async ({ page }) => {
+    await bootMetrio(page, "lead");
+    await clickSubnav(page, /delivery risk/i);
+    const jiraAction = page.getByRole("button", { name: "Open in Jira" }).first();
+    await expect(jiraAction).toBeVisible({ timeout: 15_000 });
+    await jiraAction.hover();
+    await page.waitForTimeout(300);
+    await expect(page).toHaveScreenshot("jira-open-tooltip.png", {
+      fullPage: false,
+      maxDiffPixelRatio: 0.02,
+    });
+  });
+
+  test("resource library dark", async ({ page }) => {
+    await page.addInitScript((fixtureId: string) => {
+      localStorage.setItem("metrio-connection-connected", "true");
+      localStorage.setItem("metrio-dev-fixture", fixtureId);
+      localStorage.setItem("metrio-theme", "dark");
+    }, "lead");
+    await page.goto("/");
+    await expect(page.getByTestId("home-ready")).toBeVisible({ timeout: 30_000 });
+    await page.getByRole("button", { name: "Open resource library", exact: true }).click();
+    await expect(page.getByTestId("resource-library")).toBeVisible();
+    await expect(page).toHaveScreenshot("home-resource-library-dark.png", {
+      fullPage: true,
+      maxDiffPixelRatio: 0.02,
+    });
+  });
+
   test("onboarding checklist dark", async ({ page }) => {
     const onboardingJson = serializeOnboardingChecklistVisualFixtureForPlaywright();
     await page.addInitScript((payload: string) => {
