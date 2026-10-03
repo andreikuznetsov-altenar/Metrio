@@ -17,6 +17,7 @@ import type {
   OnboardingResourceTarget,
 } from "../onboarding/resourceTypes";
 import { bambooEmployeePortalUrl } from "../../config/bambooPortal";
+import { formatWorkHistoryRowMeta } from "../personal/workHistoryDisplay";
 import { buildPersonBriefPrompts } from "./buildPersonBriefPrompts";
 import type { PersonBriefModel } from "./personBriefTypes";
 
@@ -38,6 +39,8 @@ function extractCompletedWork(
     issueKey: row.key,
     title: row.title,
     completedLabel: row.completedOn,
+    metaLine: formatWorkHistoryRowMeta(row),
+    firstPass: Boolean(row.firstPass ?? /first pass/i.test(row.outcome)),
   }));
 }
 
@@ -71,6 +74,8 @@ function mapResources(resources: OnboardingResource[]): PersonBriefModel["resour
   return resources.slice(0, 4).map((resource) => ({
     title: resource.title,
     url: resourceOpenUrl(resource.target),
+    source: resource.source,
+    subtitle: resource.description,
   }));
 }
 

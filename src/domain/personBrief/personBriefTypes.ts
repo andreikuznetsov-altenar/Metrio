@@ -6,6 +6,8 @@ export interface PersonBriefCompletedItem {
   issueKey: string;
   title: string;
   completedLabel: string;
+  metaLine: string;
+  firstPass: boolean;
 }
 
 export interface PersonBriefModel {
@@ -42,7 +44,12 @@ export interface PersonBriefModel {
   attention: GroupedAttentionSignal[];
   backflows: { count: number; issueKeys: string[] };
   feedbackLines: string[];
-  resources: { title: string; url: string }[];
+  resources: {
+    title: string;
+    url: string;
+    source: import("../onboarding/resourceTypes").OnboardingResourceSource;
+    subtitle?: string;
+  }[];
   prompts: PersonBriefPrompt[];
   generatedNote: string;
 }

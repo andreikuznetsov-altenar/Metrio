@@ -1,7 +1,10 @@
 import { useEffect, useState } from "react";
+import { Badge } from "../../components/Badge/Badge";
 import { Button } from "../../components/Button/Button";
 import { Drawer } from "../../components/Drawer/Drawer";
 import { PersonAvatar } from "../../components/PersonAvatar/PersonAvatar";
+import { PersonCycleTimeCard } from "../../components/PersonCycleTimeCard/PersonCycleTimeCard";
+import { ResourceRow } from "../../components/ResourceRow/ResourceRow";
 import { Select } from "../../components/Select/Select";
 import { useCurrentUser } from "../../app/CurrentUserContext";
 import { usePerformanceData } from "../../app/PerformanceDataContext";
@@ -11,13 +14,16 @@ import { canOpenPersonBrief } from "../../domain/personAccess";
 import type { DateRangeKey } from "../../domain/performance";
 import { formatPersonBriefPlainText } from "../../domain/personBrief/formatPersonBriefText";
 import { buildPersonBriefPdfPayload } from "../../domain/personBrief/personBriefPdf";
+import type { GroupedAttentionSignal } from "./groupAttentionSignals";
 import { usePersonBriefModel } from "../../hooks/usePersonBriefModel";
 import { resolveJiraBaseUrl } from "../../config/product";
 import { loadPreferences } from "../../platform/preferences";
 import { openExternalUrl } from "../../platform/openExternal";
-import { buildJiraIssueBrowseUrl } from "../../platform/jiraIssueUrl";
 import { exportPerformancePdf } from "../../services/export/pdfExport";
 import { useToast } from "../../components/Toast/ToastContext";
+import { PersonAnalyticsMetricGrid } from "./PersonAnalyticsMetricGrid";
+import { PersonWorkRow } from "./PersonWorkRow";
+import { AnalyticsIssueRow } from "./AnalyticsIssueRow";
 import "./person-brief-drawer.css";
 
 const PERIOD_OPTIONS: { value: DateRangeKey; label: string }[] = [
@@ -25,6 +31,16 @@ const PERIOD_OPTIONS: { value: DateRangeKey; label: string }[] = [
   { value: "30d", label: "Last 30 days" },
   { value: "3m", label: "Last 3 months" },
 ];
+
+function attentionIssuePreview(group: GroupedAttentionSignal): string {
+  const keys = group.issueKeys.slice(0, 2);
+  if (!keys.length) return `${group.taskCount} tasks`;
+  const suffix =
+    group.issueKeys.length > keys.length
+      ? ` · +${group.issueKeys.length - keys.length}`
+      : "";
+  return `${keys.join(" · ")}${suffix}`;
+}
 
 export interface PersonBriefDrawerProps {
   personId: string | null;
@@ -102,11 +118,6 @@ export function PersonBriefDrawer({
     }
   };
 
-  const openIssue = async (issueKey: string) => {
-    const url = buildJiraIssueBrowseUrl(jiraBaseUrl, issueKey);
-    await openExternalUrl(url);
-  };
-
   return (
     <Drawer
       open={open}
@@ -122,38 +133,37 @@ export function PersonBriefDrawer({
               displayName={brief.personName}
               size="md"
             />
-            <div>
+            <div className="person-brief__header-text">
               <h2 className="person-brief__title">{brief.personName}</h2>
+              <p className="person-brief__role">{brief.role}</p>
+              <p className="person-brief__meta">
+                {brief.availability} · {brief.periodLabel}
+              </p>
               {prepForOneOnOne ? (
-                <p className="person-brief__meta person-brief__meta--prep">
-                  Prepare for 1:1
-                </p>
+                <p className="person-brief__prep">Prepare for 1:1</p>
               ) : null}
-              <p className="person-brief__meta">
-                {brief.role} · {brief.periodLabel}
-              </p>
-              <p className="person-brief__meta">
-                {brief.availability}
-                {brief.newStarter ? ` · ${brief.newStarter.headline}` : ""}
-              </p>
             </div>
           </div>
         ) : null
       }
     >
       {!brief ? (
-        <p className="person-brief__empty">Brief is not available yet.</p>
+        <p className="person-brief__empty" role="status">
+          Brief is not available yet.
+        </p>
       ) : (
         <div className="person-brief__body" data-testid="person-brief-drawer">
           <div className="person-brief__toolbar">
-            <Select
-              label="Period"
-              value={periodPreset}
-              options={PERIOD_OPTIONS}
-              onChange={(event) =>
-                setPeriodPreset(event.target.value as DateRangeKey)
-              }
-            />
+            <div className="person-brief__period">
+              <Select
+                label="Period"
+                value={periodPreset}
+                options={PERIOD_OPTIONS}
+                onChange={(event) =>
+                  setPeriodPreset(event.target.value as DateRangeKey)
+                }
+              />
+            </div>
             <div className="person-brief__actions">
               <Button type="button" variant="secondary" onClick={() => void handleCopy()}>
                 Copy summary
@@ -170,117 +180,101 @@ export function PersonBriefDrawer({
 
           {brief.timeOff ? (
             <section className="person-brief__section">
-              <h3>Time off</h3>
-              <p>
-                {brief.timeOff.headline} · {brief.timeOff.rangeLabel}
+              <h3 className="person-brief__section-title">Upcoming time off</h3>
+              <p className="person-brief__section-lead">
+                {brief.timeOff.headline}
+                {brief.timeOff.rangeLabel ? ` · ${brief.timeOff.rangeLabel}` : ""}
               </p>
               {brief.timeOff.activeWorkCount > 0 ? (
                 <p className="person-brief__muted">
-                  {brief.timeOff.activeWorkCount} active tasks in Metrio scope
+                  {brief.timeOff.activeWorkCount} active tasks in scope
                 </p>
               ) : null}
             </section>
           ) : null}
 
           <section className="person-brief__section">
-            <h3>Recent performance</h3>
-            <ul className="person-brief__kpi-list">
-              {brief.performanceKpis.map((kpi) => (
-                <li key={kpi.label}>
-                  <span className="person-brief__kpi-label">{kpi.label}</span>
-                  <span className="person-brief__kpi-value">{kpi.value}</span>
-                  {kpi.contextLabel ? (
-                    <span className="person-brief__kpi-context">
-                      {kpi.contextLabel} {kpi.contextCaption}
-                    </span>
-                  ) : null}
-                </li>
-              ))}
-            </ul>
-            {brief.cycleTime.length ? (
-              <ul className="person-brief__kpi-list">
-                {brief.cycleTime.map((segment) => (
-                  <li key={segment.label}>
-                    <span className="person-brief__kpi-label">{segment.label}</span>
-                    <span className="person-brief__kpi-value">{segment.value}</span>
-                  </li>
-                ))}
-              </ul>
-            ) : null}
+            <h3 className="person-brief__section-title">Recent performance</h3>
+            <PersonAnalyticsMetricGrid
+              metrics={brief.performanceKpis}
+              className="performance-metrics performance-metrics--brief"
+            />
+            <PersonCycleTimeCard segments={brief.cycleTime} />
           </section>
 
           <section className="person-brief__section">
-            <h3>Current work</h3>
+            <h3 className="person-brief__section-title">Current work</h3>
             <p className="person-brief__muted">
               {brief.currentWork.activeCount} active · {brief.currentWork.inReviewCount} in
               review · {brief.currentWork.problematicCount} at risk
             </p>
-            <ul className="person-brief__task-list">
+            <div className="person-brief__work-list">
               {brief.currentWork.topTasks.map((task) => (
-                <li key={task.issueKey}>
-                  <button
-                    type="button"
-                    className="person-brief__task-button"
-                    onClick={() => void openIssue(task.issueKey)}
-                  >
-                    <span>{task.issueKey}</span>
-                    <span>{task.title}</span>
-                    <span className="person-brief__muted">
-                      {task.status} · {task.stageAge}
-                    </span>
-                  </button>
-                </li>
+                <PersonWorkRow
+                  key={task.issueKey}
+                  item={{
+                    key: task.issueKey,
+                    title: task.title,
+                    status: task.status,
+                    stageAge: task.stageAge,
+                    healthVariant: "neutral",
+                  }}
+                />
               ))}
-            </ul>
+            </div>
           </section>
 
           <section className="person-brief__section">
-            <h3>Recently completed</h3>
+            <h3 className="person-brief__section-title">Recently completed</h3>
             {brief.completedWork.length === 0 ? (
               <p className="person-brief__muted">No completed work in this period.</p>
             ) : (
-              <ul className="person-brief__task-list">
+              <div className="person-brief__history-list">
                 {brief.completedWork.map((item) => (
-                  <li key={item.issueKey}>
-                    <button
-                      type="button"
-                      className="person-brief__task-button"
-                      onClick={() => void openIssue(item.issueKey)}
-                    >
-                      <span>{item.issueKey}</span>
-                      <span>{item.title}</span>
-                      <span className="person-brief__muted">{item.completedLabel}</span>
-                    </button>
-                  </li>
+                  <AnalyticsIssueRow
+                    key={item.issueKey}
+                    hidePerson
+                    showOutcome
+                    metaLine={item.metaLine}
+                    issue={{
+                      issueKey: item.issueKey,
+                      title: item.title,
+                      personId: brief.personId,
+                      personName: brief.personName,
+                      outcome: item.firstPass ? "first_pass" : "rework",
+                    }}
+                  />
                 ))}
-              </ul>
+              </div>
             )}
           </section>
 
           {brief.attention.length ? (
             <section className="person-brief__section">
-              <h3>Attention</h3>
+              <h3 className="person-brief__section-title">Attention</h3>
               <ul className="person-brief__attention-list">
                 {brief.attention.map((group) => (
-                  <li key={`${group.label}-${group.reason}`}>
-                    {group.taskCount} · {group.reason}
+                  <li key={`${group.label}-${group.reason}`} className="person-brief__attention-row">
+                    <div>
+                      <span className="person-brief__attention-label">{group.label}</span>
+                      <span className="person-brief__muted">
+                        {group.taskCount} task{group.taskCount === 1 ? "" : "s"}
+                      </span>
+                    </div>
+                    <Badge variant={group.variant}>{group.reason}</Badge>
+                    <span className="person-brief__muted person-brief__attention-keys">
+                      {attentionIssuePreview(group)}
+                    </span>
                   </li>
                 ))}
               </ul>
             </section>
           ) : null}
 
-          {brief.backflows.count > 0 ? (
-            <section className="person-brief__section">
-              <h3>Backflows</h3>
-              <p>{brief.backflows.count} in period</p>
-            </section>
-          ) : null}
-
           {brief.feedbackLines.length ? (
             <section className="person-brief__section">
-              <h3>Feedback</h3>
-              <ul>
+              <h3 className="person-brief__section-title">Feedback</h3>
+              <ul className="person-brief__plain-list">
                 {brief.feedbackLines.map((line) => (
                   <li key={line}>{line}</li>
                 ))}
@@ -290,30 +284,25 @@ export function PersonBriefDrawer({
 
           {brief.resources.length ? (
             <section className="person-brief__section">
-              <h3>Team resources</h3>
-              <ul className="person-brief__resource-list">
-                {brief.resources.map((resource) => (
-                  <li key={resource.title}>
-                    {resource.url.startsWith("http") ? (
-                      <button
-                        type="button"
-                        className="person-brief__link"
-                        onClick={() => void openExternalUrl(resource.url)}
-                      >
-                        {resource.title}
-                      </button>
-                    ) : (
-                      resource.title
-                    )}
-                  </li>
-                ))}
-              </ul>
+              <h3 className="person-brief__section-title">Knowledge</h3>
+              {brief.resources.map((resource) =>
+                resource.url.startsWith("http") ? (
+                  <ResourceRow
+                    key={resource.title}
+                    title={resource.title}
+                    subtitle={resource.subtitle}
+                    source={resource.source}
+                    onOpen={() => void openExternalUrl(resource.url)}
+                    externalLabel="Open resource"
+                  />
+                ) : null,
+              )}
             </section>
           ) : null}
 
           {brief.prompts.length ? (
             <section className="person-brief__section person-brief__section--prompts">
-              <h3>Discussion prompts</h3>
+              <h3 className="person-brief__section-title">Discussion prompts</h3>
               <p className="person-brief__muted">Neutral prompts based on facts above.</p>
               <ul className="person-brief__prompt-list">
                 {brief.prompts.map((prompt) => (
