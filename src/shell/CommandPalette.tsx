@@ -27,6 +27,7 @@ export interface CommandPaletteProps {
   >;
 }
 
+const CLOSE_MS = 200;
 
 export function CommandPalette({
   open,
@@ -36,12 +37,14 @@ export function CommandPalette({
 }: CommandPaletteProps) {
   const [query, setQuery] = useState("");
   const [activeIndex, setActiveIndex] = useState(0);
+  const [mounted, setMounted] = useState(open);
+  const [visible, setVisible] = useState(open);
   const inputRef = useRef<HTMLInputElement>(null);
   const returnFocusRef = useRef<HTMLElement | null>(null);
 
   const { results, remoteHint } = useCommandPaletteSearch({
     ...searchInput,
-    open,
+    open: mounted && visible,
     query,
   });
 
@@ -49,13 +52,21 @@ export function CommandPalette({
 
   useEffect(() => {
     if (open) {
+      setMounted(true);
       returnFocusRef.current = document.activeElement as HTMLElement | null;
       setQuery("");
       setActiveIndex(0);
+      const frame = requestAnimationFrame(() => setVisible(true));
       requestAnimationFrame(() => inputRef.current?.focus());
-    } else {
-      returnFocusRef.current?.focus?.();
+      return () => cancelAnimationFrame(frame);
     }
+
+    setVisible(false);
+    const timer = window.setTimeout(() => {
+      setMounted(false);
+      returnFocusRef.current?.focus?.();
+    }, CLOSE_MS);
+    return () => window.clearTimeout(timer);
   }, [open]);
 
   useEffect(() => {
@@ -108,26 +119,36 @@ export function CommandPalette({
     });
   }, [flatResults]);
 
-  if (!open) return null;
+  if (!mounted) return null;
+
+  const shellClass = [
+    "command-palette-shell",
+    visible ? "is-open is-interactive" : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
 
   return createPortal(
     <div
-      className="command-palette-backdrop"
+      className={shellClass}
       data-testid="command-palette-backdrop"
-      onMouseDown={(event) => {
-        if (event.target === event.currentTarget) onClose();
-      }}
     >
+      <button
+        type="button"
+        className="command-palette-shell__hit"
+        aria-label="Close quick find"
+        tabIndex={-1}
+        onClick={onClose}
+      />
       <div
         className="command-palette"
         role="dialog"
-        aria-modal="true"
+        aria-modal="false"
         aria-label="Quick find"
         data-testid="command-palette"
         onKeyDown={onKeyDown}
       >
         <div className="command-palette__input-wrap">
-          <Search size={16} strokeWidth={1.75} aria-hidden />
           <input
             ref={inputRef}
             className="command-palette__input"
@@ -138,6 +159,9 @@ export function CommandPalette({
             autoComplete="off"
             spellCheck={false}
           />
+          <span className="command-palette__search-icon" aria-hidden>
+            <Search size={18} strokeWidth={1.75} />
+          </span>
         </div>
         {remoteHint ? (
           <p className="command-palette__hint" role="status">{remoteHint}</p>
