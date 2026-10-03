@@ -65,34 +65,38 @@ export function MetrioAppHeader({
       </div>
 
       <div className="app-header__actions">
-        <IconButton
-          label="Search · ⌘K"
-          onClick={onOpenCommandPalette}
-        >
-          <Search size={16} strokeWidth={1.7} />
-        </IconButton>
-        <ConnectionHealthBadge onOpenConnections={onOpenConnections} />
-        <IconButton label="Settings" onClick={onOpenSettings}>
-          <Settings2 size={16} strokeWidth={1.7} />
-        </IconButton>
-        <span className="app-header__bell-wrap">
+        <div className="app-header__status-group">
+          <ConnectionHealthBadge onOpenConnections={onOpenConnections} />
+        </div>
+        <div className="app-header__utility-group" aria-label="Utilities">
           <IconButton
-            label={
-              notificationUnreadCount > 0
-                ? `Notifications, ${notificationUnreadCount} unread`
-                : "Notifications"
-            }
-            onClick={onOpenNotifications}
+            label="Search · ⌘K"
+            onClick={onOpenCommandPalette}
           >
-            <Bell size={16} strokeWidth={1.7} />
+            <Search size={16} strokeWidth={1.7} />
           </IconButton>
-          {notificationUnreadCount > 0 ? (
-            <span className="app-header__bell-badge" aria-hidden>
-              {notificationUnreadCount > 9 ? "9+" : notificationUnreadCount}
-            </span>
-          ) : null}
-        </span>
-        <ProfileMenu onOpenSettings={onOpenSettings} onLogout={onLogout} />
+          <span className="app-header__bell-wrap">
+            <IconButton
+              label={
+                notificationUnreadCount > 0
+                  ? `Notifications, ${notificationUnreadCount} unread`
+                  : "Notifications"
+              }
+              onClick={onOpenNotifications}
+            >
+              <Bell size={16} strokeWidth={1.7} />
+            </IconButton>
+            {notificationUnreadCount > 0 ? (
+              <span className="app-header__bell-badge" aria-hidden>
+                {notificationUnreadCount > 9 ? "9+" : notificationUnreadCount}
+              </span>
+            ) : null}
+          </span>
+          <IconButton label="Settings" onClick={onOpenSettings}>
+            <Settings2 size={16} strokeWidth={1.7} />
+          </IconButton>
+          <ProfileMenu onOpenSettings={onOpenSettings} onLogout={onLogout} />
+        </div>
       </div>
     </div>
   );

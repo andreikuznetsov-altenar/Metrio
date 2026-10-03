@@ -10,59 +10,56 @@
 }
 
 .performance-toolbar__controls {
-  display: flex;
-  align-items: center;
+  display: grid;
+  grid-template-columns:
+    minmax(180px, 1.1fr)
+    auto
+    minmax(180px, 1.1fr)
+    minmax(160px, 0.9fr)
+    minmax(160px, 0.9fr)
+    36px
+    minmax(150px, 0.8fr);
+  align-items: end;
   gap: var(--space-2);
-  flex-wrap: wrap;
   width: 100%;
   min-width: 0;
 }
 
-.performance-toolbar__group {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  min-width: 0;
-}
-
 .performance-toolbar__group--dates {
-  flex: 1.4 1 480px;
-  max-width: 520px;
+  display: contents;
 }
 
 .performance-toolbar__group--dates .field {
-  flex: 1 1 220px;
-  min-width: 200px;
-  max-width: 240px;
+  min-width: 0;
 }
 
 .performance-toolbar__date-sep {
-  flex-shrink: 0;
+  align-self: end;
   color: var(--color-text-tertiary);
   font-size: 13px;
-  line-height: 34px;
+  line-height: 36px;
+  padding-bottom: 1px;
 }
 
 .performance-toolbar__field {
   min-width: 0;
 }
 
-.performance-toolbar__field--preset {
-  flex: 0 1 168px;
-  min-width: 150px;
-  max-width: 170px;
-}
-
+.performance-toolbar__field--preset,
 .performance-toolbar__field--target {
-  flex: 0 1 168px;
-  min-width: 150px;
-  max-width: 170px;
+  min-width: 0;
 }
 
 .performance-toolbar__refresh {
-  flex: 0 0 36px;
   display: flex;
   justify-content: center;
+  align-self: end;
+  padding-bottom: 1px;
+}
+
+.performance-toolbar__refresh .icon-btn {
+  width: 36px;
+  height: 36px;
 }
 
 .performance-toolbar__refresh .icon-button__icon {
@@ -74,12 +71,14 @@
 }
 
 .performance-toolbar__export {
-  flex: 0 1 150px;
+  align-self: end;
+  min-width: 0;
 }
 
 .performance-toolbar__export .btn {
   width: 100%;
-  min-width: 9rem;
+  min-width: 0;
+  height: 36px;
   justify-content: center;
   gap: var(--space-2);
 }
@@ -100,9 +99,41 @@
   }
 }
 
-@media (max-width: 1280px) {
+@media (max-width: 1100px) {
   .performance-toolbar__controls {
-    row-gap: var(--space-2);
+    grid-template-columns: 1fr 1fr;
+    grid-template-areas:
+      "from to"
+      "preset target"
+      "refresh export";
+  }
+
+  .performance-toolbar__group--dates .field:first-child {
+    grid-area: from;
+  }
+
+  .performance-toolbar__group--dates .field:last-child {
+    grid-area: to;
+  }
+
+  .performance-toolbar__date-sep {
+    display: none;
+  }
+
+  .performance-toolbar__field--preset {
+    grid-area: preset;
+  }
+
+  .performance-toolbar__field--target {
+    grid-area: target;
+  }
+
+  .performance-toolbar__refresh {
+    grid-area: refresh;
+  }
+
+  .performance-toolbar__export {
+    grid-area: export;
   }
 }
 
