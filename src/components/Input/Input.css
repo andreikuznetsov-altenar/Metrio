@@ -37,9 +37,10 @@
 }
 
 .input:focus-visible {
-  outline: var(--focus-outline);
-  outline-offset: var(--focus-outline-offset);
-  border-color: var(--color-border);
+  outline: none;
+  border-color: var(--color-focus-border);
+  border-width: 2px;
+  padding-inline: calc(var(--space-3) - 1px);
   box-shadow: none;
 }
 

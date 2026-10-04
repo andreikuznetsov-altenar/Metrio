@@ -50,9 +50,8 @@
 }
 
 .command-palette:focus-within {
-  box-shadow:
-    0 16px 48px rgba(0, 0, 0, 0.14),
-    var(--focus-ring);
+  border-color: var(--color-focus-border);
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.14);
 }
 
 .command-palette__input-wrap {

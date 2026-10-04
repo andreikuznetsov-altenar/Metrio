@@ -41,6 +41,9 @@
   --space-10: 40px;
 
   /* Motion (Phase 10 — no transition: all; no scale/bounce) */
+  --motion-fast: 150ms;
+  --motion-standard: 200ms;
+  --motion-slow: 260ms;
   --motion-hover: 120ms;
   --motion-control: 140ms;
   --motion-popover: 160ms;
@@ -48,6 +51,9 @@
   --motion-backdrop: 200ms;
   --motion-tab: 200ms;
   --transition-easing: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-enter: cubic-bezier(0, 0, 0.2, 1);
+  --ease-exit: cubic-bezier(0.4, 0, 1, 1);
   /* Legacy aliases */
   --transition-duration: var(--motion-control);
   --drawer-transition-duration: var(--motion-drawer);
@@ -58,7 +64,8 @@
   --page-header-height: 48px;
   --bottom-action-height: 56px;
 
-  /* Focus — keyboard only, subtle */
+  /* Focus — keyboard only; fields use --color-focus-border (see ui-interaction-system.css) */
+  --color-focus-border: var(--color-accent);
   --focus-ring: 0 0 0 1.5px color-mix(in srgb, var(--color-accent) 55%, transparent);
   --focus-outline: 1.5px solid color-mix(in srgb, var(--color-accent) 72%, transparent);
   --focus-outline-offset: 1px;

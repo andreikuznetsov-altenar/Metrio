@@ -43,7 +43,12 @@ export function Select({
 }: SelectProps) {
   const selectId =
     id ?? (label ? `select-${label.replace(/\s+/g, "-").toLowerCase()}` : undefined);
-  const triggerClass = ["select-trigger", error ? "select-trigger--error" : "", className]
+  const triggerClass = [
+    "select-trigger",
+    "metrio-field",
+    error ? "select-trigger--error" : "",
+    className,
+  ]
     .filter(Boolean)
     .join(" ");
 
@@ -76,7 +81,7 @@ export function Select({
       </SelectPrimitive.Trigger>
       <SelectPrimitive.Portal>
         <SelectPrimitive.Content
-          className="select-content"
+          className="select-content metrio-popover-surface"
           position="popper"
           side="bottom"
           align="start"

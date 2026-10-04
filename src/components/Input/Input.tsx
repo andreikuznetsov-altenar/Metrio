@@ -8,7 +8,7 @@ export interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
 
 export function Input({ label, id, className, error = false, ...props }: InputProps) {
   const inputId = id ?? (label ? `input-${label.replace(/\s+/g, "-").toLowerCase()}` : undefined);
-  const inputClass = ["input", error ? "input--error" : "", className]
+  const inputClass = ["input", "metrio-field", error ? "input--error" : "", className]
     .filter(Boolean)
     .join(" ");
 

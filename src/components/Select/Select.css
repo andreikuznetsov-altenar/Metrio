@@ -45,8 +45,11 @@
 }
 
 .select-trigger:focus-visible {
-  outline: var(--focus-outline);
-  outline-offset: var(--focus-outline-offset);
+  outline: none;
+  border-color: var(--color-focus-border);
+  border-width: 2px;
+  padding-inline: calc(var(--space-3) - 1px);
+  box-shadow: none;
 }
 
 .select-trigger--error {
@@ -86,7 +89,7 @@
   border: 1px solid color-mix(in srgb, var(--color-border) 85%, transparent);
   background: var(--color-surface);
   box-shadow: 0 10px 28px rgba(0, 0, 0, 0.12);
-  animation: select-in var(--motion-popover) var(--transition-easing);
+  animation: select-in var(--motion-fast) var(--ease-enter);
 }
 
 .select-content__viewport {

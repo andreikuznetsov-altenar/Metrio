@@ -37,8 +37,10 @@
 }
 
 .metrio-date-picker__trigger:focus-visible {
-  outline: var(--focus-outline);
-  outline-offset: var(--focus-outline-offset);
+  outline: none;
+  border-color: var(--color-focus-border);
+  border-width: 2px;
+  box-shadow: none;
 }
 
 .metrio-date-picker__trigger:focus:not(:focus-visible) {
