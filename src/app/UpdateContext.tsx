@@ -9,13 +9,12 @@ import {
   type ReactNode,
 } from "react";
 import { invoke } from "@tauri-apps/api/core";
-import { getBuildInfo, type BuildInfo } from "../config/build";
+import { getBuildInfo, isUpdaterAvailableForBuild, type BuildInfo } from "../config/build";
 import { getUpdateManifestUrl } from "../config/updates";
 import {
   checkForUpdatesNative,
   checkForUpdatesWithManifest,
   installNativeUpdate,
-  isUpdaterEnabledForChannel,
   markBackgroundCheckRan,
   relaunchAfterUpdate,
   shouldRunDailyBackgroundCheck,
@@ -70,7 +69,7 @@ export function UpdateProvider({ children }: { children: ReactNode }) {
   });
   const nativeUpdateRef = useRef<Update | null>(null);
 
-  const updaterEnabled = isUpdaterEnabledForChannel(buildInfo.channel);
+  const updaterEnabled = isUpdaterAvailableForBuild(buildInfo);
 
   useEffect(() => {
     void loadNativeBuildInfo().then((info) => {
@@ -82,11 +81,11 @@ export function UpdateProvider({ children }: { children: ReactNode }) {
   const runCheck = useCallback(async () => {
     const info = await loadNativeBuildInfo();
     setBuildInfo(info);
-    if (!isUpdaterEnabledForChannel(info.channel)) {
+    if (!isUpdaterAvailableForBuild(info)) {
       setCheckResult({
-        status: "up-to-date",
+        status: "idle",
         currentVersion: info.version,
-        message: "Updates are disabled in development builds.",
+        message: "Updates are unavailable in this review build.",
       });
       return;
     }

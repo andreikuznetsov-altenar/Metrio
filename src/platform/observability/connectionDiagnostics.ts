@@ -1,5 +1,10 @@
 import { isGoogleOAuthConfigured } from "../../config/google";
 import { isMetrioCloudConfigured } from "../../services/metrioCloud/metrioCloudClient";
+import { getEmployeePhotoPermissionHint } from "../../services/bamboo/bambooAvatarService";
+import {
+  formatPhotoProbeSummary,
+  probeBambooEmployeePhoto,
+} from "../../services/bamboo/bambooPhotoProbe";
 import { testBambooConnectionSaved, testJiraConnectionSaved } from "../connectionTest";
 import type { AppPreferences } from "../preferences";
 import { GoogleSurveyClient } from "../../services/survey/googleSurveyClient";
@@ -33,6 +38,29 @@ export async function runConnectionDiagnostics(
   });
 
   const bamboo = await testBambooConnectionSaved();
+  let bambooDetail = bamboo.detail;
+  const photoHint = getEmployeePhotoPermissionHint();
+  if (photoHint) {
+    bambooDetail = bambooDetail ? `${bambooDetail} ${photoHint}` : photoHint;
+  } else if (bamboo.label === "Connected") {
+    const employee = prefs.teamDetection?.employee;
+    const subdomain = prefs.bambooSubdomain?.trim();
+    if (employee?.id && subdomain) {
+      const probe = await probeBambooEmployeePhoto(
+        employee.id,
+        subdomain,
+        employee.displayName,
+      );
+      if (probe.outcome === "forbidden") {
+        const hint =
+          getEmployeePhotoPermissionHint() ??
+          "Employee photos unavailable with current BambooHR permissions.";
+        bambooDetail = bambooDetail ? `${bambooDetail} ${hint}` : hint;
+      } else if (probe.outcome !== "skipped") {
+        bambooDetail = `${bambooDetail} Photo probe: ${formatPhotoProbeSummary(probe)}.`;
+      }
+    }
+  }
   rows.push({
     id: "bamboo",
     label: "BambooHR",
@@ -42,7 +70,7 @@ export async function runConnectionDiagnostics(
         : bamboo.label === "Needs attention"
           ? "authentication_required"
           : "unavailable",
-    detail: bamboo.detail,
+    detail: bambooDetail,
   });
 
   rows.push({

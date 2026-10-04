@@ -3,6 +3,7 @@ export const COMPANY_CONFIG = {
   jiraBaseUrl: "https://altenar.atlassian.net",
   bambooSubdomain: "altenar",
   bambooPortalUrl: "https://altenar.bamboohr.com",
+  companyWebsiteUrl: "https://altenar.com",
 } as const;
 
 export const JIRA_BASE_URL = COMPANY_CONFIG.jiraBaseUrl;

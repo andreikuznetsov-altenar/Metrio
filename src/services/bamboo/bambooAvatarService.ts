@@ -20,6 +20,7 @@ const memoryCache = new Map<string, CacheEntry>();
 const inflight = new Map<string, Promise<string | null>>();
 
 let cachedSubdomain: string | null | undefined;
+let sessionEmployeePhotosForbidden = false;
 
 export interface BambooPhotoPayload {
   content_type: string;
@@ -74,7 +75,22 @@ export function resetAvatarSession(): void {
   cachedSubdomain = undefined;
   memoryCache.clear();
   inflight.clear();
+  sessionEmployeePhotosForbidden = false;
   clearPersonDirectory();
+}
+
+export function isEmployeePhotoPermissionBlocked(): boolean {
+  return sessionEmployeePhotosForbidden;
+}
+
+export function getEmployeePhotoPermissionHint(): string | null {
+  return sessionEmployeePhotosForbidden
+    ? "Employee photos unavailable with current BambooHR permissions."
+    : null;
+}
+
+export function noteEmployeePhotoPermissionDenied(): void {
+  sessionEmployeePhotosForbidden = true;
 }
 
 export function invalidateEmployeeAvatarCache(
@@ -133,6 +149,9 @@ export async function fetchEmployeeAvatarDataUrl(
       return src;
     } catch (error) {
       const status = statusFromError(error);
+      if (status === "forbidden") {
+        sessionEmployeePhotosForbidden = true;
+      }
       if (status === "failed") {
         setCacheEntry(key, {
           dataUrl: null,

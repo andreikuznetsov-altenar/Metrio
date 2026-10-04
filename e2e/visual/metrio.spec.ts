@@ -1241,6 +1241,14 @@ test.describe("Metrio visual regression", () => {
       fullPage: true,
       maxDiffPixelRatio: 0.02,
     });
+    await expect(page).toHaveScreenshot("settings-preferences-wide.png", {
+      fullPage: true,
+      maxDiffPixelRatio: 0.02,
+    });
+    await expect(page.locator(".settings-toggle-stack").first()).toHaveScreenshot(
+      "settings-switch-dividers.png",
+      { maxDiffPixelRatio: 0.02 },
+    );
   });
 
   test("settings connections credentials", async ({ page }) => {
@@ -1384,6 +1392,17 @@ test.describe("Metrio visual regression", () => {
     await page.getByRole("button", { name: /^settings$/i }).click();
     await clickSettingsSection(page, /company & app/i);
     await expect(page.getByTestId("company-app-settings")).toBeVisible();
+    await expect(page.getByTestId("company-readonly-summary")).toHaveScreenshot(
+      "company-card.png",
+      { maxDiffPixelRatio: 0.02 },
+    );
+    await expect(page.getByTestId("about-settings")).toHaveScreenshot("about-card.png", {
+      maxDiffPixelRatio: 0.02,
+    });
+    await expect(page.getByTestId("about-update-status")).toHaveScreenshot(
+      "about-review-updater.png",
+      { maxDiffPixelRatio: 0.02 },
+    );
     await expect(page).toHaveScreenshot("settings-company-app.png", {
       fullPage: true,
       maxDiffPixelRatio: 0.02,
@@ -1402,6 +1421,10 @@ test.describe("Metrio visual regression", () => {
     await expect(page.getByTestId("preferences-settings")).toBeVisible();
     await expect(page).toHaveScreenshot("settings-dark.png", {
       fullPage: true,
+      maxDiffPixelRatio: 0.02,
+    });
+    await clickSettingsSection(page, /company & app/i);
+    await expect(page.getByTestId("about-settings")).toHaveScreenshot("about-card-dark.png", {
       maxDiffPixelRatio: 0.02,
     });
   });
@@ -2635,6 +2658,12 @@ test.describe("Metrio visual regression", () => {
       fullPage: true,
       maxDiffPixelRatio: 0.02,
     });
+    const withPhoto = page.locator(".person-avatar__photo").first();
+    if ((await withPhoto.count()) > 0) {
+      await expect(withPhoto).toHaveScreenshot("person-real-photo.png", {
+        maxDiffPixelRatio: 0.02,
+      });
+    }
   });
 
   test("people-mixed-photo-fallback", async ({ page }) => {
@@ -2645,6 +2674,12 @@ test.describe("Metrio visual regression", () => {
       fullPage: true,
       maxDiffPixelRatio: 0.02,
     });
+    const initialsAvatar = page.locator(".person-avatar:not(:has(.person-avatar__photo))").first();
+    if ((await initialsAvatar.count()) > 0) {
+      await expect(initialsAvatar).toHaveScreenshot("person-fallback-initials.png", {
+        maxDiffPixelRatio: 0.02,
+      });
+    }
   });
 
   test("person-drawer-photo", async ({ page }) => {

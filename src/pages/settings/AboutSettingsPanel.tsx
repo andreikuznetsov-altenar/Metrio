@@ -1,7 +1,15 @@
 import { Button } from "../../components/Button/Button";
 import { useOptionalMetrioUpdate } from "../../app/UpdateContext";
-import { getBuildInfo } from "../../config/build";
-import { formatBuildLabel } from "../../config/build";
+import {
+  formatBuildChannelLine,
+  formatBuildVersionLine,
+  getBuildInfo,
+  isUpdaterAvailableForBuild,
+} from "../../config/build";
+import { EntityLink } from "../../components/EntityLink/EntityLink";
+
+const AUTHOR_NAME = "Andrei Kuznetsov";
+const AUTHOR_EMAIL = "andrei.kuznetsov@altenar.com";
 
 export function AboutSettingsPanel({ embedded = false }: { embedded?: boolean }) {
   const update = useOptionalMetrioUpdate();
@@ -15,10 +23,14 @@ export function AboutSettingsPanel({ embedded = false }: { embedded?: boolean })
     percent: null,
   };
   const updaterEnabled = update?.updaterEnabled ?? false;
+  const updaterAvailable = updaterEnabled && isUpdaterAvailableForBuild(buildInfo);
   const checkForUpdates = update?.checkForUpdates ?? (async () => undefined);
   const installUpdate = update?.installUpdate ?? (async () => undefined);
 
   const statusLabel = (() => {
+    if (!updaterAvailable) {
+      return "Updates are unavailable in this review build.";
+    }
     switch (checkResult.status) {
       case "checking":
         return "Checking…";
@@ -29,7 +41,7 @@ export function AboutSettingsPanel({ embedded = false }: { embedded?: boolean })
       case "error":
         return "Unable to check";
       default:
-        return updaterEnabled ? "Not checked yet" : "Development build";
+        return "Not checked yet";
     }
   })();
 
@@ -38,24 +50,53 @@ export function AboutSettingsPanel({ embedded = false }: { embedded?: boolean })
       ? (checkResult.notes ?? "").split("\n").filter(Boolean)
       : [];
 
+  const showUpdaterError =
+    updaterAvailable && checkResult.status === "error" && checkResult.message;
+
   return (
     <div
       className={embedded ? "settings-card__body" : "settings-panel"}
       data-testid="about-settings"
     >
       {!embedded ? <h2 className="settings-panel__title">About Metrio</h2> : null}
-      <p className={embedded ? "settings-card__description" : "settings-panel__lead"}>
-        Metrio · {formatBuildLabel(buildInfo)}
-      </p>
 
-      <div className="about-update" aria-live="polite">
-        <p className="about-update__status">{statusLabel}</p>
-        {checkResult.status === "available" && checkResult.availableVersion ? (
-          <p className="about-update__version">
-            Version {checkResult.availableVersion}
+      <div className="settings-meta-list" data-testid="about-meta">
+        <div className="settings-meta-row">
+          <span className="settings-meta-row__label">Metrio</span>
+          <span className="settings-meta-row__value">{formatBuildVersionLine(buildInfo)}</span>
+        </div>
+        <div className="settings-meta-row">
+          <span className="settings-meta-row__label">Build</span>
+          <span className="settings-meta-row__value" data-testid="about-build-channel">
+            {formatBuildChannelLine(buildInfo)}
+          </span>
+        </div>
+        <div className="settings-meta-row settings-meta-row--stacked">
+          <span className="settings-meta-row__label">Created by</span>
+          <span className="settings-meta-row__value">
+            <span>{AUTHOR_NAME}</span>
+            <EntityLink href={`mailto:${AUTHOR_EMAIL}`} className="about-author-email">
+              {AUTHOR_EMAIL}
+            </EntityLink>
+          </span>
+        </div>
+      </div>
+
+      <div className="about-update about-update--compact" aria-live="polite">
+        <div className="about-update__head">
+          <p
+            className={`about-update__status${showUpdaterError ? " about-update__status--error" : ""}`}
+            data-testid="about-update-status"
+          >
+            {statusLabel}
           </p>
-        ) : null}
-        {checkResult.status === "error" && checkResult.message ? (
+          {checkResult.status === "available" && checkResult.availableVersion ? (
+            <p className="about-update__version">
+              Version {checkResult.availableVersion}
+            </p>
+          ) : null}
+        </div>
+        {showUpdaterError ? (
           <p className="about-update__error" role="alert">
             {checkResult.message}
           </p>
@@ -86,34 +127,36 @@ export function AboutSettingsPanel({ embedded = false }: { embedded?: boolean })
           </p>
         ) : null}
 
-        <div className="about-update__actions">
-          <Button
-            type="button"
-            variant="secondary"
-            onClick={() => void checkForUpdates()}
-            disabled={checkResult.status === "checking"}
-          >
-            Check for updates
-          </Button>
-          {checkResult.status === "available" ? (
+        {updaterAvailable ? (
+          <div className="about-update__actions">
             <Button
               type="button"
-              variant="primary"
-              onClick={() => void installUpdate()}
-              disabled={
-                installProgress.phase === "downloading" ||
-                installProgress.phase === "installing"
-              }
+              variant="secondary"
+              onClick={() => void checkForUpdates()}
+              disabled={checkResult.status === "checking"}
             >
-              Install update
+              Check for updates
             </Button>
-          ) : null}
-          {installProgress.phase === "error" ? (
-            <Button type="button" variant="ghost" onClick={() => void installUpdate()}>
-              Try again
-            </Button>
-          ) : null}
-        </div>
+            {checkResult.status === "available" ? (
+              <Button
+                type="button"
+                variant="primary"
+                onClick={() => void installUpdate()}
+                disabled={
+                  installProgress.phase === "downloading" ||
+                  installProgress.phase === "installing"
+                }
+              >
+                Install update
+              </Button>
+            ) : null}
+            {installProgress.phase === "error" ? (
+              <Button type="button" variant="ghost" onClick={() => void installUpdate()}>
+                Try again
+              </Button>
+            ) : null}
+          </div>
+        ) : null}
         {checkResult.status === "available" ? (
           <p className="about-update__hint">
             Metrio will restart after the update is installed.

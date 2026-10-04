@@ -70,6 +70,19 @@ describe("bambooAvatarService", () => {
     expect(peekAvatarCacheStatus("9", "acme")).toBe("forbidden");
   });
 
+  it("sets session permission hint after forbidden response", async () => {
+    const { isEmployeePhotoPermissionBlocked, getEmployeePhotoPermissionHint } =
+      await import("./bambooAvatarService");
+    vi.mocked(invoke).mockRejectedValueOnce({
+      message: "forbidden",
+      code: "bamboo_api_error",
+      status: 403,
+    });
+    await fetchEmployeeAvatarDataUrl("11", "acme");
+    expect(isEmployeePhotoPermissionBlocked()).toBe(true);
+    expect(getEmployeePhotoPermissionHint()).toMatch(/permissions/i);
+  });
+
   it("allows retry after transient 5xx TTL expires", async () => {
     vi.useFakeTimers();
     vi.mocked(invoke).mockRejectedValueOnce({

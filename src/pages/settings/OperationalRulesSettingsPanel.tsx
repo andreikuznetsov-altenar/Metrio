@@ -206,7 +206,7 @@ export function OperationalRulesSettingsPanel({
           <p className="settings-card__description">
             Choose when Metrio should remind you before your upcoming time off.
           </p>
-          <ul className="settings-milestone-list">
+          <ul className="settings-milestone-list settings-toggle-stack">
             {MILESTONE_OPTIONS.map((opt) => (
               <li key={opt.value} className="settings-toggle-row">
                 <span className="settings-toggle-row__label">{opt.label}</span>

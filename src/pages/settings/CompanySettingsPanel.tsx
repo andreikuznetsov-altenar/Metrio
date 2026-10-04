@@ -6,6 +6,7 @@ import { publishCompanyConfigToCloud } from "../../services/metrioCloud/metrioCl
 import { isMetrioCloudConfigured } from "../../services/metrioCloud/metrioCloudClient";
 import { Button } from "../../components/Button/Button";
 import { Switch } from "../../components/Switch/Switch";
+import { CompanyReadonlySummary } from "./CompanyReadonlySummary";
 
 type AdminTab = "general" | "resources" | "onboarding" | "feedback" | "defaults" | "features";
 
@@ -27,17 +28,7 @@ export function CompanySettingsPanel({ embedded = false }: { embedded?: boolean 
         data-testid="company-config-readonly"
       >
         {!embedded ? <h2 className="settings-panel__title">Company</h2> : null}
-        <p className="settings-panel__description">
-          {effective.publicInfo.displayName}
-        </p>
-        <p className="settings-panel__hint">
-          Enabled: {effective.publicInfo.enabledFeatures.join(" · ") || "—"}
-        </p>
-        {effective.publicInfo.supportUrl ? (
-          <p className="settings-panel__hint">
-            Support: {effective.publicInfo.supportUrl}
-          </p>
-        ) : null}
+        <CompanyReadonlySummary publicInfo={effective.publicInfo} />
       </section>
     );
   }
@@ -145,10 +136,10 @@ export function CompanySettingsPanel({ embedded = false }: { embedded?: boolean 
       ) : null}
 
       {tab === "features" ? (
-        <div className="settings-toggle-list">
+        <div className="settings-toggle-stack">
           {(Object.keys(draftFeatures) as (keyof typeof draftFeatures)[]).map((key) => (
             <label key={key} className="settings-toggle-row">
-              <span>{key}</span>
+              <span className="settings-toggle-row__label">{key}</span>
               <Switch
                 checked={draftFeatures[key]}
                 onCheckedChange={(checked) =>
