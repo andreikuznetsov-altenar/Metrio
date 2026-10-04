@@ -39,8 +39,8 @@
   opacity: 0;
   transform: translateY(-10px);
   transition:
-    opacity 200ms var(--transition-easing),
-    transform 200ms var(--transition-easing);
+    opacity var(--motion-standard) var(--ease-standard),
+    transform var(--motion-standard) var(--ease-standard);
   pointer-events: auto;
 }
 
@@ -51,7 +51,7 @@
 
 .command-palette:focus-within {
   border-color: var(--color-focus-border);
-  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.14);
+  border-width: 2px;
 }
 
 .command-palette__input-wrap {

@@ -384,7 +384,7 @@
 
 .home-skeleton {
   min-height: 240px;
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-card);
   background: var(--color-surface-tertiary);
   opacity: 0.5;
 }

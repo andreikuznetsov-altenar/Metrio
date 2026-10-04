@@ -1,4 +1,5 @@
 @import "./tokens.css";
+@import "./design-system.css";
 @import "./ui-interaction-system.css";
 
 *,
@@ -64,9 +65,20 @@ a:active {
   outline: none;
 }
 
-:focus-visible {
+:where(
+    button,
+    a,
+    [role="button"],
+    [role="tab"],
+    [role="menuitem"],
+    summary
+  ):focus-visible {
   outline: none;
   box-shadow: var(--focus-ring);
+}
+
+:where(.input, .textarea, .select-trigger, .metrio-date-picker__trigger, .metrio-date-picker__input):focus-visible {
+  box-shadow: none;
 }
 
 @media (prefers-reduced-motion: reduce) {

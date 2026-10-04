@@ -2,19 +2,19 @@
   padding: 0.75rem 1rem;
   border-radius: var(--radius-control);
   margin-bottom: 1rem;
-  background: var(--color-surface-muted, #f4f4f5);
+  background: var(--color-banner-neutral-bg);
 }
 
 .feedback-ds__banner--warning {
-  background: #fff7ed;
+  background: var(--color-banner-warning-bg);
 }
 
 .feedback-ds__banner--danger {
-  background: #fef2f2;
+  background: var(--color-banner-danger-bg);
 }
 
 .feedback-ds__banner--success {
-  background: #f0fdf4;
+  background: var(--color-banner-success-bg);
 }
 
 .feedback-ds__sticky {
@@ -30,7 +30,7 @@
 .feedback-ds__metric {
   padding: 0.75rem;
   border: 1px solid color-mix(in srgb, var(--color-border) 50%, transparent);
-  border-radius: var(--radius-control);
+  border-radius: var(--radius-card);
   background: var(--color-surface);
 }
 
@@ -50,7 +50,7 @@
   font-size: 12px;
   padding: 0.15rem 0.5rem;
   border-radius: var(--radius-pill);
-  background: var(--color-surface-muted, #f4f4f5);
+  background: var(--color-banner-neutral-bg);
 }
 
 .feedback-ds__drawer-actions {
@@ -423,7 +423,7 @@
 }
 
 .ds-feedback-question__icon-btn:hover:not(:disabled) {
-  background: var(--color-surface-muted);
+  background: var(--color-banner-neutral-bg);
   color: var(--color-text-primary);
 }
 

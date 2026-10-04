@@ -14,8 +14,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 32px;
-  height: 32px;
+  width: var(--control-height-compact);
+  height: var(--control-height-compact);
   flex-shrink: 0;
   border-radius: var(--radius-control);
   background: var(--color-surface-secondary);

@@ -1,69 +1,8 @@
+/**
+ * @deprecated Legacy Foundation gallery global entry — NOT imported by production.
+ * Production uses `globals.css` (see src/main.tsx).
+ * Do not import this file from product code.
+ */
+
 @import "./tokens.css";
 @import "./design-system.css";
-
-*,
-*::before,
-*::after {
-  box-sizing: border-box;
-}
-
-html,
-body,
-#root {
-  height: 100%;
-  width: 100%;
-  margin: 0;
-}
-
-body {
-  font: var(--font-body);
-  color: var(--color-text-primary);
-  background: var(--color-background);
-  overflow: hidden;
-}
-
-button,
-input,
-select {
-  font: inherit;
-}
-
-a {
-  color: inherit;
-}
-
-:focus {
-  outline: none;
-}
-
-:focus-visible {
-  box-shadow: var(--focus-ring);
-}
-
-.type-display {
-  font: var(--font-display);
-  letter-spacing: -0.02em;
-}
-
-.type-heading {
-  font: var(--font-heading);
-  letter-spacing: -0.01em;
-}
-
-.type-body {
-  font: var(--font-body);
-}
-
-.type-body-small {
-  font: var(--font-body-small);
-}
-
-.type-label {
-  font: var(--font-label);
-  color: var(--color-text-secondary);
-}
-
-.type-caption {
-  font: var(--font-caption);
-  color: var(--color-text-tertiary);
-}

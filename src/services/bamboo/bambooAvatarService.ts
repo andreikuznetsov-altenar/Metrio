@@ -11,9 +11,11 @@ export type AvatarCacheStatus = "ok" | "missing" | "forbidden" | "failed";
 interface CacheEntry {
   dataUrl: string | null;
   status: AvatarCacheStatus;
+  expiresAt?: number;
 }
 
 const MAX_CACHE_ENTRIES = 500;
+const TRANSIENT_FAILURE_TTL_MS = 30_000;
 const memoryCache = new Map<string, CacheEntry>();
 const inflight = new Map<string, Promise<string | null>>();
 
@@ -30,6 +32,16 @@ function cacheKey(
   size: BambooEmployeePhotoSize,
 ): string {
   return `${subdomain}:${employeeId}:${size}`;
+}
+
+function getFreshEntry(key: string): CacheEntry | undefined {
+  const entry = memoryCache.get(key);
+  if (!entry) return undefined;
+  if (entry.expiresAt != null && entry.expiresAt <= Date.now()) {
+    memoryCache.delete(key);
+    return undefined;
+  }
+  return entry;
 }
 
 function setCacheEntry(key: string, entry: CacheEntry): void {
@@ -65,6 +77,19 @@ export function resetAvatarSession(): void {
   clearPersonDirectory();
 }
 
+export function invalidateEmployeeAvatarCache(
+  employeeId: string,
+  subdomain: string,
+  size: BambooEmployeePhotoSize = "small",
+  reason: "broken-image" | "manual" = "manual",
+): void {
+  const key = cacheKey(subdomain, employeeId.trim(), size);
+  memoryCache.delete(key);
+  if (reason === "broken-image") {
+    setCacheEntry(key, { dataUrl: null, status: "missing" });
+  }
+}
+
 export async function fetchEmployeeAvatarDataUrl(
   employeeId: string,
   subdomain: string,
@@ -74,7 +99,7 @@ export async function fetchEmployeeAvatarDataUrl(
   if (!trimmedId || !subdomain.trim()) return null;
 
   const key = cacheKey(subdomain, trimmedId, size);
-  const cached = memoryCache.get(key);
+  const cached = getFreshEntry(key);
   if (cached) {
     return cached.dataUrl;
   }
@@ -108,6 +133,14 @@ export async function fetchEmployeeAvatarDataUrl(
       return src;
     } catch (error) {
       const status = statusFromError(error);
+      if (status === "failed") {
+        setCacheEntry(key, {
+          dataUrl: null,
+          status,
+          expiresAt: Date.now() + TRANSIENT_FAILURE_TTL_MS,
+        });
+        return null;
+      }
       setCacheEntry(key, { dataUrl: null, status });
       return null;
     } finally {
@@ -125,7 +158,7 @@ export function peekCachedEmployeeAvatar(
   size: BambooEmployeePhotoSize = "small",
 ): string | null | undefined {
   const key = cacheKey(subdomain, employeeId.trim(), size);
-  const entry = memoryCache.get(key);
+  const entry = getFreshEntry(key);
   if (!entry) return undefined;
   return entry.dataUrl;
 }
@@ -136,7 +169,7 @@ export function peekAvatarCacheStatus(
   size: BambooEmployeePhotoSize = "small",
 ): AvatarCacheStatus | undefined {
   const key = cacheKey(subdomain, employeeId.trim(), size);
-  return memoryCache.get(key)?.status;
+  return getFreshEntry(key)?.status;
 }
 
 export function clearEmployeeAvatarCacheForTests(): void {

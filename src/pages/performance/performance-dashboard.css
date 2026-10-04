@@ -216,8 +216,8 @@
 
 .performance-metric-card--interactive {
   transition:
-    background 140ms var(--transition-easing),
-    box-shadow 140ms var(--transition-easing);
+    background var(--motion-control) var(--ease-standard),
+    box-shadow var(--motion-control) var(--ease-standard);
 }
 
 .performance-metric-card--interactive:hover {
@@ -450,7 +450,7 @@
 
 .performance-avatar {
   width: 32px;
-  height: 32px;
+  height: var(--control-height-compact);
   border-radius: var(--radius-round);
   background: var(--color-surface-secondary);
   border: 1px solid var(--color-border);
@@ -892,7 +892,7 @@
   text-align: left;
   padding: var(--space-3);
   border: 1px solid var(--color-border-subtle);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-card);
   background: var(--color-surface-secondary);
   cursor: pointer;
 }
@@ -1014,7 +1014,7 @@
   align-items: center;
   justify-content: center;
   width: 32px;
-  height: 32px;
+  height: var(--control-height-compact);
   border: none;
   border-radius: var(--radius-sm);
   background: transparent;
@@ -1033,7 +1033,7 @@
   gap: var(--space-3);
   margin-bottom: var(--space-5);
   padding: var(--space-3) var(--space-4);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-card);
   background: var(--color-surface-secondary);
 }
 
@@ -1056,7 +1056,7 @@
 
 .performance-trend-card--flat {
   padding: var(--space-3) var(--space-4);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-card);
   background: var(--color-surface-secondary);
 }
 
@@ -1084,7 +1084,7 @@
   align-items: flex-start;
   gap: var(--space-3);
   padding: var(--space-3);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-card);
   background: var(--color-surface-secondary);
 }
 

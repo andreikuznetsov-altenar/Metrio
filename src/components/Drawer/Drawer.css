@@ -72,24 +72,6 @@
   overflow-y: auto;
   overflow-x: hidden;
   padding: var(--drawer-body-padding);
-  scroll-behavior: smooth;
-  scrollbar-gutter: stable;
-  scrollbar-width: thin;
-  scrollbar-color: color-mix(in srgb, var(--color-text-tertiary) 35%, transparent)
-    transparent;
-}
-
-.drawer__body::-webkit-scrollbar {
-  width: 6px;
-}
-
-.drawer__body::-webkit-scrollbar-thumb {
-  background: color-mix(in srgb, var(--color-text-tertiary) 35%, transparent);
-  border-radius: var(--radius-pill);
-}
-
-.drawer__body:hover::-webkit-scrollbar-thumb {
-  background: color-mix(in srgb, var(--color-text-tertiary) 55%, transparent);
 }
 
 @media (prefers-reduced-motion: reduce) {

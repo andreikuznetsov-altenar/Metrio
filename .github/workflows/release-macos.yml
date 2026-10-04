@@ -26,6 +26,7 @@ jobs:
 
       - name: Test gate
         run: |
+          npm run verify:design-system
           npm test
           npm run build
           (cd src-tauri && cargo test && cargo check)

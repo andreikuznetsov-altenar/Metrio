@@ -20,8 +20,12 @@ describe("layout shell", () => {
     const css = fs.readFileSync(globalsPath, "utf8");
     expect(css).toContain("overflow: hidden");
 
-    const scrollPath = path.resolve(process.cwd(), "src/components/ScrollArea/ScrollArea.css");
+    const scrollPath = path.resolve(
+      process.cwd(),
+      "src/styles/ui-interaction-system.css",
+    );
     const scrollCss = fs.readFileSync(scrollPath, "utf8");
+    expect(scrollCss).toContain(".metrio-scroll");
     expect(scrollCss).toContain("overflow-y: auto");
     expect(scrollCss).toContain("overflow-x: hidden");
   });

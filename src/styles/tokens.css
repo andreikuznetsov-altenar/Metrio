@@ -93,13 +93,19 @@
   --color-background: #f8f9fb;
   --color-surface: #ffffff;
   --color-surface-secondary: #f1f3f6;
+  --color-surface-tertiary: #e8ebf0;
   --color-border: #e2e5eb;
+  --color-border-subtle: color-mix(in srgb, var(--color-border) 65%, transparent);
   --color-text-primary: #111318;
   --color-text-secondary: #5c6370;
   --color-text-tertiary: #8b919c;
   --color-success: #15803d;
   --color-warning: #b45309;
   --color-danger: #dc2626;
+  --color-banner-warning-bg: color-mix(in srgb, var(--color-warning) 12%, var(--color-surface));
+  --color-banner-danger-bg: color-mix(in srgb, var(--color-danger) 10%, var(--color-surface));
+  --color-banner-success-bg: color-mix(in srgb, var(--color-success) 10%, var(--color-surface));
+  --color-banner-neutral-bg: var(--color-surface-secondary);
 
   --connection-status-connected-bg: color-mix(in srgb, var(--color-success) 14%, var(--color-surface));
   --connection-status-connected-border: color-mix(in srgb, var(--color-success) 42%, var(--color-border));
@@ -121,13 +127,19 @@
   --color-background: #0f1115;
   --color-surface: #171a21;
   --color-surface-secondary: #1e222b;
+  --color-surface-tertiary: #252a34;
   --color-border: #2a2f3a;
+  --color-border-subtle: color-mix(in srgb, var(--color-border) 55%, transparent);
   --color-text-primary: #f3f4f6;
   --color-text-secondary: #a1a7b3;
   --color-text-tertiary: #6b7280;
   --color-success: #22c55e;
   --color-warning: #f59e0b;
   --color-danger: #ef4444;
+  --color-banner-warning-bg: color-mix(in srgb, var(--color-warning) 14%, var(--color-surface));
+  --color-banner-danger-bg: color-mix(in srgb, var(--color-danger) 12%, var(--color-surface));
+  --color-banner-success-bg: color-mix(in srgb, var(--color-success) 12%, var(--color-surface));
+  --color-banner-neutral-bg: var(--color-surface-secondary);
 
   /* Connection status badges */
   --connection-status-connected-bg: color-mix(in srgb, var(--color-success) 14%, var(--color-surface));

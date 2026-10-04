@@ -4,6 +4,7 @@ import { resolvePersonAvatarIdentity } from "../../domain/people/personDirectory
 import { getInitials } from "../../platform/avatar";
 import {
   fetchEmployeeAvatarDataUrl,
+  invalidateEmployeeAvatarCache,
   peekCachedEmployeeAvatar,
   resolveAvatarSubdomain,
 } from "../../services/bamboo/bambooAvatarService";
@@ -117,6 +118,12 @@ export function PersonAvatar({
           onError={() => {
             setSrc(null);
             setPhotoVisible(false);
+            const employeeId = identity.bambooEmployeeId;
+            if (!employeeId) return;
+            void resolveAvatarSubdomain().then((subdomain) => {
+              if (!subdomain) return;
+              invalidateEmployeeAvatarCache(employeeId, subdomain, photoSize, "broken-image");
+            });
           }}
         />
       ) : null}

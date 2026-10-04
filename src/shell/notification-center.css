@@ -79,7 +79,7 @@
 .notification-center__filters .segmented-control__option {
   flex: 1 1 0;
   justify-content: center;
-  min-height: 32px;
+  min-height: var(--control-height-compact);
   min-width: 0;
   padding: 4px 5px;
   font-size: 11px;

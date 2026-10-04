@@ -127,8 +127,8 @@
 }
 
 .analytics-issue-row__jira {
-  width: 32px;
-  height: 32px;
+  width: var(--control-height-compact);
+  height: var(--control-height-compact);
   flex-shrink: 0;
   display: inline-flex;
   align-items: center;
@@ -139,9 +139,9 @@
   color: var(--color-text-secondary);
   cursor: pointer;
   transition:
-    background 120ms var(--transition-easing),
-    color 120ms var(--transition-easing),
-    border-color 120ms var(--transition-easing);
+    background var(--motion-hover) var(--ease-standard),
+    color var(--motion-hover) var(--ease-standard),
+    border-color var(--motion-hover) var(--ease-standard);
 }
 
 .analytics-issue-row__jira:hover {

@@ -69,4 +69,24 @@ describe("bambooAvatarService", () => {
     await fetchEmployeeAvatarDataUrl("9", "acme");
     expect(peekAvatarCacheStatus("9", "acme")).toBe("forbidden");
   });
+
+  it("allows retry after transient 5xx TTL expires", async () => {
+    vi.useFakeTimers();
+    vi.mocked(invoke).mockRejectedValueOnce({
+      message: "server error",
+      code: "bamboo_api_error",
+      status: 503,
+    });
+    await fetchEmployeeAvatarDataUrl("10", "acme");
+    expect(peekAvatarCacheStatus("10", "acme")).toBe("failed");
+    vi.mocked(invoke).mockResolvedValueOnce({
+      content_type: "image/jpeg",
+      data_base64: "xyz",
+    });
+    await vi.advanceTimersByTimeAsync(31_000);
+    const retry = await fetchEmployeeAvatarDataUrl("10", "acme");
+    expect(retry).toContain("data:image/jpeg");
+    expect(invoke).toHaveBeenCalledTimes(2);
+    vi.useRealTimers();
+  });
 });

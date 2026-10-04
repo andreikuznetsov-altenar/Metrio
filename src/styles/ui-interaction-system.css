@@ -11,6 +11,7 @@
 /* —— Field focus: single accent border, no outer ring —— */
 .metrio-field:focus-visible,
 .input:focus-visible,
+.textarea:focus-visible,
 .select-trigger:focus-visible,
 .metrio-date-picker__trigger:focus-visible,
 .metrio-date-picker__input:focus-visible,
