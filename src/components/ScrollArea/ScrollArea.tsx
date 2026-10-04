@@ -6,7 +6,7 @@ export interface ScrollAreaProps extends HTMLAttributes<HTMLDivElement> {
 }
 
 export function ScrollArea({ children, className, ...props }: ScrollAreaProps) {
-  const classes = ["scroll-area", className].filter(Boolean).join(" ");
+  const classes = ["scroll-area", "metrio-scroll", className].filter(Boolean).join(" ");
 
   return (
     <div className={classes} {...props}>
