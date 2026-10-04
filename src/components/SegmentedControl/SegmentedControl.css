@@ -24,13 +24,18 @@
   z-index: 0;
 }
 
+.segmented-control {
+  min-height: var(--control-height);
+}
+
 .segmented-control__option {
   position: relative;
   z-index: 1;
   border: none;
   background: transparent;
   color: var(--color-text-secondary);
-  padding: var(--space-1) var(--space-3);
+  min-height: calc(var(--control-height) - 6px);
+  padding: 0 var(--space-3);
   border-radius: calc(var(--radius-control) - 3px);
   font-size: 13px;
   font-weight: 500;

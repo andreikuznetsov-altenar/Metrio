@@ -15,6 +15,21 @@
   --radius-card: 12px;
   --radius-round: 999px;
 
+  /* Controls (Pass 5E) */
+  --control-height: 36px;
+  --control-height-compact: 32px;
+  --button-group-gap: 8px;
+  --drawer-header-padding-x: 20px;
+  --drawer-header-padding-y: 18px;
+  --drawer-body-padding: 16px;
+
+  /* Typography scale */
+  --type-page-title: 20px;
+  --type-section-title: 16px;
+  --type-card-title: 15px;
+  --type-body: 13px;
+  --type-meta: 12px;
+
   /* Spacing (4px scale) */
   --space-1: 4px;
   --space-2: 8px;

@@ -50,7 +50,7 @@
   align-items: center;
   justify-content: space-between;
   gap: var(--space-3);
-  padding: var(--space-4) var(--space-4);
+  padding: var(--drawer-header-padding-y) var(--drawer-header-padding-x);
   border-bottom: 1px solid var(--color-border);
 }
 
@@ -62,13 +62,8 @@
 .drawer__header-toolbar {
   display: flex;
   align-items: center;
-  gap: var(--space-1);
+  gap: var(--button-group-gap);
   flex-shrink: 0;
-}
-
-.drawer__header-toolbar .icon-btn {
-  width: 36px;
-  height: 36px;
 }
 
 .drawer__body {
@@ -76,7 +71,7 @@
   min-height: 0;
   overflow-y: auto;
   overflow-x: hidden;
-  padding: var(--space-4);
+  padding: var(--drawer-body-padding);
   scroll-behavior: smooth;
   scrollbar-gutter: stable;
   scrollbar-width: thin;

@@ -1,10 +1,4 @@
-.drawer--analytics .drawer__header {
-  padding: var(--space-5) 56px var(--space-4) 24px;
-}
-
-.drawer--analytics .drawer__body {
-  padding: 24px;
-}
+/* Header/body padding: shared Drawer tokens (Pass 5E) */
 
 .analytics-drawer__header {
   display: flex;
@@ -34,7 +28,7 @@
 
 .analytics-drawer__title {
   margin: 0;
-  font-size: 21px;
+  font-size: var(--type-page-title);
   font-weight: 600;
   letter-spacing: -0.02em;
 }
@@ -184,15 +178,18 @@
   display: flex;
   gap: var(--space-3);
   align-items: flex-start;
-  padding: var(--space-3);
-  border-radius: var(--radius-control);
-  background: color-mix(in srgb, var(--color-accent) 6%, var(--color-surface-secondary));
+  max-width: 28rem;
+  margin: var(--space-2) auto 0;
+  padding: var(--space-4);
+  border-radius: var(--radius-card);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface-secondary);
   color: var(--color-text-secondary);
 }
 
 .analytics-drawer__aggregate-title {
   margin: 0;
-  font-size: 14px;
+  font-size: var(--type-card-title);
   font-weight: 600;
   color: var(--color-text-primary);
 }

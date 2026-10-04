@@ -2,14 +2,17 @@ import type { ButtonHTMLAttributes } from "react";
 import "./Button.css";
 
 export type ButtonVariant = "primary" | "secondary" | "ghost" | "danger";
+export type ButtonSize = "default" | "compact" | "small";
 
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: ButtonVariant;
+  size?: ButtonSize;
   loading?: boolean;
 }
 
 export function Button({
   variant = "primary",
+  size = "default",
   className,
   type = "button",
   loading = false,
@@ -20,6 +23,7 @@ export function Button({
   const classes = [
     "btn",
     `btn--${variant}`,
+    size === "compact" || size === "small" ? "btn--compact" : "",
     loading ? "btn--loading" : "",
     className,
   ]

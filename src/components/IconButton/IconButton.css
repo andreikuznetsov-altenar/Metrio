@@ -2,8 +2,8 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 32px;
-  height: 32px;
+  width: var(--control-height);
+  height: var(--control-height);
   padding: 0;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-control);
@@ -26,8 +26,15 @@
   background: color-mix(in srgb, var(--color-surface-secondary) 88%, var(--color-border));
 }
 
+.icon-btn--compact {
+  width: var(--control-height-compact);
+  height: var(--control-height-compact);
+}
+
 .icon-btn:focus-visible {
-  box-shadow: var(--focus-ring);
+  outline: var(--focus-outline);
+  outline-offset: var(--focus-outline-offset);
+  box-shadow: none;
 }
 
 .icon-btn:disabled {

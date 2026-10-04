@@ -2101,6 +2101,125 @@ test.describe("Metrio visual regression", () => {
     });
   });
 
+  test("button-size-system", async ({ page }) => {
+    await bootMetrio(page, "lead");
+    await expect(page.locator(".performance-metrics").first()).toBeVisible();
+    await expect(page.locator(".performance-metrics").first()).toHaveScreenshot(
+      "button-size-system.png",
+      { maxDiffPixelRatio: 0.03 },
+    );
+  });
+
+  test("card-surface-light", async ({ page }) => {
+    await page.addInitScript((fixtureId: string) => {
+      localStorage.setItem("metrio-connection-connected", "true");
+      localStorage.setItem("metrio-dev-fixture", fixtureId);
+      localStorage.setItem("metrio-theme", "light");
+    }, "lead");
+    await page.goto("/");
+    await expect(page.getByTestId("dashboard-ready")).toBeVisible({ timeout: 30_000 });
+    await expect(page.locator(".home-card").first()).toHaveScreenshot("card-surface-light.png", {
+      maxDiffPixelRatio: 0.02,
+    });
+  });
+
+  test("card-surface-dark", async ({ page }) => {
+    await page.addInitScript((fixtureId: string) => {
+      localStorage.setItem("metrio-connection-connected", "true");
+      localStorage.setItem("metrio-dev-fixture", fixtureId);
+      localStorage.setItem("metrio-theme", "dark");
+    }, "lead");
+    await page.goto("/");
+    await expect(page.getByTestId("dashboard-ready")).toBeVisible({ timeout: 30_000 });
+    await expect(page.locator(".home-card").first()).toHaveScreenshot("card-surface-dark.png", {
+      maxDiffPixelRatio: 0.02,
+    });
+  });
+
+  test("semantic-badge-map", async ({ page }) => {
+    await bootDashboardManager(page, 1440);
+    const teamActions = page.getByRole("region", { name: "Team actions" });
+    await expect(teamActions).toBeVisible();
+    await expect(teamActions).toHaveScreenshot("semantic-badge-map.png", {
+      maxDiffPixelRatio: 0.02,
+    });
+  });
+
+  test("compact-action-row", async ({ page }) => {
+    await bootDashboardManager(page, 1440);
+    const card = page.getByRole("region", { name: "New assignments" });
+    await expect(card).toHaveScreenshot("compact-action-row.png", { maxDiffPixelRatio: 0.02 });
+  });
+
+  test("drawer-header-notifications", async ({ page }) => {
+    await bootMetrioWithNotificationFixture(page, 6);
+    await page.getByRole("button", { name: /Notifications, 6 unread/i }).click();
+    await expect(page.locator(".drawer--notifications")).toBeVisible();
+    await expect(page.locator(".drawer__header")).toHaveScreenshot("drawer-header-notifications.png", {
+      maxDiffPixelRatio: 0.02,
+    });
+  });
+
+  test("drawer-header-goal", async ({ page }) => {
+    await bootGoalsVisual(page, "lead", "light");
+    await page.getByTestId("goal-list-row").first().getByRole("button", { name: "Open goal" }).click();
+    await expect(page.getByTestId("goal-detail-drawer")).toBeVisible();
+    await expect(page.locator(".drawer__header")).toHaveScreenshot("drawer-header-goal.png", {
+      maxDiffPixelRatio: 0.02,
+    });
+  });
+
+  test("drawer-header-person", async ({ page }) => {
+    await bootMetrio(page, "lead");
+    await page.getByRole("button", { name: /View person/i }).first().click();
+    await expect(page.locator(".drawer--person, .drawer")).toBeVisible({ timeout: 15_000 });
+    await expect(page.locator(".drawer__header")).toHaveScreenshot("drawer-header-person.png", {
+      maxDiffPixelRatio: 0.02,
+    });
+  });
+
+  test("drawer-header-analytics", async ({ page }) => {
+    await bootMetrio(page, "lead");
+    await page.getByRole("button", { name: /View Completed details/i }).click();
+    await expect(page.locator(".drawer--analytics")).toBeVisible();
+    await expect(page.locator(".drawer__header")).toHaveScreenshot("drawer-header-analytics.png", {
+      maxDiffPixelRatio: 0.02,
+    });
+  });
+
+  test("empty-state-light", async ({ page }) => {
+    test.setTimeout(60_000);
+    await openFeedbackDisconnectedState(page);
+    await expect(page.locator(".feedback-empty-state").first()).toHaveScreenshot(
+      "empty-state-light.png",
+      { maxDiffPixelRatio: 0.02 },
+    );
+  });
+
+  test("empty-state-dark", async ({ page }) => {
+    test.setTimeout(60_000);
+    await bootMetrioFeedbackDisconnected(page, "dark");
+    await page.getByRole("button", { name: /^feedback$/i }).click();
+    await page.getByRole("button", { name: /^Survey$/i }).click();
+    await expect(page.getByTestId("feedback-survey-disconnected")).toBeVisible({
+      timeout: 15_000,
+    });
+    await expect(page.locator(".feedback-empty-state").first()).toHaveScreenshot(
+      "empty-state-dark.png",
+      { maxDiffPixelRatio: 0.02 },
+    );
+  });
+
+  test("focus-states", async ({ page }) => {
+    await page.goto("/");
+    await expect(page.getByTestId("connection-screen")).toBeVisible({ timeout: 15_000 });
+    await page.getByLabel(/^api token$/i).focus();
+    await expect(page).toHaveScreenshot("focus-states.png", {
+      fullPage: true,
+      maxDiffPixelRatio: 0.02,
+    });
+  });
+
   test("onboarding checklist dark", async ({ page }) => {
     const onboardingJson = serializeOnboardingChecklistVisualFixtureForPlaywright();
     await page.addInitScript((payload: string) => {

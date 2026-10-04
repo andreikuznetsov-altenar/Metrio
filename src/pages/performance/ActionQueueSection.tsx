@@ -2,6 +2,7 @@ import { Badge } from "../../components/Badge/Badge";
 import { Button } from "../../components/Button/Button";
 import type { ActionItem } from "../../domain/actions/actionTypes";
 import { buildDashboardActionRow } from "../../domain/actions/actionPresentation";
+import { badgeVariantForAttentionLabel } from "../../platform/attentionSemanticBadge";
 import "./action-queue.css";
 
 export interface ActionQueueSectionProps {
@@ -40,7 +41,10 @@ export function ActionQueueSection({
                   data-testid="dashboard-action-row"
                 >
                   <span className="action-queue__dashboard-subject">{row.subject}</span>
-                  <Badge variant="neutral" className="action-queue__dashboard-badge">
+                  <Badge
+                    variant={badgeVariantForAttentionLabel(row.reasonTag)}
+                    className="action-queue__dashboard-badge"
+                  >
                     {row.reasonTag}
                   </Badge>
                   <span className="action-queue__dashboard-context">
