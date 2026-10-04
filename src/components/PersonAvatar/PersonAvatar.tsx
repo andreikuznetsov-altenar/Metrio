@@ -1,74 +1,125 @@
-import { useEffect, useState } from "react";
-import { resolveBambooSubdomain } from "../../config/product";
+import { useEffect, useMemo, useState } from "react";
+import type { Person } from "../../domain/people/types";
+import { resolvePersonAvatarIdentity } from "../../domain/people/personDirectory";
 import { getInitials } from "../../platform/avatar";
-import { loadPreferences } from "../../platform/preferences";
-import { fetchEmployeeAvatarDataUrl } from "../../services/bamboo/bambooAvatarService";
+import {
+  fetchEmployeeAvatarDataUrl,
+  peekCachedEmployeeAvatar,
+  resolveAvatarSubdomain,
+} from "../../services/bamboo/bambooAvatarService";
+import { bambooPhotoSizeForAvatar } from "./personAvatarPhotoSize";
 import "./PersonAvatar.css";
 
-export type PersonAvatarSize = "sm" | "md" | "lg";
+export type PersonAvatarSize = "xs" | "sm" | "md" | "lg" | "xl";
 
 const SIZE_CLASS: Record<PersonAvatarSize, string> = {
+  xs: "person-avatar--xs",
   sm: "person-avatar--sm",
   md: "person-avatar--md",
   lg: "person-avatar--lg",
+  xl: "person-avatar--xl",
 };
 
 export interface PersonAvatarProps {
-  employeeId: string;
-  displayName: string;
+  person?: Person | null;
+  personId?: string;
+  displayName?: string;
+  bambooEmployeeId?: string;
   size?: PersonAvatarSize;
   className?: string;
 }
 
 export function PersonAvatar({
-  employeeId,
+  person,
+  personId,
   displayName,
+  bambooEmployeeId,
   size = "sm",
   className,
 }: PersonAvatarProps) {
+  const identity = useMemo(
+    () =>
+      resolvePersonAvatarIdentity({
+        person,
+        personId,
+        displayName,
+        bambooEmployeeId,
+      }),
+    [person, personId, displayName, bambooEmployeeId],
+  );
+
+  const photoSize = bambooPhotoSizeForAvatar(size);
+  const initials = getInitials(identity.displayName);
+  const skipRemoteAvatar = import.meta.env.MODE === "test";
+
   const [src, setSrc] = useState<string | null>(null);
-  const initials = getInitials(displayName);
-  const skipRemoteAvatar =
-    import.meta.env.MODE === "test" ||
-    import.meta.env.VITE_VISUAL_FIXTURE === "1";
+  const [photoVisible, setPhotoVisible] = useState(false);
 
   useEffect(() => {
-    if (skipRemoteAvatar) return;
+    if (skipRemoteAvatar) {
+      setSrc(null);
+      setPhotoVisible(false);
+      return;
+    }
+
+    const employeeId = identity.bambooEmployeeId;
+    if (!employeeId) {
+      setSrc(null);
+      setPhotoVisible(false);
+      return;
+    }
+
     let cancelled = false;
+
     void (async () => {
-      const prefs = await loadPreferences();
-      const subdomain = resolveBambooSubdomain(prefs);
-      if (!subdomain || !employeeId) return;
-      const dataUrl = await fetchEmployeeAvatarDataUrl(employeeId, subdomain);
+      const subdomain = await resolveAvatarSubdomain();
+      if (!subdomain || cancelled) return;
+
+      const cached = peekCachedEmployeeAvatar(employeeId, subdomain, photoSize);
+      if (cached !== undefined) {
+        setSrc(cached);
+        setPhotoVisible(Boolean(cached));
+        return;
+      }
+
+      const dataUrl = await fetchEmployeeAvatarDataUrl(employeeId, subdomain, photoSize);
       if (!cancelled) {
         setSrc(dataUrl);
+        setPhotoVisible(Boolean(dataUrl));
       }
     })();
+
     return () => {
       cancelled = true;
     };
-  }, [employeeId, skipRemoteAvatar]);
+  }, [identity.bambooEmployeeId, photoSize, skipRemoteAvatar]);
 
   const classes = ["person-avatar", SIZE_CLASS[size], className]
     .filter(Boolean)
     .join(" ");
 
-  if (src) {
-    return (
-      <img
-        className={classes}
-        src={src}
-        alt=""
-        aria-hidden
-        loading="lazy"
-        onError={() => setSrc(null)}
-      />
-    );
-  }
-
   return (
-    <span className={classes} aria-hidden>
-      {initials}
+    <span className={classes} aria-hidden data-testid="person-avatar">
+      <span className="person-avatar__initials">{initials}</span>
+      {src ? (
+        <img
+          className={[
+            "person-avatar__photo",
+            photoVisible ? "person-avatar__photo--visible" : "",
+          ]
+            .filter(Boolean)
+            .join(" ")}
+          src={src}
+          alt=""
+          loading="lazy"
+          decoding="async"
+          onLoad={() => setPhotoVisible(true)}
+          onError={() => {
+            setSrc(null);
+            setPhotoVisible(false);
+          }}
+        />
+      ) : null}
     </span>
   );
 }
