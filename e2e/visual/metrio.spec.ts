@@ -523,7 +523,7 @@ test.describe("Metrio visual regression", () => {
   test("analytics-backflows-zero", async ({ page }) => {
     await bootMetrio(page, "lead");
     await page.getByRole("button", { name: /View Backflows details/i }).click();
-    await expect(page.locator(".analytics-drilldown-drawer")).toBeVisible({ timeout: 10_000 });
+    await expect(page.locator(".drawer--analytics")).toBeVisible({ timeout: 10_000 });
     await expect(page).toHaveScreenshot("analytics-backflows-zero.png", {
       fullPage: true,
       maxDiffPixelRatio: 0.02,
@@ -533,7 +533,7 @@ test.describe("Metrio visual regression", () => {
   test("analytics-completed", async ({ page }) => {
     await bootMetrio(page, "lead");
     await page.getByRole("button", { name: /View Completed details/i }).click();
-    await expect(page.locator(".analytics-drilldown-drawer")).toBeVisible({ timeout: 10_000 });
+    await expect(page.locator(".drawer--analytics")).toBeVisible({ timeout: 10_000 });
     await expect(page).toHaveScreenshot("analytics-completed.png", {
       fullPage: true,
       maxDiffPixelRatio: 0.02,
