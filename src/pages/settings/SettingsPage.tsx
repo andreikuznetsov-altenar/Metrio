@@ -5,6 +5,8 @@ import { useFeedbackSurveyStore } from "../../app/feedbackSurveyStore";
 import { Button } from "../../components/Button/Button";
 import { Input } from "../../components/Input/Input";
 import { useToast } from "../../components/Toast/ToastContext";
+import { ATLASSIAN_API_TOKEN_URL, getBambooApiKeyHelpUrl } from "../../config/links";
+import { openExternalUrl } from "../../platform/openExternal";
 import { syncGeneralPreferencesToNative } from "../../platform/generalPreferencesSync";
 import {
   testBambooConnectionSaved,
@@ -206,7 +208,7 @@ export function SettingsPage({
             Manage secure credentials for your company integrations.
           </p>
 
-          <section className="settings-card">
+          <section className="settings-card settings-card--compact">
             <h3 className="settings-card__title">Work email</h3>
             <p className="settings-card__description">
               Used to match your Metrio account with Jira and Bamboo.
@@ -217,7 +219,7 @@ export function SettingsPage({
             />
           </section>
 
-          <section className="settings-card">
+          <section className="settings-card" data-testid="settings-jira-card">
             <div className="settings-card__head">
               <h3 className="settings-card__title">Jira</h3>
               <span
@@ -236,14 +238,26 @@ export function SettingsPage({
               busy={busy}
               onSave={onSaveJiraToken}
             />
-            <div className="settings-button-group">
+            <div
+              className="settings-button-group settings-credential-actions"
+              data-testid="jira-credential-actions"
+            >
               <Button type="button" variant="secondary" disabled={busy} onClick={() => void onTestJira()}>
                 Test connection
+              </Button>
+              <Button
+                type="button"
+                variant="secondary"
+                disabled={busy}
+                data-testid="jira-get-api-token"
+                onClick={() => void openExternalUrl(ATLASSIAN_API_TOKEN_URL)}
+              >
+                Get API token
               </Button>
             </div>
           </section>
 
-          <section className="settings-card">
+          <section className="settings-card" data-testid="settings-bamboo-card">
             <div className="settings-card__head">
               <h3 className="settings-card__title">BambooHR</h3>
               <span
@@ -262,9 +276,21 @@ export function SettingsPage({
               busy={busy}
               onSave={onSaveBambooKey}
             />
-            <div className="settings-button-group">
+            <div
+              className="settings-button-group settings-credential-actions"
+              data-testid="bamboo-credential-actions"
+            >
               <Button type="button" variant="secondary" disabled={busy} onClick={() => void onTestBamboo()}>
                 Test connection
+              </Button>
+              <Button
+                type="button"
+                variant="secondary"
+                disabled={busy}
+                data-testid="bamboo-api-key-help"
+                onClick={() => void openExternalUrl(getBambooApiKeyHelpUrl())}
+              >
+                How to get API key
               </Button>
             </div>
           </section>
