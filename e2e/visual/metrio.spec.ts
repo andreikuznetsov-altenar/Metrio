@@ -2626,4 +2626,107 @@ test.describe("Metrio visual regression", () => {
       { maxDiffPixelRatio: 0.02 },
     );
   });
+
+  test("people-with-photos", async ({ page }) => {
+    await bootMetrio(page, "lead");
+    await clickSubnav(page, /^people$/i);
+    await page.waitForTimeout(200);
+    await expect(page).toHaveScreenshot("people-with-photos.png", {
+      fullPage: true,
+      maxDiffPixelRatio: 0.02,
+    });
+  });
+
+  test("people-mixed-photo-fallback", async ({ page }) => {
+    await bootMetrio(page, "lead");
+    await clickSubnav(page, /^people$/i);
+    await expect(page.locator('[data-testid="person-avatar"]').first()).toBeVisible();
+    await expect(page).toHaveScreenshot("people-mixed-photo-fallback.png", {
+      fullPage: true,
+      maxDiffPixelRatio: 0.02,
+    });
+  });
+
+  test("person-drawer-photo", async ({ page }) => {
+    await bootMetrio(page, "lead");
+    await openFirstAttentionPerson(page);
+    await page.waitForTimeout(200);
+    const drawer = page.locator(".drawer--person-detail");
+    await expect(drawer).toBeVisible();
+    await expect(drawer).toHaveScreenshot("person-drawer-photo.png", {
+      maxDiffPixelRatio: 0.02,
+    });
+  });
+
+  test("person-brief-photo", async ({ page }) => {
+    await bootMetrio(page, "lead");
+    await openFirstAttentionPerson(page);
+    await page.getByRole("button", { name: "Brief" }).click();
+    await page.waitForTimeout(200);
+    await expect(page.getByTestId("person-brief-drawer")).toBeVisible();
+    await expect(page.getByTestId("person-brief-drawer")).toHaveScreenshot(
+      "person-brief-photo.png",
+      { maxDiffPixelRatio: 0.02 },
+    );
+  });
+
+  test("dashboard-team-actions-photo", async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem("metrio-connection-connected", "true");
+      localStorage.setItem("metrio-dev-fixture", "lead");
+      localStorage.setItem("metrio-theme", "light");
+    });
+    await page.goto("/");
+    await expect(page.getByTestId("dashboard-ready")).toBeVisible({ timeout: 30_000 });
+    const row = page.getByTestId("dashboard-action-row").first();
+    if (await row.isVisible().catch(() => false)) {
+      await expect(row).toHaveScreenshot("dashboard-team-actions-photo.png", {
+        maxDiffPixelRatio: 0.02,
+      });
+    }
+  });
+
+  test("new-starter-photo", async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem("metrio-connection-connected", "true");
+      localStorage.setItem("metrio-dev-fixture", "lead");
+      localStorage.setItem("metrio-theme", "light");
+    });
+    await page.goto("/");
+    await expect(page.getByTestId("dashboard-ready")).toBeVisible({ timeout: 30_000 });
+    const starter = page.getByTestId("dashboard-new-starter-row").first();
+    if (await starter.isVisible().catch(() => false)) {
+      await page.waitForTimeout(200);
+      await expect(starter).toHaveScreenshot("new-starter-photo.png", {
+        maxDiffPixelRatio: 0.02,
+      });
+    }
+  });
+
+  test("notification-person-photo", async ({ page }) => {
+    await bootMetrioWithNotificationFixture(page, 6);
+    await page.getByRole("button", { name: /Notifications, 6 unread/i }).click();
+    await page.waitForTimeout(200);
+    await expect(page.locator(".drawer--notifications")).toHaveScreenshot(
+      "notification-person-photo.png",
+      { maxDiffPixelRatio: 0.02 },
+    );
+  });
+
+  test("dark-person-photo", async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem("metrio-connection-connected", "true");
+      localStorage.setItem("metrio-dev-fixture", "lead");
+      localStorage.setItem("metrio-theme", "dark");
+    });
+    await page.goto("/");
+    await expect(page.getByTestId("app-shell")).toBeVisible({ timeout: 30_000 });
+    await openPerformanceFromHome(page);
+    await clickSubnav(page, /^people$/i);
+    await page.waitForTimeout(200);
+    await expect(page).toHaveScreenshot("dark-person-photo.png", {
+      fullPage: true,
+      maxDiffPixelRatio: 0.02,
+    });
+  });
 });
