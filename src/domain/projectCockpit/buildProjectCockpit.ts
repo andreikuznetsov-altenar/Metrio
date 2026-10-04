@@ -27,7 +27,11 @@ import type { MetricCardData } from "../performance";
 import type { OperationalRules } from "../operationalRules/operationalRulesTypes";
 import { DEFAULT_OPERATIONAL_RULES } from "../operationalRules/operationalRulesDefaults";
 import { taskHealthThresholdsFromRules } from "../operationalRules/normalizeOperationalRules";
-import { comparisonPeriodLabel, type PerformanceDateRange } from "../performance/performanceDateRange";
+import {
+  comparisonPeriodLabel,
+  formatPerformanceDateRangeDisplay,
+  type PerformanceDateRange,
+} from "../performance/performanceDateRange";
 import { formatAttentionHealthLabel } from "../../pages/performance/trendPresentation";
 import { buildProjectDependencySection } from "../dependencies/buildProjectDependencies";
 import type { DeliveryDependencyIndex } from "../dependencies/dependencyTypes";
@@ -323,7 +327,10 @@ export function buildProjectCockpit(input: BuildProjectCockpitInput): ProjectCoc
     identity,
     initiative,
     periodLabel: input.displayRange
-      ? comparisonPeriodLabel(input.displayRange)
+      ? `${formatPerformanceDateRangeDisplay(
+          input.displayRange.from,
+          input.displayRange.to,
+        )} · ${comparisonPeriodLabel(input.displayRange)}`
       : "Selected period",
     summary: {
       active,

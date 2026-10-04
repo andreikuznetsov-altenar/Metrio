@@ -26,7 +26,7 @@ export function aggregateStaleReviewActions(
     id: "team-stale-review",
     kind: "review_bottleneck",
     severity: rows.length >= 3 ? "warning" : "info",
-    title: `${rows.length} tasks in Review for 7+ days`,
+    title: `${rows.length} ${rows.length === 1 ? "task" : "tasks"} in Review for 7+ days`,
     description:
       extra > 0
         ? `${preview.join(" · ")} · +${extra}`

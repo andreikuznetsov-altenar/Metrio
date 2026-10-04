@@ -137,6 +137,22 @@ describe("buildProjectCockpit KPI parity", () => {
     expect(cockpit.summary.completedInPeriod).toBe(kpiDirect.completedCount);
     expect(cockpit.deliveryFlow.backflow).toBe(kpiDirect.backflowCount);
   });
+
+  it("formats period label with range and comparison", () => {
+    const snapshot = snapshotWith([activeIssue("UX-1", "In Progress")]);
+    const cockpit = buildProjectCockpit({
+      scope: { kind: "project", projectKey: "UX" },
+      snapshot,
+      params,
+      displayRange: { from: "2026-09-04", to: "2026-10-04", preset: "30d" },
+      projects: [{ key: "UX", name: "UX Platform", jiraUrl: "https://jira/UX" }],
+      knowledgeLinks: [],
+      currentUser: managerUser,
+      jiraBaseUrl: "https://jira",
+    });
+    expect(cockpit.periodLabel).toContain("4 Sep");
+    expect(cockpit.periodLabel).toContain("vs previous 30 days");
+  });
 });
 
 describe("buildProjectCockpit access", () => {

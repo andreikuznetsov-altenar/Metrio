@@ -143,6 +143,7 @@ export function TeamOverviewView({
   return (
     <>
       <ActionQueueSection
+        variant="dashboard"
         title={actionTitle}
         items={teamActions}
         emptyMessage="No high-priority team actions right now."
