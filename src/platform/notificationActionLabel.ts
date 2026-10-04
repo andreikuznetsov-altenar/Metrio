@@ -1,9 +1,30 @@
 import type { NotificationEvent, NotificationTarget } from "./notificationTypes";
 
+const JIRA_ISSUE_EVENT_TYPES: NotificationEvent["type"][] = [
+  "task_attention",
+  "jira_assignment",
+  "jira_reassignment",
+];
+
+function isJiraIssueEvent(event: NotificationEvent, target?: NotificationTarget): boolean {
+  if (!JIRA_ISSUE_EVENT_TYPES.includes(event.type)) {
+    return false;
+  }
+  if (event.issueKey?.trim()) {
+    return true;
+  }
+  const resolved = target ?? event.target;
+  return resolved?.kind === "jira";
+}
+
 export function notificationActionLabel(
   event: NotificationEvent,
   target?: NotificationTarget,
 ): string | null {
+  if (isJiraIssueEvent(event, target)) {
+    return "Open Jira";
+  }
+
   const resolved = target ?? event.target;
   if (!resolved) return null;
 

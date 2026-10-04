@@ -14,6 +14,18 @@ function event(partial: Partial<NotificationEvent>): NotificationEvent {
 }
 
 describe("notificationActionLabel", () => {
+  it("opens Jira for task attention with issue key and person target", () => {
+    expect(
+      notificationActionLabel(
+        event({
+          type: "task_attention",
+          issueKey: "AGTC-105",
+          target: { kind: "person", personId: "p1" },
+        }),
+      ),
+    ).toBe("Open Jira");
+  });
+
   it("maps targets to specific labels", () => {
     expect(
       notificationActionLabel(
