@@ -8,6 +8,7 @@ Clean desktop foundation (Phase 0–1): Tauri 2, React, TypeScript, Vite.
 npm install
 npm run dev
 npm test
+npm run verify:design-system
 npm run build
 npm run tauri dev
 npm run tauri build
