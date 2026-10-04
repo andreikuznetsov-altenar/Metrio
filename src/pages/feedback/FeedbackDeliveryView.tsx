@@ -31,6 +31,7 @@ export function FeedbackDeliveryView({
 
   return (
     <Section title="Delivery" subtitle="Send surveys and track delivery" variant="plain">
+      <div className="feedback-surface-card feedback-surface-card--stack">
       <div className="ds-feedback-delivery-stats">
         <div className="ds-feedback-stat">
           <span className="ds-feedback-stat__label">Recipients</span>
@@ -98,6 +99,7 @@ export function FeedbackDeliveryView({
             ))}
           </tbody>
         </table>
+      </div>
       </div>
     </Section>
   );

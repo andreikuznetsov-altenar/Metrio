@@ -84,6 +84,6 @@ describe("FeedbackPage", () => {
     expect(screen.getByRole("button", { name: "History" })).toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: "Results" }));
-    expect(screen.getByText("No survey responses yet.")).toBeInTheDocument();
+    expect(screen.getByTestId("feedback-results-empty")).toBeInTheDocument();
   });
 });

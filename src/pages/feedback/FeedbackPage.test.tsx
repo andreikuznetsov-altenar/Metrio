@@ -105,7 +105,8 @@ describe('FeedbackPage', () => {
     });
     expect(container.querySelector('.performance-subnav')).toBeTruthy();
     expect(container.querySelector('[data-testid="feedback-survey-disconnected"]')).toBeTruthy();
-    expect(container.textContent).toContain('Connect Google to create and send surveys');
+    expect(container.textContent).toContain('Connect Google to send surveys');
+    expect(container.textContent).not.toContain('Connect Google to send surveys.');
     expect(container.textContent).toContain('Setup instructions');
   });
 
@@ -140,6 +141,37 @@ describe('FeedbackPage', () => {
     expect(container.textContent).toContain('Survey');
     expect(container.textContent).toContain('Delivery');
     expect(container.textContent).toContain('Google Workspace');
+  });
+
+  it('shows delivery disconnected empty state without inline delivery fallback', async () => {
+    await act(async () => {
+      await Promise.resolve();
+    });
+    const deliveryTab = container.querySelector(
+      '.performance-subnav button[name="Delivery"], .performance-subnav [data-subnav-id="delivery"]',
+    );
+    const buttons = Array.from(container.querySelectorAll('.performance-subnav button'));
+    const delivery = buttons.find((b) => b.textContent?.trim() === 'Delivery');
+    expect(delivery).toBeTruthy();
+    act(() => {
+      delivery!.click();
+    });
+    expect(container.querySelector('[data-testid="feedback-delivery-disconnected"]')).toBeTruthy();
+    expect(container.textContent).not.toMatch(/^Connect Google to send surveys\.$/);
+    expect(container.textContent).toContain('Connect Google to manage survey delivery');
+  });
+
+  it('shows results disconnected empty state on Results tab', async () => {
+    await act(async () => {
+      await Promise.resolve();
+    });
+    const buttons = Array.from(container.querySelectorAll('.performance-subnav button'));
+    const results = buttons.find((b) => b.textContent?.trim() === 'Results');
+    expect(results).toBeTruthy();
+    act(() => {
+      results!.click();
+    });
+    expect(container.querySelector('[data-testid="feedback-results-disconnected"]')).toBeTruthy();
   });
 
   it('shows compact strip when Google is linked', async () => {
