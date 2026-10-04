@@ -1,6 +1,7 @@
 import { test, expect, type Page } from "@playwright/test";
 import { serializeNotificationFixtureForPlaywright } from "../../src/fixtures/notificationCenterVisualFixture";
 import {
+  serializeFeedbackCyclesPopulatedSurveyForPlaywright,
   serializeFeedbackDisconnectedPrefsForPlaywright,
   serializeFeedbackVisualPrefsForPlaywright,
 } from "../../src/fixtures/feedbackWorkflowFixture";
@@ -615,9 +616,12 @@ test.describe("Metrio visual regression", () => {
   async function openFeedbackDisconnectedState(page: Page) {
     await bootMetrioFeedbackDisconnected(page, "light");
     await page.getByRole("button", { name: /^feedback$/i }).click();
+    await page.getByRole("button", { name: /^Survey$/i }).click();
     await expect(page.getByTestId("feedback-survey-disconnected")).toBeVisible({
       timeout: 15_000,
     });
+    await expect(page.getByRole("button", { name: "Connect Google" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Setup instructions" })).toBeVisible();
   }
 
   test("feedback survey disconnected", async ({ page }) => {
@@ -633,6 +637,7 @@ test.describe("Metrio visual regression", () => {
     test.setTimeout(60_000);
     await bootMetrioFeedbackDisconnected(page, "dark");
     await page.getByRole("button", { name: /^feedback$/i }).click();
+    await page.getByRole("button", { name: /^Survey$/i }).click();
     await expect(page.getByTestId("feedback-survey-disconnected")).toBeVisible({
       timeout: 15_000,
     });
@@ -640,6 +645,109 @@ test.describe("Metrio visual regression", () => {
       fullPage: true,
       maxDiffPixelRatio: 0.02,
     });
+  });
+
+  test("feedback delivery disconnected", async ({ page }) => {
+    test.setTimeout(60_000);
+    await bootMetrioFeedbackDisconnected(page, "light");
+    await page.getByRole("button", { name: /^feedback$/i }).click();
+    await page.getByRole("button", { name: /^Delivery$/i }).click();
+    await expect(page.getByTestId("feedback-delivery-disconnected")).toBeVisible({
+      timeout: 15_000,
+    });
+    await expect(page.getByTestId("feedback-tab-panel-delivery")).toHaveScreenshot(
+      "feedback-delivery-disconnected.png",
+      { maxDiffPixelRatio: 0.02 },
+    );
+  });
+
+  test("feedback results disconnected", async ({ page }) => {
+    test.setTimeout(60_000);
+    await bootMetrioFeedbackDisconnected(page, "light");
+    await page.getByRole("button", { name: /^feedback$/i }).click();
+    await page.getByRole("button", { name: /^Results$/i }).click();
+    await expect(page.getByTestId("feedback-results-disconnected")).toBeVisible({
+      timeout: 15_000,
+    });
+    await expect(page.getByTestId("feedback-tab-panel-results")).toHaveScreenshot(
+      "feedback-results-disconnected.png",
+      { maxDiffPixelRatio: 0.02 },
+    );
+  });
+
+  test("feedback history empty", async ({ page }) => {
+    test.setTimeout(60_000);
+    await bootMetrioFeedbackDisconnected(page, "light");
+    await page.getByRole("button", { name: /^feedback$/i }).click();
+    await page.getByRole("button", { name: /^History$/i }).click();
+    await expect(page.getByTestId("feedback-history-empty")).toBeVisible({
+      timeout: 15_000,
+    });
+    await expect(page.getByTestId("feedback-tab-panel-history")).toHaveScreenshot(
+      "feedback-history-empty.png",
+      { maxDiffPixelRatio: 0.02 },
+    );
+  });
+
+  test("feedback cycles empty", async ({ page }) => {
+    test.setTimeout(60_000);
+    await bootMetrioFeedbackDisconnected(page, "light");
+    await page.getByRole("button", { name: /^feedback$/i }).click();
+    await page.getByRole("button", { name: /^Cycles$/i }).click();
+    await expect(page.getByTestId("feedback-cycles-empty")).toBeVisible({
+      timeout: 15_000,
+    });
+    await expect(page.getByTestId("feedback-tab-panel-cycles")).toHaveScreenshot(
+      "feedback-cycles-empty.png",
+      { maxDiffPixelRatio: 0.02 },
+    );
+  });
+
+  test("feedback cycles populated", async ({ page }) => {
+    test.setTimeout(60_000);
+    const surveyJson = serializeFeedbackCyclesPopulatedSurveyForPlaywright();
+    await page.addInitScript(
+      ({ prefs, survey }: { prefs: string; survey: string }) => {
+        localStorage.setItem("metrio-connection-connected", "true");
+        localStorage.setItem("metrio-dev-fixture", "lead");
+        localStorage.setItem("metrio-theme", "light");
+        localStorage.setItem("metrio-visual-preferences", prefs);
+        localStorage.setItem("metrio-visual-survey-data", survey);
+      },
+      {
+        prefs: serializeFeedbackVisualPrefsForPlaywright(),
+        survey: surveyJson,
+      },
+    );
+    await page.goto("/");
+    await expect(page.getByTestId("dashboard-ready")).toBeVisible({ timeout: 30_000 });
+    await page.getByRole("button", { name: /^feedback$/i }).click();
+    await page.getByRole("button", { name: /^Cycles$/i }).click();
+    await expect(page.getByTestId("feedback-cycle-card")).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByTestId("feedback-tab-panel-cycles")).toHaveScreenshot(
+      "feedback-cycles-populated.png",
+      { maxDiffPixelRatio: 0.02 },
+    );
+  });
+
+  test("feedback survey disconnected 1440", async ({ page }) => {
+    test.setTimeout(60_000);
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await openFeedbackDisconnectedState(page);
+    await expect(page.getByTestId("feedback-tab-panel-survey")).toHaveScreenshot(
+      "feedback-survey-disconnected-1440.png",
+      { maxDiffPixelRatio: 0.02 },
+    );
+  });
+
+  test("feedback survey disconnected 1728", async ({ page }) => {
+    test.setTimeout(60_000);
+    await page.setViewportSize({ width: 1728, height: 1117 });
+    await openFeedbackDisconnectedState(page);
+    await expect(page.getByTestId("feedback-tab-panel-survey")).toHaveScreenshot(
+      "feedback-survey-disconnected-1728.png",
+      { maxDiffPixelRatio: 0.02 },
+    );
   });
 
   test("feedback google setup instructions", async ({ page }) => {

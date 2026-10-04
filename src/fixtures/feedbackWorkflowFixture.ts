@@ -58,6 +58,40 @@ export function serializeFeedbackVisualPrefsForPlaywright(): string {
 }
 
 /** Team lead Feedback page without Google connection (Survey tab still visible). */
+export function serializeFeedbackCyclesPopulatedSurveyForPlaywright(): string {
+  const now = new Date().toISOString();
+  return JSON.stringify({
+    schemaVersion: 2,
+    defaults: {
+      title: 'Design Team Collaboration Feedback',
+      emailSubject: 'Feedback',
+      introText: 'Intro',
+      buttonLabel: 'Open',
+      signature: 'Thanks',
+      emailCollectionMode: 'RESPONDER_INPUT',
+      responseAccess: 'anyone_with_link',
+      questions: [],
+    },
+    surveys: [],
+    activeSurveyId: null,
+    cycles: [
+      {
+        id: 'cycle_visual_pulse',
+        name: 'Team pulse',
+        type: 'pulse',
+        status: 'active',
+        cadence: { unit: 'monthly', timezone: 'local' },
+        audienceRule: { kind: 'team_direct_scope' },
+        surveyTemplateId: 'tpl_team_pulse',
+        confidentiality: 'identified',
+        createdAt: now,
+        updatedAt: now,
+      },
+    ],
+    templates: [],
+  });
+}
+
 export function serializeFeedbackDisconnectedPrefsForPlaywright(): string {
   const prefs: AppPreferences = {
     ...DEFAULT_PREFERENCES,

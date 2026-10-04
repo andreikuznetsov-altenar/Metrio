@@ -120,10 +120,31 @@ export function migrateSurveyData(raw: Partial<SurveyDataFile>): SurveyDataFile 
   if (version > SURVEY_DATA_SCHEMA_VERSION) {
     throw new Error(`Unsupported survey data schema version: ${version}`);
   }
-  return applyFeedbackCyclesMigration(migrated);
+  return applyFeedbackCyclesMigration({
+    ...migrated,
+    cycles: raw.cycles,
+    templates: raw.templates,
+    scheduleState: raw.scheduleState,
+  });
+}
+
+const VISUAL_SURVEY_DATA_KEY = 'metrio-visual-survey-data';
+
+function visualFixtureSurveyEnabled(): boolean {
+  return import.meta.env.VITE_VISUAL_FIXTURE === '1';
 }
 
 export async function loadSurveyData(): Promise<SurveyDataFile> {
+  if (visualFixtureSurveyEnabled()) {
+    try {
+      const stored = localStorage.getItem(VISUAL_SURVEY_DATA_KEY);
+      if (stored) {
+        return migrateSurveyData(JSON.parse(stored) as Partial<SurveyDataFile>);
+      }
+    } catch {
+      /* fall through */
+    }
+  }
   try {
     const raw = await invoke<Partial<SurveyDataFile>>('survey_data_load');
     return migrateSurveyData(raw);
@@ -133,8 +154,13 @@ export async function loadSurveyData(): Promise<SurveyDataFile> {
 }
 
 export async function saveSurveyData(data: SurveyDataFile): Promise<void> {
+  const payload = { ...data, schemaVersion: SURVEY_DATA_SCHEMA_VERSION };
+  if (visualFixtureSurveyEnabled()) {
+    localStorage.setItem(VISUAL_SURVEY_DATA_KEY, JSON.stringify(payload));
+    return;
+  }
   await invoke('survey_data_save', {
-    data: { ...data, schemaVersion: SURVEY_DATA_SCHEMA_VERSION },
+    data: payload,
   });
 }
 
