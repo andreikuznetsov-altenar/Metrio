@@ -1,38 +1,114 @@
 import { invoke } from "@tauri-apps/api/core";
+import { resolveBambooSubdomain } from "../../config/product";
+import { clearPersonDirectory } from "../../domain/people/personDirectory";
+import { loadPreferences } from "../../platform/preferences";
 import { parseInvokeError } from "../../platform/apiTypes";
 
-const memoryCache = new Map<string, string | null>();
+export type BambooEmployeePhotoSize = "small" | "medium";
+
+export type AvatarCacheStatus = "ok" | "missing" | "forbidden" | "failed";
+
+interface CacheEntry {
+  dataUrl: string | null;
+  status: AvatarCacheStatus;
+}
+
+const MAX_CACHE_ENTRIES = 500;
+const memoryCache = new Map<string, CacheEntry>();
 const inflight = new Map<string, Promise<string | null>>();
+
+let cachedSubdomain: string | null | undefined;
 
 export interface BambooPhotoPayload {
   content_type: string;
   data_base64: string;
 }
 
+function cacheKey(
+  subdomain: string,
+  employeeId: string,
+  size: BambooEmployeePhotoSize,
+): string {
+  return `${subdomain}:${employeeId}:${size}`;
+}
+
+function setCacheEntry(key: string, entry: CacheEntry): void {
+  if (memoryCache.has(key)) {
+    memoryCache.delete(key);
+  }
+  memoryCache.set(key, entry);
+  while (memoryCache.size > MAX_CACHE_ENTRIES) {
+    const oldest = memoryCache.keys().next().value;
+    if (oldest === undefined) break;
+    memoryCache.delete(oldest);
+  }
+}
+
+function statusFromError(error: unknown): AvatarCacheStatus {
+  const api = parseInvokeError(error);
+  if (api.status === 404) return "missing";
+  if (api.status === 403) return "forbidden";
+  return "failed";
+}
+
+export async function resolveAvatarSubdomain(): Promise<string | null> {
+  if (cachedSubdomain !== undefined) return cachedSubdomain;
+  const prefs = await loadPreferences();
+  cachedSubdomain = resolveBambooSubdomain(prefs) || null;
+  return cachedSubdomain;
+}
+
+export function resetAvatarSession(): void {
+  cachedSubdomain = undefined;
+  memoryCache.clear();
+  inflight.clear();
+  clearPersonDirectory();
+}
+
 export async function fetchEmployeeAvatarDataUrl(
   employeeId: string,
   subdomain: string,
+  size: BambooEmployeePhotoSize = "small",
 ): Promise<string | null> {
-  const key = `${subdomain}:${employeeId}`;
-  if (memoryCache.has(key)) {
-    return memoryCache.get(key) ?? null;
+  const trimmedId = employeeId.trim();
+  if (!trimmedId || !subdomain.trim()) return null;
+
+  const key = cacheKey(subdomain, trimmedId, size);
+  const cached = memoryCache.get(key);
+  if (cached) {
+    return cached.dataUrl;
   }
 
   const pending = inflight.get(key);
   if (pending) return pending;
 
   const promise = (async () => {
+    let visual: string | null | undefined;
+    if (import.meta.env.VITE_VISUAL_FIXTURE === "1") {
+      const mod = await import("../../fixtures/personAvatarVisualFixture");
+      visual = mod.getVisualEmployeePhotoDataUrl(trimmedId);
+    }
+    if (visual !== undefined) {
+      const entry: CacheEntry = {
+        dataUrl: visual,
+        status: visual ? "ok" : "missing",
+      };
+      setCacheEntry(key, entry);
+      return visual;
+    }
+
     try {
       const payload = await invoke<BambooPhotoPayload>("bamboo_get_employee_photo", {
         config: { subdomain },
-        employee_id: employeeId,
+        employee_id: trimmedId,
+        photo_size: size,
       });
       const src = `data:${payload.content_type};base64,${payload.data_base64}`;
-      memoryCache.set(key, src);
+      setCacheEntry(key, { dataUrl: src, status: "ok" });
       return src;
     } catch (error) {
-      void parseInvokeError(error);
-      memoryCache.set(key, null);
+      const status = statusFromError(error);
+      setCacheEntry(key, { dataUrl: null, status });
       return null;
     } finally {
       inflight.delete(key);
@@ -46,13 +122,25 @@ export async function fetchEmployeeAvatarDataUrl(
 export function peekCachedEmployeeAvatar(
   employeeId: string,
   subdomain: string,
+  size: BambooEmployeePhotoSize = "small",
 ): string | null | undefined {
-  const key = `${subdomain}:${employeeId}`;
-  if (!memoryCache.has(key)) return undefined;
-  return memoryCache.get(key) ?? null;
+  const key = cacheKey(subdomain, employeeId.trim(), size);
+  const entry = memoryCache.get(key);
+  if (!entry) return undefined;
+  return entry.dataUrl;
+}
+
+export function peekAvatarCacheStatus(
+  employeeId: string,
+  subdomain: string,
+  size: BambooEmployeePhotoSize = "small",
+): AvatarCacheStatus | undefined {
+  const key = cacheKey(subdomain, employeeId.trim(), size);
+  return memoryCache.get(key)?.status;
 }
 
 export function clearEmployeeAvatarCacheForTests(): void {
   memoryCache.clear();
   inflight.clear();
+  cachedSubdomain = undefined;
 }

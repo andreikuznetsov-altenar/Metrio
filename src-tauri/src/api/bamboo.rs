@@ -309,11 +309,20 @@ pub struct BambooPhotoPayload {
 pub async fn bamboo_get_employee_photo(
     config: BambooConfig,
     employee_id: String,
+    photo_size: Option<String>,
 ) -> Result<BambooPhotoPayload, ApiError> {
     use base64::Engine;
+    let size = photo_size.as_deref().unwrap_or("small");
+    if size != "small" && size != "medium" {
+        return Err(ApiError::new(
+            "bamboo_config_error",
+            "photo_size must be small or medium",
+        ));
+    }
     let path = format!(
-        "/employees/{}/photo/small",
-        urlencoding::encode(employee_id.trim())
+        "/employees/{}/photo/{}",
+        urlencoding::encode(employee_id.trim()),
+        size
     );
     let (content_type, bytes) = bamboo_binary_request(&config, &path).await?;
     Ok(BambooPhotoPayload {

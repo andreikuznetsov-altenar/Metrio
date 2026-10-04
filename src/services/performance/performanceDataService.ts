@@ -38,6 +38,7 @@ import {
   resolveAuthorizedPeopleScope,
 } from "../../domain/organization/authorizedPeopleScope";
 import { JiraClient } from "../jira/jiraClient";
+import { registerPersonDirectory } from "../../domain/people/personDirectory";
 import {
   buildTeamSnapshot,
 } from "../people/personService";
@@ -132,11 +133,13 @@ export async function fetchPerformanceData(
       "../../fixtures/performanceFetchFixture"
     );
     const presetKey = dateRangeKeyFromPerformanceRange(dateRange);
-    return buildVisualPerformanceFetchResult(
+    const visual = buildVisualPerformanceFetchResult(
       presetKey,
       reviewTarget,
       audience,
     );
+    registerPersonDirectory(visual.teamSnapshot.persons);
+    return visual;
   }
 
   const prefs = await loadPreferences();
@@ -331,6 +334,8 @@ export async function fetchPerformanceData(
   }
 
   const dependencyIndex = buildDeliveryDependencyGraph(issues, teamSnapshot);
+
+  registerPersonDirectory(teamSnapshot.persons);
 
   return {
     teamSnapshot,
