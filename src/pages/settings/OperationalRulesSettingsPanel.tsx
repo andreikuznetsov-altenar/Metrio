@@ -106,21 +106,28 @@ export function OperationalRulesSettingsPanel({
         <p className="settings-card__description">
           Tune when tasks appear in attention signals and Team Actions.
         </p>
-        <div className="settings-field-grid settings-field-grid--3">
+        <div
+          className="settings-field-grid settings-field-grid--4"
+          data-testid="attention-rules-field-grid"
+        >
           <div className="settings-field">
             <label className="settings-field__label" htmlFor="review-attention-days">
               Review attention
             </label>
-            <Input
-              id="review-attention-days"
-              type="number"
-              min={1}
-              max={30}
-              value={String(draft.taskAttention.reviewAttentionDays)}
-              onChange={(e) =>
-                patchTask({ reviewAttentionDays: Number(e.target.value) })
-              }
-            />
+            <div className="settings-number-field">
+              <Input
+                id="review-attention-days"
+                type="number"
+                className="input--settings-number"
+                min={1}
+                max={30}
+                value={String(draft.taskAttention.reviewAttentionDays)}
+                onChange={(e) =>
+                  patchTask({ reviewAttentionDays: Number(e.target.value) })
+                }
+              />
+              <span className="settings-number-field__suffix">days</span>
+            </div>
             <p className="settings-field__hint">
               Matches {reviewPreview} tasks in review now
             </p>
@@ -129,14 +136,18 @@ export function OperationalRulesSettingsPanel({
             <label className="settings-field__label" htmlFor="no-activity-days">
               No activity
             </label>
-            <Input
-              id="no-activity-days"
-              type="number"
-              min={1}
-              max={30}
-              value={String(draft.taskAttention.noActivityDays)}
-              onChange={(e) => patchTask({ noActivityDays: Number(e.target.value) })}
-            />
+            <div className="settings-number-field">
+              <Input
+                id="no-activity-days"
+                type="number"
+                className="input--settings-number"
+                min={1}
+                max={30}
+                value={String(draft.taskAttention.noActivityDays)}
+                onChange={(e) => patchTask({ noActivityDays: Number(e.target.value) })}
+              />
+              <span className="settings-number-field__suffix">days</span>
+            </div>
             <p className="settings-field__hint">
               Matches {activityPreview} tasks without activity
             </p>
@@ -145,39 +156,47 @@ export function OperationalRulesSettingsPanel({
             <label className="settings-field__label" htmlFor="long-review-days">
               Long review highlight
             </label>
-            <Input
-              id="long-review-days"
-              type="number"
-              min={2}
-              max={45}
-              value={String(draft.taskAttention.longReviewHighlightDays)}
-              onChange={(e) =>
-                patchTask({ longReviewHighlightDays: Number(e.target.value) })
-              }
-            />
+            <div className="settings-number-field">
+              <Input
+                id="long-review-days"
+                type="number"
+                className="input--settings-number"
+                min={2}
+                max={45}
+                value={String(draft.taskAttention.longReviewHighlightDays)}
+                onChange={(e) =>
+                  patchTask({ longReviewHighlightDays: Number(e.target.value) })
+                }
+              />
+              <span className="settings-number-field__suffix">days</span>
+            </div>
             <p className="settings-field__hint">Dashboard delivery summary threshold</p>
           </div>
-        </div>
-        <div className="settings-field settings-field--narrow">
-          <label className="settings-field__label" htmlFor="vacation-soon-days">
-            Vacation soon window (days)
-          </label>
-          <Input
-            id="vacation-soon-days"
-            type="number"
-            min={1}
-            max={21}
-            value={String(draft.vacation.soonWithinDays)}
-            onChange={(e) =>
-              setDraft((prev) => ({
-                ...prev,
-                vacation: {
-                  ...prev.vacation,
-                  soonWithinDays: Number(e.target.value),
-                },
-              }))
-            }
-          />
+          <div className="settings-field">
+            <label className="settings-field__label" htmlFor="vacation-soon-days">
+              Vacation soon window
+            </label>
+            <div className="settings-number-field">
+              <Input
+                id="vacation-soon-days"
+                type="number"
+                className="input--settings-number"
+                min={1}
+                max={21}
+                value={String(draft.vacation.soonWithinDays)}
+                onChange={(e) =>
+                  setDraft((prev) => ({
+                    ...prev,
+                    vacation: {
+                      ...prev.vacation,
+                      soonWithinDays: Number(e.target.value),
+                    },
+                  }))
+                }
+              />
+              <span className="settings-number-field__suffix">days</span>
+            </div>
+          </div>
         </div>
       </section>
 
