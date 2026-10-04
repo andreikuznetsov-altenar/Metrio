@@ -65,7 +65,11 @@ export function formatReviewDateLabel(reviewDate: string): string {
 export function summarizeGoalsForHome(
   goals: Goal[],
   now = new Date(),
-): { activeCount: number; reviewApproachingCount: number } {
+): {
+  activeCount: number;
+  reviewApproachingCount: number;
+  nearestReviewLabel: string | null;
+} {
   const active = goals.filter((g) => g.status === "active");
   const reviewApproaching = active.filter((g) => {
     const days = g.reviewDate
@@ -73,8 +77,22 @@ export function summarizeGoalsForHome(
       : null;
     return days != null && days >= 0 && days <= 7;
   });
+
+  let nearestReviewLabel: string | null = null;
+  let nearestDays: number | null = null;
+  for (const goal of active) {
+    if (!goal.reviewDate) continue;
+    const days = calendarDaysUntilReview(goal.reviewDate, now);
+    if (days == null || days < 0) continue;
+    if (nearestDays == null || days < nearestDays) {
+      nearestDays = days;
+      nearestReviewLabel = formatReviewDateLabel(goal.reviewDate);
+    }
+  }
+
   return {
     activeCount: active.length,
     reviewApproachingCount: reviewApproaching.length,
+    nearestReviewLabel,
   };
 }

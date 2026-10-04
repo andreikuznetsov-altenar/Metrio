@@ -499,34 +499,44 @@ export function HomePage() {
       {goalsFeatureOn &&
       (goalsHomeSummary.activeCount > 0 || goalsHomeSummary.reviewApproachingCount > 0) ? (
         <section
-          className="home-card"
+          className="home-card home-card--compact"
           aria-label="Goals"
           data-testid="home-goals-summary"
         >
-          <h2 className="home-card__title">{team ? "Goal reviews" : "Goals"}</h2>
-          <p className="home-card__meta">
-            {goalsHomeSummary.activeCount} active
-            {goalsHomeSummary.reviewApproachingCount > 0
-              ? ` · ${goalsHomeSummary.reviewApproachingCount} review approaching`
+          <h2 className="home-card__title home-card__title--section">
+            {team ? "Goal reviews" : "Goals"}
+          </h2>
+          <p className="dashboard-digest-card__headline">
+            {goalsHomeSummary.activeCount} active goal
+            {goalsHomeSummary.activeCount === 1 ? "" : "s"}
+          </p>
+          <p className="dashboard-digest-card__detail">
+            {team
+              ? "Review your active goals and upcoming review dates."
+              : "Track progress on your active goals and review dates."}
+            {goalsHomeSummary.nearestReviewLabel
+              ? ` Next review: ${goalsHomeSummary.nearestReviewLabel}.`
               : ""}
           </p>
-          <Button
-            variant="secondary"
-            onClick={() => {
-              dispatchAppRoute("performance");
-              if (team) {
-                window.dispatchEvent(
-                  new CustomEvent("metrio-open-performance-tab", {
-                    detail: "goals",
-                  }),
-                );
-              } else {
-                dispatchEmployeeView("goals");
-              }
-            }}
-          >
-            View goals
-          </Button>
+          <div className="home-card__actions">
+            <Button
+              variant="secondary"
+              onClick={() => {
+                dispatchAppRoute("performance");
+                if (team) {
+                  window.dispatchEvent(
+                    new CustomEvent("metrio-open-performance-tab", {
+                      detail: "goals",
+                    }),
+                  );
+                } else {
+                  dispatchEmployeeView("goals");
+                }
+              }}
+            >
+              View goals
+            </Button>
+          </div>
         </section>
       ) : null}
 

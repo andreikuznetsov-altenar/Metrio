@@ -223,6 +223,10 @@
   margin-top: var(--space-3);
 }
 
+.home-card--compact {
+  max-width: 520px;
+}
+
 .home-knowledge-rows {
   display: flex;
   flex-direction: column;
