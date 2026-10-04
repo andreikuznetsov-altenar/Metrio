@@ -1,6 +1,8 @@
 # Metrio UI interaction rules (global)
 
-These rules apply to **all** Metrio screens — current and future. Implement via shared tokens and components in `src/styles/ui-interaction-system.css`, `src/styles/tokens.css`, and design-system primitives.
+These rules apply to **all** Metrio screens — current and future. The normative contract is **`docs/design-system-contract.md`**. Implement via shared tokens and components in `src/styles/ui-interaction-system.css`, `src/styles/tokens.css`, and design-system primitives.
+
+> New product components must not locally redefine shared primitive visual behavior. If a primitive or token exists in the Metrio design system, it must be reused.
 
 ## Links vs buttons
 

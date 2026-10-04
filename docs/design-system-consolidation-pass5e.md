@@ -1,5 +1,7 @@
 # Design system consolidation — Pass 5E audit
 
+> **Current normative contract:** see [`design-system-contract.md`](./design-system-contract.md) and `npm run verify:design-system`.
+
 Baseline: `f6114f9` (Pass 5D). This document records pre-fix inconsistencies.
 
 ## Controls

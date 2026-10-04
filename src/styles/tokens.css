@@ -10,14 +10,25 @@
   --color-accent-foreground: #ffffff;
 
   /* Radius */
+  --radius-micro: 2px;
+  --radius-badge: 5px;
   --radius-small: 6px;
   --radius-control: 8px;
   --radius-card: 12px;
   --radius-round: 999px;
+  --radius-popover: var(--radius-control);
+  --radius-pill: var(--radius-round);
 
   /* Controls (Pass 5E) */
   --control-height: 36px;
+  --control-height-default: var(--control-height);
   --control-height-compact: 32px;
+
+  /* Borders (semantic) */
+  --border-subtle: var(--color-border);
+  --border-default: var(--color-border);
+  --border-accent: var(--color-accent);
+  --border-danger: var(--color-danger);
   --button-group-gap: 8px;
   --drawer-header-padding-x: 20px;
   --drawer-header-padding-y: 18px;

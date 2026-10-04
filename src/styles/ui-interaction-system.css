@@ -3,15 +3,7 @@
  * Import from globals.css after tokens.
  */
 
-/* —— Motion token aliases —— */
 :root {
-  --motion-fast: 150ms;
-  --motion-standard: 200ms;
-  --motion-slow: 260ms;
-  --ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
-  --ease-enter: cubic-bezier(0, 0, 0.2, 1);
-  --ease-exit: cubic-bezier(0.4, 0, 1, 1);
-  --color-focus-border: var(--color-accent);
   --scrollbar-thumb: color-mix(in srgb, var(--color-text-tertiary) 35%, transparent);
   --scrollbar-thumb-hover: color-mix(in srgb, var(--color-text-tertiary) 55%, transparent);
 }
