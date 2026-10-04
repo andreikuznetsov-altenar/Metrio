@@ -1,4 +1,3 @@
-import type { ReactNode } from "react";
 import { Badge } from "../../components/Badge/Badge";
 import { PersonAvatar } from "../../components/PersonAvatar/PersonAvatar";
 import type { Person } from "../../domain/people/types";
@@ -17,7 +16,6 @@ export interface PersonIdentityHeaderProps {
   /** Fallback when person record is unavailable. */
   availabilityLabel?: string;
   workloadLabel?: string;
-  action?: ReactNode;
   contextNote?: string;
   className?: string;
 }
@@ -29,7 +27,6 @@ export function PersonIdentityHeader({
   person,
   availabilityLabel,
   workloadLabel,
-  action,
   contextNote,
   className,
 }: PersonIdentityHeaderProps) {
@@ -76,7 +73,6 @@ export function PersonIdentityHeader({
           <p className="person-identity-header__context">{contextNote}</p>
         ) : null}
       </div>
-      {action ? <div className="person-identity-header__action">{action}</div> : null}
     </div>
   );
 }

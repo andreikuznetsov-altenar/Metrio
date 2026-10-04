@@ -118,13 +118,27 @@
 }
 
 /* —— Table system (all performance-table + future grids) —— */
+.performance-table {
+  border-collapse: collapse;
+}
+
+.performance-table thead tr,
+.performance-table tbody tr {
+  box-shadow: inset 0 -1px 0 var(--color-border);
+}
+
 .performance-table th,
 .performance-table td {
   vertical-align: middle;
+  border-bottom: none;
 }
 
 .performance-table tbody tr {
   height: auto;
+}
+
+.performance-table tbody tr:last-child {
+  box-shadow: none;
 }
 
 .performance-table__cell--clamp-2 {

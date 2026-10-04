@@ -1,6 +1,8 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Badge } from "../../components/Badge/Badge";
 import { Button } from "../../components/Button/Button";
+import { SortableTableHeader } from "../../components/Table/SortableTableHeader";
+import { useTableSort } from "../../components/Table/useTableSort";
 import { resolveJiraBaseUrl } from "../../config/product";
 import type { DeliveryRiskRow } from "../../domain/performance";
 import { performanceHelp } from "../../domain/performance/performanceHelp";
@@ -18,6 +20,16 @@ function statusVariant(status: string): "danger" | "warning" | "neutral" {
   return "neutral";
 }
 
+const DELIVERY_RISK_COLUMNS = [
+  { id: "issue", type: "issueKey" as const },
+  { id: "description", type: "text" as const },
+  { id: "owner", type: "person" as const },
+  { id: "age", type: "duration" as const },
+  { id: "riskReason", type: "text" as const },
+  { id: "status", type: "status" as const },
+  { id: "jira", type: "issueKey" as const },
+];
+
 export interface TeamDeliveryRiskViewProps {
   rows: DeliveryRiskRow[];
   onOpenPerson: (personId: string) => void;
@@ -34,6 +46,35 @@ export function TeamDeliveryRiskView({
       setJiraBaseUrl(resolveJiraBaseUrl(prefs));
     });
   }, []);
+
+  const getValue = useMemo(
+    () => (row: DeliveryRiskRow, columnId: string) => {
+      switch (columnId) {
+        case "issue":
+        case "jira":
+          return row.issueKey;
+        case "description":
+          return row.issueTitle;
+        case "owner":
+          return row.ownerName || row.ownerId;
+        case "age":
+          return row.age;
+        case "riskReason":
+          return row.riskReason;
+        case "status":
+          return row.status;
+        default:
+          return "";
+      }
+    },
+    [],
+  );
+
+  const { sortedRows, sort, toggleSort } = useTableSort(
+    rows,
+    DELIVERY_RISK_COLUMNS,
+    getValue,
+  );
 
   if (rows.length === 0) {
     return (
@@ -54,17 +95,41 @@ export function TeamDeliveryRiskView({
         <table className="performance-table performance-table--interactive performance-table--delivery-risk">
           <thead>
             <tr>
-              <th>Issue</th>
-              <th>Description</th>
-              <th>Owner</th>
-              <th className="performance-table__num">Age</th>
-              <th>Risk reason</th>
-              <th>Status</th>
-              <th className="performance-table__action">Jira</th>
+              <SortableTableHeader columnId="issue" label="Issue" sort={sort} onToggle={toggleSort} />
+              <SortableTableHeader
+                columnId="description"
+                label="Description"
+                sort={sort}
+                onToggle={toggleSort}
+              />
+              <SortableTableHeader columnId="owner" label="Owner" sort={sort} onToggle={toggleSort} />
+              <SortableTableHeader
+                columnId="age"
+                label="Age"
+                sort={sort}
+                onToggle={toggleSort}
+                className="performance-table__num"
+                align="right"
+              />
+              <SortableTableHeader
+                columnId="riskReason"
+                label="Risk reason"
+                sort={sort}
+                onToggle={toggleSort}
+              />
+              <SortableTableHeader columnId="status" label="Status" sort={sort} onToggle={toggleSort} />
+              <SortableTableHeader
+                columnId="jira"
+                label="Jira"
+                sort={sort}
+                onToggle={toggleSort}
+                className="performance-table__action"
+                align="right"
+              />
             </tr>
           </thead>
           <tbody>
-            {rows.map((row) => {
+            {sortedRows.map((row) => {
               const issueUrl = buildJiraIssueBrowseUrl(jiraBaseUrl, row.issueKey);
               return (
                 <tr key={row.issueKey}>

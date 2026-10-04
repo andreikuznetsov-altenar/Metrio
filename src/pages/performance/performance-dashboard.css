@@ -9,7 +9,7 @@
 .performance-subnav {
   display: flex;
   align-items: center;
-  gap: var(--space-1);
+  gap: var(--space-4);
   margin: 0;
   padding: 0 0 var(--space-2);
   position: relative;
@@ -28,12 +28,13 @@
   pointer-events: none;
 }
 
-.performance-subnav__link {
+.performance-subnav__link,
+.performance-subnav__item {
   position: relative;
   border: none;
   background: transparent;
   color: var(--color-text-secondary);
-  padding: var(--space-2) var(--space-2);
+  padding: var(--space-2) 0;
   border-radius: var(--radius-control);
   font-size: 13px;
   font-weight: 500;
@@ -44,21 +45,27 @@
     border-color var(--motion-hover) var(--transition-easing);
 }
 
-.performance-subnav__link:hover:not(.is-active) {
+.performance-subnav__link:hover:not(.is-active),
+.performance-subnav__item:hover:not(.performance-subnav__item--active):not(.is-active) {
   color: var(--color-accent);
   border-bottom-color: transparent;
 }
 
-.performance-subnav__link.is-active {
+.performance-subnav__link.is-active,
+.performance-subnav__item--active,
+.performance-subnav__item.is-active {
   color: var(--color-text-primary);
 }
 
-.performance-subnav__link.is-active:hover {
+.performance-subnav__link.is-active:hover,
+.performance-subnav__item--active:hover,
+.performance-subnav__item.is-active:hover {
   color: var(--color-text-primary);
   border-bottom-color: transparent;
 }
 
-.performance-subnav__link:focus-visible {
+.performance-subnav__link:focus-visible,
+.performance-subnav__item:focus-visible {
   outline: var(--focus-outline);
   outline-offset: var(--focus-outline-offset);
 }
@@ -571,17 +578,12 @@
 .performance-table td {
   padding: var(--space-2) var(--space-3);
   text-align: left;
-  border-bottom: 1px solid var(--color-border);
 }
 
 .performance-table th {
   color: var(--color-text-tertiary);
   font-weight: 600;
   background: var(--color-surface-secondary);
-}
-
-.performance-table tr:last-child td {
-  border-bottom: none;
 }
 
 .performance-table td {
@@ -774,8 +776,54 @@
   width: 120px;
 }
 
-.performance-table--delivery-risk tbody tr {
-  min-height: 56px;
+.performance-table__sort-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.performance-table__sort-btn:focus-visible {
+  outline: var(--focus-outline);
+  outline-offset: var(--focus-outline-offset);
+}
+
+.performance-table__sort-icon {
+  font-size: 10px;
+  opacity: 0.35;
+  line-height: 1;
+}
+
+.performance-table__sort-btn.is-active .performance-table__sort-icon {
+  opacity: 0.9;
+  color: var(--color-accent);
+}
+
+.attention-signals-table__issues {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.attention-signals-table__more {
+  border: none;
+  background: transparent;
+  padding: 0;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--color-accent);
+  cursor: pointer;
+}
+
+.attention-signals-table__more:hover {
+  text-decoration: underline;
 }
 
 .performance-delivery-risk__key {

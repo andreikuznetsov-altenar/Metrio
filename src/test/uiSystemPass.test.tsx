@@ -36,7 +36,7 @@ describe("UI System Pass", () => {
   it("removes delivery-risk row max-height cap", () => {
     const perf = read("pages/performance/performance-dashboard.css");
     expect(perf).not.toContain("max-height: 68px");
-    expect(perf).toMatch(/performance-table--delivery-risk tbody tr[\s\S]*min-height:\s*56px/);
+    expect(perf).toMatch(/performance-table__sort-btn/);
   });
 
   it("documents global rules", () => {

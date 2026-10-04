@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState } from "react";
-import { Badge } from "../../components/Badge/Badge";
 import { Button } from "../../components/Button/Button";
 import { Drawer } from "../../components/Drawer/Drawer";
 import { Select } from "../../components/Select/Select";
@@ -21,7 +20,10 @@ import {
   formatWorkHistoryGroupLabel,
   formatWorkHistoryGroupSummary,
 } from "../../domain/personal/workHistoryDisplay";
-import { groupAttentionSignals, hiddenAttentionKeyCount } from "./groupAttentionSignals";
+import { groupAttentionSignals } from "./groupAttentionSignals";
+import { AttentionSignalsTable } from "./AttentionSignalsTable";
+import { resolveJiraBaseUrl } from "../../config/product";
+import { loadPreferences } from "../../platform/preferences";
 import { AnalyticsIssueRow } from "./AnalyticsIssueRow";
 import { PersonWorkRow } from "./PersonWorkRow";
 import { PersonIdentityHeader } from "./PersonIdentityHeader";
@@ -101,12 +103,19 @@ export function PersonDetailDrawer({
   const [historyPeriod, setHistoryPeriod] = useState<HistoryPeriod>("month");
   const [historyFilter, setHistoryFilter] = useState<HistoryFilter>("all");
   const [historyVisibleCount, setHistoryVisibleCount] = useState(HISTORY_PAGE_SIZE);
+  const [jiraBaseUrl, setJiraBaseUrl] = useState("");
 
   useEffect(() => {
     if (open) {
       setHistoryVisibleCount(HISTORY_PAGE_SIZE);
     }
   }, [open, personId, historyPeriod, historyFilter]);
+
+  useEffect(() => {
+    void loadPreferences().then((prefs) => {
+      setJiraBaseUrl(resolveJiraBaseUrl(prefs));
+    });
+  }, []);
 
   const groupedAttention = useMemo(
     () => (workspace ? groupAttentionSignals(workspace.attention) : []),
@@ -254,40 +263,10 @@ export function PersonDetailDrawer({
             {groupedAttention.length === 0 ? (
               <p className="person-detail-drawer__empty">No active attention signals.</p>
             ) : (
-              <div className="performance-work-list">
-                {groupedAttention.map((group) => {
-                  const visibleKeys = group.issueKeys.slice(0, 2);
-                  const extraKeys = hiddenAttentionKeyCount(group.taskCount, visibleKeys);
-                  return (
-                    <div
-                      key={`${group.label}-${group.reason}`}
-                      className="performance-work-row performance-work-row--drawer performance-work-row--attention"
-                    >
-                      <div className="performance-work-row__main">
-                        <div className="performance-attention-group__head">
-                          <Badge variant={group.variant}>{group.label}</Badge>
-                          <span className="performance-attention-group__count">
-                            {group.taskCount} {group.taskCount === 1 ? "task" : "tasks"}
-                          </span>
-                        </div>
-                        <div className="performance-work-row__meta">{group.reason}</div>
-                        {visibleKeys.length > 0 || extraKeys > 0 ? (
-                          <div className="issue-chip-list performance-attention-group__keys">
-                            {visibleKeys.map((key) => (
-                              <Badge key={key} variant="neutral">
-                                {key}
-                              </Badge>
-                            ))}
-                            {extraKeys > 0 ? (
-                              <span className="issue-chip-list__more">+{extraKeys} more</span>
-                            ) : null}
-                          </div>
-                        ) : null}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
+              <AttentionSignalsTable
+                groups={groupedAttention}
+                jiraBaseUrl={jiraBaseUrl}
+              />
             )}
           </div>
         ),
@@ -445,18 +424,18 @@ export function PersonDetailDrawer({
           person={person}
           availabilityLabel={workspace.availability}
           workloadLabel={workspace.workload}
-          action={
-            showBriefAction ? (
-              <Button
-                type="button"
-                variant="secondary"
-                onClick={() => dispatchOpenPersonBrief({ personId })}
-              >
-                Brief
-              </Button>
-            ) : null
-          }
         />
+      }
+      headerActions={
+        showBriefAction ? (
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={() => dispatchOpenPersonBrief({ personId })}
+          >
+            Brief
+          </Button>
+        ) : null
       }
     >
       <Tabs

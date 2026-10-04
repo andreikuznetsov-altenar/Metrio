@@ -24,8 +24,8 @@ export function DirectorPerformanceSubnav({
           type="button"
           className={
             activeView === item.id
-              ? "performance-subnav__item performance-subnav__item--active"
-              : "performance-subnav__item"
+              ? "performance-subnav__link is-active"
+              : "performance-subnav__link"
           }
           onClick={() => onChange(item.id)}
         >

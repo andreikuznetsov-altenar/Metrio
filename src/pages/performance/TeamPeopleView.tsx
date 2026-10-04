@@ -1,5 +1,8 @@
+import { useMemo } from "react";
 import { Badge } from "../../components/Badge/Badge";
 import { PersonAvatar } from "../../components/PersonAvatar/PersonAvatar";
+import { SortableTableHeader } from "../../components/Table/SortableTableHeader";
+import { useTableSort } from "../../components/Table/useTableSort";
 import type { TeamPeopleRow } from "../../domain/performance";
 import { performanceHelp } from "../../domain/performance/performanceHelp";
 import {
@@ -7,12 +10,42 @@ import {
   workloadBadgeVariantFromLabel,
 } from "../../domain/performance/performanceStatusBadges";
 
+const PEOPLE_COLUMNS = [
+  { id: "person", type: "person" as const },
+  { id: "efficiency", type: "text" as const },
+  { id: "attention", type: "text" as const },
+  { id: "availability", type: "text" as const },
+  { id: "workload", type: "text" as const },
+];
+
 export interface TeamPeopleViewProps {
   rows: TeamPeopleRow[];
   onOpenPerson: (personId: string) => void;
 }
 
 export function TeamPeopleView({ rows, onOpenPerson }: TeamPeopleViewProps) {
+  const getValue = useMemo(
+    () => (row: TeamPeopleRow, columnId: string) => {
+      switch (columnId) {
+        case "person":
+          return row.personName || row.personId;
+        case "efficiency":
+          return row.efficiency;
+        case "attention":
+          return row.attentionSeverityLabel;
+        case "availability":
+          return row.availability;
+        case "workload":
+          return row.workload;
+        default:
+          return "";
+      }
+    },
+    [],
+  );
+
+  const { sortedRows, sort, toggleSort } = useTableSort(rows, PEOPLE_COLUMNS, getValue);
+
   return (
     <section aria-label="People">
       <p className="performance-section-desc">{performanceHelp.people}</p>
@@ -20,15 +53,22 @@ export function TeamPeopleView({ rows, onOpenPerson }: TeamPeopleViewProps) {
         <table className="performance-table performance-table--interactive">
           <thead>
             <tr>
-              <th>Person</th>
-              <th className="performance-table__num">Efficiency</th>
-              <th>Attention</th>
-              <th>Availability</th>
-              <th>Workload</th>
+              <SortableTableHeader columnId="person" label="Person" sort={sort} onToggle={toggleSort} />
+              <SortableTableHeader
+                columnId="efficiency"
+                label="Efficiency"
+                sort={sort}
+                onToggle={toggleSort}
+                className="performance-table__num"
+                align="right"
+              />
+              <SortableTableHeader columnId="attention" label="Attention" sort={sort} onToggle={toggleSort} />
+              <SortableTableHeader columnId="availability" label="Availability" sort={sort} onToggle={toggleSort} />
+              <SortableTableHeader columnId="workload" label="Workload" sort={sort} onToggle={toggleSort} />
             </tr>
           </thead>
           <tbody>
-            {rows.map((row) => (
+            {sortedRows.map((row) => (
               <tr key={row.personId}>
                 <td>
                   <button

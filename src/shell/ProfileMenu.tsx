@@ -111,28 +111,30 @@ export function ProfileMenu({
 
           <div className="profile-menu__divider" />
 
-          <button
-            type="button"
-            role="menuitem"
-            className="profile-menu__item"
-            onClick={() => {
-              onOpenSettings?.();
-              setOpen(false);
-            }}
-          >
-            Settings
-          </button>
-          <button
-            type="button"
-            role="menuitem"
-            className="profile-menu__item profile-menu__item--danger"
-            onClick={() => {
-              onLogout?.();
-              setOpen(false);
-            }}
-          >
-            Log out
-          </button>
+          <div className="profile-menu__actions">
+            <button
+              type="button"
+              role="menuitem"
+              className="profile-menu__item"
+              onClick={() => {
+                onOpenSettings?.();
+                setOpen(false);
+              }}
+            >
+              Settings
+            </button>
+            <button
+              type="button"
+              role="menuitem"
+              className="profile-menu__item profile-menu__item--danger"
+              onClick={() => {
+                onLogout?.();
+                setOpen(false);
+              }}
+            >
+              Log out
+            </button>
+          </div>
 
           {isDevFixtureMode ? (
             <>

@@ -40,6 +40,12 @@
   cursor: not-allowed;
 }
 
+.profile-menu__actions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
 .profile-menu__popover {
   position: absolute;
   top: calc(100% + var(--space-2));

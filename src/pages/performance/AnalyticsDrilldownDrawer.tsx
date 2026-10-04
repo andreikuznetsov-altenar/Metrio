@@ -1,4 +1,5 @@
 import { CheckCircle2, Info } from "lucide-react";
+import { Badge } from "../../components/Badge/Badge";
 import { useEffect, useMemo, useState } from "react";
 import { Drawer } from "../../components/Drawer/Drawer";
 import { SegmentedControl } from "../../components/SegmentedControl/SegmentedControl";
@@ -23,6 +24,29 @@ type FirstPassFilter = "all" | "first_pass" | "rework";
 
 function SectionHeading({ children }: { children: string }) {
   return <h3 className="analytics-drawer__section-heading">{children}</h3>;
+}
+
+function AnalyticsDrawerIntro({ evidence }: { evidence: AnalyticsEvidence }) {
+  const backflowsZero = isBackflowsZeroState(evidence);
+  return (
+    <section className="analytics-drawer__intro-card" data-testid="analytics-drawer-intro">
+      {evidence.personDisplayName ? (
+        <p className="analytics-drawer__intro-person">{evidence.personDisplayName}</p>
+      ) : null}
+      <div className="analytics-drawer__intro-metric">
+        <h2 className="analytics-drawer__intro-title">{evidence.title}</h2>
+        <p className="analytics-drawer__intro-value">{evidence.valueLabel}</p>
+      </div>
+      <p className="analytics-drawer__intro-context">{buildContextLine(evidence)}</p>
+      <p className="analytics-drawer__description">{evidence.description}</p>
+      {backflowsZero ? (
+        <div className="analytics-drawer__summary-status" role="status">
+          <Badge variant="success">Healthy</Badge>
+          <span>No backflows in this period</span>
+        </div>
+      ) : null}
+    </section>
+  );
 }
 
 function OutcomeSummary({
@@ -167,25 +191,10 @@ export function AnalyticsDrilldownDrawer({
       onClosed={onClosed}
       ariaLabel={evidence ? `${evidence.title} analytics detail` : "Analytics detail"}
       size="analytics"
-      header={
-        evidence ? (
-          <div className="analytics-drawer__header">
-            <div className="analytics-drawer__title-row">
-              <h2 className="analytics-drawer__title">
-                {evidence.personDisplayName
-                  ? `${evidence.personDisplayName} · ${evidence.title}`
-                  : evidence.title}
-              </h2>
-              <span className="analytics-drawer__value">{evidence.valueLabel}</span>
-            </div>
-            <p className="analytics-drawer__context">{buildContextLine(evidence)}</p>
-          </div>
-        ) : null
-      }
     >
       {evidence ? (
         <div className="analytics-drawer__body">
-          <p className="analytics-drawer__description">{evidence.description}</p>
+          <AnalyticsDrawerIntro evidence={evidence} />
 
           {evidence.detailLevel === "aggregate" ? (
             <div className="analytics-drawer__aggregate-state" role="status">

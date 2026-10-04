@@ -1,7 +1,18 @@
+import { useMemo } from "react";
 import { Badge } from "../../components/Badge/Badge";
 import { PersonAvatar } from "../../components/PersonAvatar/PersonAvatar";
+import { SortableTableHeader } from "../../components/Table/SortableTableHeader";
+import { useTableSort } from "../../components/Table/useTableSort";
 import type { TeamRadarRow } from "../../domain/performance";
 import { performanceHelp } from "../../domain/performance/performanceHelp";
+
+const RADAR_COLUMNS = [
+  { id: "person", type: "person" as const },
+  { id: "reason", type: "text" as const },
+  { id: "tasks", type: "number" as const },
+  { id: "action", type: "text" as const },
+  { id: "severity", type: "status" as const },
+];
 
 export interface TeamRadarViewProps {
   rows: TeamRadarRow[];
@@ -9,6 +20,28 @@ export interface TeamRadarViewProps {
 }
 
 export function TeamRadarView({ rows, onOpenPerson }: TeamRadarViewProps) {
+  const getValue = useMemo(
+    () => (row: TeamRadarRow, columnId: string) => {
+      switch (columnId) {
+        case "person":
+          return row.personName || row.personId;
+        case "reason":
+          return row.reason;
+        case "tasks":
+          return row.tasksAffected;
+        case "action":
+          return row.action;
+        case "severity":
+          return row.severity;
+        default:
+          return "";
+      }
+    },
+    [],
+  );
+
+  const { sortedRows, sort, toggleSort } = useTableSort(rows, RADAR_COLUMNS, getValue);
+
   if (rows.length === 0) {
     return (
       <section aria-label="Radar">
@@ -30,15 +63,22 @@ export function TeamRadarView({ rows, onOpenPerson }: TeamRadarViewProps) {
         <table className="performance-table performance-table--interactive">
           <thead>
             <tr>
-              <th>Person</th>
-              <th>Reason</th>
-              <th className="performance-table__num">Tasks</th>
-              <th>Action</th>
-              <th>Severity</th>
+              <SortableTableHeader columnId="person" label="Person" sort={sort} onToggle={toggleSort} />
+              <SortableTableHeader columnId="reason" label="Reason" sort={sort} onToggle={toggleSort} />
+              <SortableTableHeader
+                columnId="tasks"
+                label="Tasks"
+                sort={sort}
+                onToggle={toggleSort}
+                className="performance-table__num"
+                align="right"
+              />
+              <SortableTableHeader columnId="action" label="Action" sort={sort} onToggle={toggleSort} />
+              <SortableTableHeader columnId="severity" label="Severity" sort={sort} onToggle={toggleSort} />
             </tr>
           </thead>
           <tbody>
-            {rows.map((row) => (
+            {sortedRows.map((row) => (
               <tr key={`${row.personId}-${row.reason}`}>
                 <td>
                   <button
