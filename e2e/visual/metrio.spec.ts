@@ -470,6 +470,76 @@ test.describe("Metrio visual regression", () => {
     });
   });
 
+  test("performance-date-picker-24px", async ({ page }) => {
+    await bootMetrio(page, "lead");
+    await page.getByRole("button", { name: /^From date,/i }).click();
+    await expect(page.locator(".metrio-date-picker__popover")).toBeVisible();
+    await expect(page).toHaveScreenshot("performance-date-picker-24px.png", {
+      fullPage: true,
+      maxDiffPixelRatio: 0.02,
+    });
+  });
+
+  test("performance-select-4px-gap", async ({ page }) => {
+    await bootMetrio(page, "lead");
+    await page.getByLabel("Date range preset").click();
+    await page.waitForTimeout(250);
+    await expect(page).toHaveScreenshot("performance-select-4px-gap.png", {
+      fullPage: true,
+      maxDiffPixelRatio: 0.02,
+    });
+  });
+
+  test("person-header-actions", async ({ page }) => {
+    await bootMetrio(page, "lead");
+    await openFirstAttentionPerson(page);
+    const toolbar = page.locator(".drawer--person-detail .drawer__header-toolbar");
+    await expect(toolbar).toBeVisible();
+    await expect(toolbar).toHaveScreenshot("person-header-actions.png", {
+      maxDiffPixelRatio: 0.02,
+    });
+  });
+
+  test("attention-signals-table", async ({ page }) => {
+    await bootMetrio(page, "lead");
+    await openFirstAttentionPerson(page);
+    await expect(page.getByTestId("attention-signals-table")).toBeVisible();
+    await expect(page.getByTestId("attention-signals-table")).toHaveScreenshot(
+      "attention-signals-table.png",
+      { maxDiffPixelRatio: 0.02 },
+    );
+  });
+
+  test("trend-tooltip-clickable", async ({ page }) => {
+    await bootMetrio(page, "lead");
+    const chart = page.getByTestId("trend-mini-chart").first();
+    await chart.hover({ position: { x: 48, y: 24 } });
+    await expect(page.locator(".trend-chart-tooltip")).toBeVisible();
+    await expect(chart).toHaveScreenshot("trend-tooltip-clickable.png", {
+      maxDiffPixelRatio: 0.03,
+    });
+  });
+
+  test("analytics-backflows-zero", async ({ page }) => {
+    await bootMetrio(page, "lead");
+    await page.getByRole("button", { name: /View Backflows details/i }).click();
+    await expect(page.locator(".analytics-drilldown-drawer")).toBeVisible({ timeout: 10_000 });
+    await expect(page).toHaveScreenshot("analytics-backflows-zero.png", {
+      fullPage: true,
+      maxDiffPixelRatio: 0.02,
+    });
+  });
+
+  test("analytics-completed", async ({ page }) => {
+    await bootMetrio(page, "lead");
+    await page.getByRole("button", { name: /View Completed details/i }).click();
+    await expect(page.locator(".analytics-drilldown-drawer")).toBeVisible({ timeout: 10_000 });
+    await expect(page).toHaveScreenshot("analytics-completed.png", {
+      fullPage: true,
+      maxDiffPixelRatio: 0.02,
+    });
+  });
+
   async function bootDigestVisual(
     page: Page,
     variant: "employee" | "manager" | "weekly" | "no-change",
