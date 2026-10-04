@@ -35,7 +35,7 @@
 
 .person-brief__period .select-trigger,
 .person-brief__actions .btn {
-  min-height: 36px;
+  min-height: var(--control-height-default);
 }
 
 .person-brief__actions {

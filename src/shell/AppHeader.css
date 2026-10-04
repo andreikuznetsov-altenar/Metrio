@@ -39,11 +39,11 @@
 
 .app-header__utility-group .icon-btn {
   width: 36px;
-  height: 36px;
+  height: var(--control-height-default);
 }
 
 .app-header__nav-link {
-  min-height: 36px;
+  min-height: var(--control-height-default);
   display: inline-flex;
   align-items: center;
 }
@@ -129,7 +129,7 @@
   min-width: 16px;
   height: 16px;
   padding: 0 4px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: var(--color-danger, #dc2626);
   color: #fff;
   font-size: 10px;

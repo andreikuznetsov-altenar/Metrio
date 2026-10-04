@@ -158,7 +158,7 @@
   background: color-mix(in srgb, var(--color-accent) 22%, transparent);
   color: inherit;
   padding: 0 1px;
-  border-radius: 2px;
+  border-radius: var(--radius-micro);
 }
 
 .command-palette__empty {

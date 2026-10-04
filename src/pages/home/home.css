@@ -323,7 +323,7 @@
 .home-new-starter-card__progress {
   margin-top: var(--space-2);
   height: 4px;
-  border-radius: 2px;
+  border-radius: var(--radius-micro);
   background: var(--color-surface-tertiary);
   overflow: hidden;
 }

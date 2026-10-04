@@ -1,6 +1,6 @@
 .feedback-ds__banner {
   padding: 0.75rem 1rem;
-  border-radius: 8px;
+  border-radius: var(--radius-control);
   margin-bottom: 1rem;
   background: var(--color-surface-muted, #f4f4f5);
 }
@@ -30,7 +30,7 @@
 .feedback-ds__metric {
   padding: 0.75rem;
   border: 1px solid color-mix(in srgb, var(--color-border) 50%, transparent);
-  border-radius: 8px;
+  border-radius: var(--radius-control);
   background: var(--color-surface);
 }
 
@@ -49,7 +49,7 @@
   display: inline-block;
   font-size: 12px;
   padding: 0.15rem 0.5rem;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: var(--color-surface-muted, #f4f4f5);
 }
 
@@ -416,7 +416,7 @@
   width: 28px;
   height: 28px;
   border: none;
-  border-radius: 6px;
+  border-radius: var(--radius-small);
   background: transparent;
   color: var(--color-text-secondary);
   cursor: pointer;

@@ -134,8 +134,8 @@
 
 .settings-field .input,
 .settings-field .select-trigger {
-  min-height: 36px;
-  height: 36px;
+  min-height: var(--control-height-default);
+  height: var(--control-height-default);
 }
 
 .settings-number-field {

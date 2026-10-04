@@ -241,7 +241,7 @@
 }
 
 .history-period-select .select-trigger {
-  min-height: 36px;
+  min-height: var(--control-height-default);
 }
 
 .person-detail-drawer__history-group + .person-detail-drawer__history-group {

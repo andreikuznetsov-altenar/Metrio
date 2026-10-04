@@ -149,7 +149,7 @@
 }
 
 .analytics-drawer__filter .segmented-control {
-  min-height: 34px;
+  min-height: var(--control-height-compact);
 }
 
 .analytics-drawer__positive-empty {

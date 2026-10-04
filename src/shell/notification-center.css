@@ -17,7 +17,7 @@
 
 .notification-center__header-actions .icon-btn {
   width: 36px;
-  height: 36px;
+  height: var(--control-height-default);
 }
 
 .notification-center__menu {
@@ -166,7 +166,7 @@
   width: 28px;
   height: 28px;
   margin-top: 2px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: var(--color-surface-secondary);
   color: var(--color-text-secondary);
 }
