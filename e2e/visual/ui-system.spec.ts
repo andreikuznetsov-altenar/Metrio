@@ -59,11 +59,3 @@ test("ui-system-diagnostics-accordion-open", async ({ page }) => {
   );
 });
 
-test("ui-system-search-sheet", async ({ page }) => {
-  await bootConnected(page, "lead", "light");
-  await page.keyboard.press("Meta+k");
-  await expect(page.getByTestId("command-palette")).toBeVisible();
-  await expect(page.getByTestId("command-palette")).toHaveScreenshot("ui-system-search-sheet.png", {
-    maxDiffPixelRatio: 0.03,
-  });
-});

@@ -1325,7 +1325,7 @@ test.describe("Metrio visual regression", () => {
     await expect(page.getByTestId("diagnostics-checks")).toBeVisible({
       timeout: 15_000,
     });
-    await expect(page.getByTestId("diagnostics-advanced")).toHaveCount(0);
+    await expect(page.locator(".metrio-collapsible.is-open")).toHaveCount(0);
     await expect(page.getByTestId("diagnostics-settings")).toHaveScreenshot(
       "diagnostics-advanced-collapsed.png",
       { maxDiffPixelRatio: 0.02 },
