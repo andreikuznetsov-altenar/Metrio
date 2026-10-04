@@ -15,7 +15,6 @@ import {
   navigateActionTarget,
 } from "../../app/actionNavigation";
 import { useOptionalPerformanceAnalytics } from "../../app/performanceAnalyticsContext";
-import { bambooEmployeePortalUrl } from "../../config/bambooPortal";
 import {
   buildHomeWorkspace,
   resolveHomeRoleVariant,
@@ -42,12 +41,8 @@ import { isGoalsEnabled } from "../../app/featureGates";
 import { summarizeGoalsForHome } from "../../domain/goals/goalReview";
 import { acknowledgeTrayJiraIssue } from "../../platform/trayActionCenter";
 import { canOpenPersonBrief } from "../../domain/personAccess";
-import { ActionQueueSection } from "../performance/ActionQueueSection";
 import { PerformanceStatusBanner } from "../performance/PerformanceStatusBanner";
 import { Button } from "../../components/Button/Button";
-import { DashboardCompactRow } from "../../components/DashboardCompactRow/DashboardCompactRow";
-import { PersonAvatar } from "../../components/PersonAvatar/PersonAvatar";
-import { ResourceRow } from "../../components/ResourceRow/ResourceRow";
 import {
   applyVisualHomeOverrides,
   readHomeVisualState,
@@ -69,10 +64,13 @@ import { syncOnboardingChecklistInbox } from "../../platform/onboardingChecklist
 import { listNotificationEvents } from "../../platform/notificationEvents";
 import { useUpcomingMeetings } from "../../hooks/useUpcomingMeetings";
 import { HomeUpcomingMeetings } from "./HomeUpcomingMeetings";
-import { HomeGoalsSummaryCard } from "./HomeGoalsSummaryCard";
 import { buildDashboardSyncStatus } from "../../domain/home/dashboardSyncStatus";
+import { parseActiveJiraCount } from "../../domain/home/dashboardContextSummary";
+import { ManagerExecutiveDashboard } from "./dashboard/ManagerExecutiveDashboard";
+import { EmployeeExecutiveDashboard } from "./dashboard/EmployeeExecutiveDashboard";
+import { DirectorExecutiveDashboard } from "./dashboard/DirectorExecutiveDashboard";
+import "./dashboard/executive-dashboard.css";
 
-const DASHBOARD_QUEUE_PREVIEW = 5;
 import type {
   DateRangeKey,
   TeamPerformanceSnapshot,
@@ -218,6 +216,12 @@ export function HomePage() {
     () => summarizeGoalsForHome(homeGoals),
     [homeGoals],
   );
+
+  const activeJiraCount = useMemo(() => {
+    const activeValue =
+      employeeSnapshot?.myWeek.summary.find((m) => m.label === "Active")?.value ?? "0";
+    return parseActiveJiraCount(activeValue);
+  }, [employeeSnapshot]);
 
   const onboardingMatched = useOnboardingResources({
     department: selfPerson?.bamboo.department,
@@ -422,56 +426,137 @@ export function HomePage() {
   const dashboardReadyTestId =
     visualHomeState === "partial" ? "dashboard-partial" : "dashboard-ready";
 
-  const focusPreview = personal.focus.slice(0, DASHBOARD_QUEUE_PREVIEW);
-  const focusHasMore = personal.focus.length > DASHBOARD_QUEUE_PREVIEW;
-  const teamActionsPreview = team?.actions.slice(0, DASHBOARD_QUEUE_PREVIEW) ?? [];
-  const teamActionsHasMore = (team?.actions.length ?? 0) > DASHBOARD_QUEUE_PREVIEW;
   const showGoalsSummary =
     goalsFeatureOn &&
     (goalsHomeSummary.activeCount > 0 || goalsHomeSummary.reviewApproachingCount > 0);
   const goalsProminent = Boolean(showGoalsSummary && goalsHomeSummary.needsAttention);
+  const newAssignmentCount = personal.newAssignments.length;
+  const performanceTrends = effectiveTeamSnapshot?.trends ?? [];
+  const openTrendPoint = analytics
+    ? (
+        trend: import("../../domain/performance").TrendCardData,
+        point: { date: string; value: number },
+        source: HTMLElement | null,
+      ) => {
+        analytics.openTeamTrendDrilldown(trend, point, source);
+      }
+    : undefined;
+
+  const sharedHeader = {
+    greeting: displayWorkspace.greeting,
+    activeJiraCount,
+    newAssignmentCount,
+    lastUpdatedAt: performanceLastUpdatedAt,
+    dashboardSyncStatus,
+    refreshing: dashboardRefreshing,
+    onRefresh: () => void refresh(),
+  };
 
   return (
     <div className="home-page dashboard-page" data-testid={dashboardReadyTestId}>
       <PerformanceStatusBanner />
-      <div className="dashboard-greeting-row">
-        <div className="dashboard-greeting-row__text">
-          <h1 className="dashboard-greeting-row__title">{displayWorkspace.greeting}</h1>
-          <p className="dashboard-greeting-row__summary">{displayWorkspace.contextLine}</p>
-          {dashboardSyncStatus ? (
-            <p
-              className="dashboard-greeting-row__sync"
-              data-testid="dashboard-sync-status"
-            >
-              {dashboardSyncStatus.line}
-              {dashboardSyncStatus.showRetry ? (
-                <>
-                  {" "}
-                  <button
-                    type="button"
-                    className="dashboard-greeting-row__sync-action"
-                    onClick={() => void refresh()}
-                  >
-                    Retry
-                  </button>
-                </>
-              ) : null}
-            </p>
-          ) : null}
-        </div>
-        <Button
-          type="button"
-          variant="secondary"
-          disabled={dashboardRefreshing}
-          onClick={() => void refresh()}
-        >
-          {dashboardRefreshing ? "Refreshing…" : "Refresh"}
-        </Button>
+      <div className="executive-dashboard" data-testid="dashboard-first-viewport">
+      {homeRole === "director" && organization && team ? (
+        <DirectorExecutiveDashboard
+          {...sharedHeader}
+          personal={personal}
+          team={team}
+          teamSnapshot={effectiveTeamSnapshot}
+          deliveryRiskCount={deliveryRisk.length}
+          trends={performanceTrends}
+          onOpenAction={handleAction}
+          actionOpenLabel={actionOpenLabel}
+          onOpenTrendPoint={openTrendPoint}
+          onOpenDeliveryRisk={() => {
+            dispatchAppRoute("performance");
+            dispatchPerformanceTab("delivery-risk");
+          }}
+          onOpenTeamOverview={() => {
+            dispatchAppRoute("performance");
+            dispatchPerformanceTab("overview");
+          }}
+          onOpenProject={openProjectCockpit}
+          onOpenPerson={(personId) => openPerson(personId)}
+          onOpenJiraAssignment={(key) => void openJiraAssignment(key)}
+          onOpenMyWeek={() => {
+            dispatchAppRoute("performance");
+            dispatchEmployeeView("my-week");
+          }}
+          onOpenPerformance={() => dispatchAppRoute("performance")}
+          onOpenFeedback={() => {
+            dispatchAppRoute("feedback");
+            dispatchFeedbackTab("delivery");
+          }}
+          teamPersons={data?.teamSnapshot?.persons ?? []}
+          goalsSummary={showGoalsSummary ? goalsHomeSummary : null}
+          goalsFeatureOn={goalsFeatureOn}
+          goalsProminent={goalsProminent}
+          canOpenPersonBrief={(id) => canOpenPersonBrief(currentUser, id)}
+          organization={organization}
+          onOpenDirectorView={() => {
+            dispatchAppRoute("performance");
+            dispatchPerformanceTab("overview");
+          }}
+        />
+      ) : team ? (
+        <ManagerExecutiveDashboard
+          {...sharedHeader}
+          personal={personal}
+          team={team}
+          teamSnapshot={effectiveTeamSnapshot}
+          deliveryRiskCount={deliveryRisk.length}
+          trends={performanceTrends}
+          onOpenAction={handleAction}
+          actionOpenLabel={actionOpenLabel}
+          onOpenTrendPoint={openTrendPoint}
+          onOpenDeliveryRisk={() => {
+            dispatchAppRoute("performance");
+            dispatchPerformanceTab("delivery-risk");
+          }}
+          onOpenTeamOverview={() => {
+            dispatchAppRoute("performance");
+            dispatchPerformanceTab("overview");
+          }}
+          onOpenProject={openProjectCockpit}
+          onOpenPerson={(personId) => openPerson(personId)}
+          onOpenJiraAssignment={(key) => void openJiraAssignment(key)}
+          onOpenMyWeek={() => {
+            dispatchAppRoute("performance");
+            dispatchEmployeeView("my-week");
+          }}
+          onOpenPerformance={() => dispatchAppRoute("performance")}
+          onOpenFeedback={() => {
+            dispatchAppRoute("feedback");
+            dispatchFeedbackTab("delivery");
+          }}
+          teamPersons={data?.teamSnapshot?.persons ?? []}
+          goalsSummary={showGoalsSummary ? goalsHomeSummary : null}
+          goalsFeatureOn={goalsFeatureOn}
+          goalsProminent={goalsProminent}
+          canOpenPersonBrief={(id) => canOpenPersonBrief(currentUser, id)}
+        />
+      ) : (
+        <EmployeeExecutiveDashboard
+          {...sharedHeader}
+          personal={personal}
+          onOpenAction={handleAction}
+          actionOpenLabel={actionOpenLabel}
+          onOpenJiraAssignment={(key) => void openJiraAssignment(key)}
+          onOpenMyWeek={() => {
+            dispatchAppRoute("performance");
+            dispatchEmployeeView("my-week");
+          }}
+          onOpenPerformance={() => dispatchAppRoute("performance")}
+          goalsSummary={showGoalsSummary ? goalsHomeSummary : null}
+          goalsFeatureOn={goalsFeatureOn}
+          goalsProminent={goalsProminent}
+        />
+      )}
       </div>
 
       {(digestModel?.prefs.showDailyOnHome && digestModel.daily) ||
       (digestModel?.prefs.showWeeklyOnHome && digestModel.weekly && team) ? (
-        <div className="dashboard-digest-row">
+        <div className="dashboard-digest-row executive-lower-section">
           {digestModel?.prefs.showDailyOnHome && digestModel.daily ? (
             <section
               className="home-card dashboard-digest-card"
@@ -497,521 +582,49 @@ export function HomePage() {
               </div>
             </section>
           ) : null}
-          {digestModel?.prefs.showWeeklyOnHome && digestModel.weekly && team ? (
-            <section
-              className="home-card dashboard-digest-card"
-              aria-label="Weekly digest"
-              data-testid="dashboard-weekly-digest"
-            >
-              <h2 className="home-card__title home-card__title--section">Weekly digest</h2>
-              {(() => {
-                const content = digestCardContent(digestModel.weekly);
-                return (
-                  <>
-                    <p className="dashboard-digest-card__headline">{content.headline}</p>
-                    <p className="dashboard-digest-card__detail">{content.detail}</p>
-                  </>
-                );
-              })()}
-              <div className="home-card__actions">
-                <Button variant="secondary" onClick={() => openDigest("weekly")}>
-                  Open weekly digest
-                </Button>
-              </div>
-            </section>
-          ) : null}
         </div>
       ) : null}
 
-      {goalsProminent ? (
-        <HomeGoalsSummaryCard
-          teamView={Boolean(team)}
-          summary={goalsHomeSummary}
-          prominent
+      {calendarConnected && upcomingMeetings?.meetings.length ? (
+        <HomeUpcomingMeetings
+          meetings={upcomingMeetings.meetings}
+          managerView={Boolean(team)}
+          jiraBaseUrl={homeJiraBaseUrl}
+          onPrepareOneOnOne={(personId, periodPreset: DateRangeKey) => {
+            window.dispatchEvent(
+              new CustomEvent("metrio-open-person-brief", {
+                detail: {
+                  personId,
+                  periodPreset,
+                  prepForOneOnOne: true,
+                },
+              }),
+            );
+          }}
+          onOpenTeamOverview={() => {
+            dispatchAppRoute("performance");
+            dispatchPerformanceTab("overview");
+          }}
         />
       ) : null}
 
-      <div
-        className="dashboard-operational-row"
-        data-testid="dashboard-first-viewport"
-      >
-        <ActionQueueSection
-          title="My focus"
-          items={focusPreview}
-          emptyMessage="Nothing needs your attention right now."
-          onOpen={handleAction}
-          openLabel={actionOpenLabel}
-          variant="dashboard"
-          footerAction={
-            focusHasMore
-              ? {
-                  label: "View all assignments",
-                  onClick: () => {
-                    dispatchAppRoute("performance");
-                    dispatchEmployeeView("my-week");
-                  },
-                }
-              : undefined
-          }
-        />
-        {team ? (
-          <ActionQueueSection
-            title="Team actions"
-            items={teamActionsPreview}
-            emptyMessage="No high-priority team actions right now."
-            onOpen={handleAction}
-            openLabel={actionOpenLabel}
-            variant="dashboard"
-            footerAction={{
-              label: teamActionsHasMore ? "View all team actions" : "Open team overview",
-              onClick: () => {
-                dispatchAppRoute("performance");
-                dispatchPerformanceTab("overview");
-              },
-            }}
+      {selfPerson?.bamboo.hireDate && isNewStarter(selfPerson.bamboo.hireDate) && !team ? (
+        selfOnboarding ? (
+          <OnboardingChecklistCard
+            model={selfOnboarding}
+            onOpenDetail={() => setChecklistDrawerOpen(true)}
+            compact
           />
-        ) : null}
-      </div>
+        ) : (
+          <GettingStartedResources
+            bamboo={selfPerson.bamboo}
+            matched={onboardingMatched}
+            onViewAll={resourceLibrary.openLibrary}
+            compact
+          />
+        )
+      ) : null}
 
-      <div className="home-layout">
-        <div className="home-column home-column--personal">
-
-          <section className="home-card" aria-label="New assignments">
-            <h2 className="home-card__title">New assignments</h2>
-            {personal.newAssignments.length === 0 ? (
-              <p className="home-card__empty">No unread Jira assignments.</p>
-            ) : (
-              <div className="home-compact-rows">
-                {personal.newAssignments.map((record) => (
-                  <DashboardCompactRow
-                    key={record.issueKey}
-                    subject={
-                      <>
-                        <span className="home-compact-rows__key">{record.issueKey}</span>
-                        {record.title}
-                      </>
-                    }
-                    actionLabel="Open Jira"
-                    onAction={() => void openJiraAssignment(record.issueKey)}
-                    subjectAction={() => void openJiraAssignment(record.issueKey)}
-                  />
-                ))}
-              </div>
-            )}
-            <Button
-              variant="secondary"
-              onClick={() => {
-                dispatchAppRoute("performance");
-                dispatchEmployeeView("my-week");
-              }}
-            >
-              Open My Week
-            </Button>
-          </section>
-
-          {personal.timeOff ? (
-            <section className="home-card" aria-label="Upcoming time off">
-              <h2 className="home-card__title">Upcoming time off</h2>
-              <p className="home-card__lead">{personal.timeOff.headline}</p>
-              <p className="home-card__meta">{personal.timeOff.rangeLabel}</p>
-              {personal.timeOff.activeCount > 0 ? (
-                <p className="home-card__meta">
-                  {personal.timeOff.activeCount} active tasks
-                  {personal.timeOff.inReviewCount > 0
-                    ? ` · ${personal.timeOff.inReviewCount} in review`
-                    : ""}
-                </p>
-              ) : null}
-              <div className="home-card__actions">
-                <Button
-                  variant="secondary"
-                  onClick={() => {
-                    dispatchAppRoute("performance");
-                    dispatchEmployeeView("my-week");
-                  }}
-                >
-                  View work
-                </Button>
-                <Button
-                  variant="secondary"
-                  onClick={() => void openExternalUrl(bambooEmployeePortalUrl())}
-                >
-                  Open BambooHR
-                </Button>
-              </div>
-            </section>
-          ) : null}
-
-          <section
-            className="home-card home-card--knowledge"
-            aria-label="Relevant knowledge"
-            data-testid="home-relevant-knowledge"
-          >
-            <h2 className="home-card__title">Relevant knowledge</h2>
-            {personal.knowledgeStatus === "unavailable" ? (
-              <p className="home-card__empty" role="status">Knowledge unavailable.</p>
-            ) : personal.knowledgeStatus === "loading" ? (
-              <p className="home-card__meta" aria-busy="true">Loading knowledge…</p>
-            ) : personal.knowledge.length === 0 ? (
-              <p className="home-card__empty" role="status">
-                No related knowledge found.
-              </p>
-            ) : (
-              <div className="home-knowledge-rows">
-                {personal.knowledge.map((item) => (
-                  <ResourceRow
-                    key={item.id}
-                    title={item.title}
-                    source="confluence"
-                    subtitle={
-                      item.contextLabel ||
-                      (item.relatedIssueKey ? `Related to ${item.relatedIssueKey}` : undefined)
-                    }
-                    externalLabel="Open in Confluence"
-                    onOpen={() => void openExternalUrl(item.url)}
-                  />
-                ))}
-              </div>
-            )}
-          </section>
-
-          <section className="home-card" aria-label="Performance snapshot">
-            <h2 className="home-card__title">Performance snapshot</h2>
-            <dl className="home-metrics">
-              {personal.performanceSnapshot.metrics.map((metric) => (
-                <div key={metric.label} className="home-metrics__row">
-                  <dt>{metric.label}</dt>
-                  <dd>{metric.value}</dd>
-                </div>
-              ))}
-            </dl>
-            <Button variant="secondary" onClick={() => dispatchAppRoute("performance")}>
-              Open Performance
-            </Button>
-          </section>
-
-          {selfPerson?.bamboo.hireDate && isNewStarter(selfPerson.bamboo.hireDate) ? (
-            selfOnboarding ? (
-              <OnboardingChecklistCard
-                model={selfOnboarding}
-                onOpenDetail={() => setChecklistDrawerOpen(true)}
-                compact
-              />
-            ) : (
-              <GettingStartedResources
-                bamboo={selfPerson.bamboo}
-                matched={onboardingMatched}
-                onViewAll={resourceLibrary.openLibrary}
-                compact
-              />
-            )
-          ) : null}
-
-          {showGoalsSummary && !team && !goalsProminent ? (
-            <HomeGoalsSummaryCard teamView={false} summary={goalsHomeSummary} />
-          ) : null}
-
-          {selfPerson?.bamboo &&
-          (!selfPerson.bamboo.hireDate || !isNewStarter(selfPerson.bamboo.hireDate)) ? (
-            <section className="home-card" aria-label="Resources">
-              <h2 className="home-card__title">Resources</h2>
-              <p className="home-card__meta">
-                {onboardingMatched.all.length} links for your team and role
-              </p>
-              <Button variant="secondary" onClick={resourceLibrary.openLibrary}>
-                Open resource library
-              </Button>
-            </section>
-          ) : null}
-
-          {calendarConnected && upcomingMeetings?.meetings.length ? (
-            <HomeUpcomingMeetings
-              meetings={upcomingMeetings.meetings}
-              managerView={Boolean(team)}
-              jiraBaseUrl={homeJiraBaseUrl}
-              onPrepareOneOnOne={(personId, periodPreset: DateRangeKey) => {
-                window.dispatchEvent(
-                  new CustomEvent("metrio-open-person-brief", {
-                    detail: {
-                      personId,
-                      periodPreset,
-                      prepForOneOnOne: true,
-                    },
-                  }),
-                );
-              }}
-              onOpenTeamOverview={() => {
-                dispatchAppRoute("performance");
-                dispatchPerformanceTab("overview");
-              }}
-            />
-          ) : null}
-        </div>
-
-        {team ? (
-          <div className="home-column home-column--team">
-            {team.dependencySignals.length ? (
-              <section
-                className="home-card"
-                aria-label="Delivery dependencies"
-                data-testid="home-dependency-signals"
-              >
-                <h2 className="home-card__title">Dependencies</h2>
-                <div className="home-compact-rows">
-                  {team.dependencySignals.map((signal) => (
-                    <DashboardCompactRow
-                      key={signal.id}
-                      subject={signal.title}
-                      secondary={signal.description}
-                      actionLabel="Open Delivery Risk"
-                      onAction={() => {
-                        dispatchAppRoute("performance");
-                        dispatchPerformanceTab("delivery-risk");
-                      }}
-                    />
-                  ))}
-                </div>
-              </section>
-            ) : null}
-
-            <section className="home-card" aria-label="Delivery summary">
-              <h2 className="home-card__title">Delivery summary</h2>
-              <p className="home-card__meta">
-                {team.deliverySummary.problematic} problematic ·{" "}
-                {team.deliverySummary.longReview} in long Review ·{" "}
-                {team.deliverySummary.backflowSignals} backflow signals
-              </p>
-              <Button
-                variant="secondary"
-                onClick={() => {
-                  dispatchAppRoute("performance");
-                  dispatchPerformanceTab("delivery-risk");
-                }}
-              >
-                Open Delivery Risk
-              </Button>
-            </section>
-
-            {team.projectSignals.length > 0 ? (
-              <section className="home-card" aria-label="Project signals">
-                <h2 className="home-card__title">Project signals</h2>
-                <div className="home-compact-rows">
-                  {team.projectSignals.map((signal) => (
-                    <DashboardCompactRow
-                      key={signal.projectKey}
-                      subject={signal.projectKey}
-                      secondary={signal.label}
-                      actionLabel="Open project"
-                      onAction={() => openProjectCockpit(signal.projectKey)}
-                    />
-                  ))}
-                </div>
-              </section>
-            ) : null}
-
-            <section className="home-card" aria-label="Upcoming availability">
-              <h2 className="home-card__title">Upcoming availability</h2>
-              <p className="home-card__meta">
-                {team.awayNextWeek} people away next week
-              </p>
-              <div className="home-compact-rows">
-                {team.availabilityPreview.map((row) => {
-                  const startsLabel =
-                    row.daysUntil === 0
-                      ? "Starts today"
-                      : row.daysUntil === 1
-                        ? "Starts tomorrow"
-                        : row.daysUntil != null
-                          ? `Starts in ${row.daysUntil} days`
-                          : "Upcoming leave";
-                  return (
-                    <DashboardCompactRow
-                      key={row.personId}
-                      subject={row.personName}
-                      secondary={`Away ${row.rangeLabel}\n${startsLabel}`}
-                      badge={
-                        row.severity === "warning"
-                          ? {
-                              label: "Coverage risk",
-                              variant: "warning",
-                            }
-                          : undefined
-                      }
-                      actionLabel="View person"
-                      onAction={() => openPerson(row.personId, "overview")}
-                    />
-                  );
-                })}
-              </div>
-              <Button
-                variant="secondary"
-                onClick={() => {
-                  dispatchAppRoute("performance");
-                  dispatchPerformanceTab("overview");
-                }}
-              >
-                View team overview
-              </Button>
-            </section>
-
-            {team.newStarters.length > 0 ? (
-              <section className="home-card" aria-label="New starters">
-                <h2 className="home-card__title">New starters</h2>
-                <div className="home-compact-rows home-compact-rows--starters">
-                  {team.newStarters.map((row) => {
-                    const person = data?.teamSnapshot?.persons.find(
-                      (p) => p.id === row.personId,
-                    );
-                    const [completeSteps, totalSteps] = (row.progressLabel ?? "")
-                      .split("/")
-                      .map((part) => Number.parseInt(part, 10));
-                    const progressRatio =
-                      Number.isFinite(completeSteps) &&
-                      Number.isFinite(totalSteps) &&
-                      totalSteps > 0
-                        ? completeSteps / totalSteps
-                        : null;
-                    return (
-                      <article
-                        key={row.personId}
-                        className="home-new-starter-card"
-                        data-testid="dashboard-new-starter-row"
-                      >
-                        <div className="home-new-starter-card__head">
-                          {person ? (
-                            <PersonAvatar person={person} size="sm" />
-                          ) : null}
-                          <div className="home-new-starter-card__identity">
-                            <p className="home-new-starter-card__name">{row.personName}</p>
-                            {row.jobTitle ? (
-                              <p className="home-new-starter-card__meta">{row.jobTitle}</p>
-                            ) : null}
-                            <p className="home-new-starter-card__meta">{row.dayLabel}</p>
-                          </div>
-                        </div>
-                        {row.stepsCompleteLabel ? (
-                          <div className="home-new-starter-card__onboarding">
-                            <p className="home-new-starter-card__label">Onboarding</p>
-                            <p className="home-new-starter-card__meta">
-                              {row.stepsCompleteLabel}
-                            </p>
-                            {progressRatio != null ? (
-                              <div
-                                className="home-new-starter-card__progress"
-                                role="progressbar"
-                                aria-valuenow={completeSteps}
-                                aria-valuemin={0}
-                                aria-valuemax={totalSteps}
-                                aria-label="Onboarding progress"
-                              >
-                                <span
-                                  className="home-new-starter-card__progress-fill"
-                                  style={{ width: `${Math.round(progressRatio * 100)}%` }}
-                                />
-                              </div>
-                            ) : null}
-                            {row.actionsRemainingLabel ? (
-                              <p className="home-new-starter-card__meta">
-                                {row.actionsRemainingLabel}
-                              </p>
-                            ) : null}
-                          </div>
-                        ) : null}
-                        <div className="home-new-starter-card__actions">
-                          <Button
-                            type="button"
-                            variant="secondary"
-                            onClick={() => openPerson(row.personId)}
-                          >
-                            View person
-                          </Button>
-                          {canOpenPersonBrief(currentUser, row.personId) ? (
-                            <Button
-                              type="button"
-                              variant="secondary"
-                              onClick={() => {
-                                window.dispatchEvent(
-                                  new CustomEvent("metrio-open-person-brief", {
-                                    detail: { personId: row.personId },
-                                  }),
-                                );
-                              }}
-                            >
-                              Prepare for 1:1
-                            </Button>
-                          ) : null}
-                        </div>
-                      </article>
-                    );
-                  })}
-                </div>
-              </section>
-            ) : null}
-
-            {team.feedback ? (
-              <section className="home-card" aria-label="Feedback">
-                <h2 className="home-card__title">Feedback</h2>
-                <p className="home-card__lead">{team.feedback.headline}</p>
-                {team.feedback.detail ? (
-                  <p className="home-card__meta">{team.feedback.detail}</p>
-                ) : null}
-                <Button
-                  variant="secondary"
-                  onClick={() => {
-                    dispatchAppRoute("feedback");
-                    dispatchFeedbackTab("delivery");
-                  }}
-                >
-                  Open Feedback
-                </Button>
-              </section>
-            ) : null}
-
-            {showGoalsSummary && !goalsProminent ? (
-              <HomeGoalsSummaryCard
-                teamView
-                summary={goalsHomeSummary}
-              />
-            ) : null}
-          </div>
-        ) : null}
-
-        {organization ? (
-          <div className="home-column home-column--org">
-            <section className="home-card" aria-label="Organization signals">
-              <h2 className="home-card__title">Organization signals</h2>
-              <p className="home-card__meta">
-                {organization.signalCount} signals ·{" "}
-                {organization.teamsNeedingAttention} teams need attention
-              </p>
-              <Button
-                variant="secondary"
-                onClick={() => {
-                  dispatchAppRoute("performance");
-                  dispatchPerformanceTab("overview");
-                }}
-              >
-                Open director view
-              </Button>
-            </section>
-            <section className="home-card" aria-label="Capacity">
-              <h2 className="home-card__title">Capacity</h2>
-              <ul className="home-link-list">
-                {organization.model.teamCapacity
-                  .filter((row) => row.awayNextWeek > 0)
-                  .slice(0, 6)
-                  .map((row) => (
-                    <li key={row.teamId}>
-                      <span className="home-card__meta">
-                        <strong>{row.teamName}</strong> · {row.label}
-                      </span>
-                    </li>
-                  ))}
-              </ul>
-            </section>
-          </div>
-        ) : null}
-      </div>
       {selfPerson ? (
         <ResourceLibrary
           open={resourceLibrary.open}

@@ -1,0 +1,76 @@
+import { Button } from "../../../components/Button/Button";
+import type { DashboardSyncStatus } from "../../../domain/home/dashboardSyncStatus";
+import { formatRelativeSync } from "../../../platform/observability/connectionDiagnostics";
+
+export interface DashboardExecutiveHeaderProps {
+  greeting: string;
+  activeJiraCount: number;
+  newAssignmentCount: number;
+  lastUpdatedAt: string | null;
+  dashboardSyncStatus: DashboardSyncStatus | null;
+  refreshing: boolean;
+  onRefresh: () => void;
+}
+
+export function DashboardExecutiveHeader({
+  greeting,
+  activeJiraCount,
+  newAssignmentCount,
+  lastUpdatedAt,
+  dashboardSyncStatus,
+  refreshing,
+  onRefresh,
+}: DashboardExecutiveHeaderProps) {
+  return (
+    <header className="executive-header" data-testid="dashboard-executive-header">
+      <div className="executive-header__main">
+        <h1 className="executive-header__title">{greeting}</h1>
+        <div className="executive-header__meta">
+          <span className="executive-header__chip">
+            {activeJiraCount} active Jira work
+          </span>
+          <span className="executive-header__chip">
+            {newAssignmentCount} new assignment{newAssignmentCount === 1 ? "" : "s"}
+          </span>
+          {lastUpdatedAt ? (
+            <span className="executive-header__chip">
+              Updated {formatRelativeSync(lastUpdatedAt)}
+            </span>
+          ) : null}
+        </div>
+        {dashboardSyncStatus ? (
+          <p className="executive-header__sync" data-testid="dashboard-sync-status">
+            {dashboardSyncStatus.line}
+            {dashboardSyncStatus.showRetry ? (
+              <>
+                {" "}
+                <button
+                  type="button"
+                  className="executive-header__sync-action"
+                  onClick={() => onRefresh()}
+                >
+                  Retry
+                </button>
+              </>
+            ) : null}
+          </p>
+        ) : null}
+      </div>
+      <div className="executive-header__actions">
+        <Button
+          type="button"
+          variant="secondary"
+          disabled={refreshing}
+          onClick={() => onRefresh()}
+        >
+          {refreshing ? "Refreshing…" : "Refresh"}
+        </Button>
+        {refreshing ? (
+          <span className="executive-header__refresh-hint" aria-live="polite">
+            Refreshing
+          </span>
+        ) : null}
+      </div>
+    </header>
+  );
+}

@@ -2006,6 +2006,143 @@ test.describe("Metrio visual regression", () => {
     });
   });
 
+  test("dashboard-manager-1280", async ({ page }) => {
+    await bootDashboardManager(page, 1280);
+    await expect(page.getByTestId("dashboard-kpi-strip")).toBeVisible();
+    await expect(page).toHaveScreenshot("dashboard-manager-1280.png", {
+      fullPage: true,
+      maxDiffPixelRatio: 0.02,
+    });
+  });
+
+  test("dashboard-manager-1440", async ({ page }) => {
+    await bootDashboardManager(page, 1440);
+    await expect(page.getByTestId("dashboard-kpi-strip")).toBeVisible();
+    await expect(page).toHaveScreenshot("dashboard-manager-1440.png", {
+      fullPage: true,
+      maxDiffPixelRatio: 0.02,
+    });
+  });
+
+  test("dashboard-manager-1728", async ({ page }) => {
+    await bootDashboardManager(page, 1728);
+    await expect(page.getByTestId("dashboard-kpi-strip")).toBeVisible();
+    await expect(page).toHaveScreenshot("dashboard-manager-1728.png", {
+      fullPage: true,
+      maxDiffPixelRatio: 0.02,
+    });
+  });
+
+  test("dashboard-manager-dark", async ({ page }) => {
+    await page.addInitScript((fixtureId: string) => {
+      localStorage.setItem("metrio-connection-connected", "true");
+      localStorage.setItem("metrio-dev-fixture", fixtureId);
+      localStorage.setItem("metrio-theme", "dark");
+    }, "lead");
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto("/");
+    await expect(page.getByTestId("dashboard-ready")).toBeVisible({ timeout: 30_000 });
+    await expect(page).toHaveScreenshot("dashboard-manager-dark.png", {
+      fullPage: true,
+      maxDiffPixelRatio: 0.02,
+    });
+  });
+
+  test("dashboard-employee", async ({ page }) => {
+    await bootMetrio(page, "employee");
+    await expect(page.getByTestId("dashboard-ready")).toBeVisible({ timeout: 30_000 });
+    await expect(page.getByTestId("dashboard-my-focus")).toBeVisible();
+    await expect(page).toHaveScreenshot("dashboard-employee.png", {
+      fullPage: true,
+      maxDiffPixelRatio: 0.02,
+    });
+  });
+
+  test("dashboard-director", async ({ page }) => {
+    await bootMetrio(page, "director");
+    await expect(page.getByTestId("dashboard-ready")).toBeVisible({ timeout: 30_000 });
+    await expect(page.getByTestId("dashboard-director-org")).toBeVisible();
+    await expect(page).toHaveScreenshot("dashboard-director.png", {
+      fullPage: true,
+      maxDiffPixelRatio: 0.02,
+    });
+  });
+
+  test("dashboard-new-starter", async ({ page }) => {
+    await bootDashboardManager(page, 1440);
+    await expect(page.getByTestId("dashboard-new-starter-row").first()).toBeVisible();
+    await expect(page).toHaveScreenshot("dashboard-new-starter.png", {
+      fullPage: true,
+      maxDiffPixelRatio: 0.02,
+    });
+  });
+
+  test("dashboard-upcoming-leave", async ({ page }) => {
+    await page.addInitScript((fixtureId: string) => {
+      localStorage.setItem("metrio-connection-connected", "true");
+      localStorage.setItem("metrio-dev-fixture", fixtureId);
+      localStorage.setItem("metrio-theme", "light");
+    }, "lead");
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto("/?visualHomeTimeOff=1");
+    await expect(page.getByTestId("dashboard-ready")).toBeVisible({ timeout: 30_000 });
+    await expect(page).toHaveScreenshot("dashboard-upcoming-leave.png", {
+      fullPage: true,
+      maxDiffPixelRatio: 0.02,
+    });
+  });
+
+  test("dashboard-no-secondary-data", async ({ page }) => {
+    await page.addInitScript((fixtureId: string) => {
+      localStorage.setItem("metrio-connection-connected", "true");
+      localStorage.setItem("metrio-dev-fixture", fixtureId);
+      localStorage.setItem("metrio-theme", "light");
+      localStorage.setItem("metrio-visual-goals", "[]");
+    }, "employee");
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto("/");
+    await expect(page.getByTestId("dashboard-ready")).toBeVisible({ timeout: 30_000 });
+    await expect(page).toHaveScreenshot("dashboard-no-secondary-data.png", {
+      fullPage: true,
+      maxDiffPixelRatio: 0.02,
+    });
+  });
+
+  test("dashboard-refreshing-cache", async ({ page }) => {
+    await bootDashboardWithCache(page, { width: 1440, delayMs: 600_000 });
+    await expect(page.getByTestId("dashboard-kpi-strip")).toBeVisible();
+    await expect(page).toHaveScreenshot("dashboard-refreshing-cache.png", {
+      fullPage: true,
+      maxDiffPixelRatio: 0.02,
+    });
+  });
+
+  test("dashboard-team-actions-long-label", async ({ page }) => {
+    await bootDashboardManager(page, 1280);
+    const cta = page.getByTestId("dashboard-team-actions").getByRole("button", {
+      name: /Open Delivery Risk/i,
+    });
+    await expect(cta.first()).toBeVisible();
+    const box = await cta.first().boundingBox();
+    expect(box).not.toBeNull();
+    await expect(page.getByTestId("dashboard-team-actions")).toHaveScreenshot(
+      "dashboard-team-actions-long-label.png",
+      { maxDiffPixelRatio: 0.02 },
+    );
+  });
+
+  test("dashboard-chart-tooltip", async ({ page }) => {
+    await bootDashboardManager(page, 1440);
+    const pulse = page.getByTestId("dashboard-performance-pulse");
+    await expect(pulse).toBeVisible();
+    const chart = pulse.locator(".recharts-surface").first();
+    await chart.hover({ position: { x: 40, y: 20 } });
+    await expect(page.locator(".trend-chart-tooltip")).toBeVisible();
+    await expect(pulse).toHaveScreenshot("dashboard-chart-tooltip.png", {
+      maxDiffPixelRatio: 0.03,
+    });
+  });
+
   test("dark-dashboard", async ({ page }) => {
     await page.addInitScript((fixtureId: string) => {
       localStorage.setItem("metrio-connection-connected", "true");
