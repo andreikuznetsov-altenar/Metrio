@@ -843,11 +843,7 @@ export function HomePage() {
                       >
                         <div className="home-new-starter-card__head">
                           {person ? (
-                            <PersonAvatar
-                              displayName={person.bamboo.displayName}
-                              employeeId={person.bamboo.id || person.id}
-                              size="sm"
-                            />
+                            <PersonAvatar person={person} size="sm" />
                           ) : null}
                           <div className="home-new-starter-card__identity">
                             <p className="home-new-starter-card__name">{row.personName}</p>

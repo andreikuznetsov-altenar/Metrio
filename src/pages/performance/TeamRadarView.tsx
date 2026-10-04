@@ -48,7 +48,7 @@ export function TeamRadarView({ rows, onOpenPerson }: TeamRadarViewProps) {
                   >
                     <span className="performance-table__person-inline">
                       <PersonAvatar
-                        employeeId={row.personId}
+                        personId={row.personId}
                         displayName={row.personName || row.personId}
                         size="sm"
                       />

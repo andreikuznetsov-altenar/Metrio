@@ -60,7 +60,7 @@ export function TeamUpcomingAvailabilitySection({
                 onClick={() => onOpenPerson(row.personId)}
               >
                 <PersonAvatar
-                  employeeId={row.personId}
+                  personId={row.personId}
                   displayName={row.personName}
                   size="sm"
                 />

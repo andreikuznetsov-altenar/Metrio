@@ -303,7 +303,7 @@ export function TeamOverviewView({
                       <td>
                         <div className="performance-table__person-inline">
                           <PersonAvatar
-                            employeeId={item.personId}
+                            personId={item.personId}
                             displayName={name}
                             size="sm"
                           />

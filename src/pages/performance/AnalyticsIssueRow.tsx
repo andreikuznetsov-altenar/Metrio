@@ -108,7 +108,7 @@ export function AnalyticsIssueRow({
         <div className="analytics-issue-row__person-line">
           {!hidePerson && issue.personId ? (
             <PersonAvatar
-              employeeId={issue.personId}
+              personId={issue.personId}
               displayName={personLabel}
               size="sm"
             />

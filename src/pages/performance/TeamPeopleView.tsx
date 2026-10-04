@@ -37,7 +37,7 @@ export function TeamPeopleView({ rows, onOpenPerson }: TeamPeopleViewProps) {
                     onClick={() => onOpenPerson(row.personId)}
                   >
                     <PersonAvatar
-                      employeeId={row.personId}
+                      personId={row.personId}
                       displayName={row.personName || row.personId}
                       size="sm"
                     />

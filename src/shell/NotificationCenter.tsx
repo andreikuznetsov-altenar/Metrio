@@ -199,7 +199,7 @@ export function NotificationCenter({
     if (personWorkload) {
       return (
         <PersonAvatar
-          employeeId={event.personId!}
+          personId={event.personId!}
           displayName={event.personName!}
           size="sm"
         />

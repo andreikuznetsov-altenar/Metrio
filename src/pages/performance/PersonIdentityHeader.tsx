@@ -52,7 +52,12 @@ export function PersonIdentityHeader({
     <div
       className={[ "person-identity-header", className ].filter(Boolean).join(" ")}
     >
-      <PersonAvatar employeeId={personId} displayName={displayName} size="md" />
+      <PersonAvatar
+        person={person}
+        personId={personId}
+        displayName={displayName}
+        size="lg"
+      />
       <div className="person-identity-header__text">
         <div className="person-identity-header__name">{displayName}</div>
         <div className="person-identity-header__role">{jobTitle}</div>

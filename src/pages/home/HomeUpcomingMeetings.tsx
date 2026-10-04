@@ -1,4 +1,5 @@
 import { Button } from "../../components/Button/Button";
+import { PersonAvatar } from "../../components/PersonAvatar/PersonAvatar";
 import type { MatchedMeeting } from "../../domain/calendar/calendarTypes";
 import {
   isJoinWindowActive,
@@ -41,6 +42,14 @@ export function HomeUpcomingMeetings({
         {upcoming.map((meeting) => (
           <li key={meeting.eventId} className="home-calendar-row">
             <div className="home-calendar-row__main">
+              {meeting.kind === "one_on_one" && meeting.otherPersonId ? (
+                <PersonAvatar
+                  personId={meeting.otherPersonId}
+                  displayName={meeting.otherPersonName ?? "Team member"}
+                  size="sm"
+                  className="home-calendar-row__avatar"
+                />
+              ) : null}
               <span className="home-calendar-row__time">
                 {formatMeetingTime(meeting.start)}
               </span>

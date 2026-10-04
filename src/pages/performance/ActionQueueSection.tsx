@@ -1,5 +1,6 @@
 import { Badge } from "../../components/Badge/Badge";
 import { Button } from "../../components/Button/Button";
+import { PersonAvatar } from "../../components/PersonAvatar/PersonAvatar";
 import type { ActionItem } from "../../domain/actions/actionTypes";
 import { buildDashboardActionRow } from "../../domain/actions/actionPresentation";
 import { badgeVariantForAttentionLabel } from "../../platform/attentionSemanticBadge";
@@ -40,6 +41,14 @@ export function ActionQueueSection({
                   className="action-queue__dashboard-row"
                   data-testid="dashboard-action-row"
                 >
+                  {item.personId && item.personName ? (
+                    <PersonAvatar
+                      personId={item.personId}
+                      displayName={item.personName}
+                      size="sm"
+                      className="action-queue__dashboard-avatar"
+                    />
+                  ) : null}
                   <span className="action-queue__dashboard-subject">{row.subject}</span>
                   <Badge
                     variant={badgeVariantForAttentionLabel(row.reasonTag)}
