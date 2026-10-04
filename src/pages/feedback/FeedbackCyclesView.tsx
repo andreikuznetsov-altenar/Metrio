@@ -9,24 +9,16 @@ import { confidentialityLabel } from '../../domain/feedbackCycles/feedbackPrivac
 import { responseProgress, runsForCycle } from '../../domain/feedbackCycles/runComparison';
 import type { FeedbackCycle } from '../../domain/feedbackCycles/feedbackCycleTypes';
 import { BUILTIN_FEEDBACK_TEMPLATES } from '../../domain/feedbackCycles/feedbackTemplates';
+import {
+  feedbackCadenceUnitLabel,
+  feedbackCycleStatusLabel,
+  feedbackCycleTypeLabel,
+} from '../../domain/feedbackCycles/feedbackCycleLabels';
 import { useOptionalCompanyConfig } from '../../app/CompanyConfigContext';
 import { saveSurveyData } from '../../services/survey/surveyPersistence';
 import { Badge, Button } from './design-system';
 import { FeedbackEmptyState } from './FeedbackEmptyState';
 import { FeedbackTemplateLibrary } from './FeedbackTemplateLibrary';
-
-function cycleTypeLabel(type: FeedbackCycle['type']): string {
-  switch (type) {
-    case 'pulse':
-      return 'Pulse';
-    case 'onboarding':
-      return 'Onboarding';
-    case 'project':
-      return 'Project';
-    default:
-      return type;
-  }
-}
 
 function cycleStatusVariant(
   status: FeedbackCycle['status'],
@@ -147,13 +139,16 @@ export function FeedbackCyclesView() {
               <div className="feedback-cycle-card__head">
                 <h3 className="feedback-cycle-card__title">{cycle.name}</h3>
                 <div className="feedback-cycle-card__badges">
-                  <Badge variant="neutral">{cycleTypeLabel(cycle.type)}</Badge>
-                  <Badge variant={cycleStatusVariant(cycle.status)}>{cycle.status}</Badge>
+                  <Badge variant="neutral">{feedbackCycleTypeLabel(cycle.type)}</Badge>
+                  <Badge variant={cycleStatusVariant(cycle.status)}>
+                    {feedbackCycleStatusLabel(cycle.status)}
+                  </Badge>
                 </div>
               </div>
               <div className="feedback-cycle-card__metrics">
                 <span>
-                  Cadence: <strong>{cycle.cadence?.unit ?? '—'}</strong>
+                  Cadence:{' '}
+                  <strong>{feedbackCadenceUnitLabel(cycle.cadence?.unit)}</strong>
                 </span>
                 <span>
                   Responses:{' '}

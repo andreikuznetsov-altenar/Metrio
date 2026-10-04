@@ -2,6 +2,7 @@ import { test, expect, type Page } from "@playwright/test";
 import { serializeNotificationFixtureForPlaywright } from "../../src/fixtures/notificationCenterVisualFixture";
 import {
   serializeFeedbackCyclesPopulatedSurveyForPlaywright,
+  serializeFeedbackDeliveryVisualSurveyForPlaywright,
   serializeFeedbackDisconnectedPrefsForPlaywright,
   serializeFeedbackVisualPrefsForPlaywright,
 } from "../../src/fixtures/feedbackWorkflowFixture";
@@ -1258,6 +1259,7 @@ test.describe("Metrio visual regression", () => {
     await page.getByRole("button", { name: /^settings$/i }).click();
     await clickSettingsSection(page, /^connections$/i);
     const card = page.getByTestId("settings-jira-card");
+    await card.getByRole("button", { name: /^change$/i }).click();
     await expect(card.getByTestId("jira-get-api-token")).toBeVisible();
     await expect(card).toHaveScreenshot("connections-jira-card.png", {
       maxDiffPixelRatio: 0.02,
@@ -1269,6 +1271,7 @@ test.describe("Metrio visual regression", () => {
     await page.getByRole("button", { name: /^settings$/i }).click();
     await clickSettingsSection(page, /^connections$/i);
     const card = page.getByTestId("settings-bamboo-card");
+    await card.getByRole("button", { name: /^change$/i }).click();
     await expect(card.getByTestId("bamboo-api-key-help")).toBeVisible();
     await expect(card).toHaveScreenshot("connections-bamboo-card.png", {
       maxDiffPixelRatio: 0.02,
@@ -1772,11 +1775,11 @@ test.describe("Metrio visual regression", () => {
     });
   });
 
-  test("initial connection screen", async ({ page }) => {
+  test("initial-connection-screen", async ({ page }) => {
     await page.goto("/");
     await expect(page.getByTestId("connection-screen")).toBeVisible({ timeout: 15_000 });
     await expect(page.getByText("Connect your work tools")).toBeVisible();
-    await expect(page).toHaveScreenshot("connection-initial-screen.png", {
+    await expect(page).toHaveScreenshot("initial-connection-screen.png", {
       fullPage: true,
       maxDiffPixelRatio: 0.02,
     });
@@ -1840,36 +1843,32 @@ test.describe("Metrio visual regression", () => {
     });
   });
 
-  test("dashboard manager 1440", async ({ page }) => {
-    await page.addInitScript((fixtureId: string) => {
-      localStorage.setItem("metrio-connection-connected", "true");
-      localStorage.setItem("metrio-dev-fixture", fixtureId);
-      localStorage.setItem("metrio-theme", "light");
-    }, "lead");
-    await page.goto("/");
-    await expect(page.getByTestId("dashboard-ready")).toBeVisible({ timeout: 30_000 });
-    await expect(page).toHaveScreenshot("dashboard-manager-1440.png", {
+  test("executive-dashboard-1440", async ({ page }) => {
+    await bootDashboardManager(page, 1440);
+    await expect(page).toHaveScreenshot("executive-dashboard-1440.png", {
       fullPage: true,
       maxDiffPixelRatio: 0.02,
     });
   });
 
-  test("dashboard manager 1728", async ({ page }) => {
-    await page.setViewportSize({ width: 1728, height: 900 });
-    await page.addInitScript((fixtureId: string) => {
-      localStorage.setItem("metrio-connection-connected", "true");
-      localStorage.setItem("metrio-dev-fixture", fixtureId);
-      localStorage.setItem("metrio-theme", "light");
-    }, "lead");
-    await page.goto("/");
-    await expect(page.getByTestId("dashboard-ready")).toBeVisible({ timeout: 30_000 });
-    await expect(page).toHaveScreenshot("dashboard-manager-1728.png", {
+  test("executive-dashboard-1728", async ({ page }) => {
+    await bootDashboardManager(page, 1728);
+    await expect(page).toHaveScreenshot("executive-dashboard-1728.png", {
       fullPage: true,
       maxDiffPixelRatio: 0.02,
     });
   });
 
-  test("dashboard dark", async ({ page }) => {
+  test("dashboard-first-viewport", async ({ page }) => {
+    await bootDashboardManager(page, 1440);
+    const viewport = page.getByTestId("dashboard-first-viewport");
+    await expect(viewport).toBeVisible();
+    await expect(viewport).toHaveScreenshot("dashboard-first-viewport.png", {
+      maxDiffPixelRatio: 0.02,
+    });
+  });
+
+  test("dark-dashboard", async ({ page }) => {
     await page.addInitScript((fixtureId: string) => {
       localStorage.setItem("metrio-connection-connected", "true");
       localStorage.setItem("metrio-dev-fixture", fixtureId);
@@ -1877,7 +1876,7 @@ test.describe("Metrio visual regression", () => {
     }, "lead");
     await page.goto("/");
     await expect(page.getByTestId("dashboard-ready")).toBeVisible({ timeout: 30_000 });
-    await expect(page).toHaveScreenshot("dashboard-dark.png", {
+    await expect(page).toHaveScreenshot("dark-dashboard.png", {
       fullPage: true,
       maxDiffPixelRatio: 0.02,
     });
@@ -2220,6 +2219,138 @@ test.describe("Metrio visual regression", () => {
     });
   });
 
+  test("new-starter-card", async ({ page }) => {
+    await bootDashboardManager(page, 1440);
+    const section = page.getByRole("region", { name: "New starters" });
+    await expect(section).toBeVisible();
+    await expect(section).toHaveScreenshot("new-starter-card.png", {
+      maxDiffPixelRatio: 0.02,
+    });
+  });
+
+  test("upcoming-time-off", async ({ page }) => {
+    await page.addInitScript((fixtureId: string) => {
+      localStorage.setItem("metrio-connection-connected", "true");
+      localStorage.setItem("metrio-dev-fixture", fixtureId);
+      localStorage.setItem("metrio-theme", "light");
+    }, "lead");
+    await page.goto("/?visualHomeTimeOff=1");
+    await expect(page.getByTestId("dashboard-ready")).toBeVisible({ timeout: 30_000 });
+    const card = page.getByRole("region", { name: "Upcoming time off" });
+    await expect(card).toBeVisible();
+    await expect(card).toHaveScreenshot("upcoming-time-off.png", {
+      maxDiffPixelRatio: 0.02,
+    });
+  });
+
+  test("team-availability", async ({ page }) => {
+    await bootDashboardManager(page, 1440);
+    const card = page.getByRole("region", { name: "Upcoming availability" });
+    await expect(card).toBeVisible();
+    await expect(card).toHaveScreenshot("team-availability.png", {
+      maxDiffPixelRatio: 0.02,
+    });
+  });
+
+  test("stored-jira-token", async ({ page }) => {
+    await page.addInitScript((fixtureId: string) => {
+      localStorage.setItem("metrio-visual-secure-store", "all");
+      localStorage.setItem(
+        "metrio-connection-config",
+        JSON.stringify({ workEmail: "lead@altenar.com" }),
+      );
+      localStorage.setItem("metrio-connection-connected", "true");
+      localStorage.setItem("metrio-dev-fixture", fixtureId);
+      localStorage.setItem("metrio-theme", "light");
+    }, "lead");
+    await page.goto("/");
+    await expect(page.getByTestId("dashboard-ready")).toBeVisible({ timeout: 30_000 });
+    await page.getByRole("button", { name: /^settings$/i }).click();
+    await clickSettingsSection(page, /^connections$/i);
+    const card = page.getByTestId("settings-jira-card");
+    await expect(card.getByTestId("settings-credential-stored")).toHaveText(
+      "Stored securely",
+    );
+    await expect(card).toHaveScreenshot("stored-jira-token.png", {
+      maxDiffPixelRatio: 0.02,
+    });
+  });
+
+  test("edit-jira-token", async ({ page }) => {
+    await page.addInitScript((fixtureId: string) => {
+      localStorage.setItem("metrio-visual-secure-store", "all");
+      localStorage.setItem(
+        "metrio-connection-config",
+        JSON.stringify({ workEmail: "lead@altenar.com" }),
+      );
+      localStorage.setItem("metrio-connection-connected", "true");
+      localStorage.setItem("metrio-dev-fixture", fixtureId);
+      localStorage.setItem("metrio-theme", "light");
+    }, "lead");
+    await page.goto("/");
+    await expect(page.getByTestId("dashboard-ready")).toBeVisible({ timeout: 30_000 });
+    await page.getByRole("button", { name: /^settings$/i }).click();
+    await clickSettingsSection(page, /^connections$/i);
+    const card = page.getByTestId("settings-jira-card");
+    await card.getByRole("button", { name: /^change$/i }).click();
+    await expect(card.getByRole("button", { name: /^test connection$/i })).toBeVisible();
+    await expect(card).toHaveScreenshot("edit-jira-token.png", {
+      maxDiffPixelRatio: 0.02,
+    });
+  });
+
+  test("stored-bamboo-key", async ({ page }) => {
+    await page.addInitScript((fixtureId: string) => {
+      localStorage.setItem("metrio-visual-secure-store", "all");
+      localStorage.setItem(
+        "metrio-connection-config",
+        JSON.stringify({ workEmail: "lead@altenar.com" }),
+      );
+      localStorage.setItem("metrio-connection-connected", "true");
+      localStorage.setItem("metrio-dev-fixture", fixtureId);
+      localStorage.setItem("metrio-theme", "light");
+    }, "lead");
+    await page.goto("/");
+    await expect(page.getByTestId("dashboard-ready")).toBeVisible({ timeout: 30_000 });
+    await page.getByRole("button", { name: /^settings$/i }).click();
+    await clickSettingsSection(page, /^connections$/i);
+    const card = page.getByTestId("settings-bamboo-card");
+    await expect(card.getByTestId("settings-credential-stored")).toHaveText(
+      "Stored securely",
+    );
+    await expect(card).toHaveScreenshot("stored-bamboo-key.png", {
+      maxDiffPixelRatio: 0.02,
+    });
+  });
+
+  test("dark-connection-screen", async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem("metrio-theme", "dark");
+    });
+    await page.goto("/");
+    await expect(page.getByTestId("connection-screen")).toBeVisible({ timeout: 15_000 });
+    await expect(page).toHaveScreenshot("dark-connection-screen.png", {
+      fullPage: true,
+      maxDiffPixelRatio: 0.02,
+    });
+  });
+
+  test("connection-error", async ({ page }) => {
+    await page.goto("/");
+    await expect(page.getByTestId("connection-screen")).toBeVisible({ timeout: 15_000 });
+    await page.getByLabel(/^work email/i).fill("user@altenar.com");
+    await page.getByLabel(/^api token$/i).fill("bad");
+    await page.getByLabel(/^api key$/i).fill("bad");
+    await page.getByRole("button", { name: /connect & continue/i }).click();
+    await expect(page.getByTestId("connection-jira-error")).toBeVisible({
+      timeout: 15_000,
+    });
+    await expect(page).toHaveScreenshot("connection-error.png", {
+      fullPage: true,
+      maxDiffPixelRatio: 0.02,
+    });
+  });
+
   test("onboarding checklist dark", async ({ page }) => {
     const onboardingJson = serializeOnboardingChecklistVisualFixtureForPlaywright();
     await page.addInitScript((payload: string) => {
@@ -2236,5 +2367,263 @@ test.describe("Metrio visual regression", () => {
       fullPage: true,
       maxDiffPixelRatio: 0.02,
     });
+  });
+
+  test("performance-overview", async ({ page }) => {
+    await bootMetrio(page, "lead");
+    await expect(page.getByTestId("performance-dashboard-ready")).toBeVisible();
+    await expect(page).toHaveScreenshot("performance-overview.png", {
+      fullPage: true,
+      maxDiffPixelRatio: 0.02,
+    });
+  });
+
+  test("people", async ({ page }) => {
+    await bootMetrio(page, "lead");
+    await clickSubnav(page, /^people$/i);
+    await expect(page).toHaveScreenshot("people.png", {
+      fullPage: true,
+      maxDiffPixelRatio: 0.02,
+    });
+  });
+
+  test("radar", async ({ page }) => {
+    await bootMetrio(page, "lead");
+    await clickSubnav(page, /^radar$/i);
+    await expect(page).toHaveScreenshot("radar.png", {
+      fullPage: true,
+      maxDiffPixelRatio: 0.02,
+    });
+  });
+
+  test("project-cockpit", async ({ page }) => {
+    await bootMetrio(page, "lead");
+    await page.evaluate(() => {
+      window.dispatchEvent(
+        new CustomEvent("metrio-open-project-cockpit", {
+          detail: { projectKey: "UX" },
+        }),
+      );
+    });
+    await expect(page.getByTestId("project-cockpit")).toBeVisible();
+    await expect(page).toHaveScreenshot("project-cockpit.png", {
+      fullPage: true,
+      maxDiffPixelRatio: 0.02,
+    });
+  });
+
+  test("dependencies", async ({ page }) => {
+    await bootMetrio(page, "lead");
+    await page.evaluate(() => {
+      window.dispatchEvent(
+        new CustomEvent("metrio-open-project-cockpit", {
+          detail: { projectKey: "UX" },
+        }),
+      );
+    });
+    const section = page.getByTestId("project-cockpit-dependencies");
+    await expect(section).toBeVisible();
+    await expect(section).toHaveScreenshot("dependencies.png", {
+      maxDiffPixelRatio: 0.02,
+    });
+  });
+
+  test("meetings", async ({ page }) => {
+    await page.clock.install({ time: new Date("2026-10-03T09:30:00+02:00") });
+    const calendarJson = serializeCalendarVisualFixtureForPlaywright();
+    const prefsJson = serializeFeedbackVisualPrefsForPlaywright();
+    await page.addInitScript(
+      ({ payload, prefs }: { payload: string; prefs: string }) => {
+        localStorage.setItem("metrio-connection-connected", "true");
+        localStorage.setItem("metrio-dev-fixture", "lead");
+        localStorage.setItem("metrio-theme", "light");
+        localStorage.setItem("metrio-calendar-visual-fixture", payload);
+        const parsed = JSON.parse(prefs) as { google: Record<string, unknown> };
+        parsed.google = { ...parsed.google, calendarConnected: true };
+        localStorage.setItem("metrio-visual-preferences", JSON.stringify(parsed));
+      },
+      { payload: calendarJson, prefs: prefsJson },
+    );
+    await page.goto("/");
+    await expect(page.getByTestId("home-upcoming-meetings")).toBeVisible({
+      timeout: 30_000,
+    });
+    await expect(page.getByTestId("home-upcoming-meetings")).toHaveScreenshot(
+      "meetings.png",
+      { maxDiffPixelRatio: 0.02 },
+    );
+  });
+
+  test("onboarding", async ({ page }) => {
+    const onboardingJson = serializeOnboardingChecklistVisualFixtureForPlaywright();
+    await page.addInitScript((payload: string) => {
+      localStorage.setItem("metrio-connection-connected", "true");
+      localStorage.setItem("metrio-dev-fixture", "employee");
+      localStorage.setItem("metrio-theme", "light");
+      localStorage.setItem("metrio-visual-onboarding-checklist", payload);
+    }, onboardingJson);
+    await page.goto("/");
+    await expect(page.getByTestId("onboarding-checklist-card")).toBeVisible({
+      timeout: 30_000,
+    });
+    await expect(page.getByTestId("onboarding-checklist-card")).toHaveScreenshot(
+      "onboarding.png",
+      { maxDiffPixelRatio: 0.02 },
+    );
+  });
+
+  test("resource-library", async ({ page }) => {
+    await page.addInitScript((fixtureId: string) => {
+      localStorage.setItem("metrio-connection-connected", "true");
+      localStorage.setItem("metrio-dev-fixture", fixtureId);
+      localStorage.setItem("metrio-theme", "light");
+    }, "lead");
+    await page.goto("/");
+    await expect(page.getByTestId("dashboard-ready")).toBeVisible({ timeout: 30_000 });
+    await page.getByRole("button", { name: "Open resource library", exact: true }).click();
+    await expect(page.getByTestId("resource-library")).toBeVisible();
+    await expect(page.getByTestId("resource-library")).toHaveScreenshot(
+      "resource-library.png",
+      { maxDiffPixelRatio: 0.02 },
+    );
+  });
+
+  test("feedback-connected-survey", async ({ page }) => {
+    await bootMetrioFeedback(page, "light");
+    await page.getByRole("button", { name: /^feedback$/i }).click();
+    await page.getByRole("button", { name: /^Survey$/i }).click();
+    await expect(page.locator(".feedback-google-strip")).toBeVisible({ timeout: 15_000 });
+    await expect(page).toHaveScreenshot("feedback-connected-survey.png", {
+      fullPage: true,
+      maxDiffPixelRatio: 0.02,
+    });
+  });
+
+  test("feedback-recipients", async ({ page }) => {
+    const surveyJson = serializeFeedbackDeliveryVisualSurveyForPlaywright();
+    const prefsJson = serializeFeedbackVisualPrefsForPlaywright();
+    await page.addInitScript(
+      ({ prefs, survey }: { prefs: string; survey: string }) => {
+        localStorage.setItem("metrio-connection-connected", "true");
+        localStorage.setItem("metrio-dev-fixture", "lead");
+        localStorage.setItem("metrio-theme", "light");
+        localStorage.setItem("metrio-visual-preferences", prefs);
+        localStorage.setItem("metrio-visual-survey-data", survey);
+      },
+      { prefs: prefsJson, survey: surveyJson },
+    );
+    await page.goto("/");
+    await expect(page.getByTestId("dashboard-ready")).toBeVisible({ timeout: 30_000 });
+    await page.getByRole("button", { name: /^feedback$/i }).click();
+    await page.getByRole("button", { name: /^Delivery$/i }).click();
+    await page.getByRole("button", { name: /review recipients/i }).click();
+    await expect(page.getByTestId("feedback-recipients-drawer")).toBeVisible({
+      timeout: 15_000,
+    });
+    await expect(page.getByTestId("feedback-recipients-drawer")).toHaveScreenshot(
+      "feedback-recipients.png",
+      { maxDiffPixelRatio: 0.02 },
+    );
+  });
+
+  test("feedback-delivery", async ({ page }) => {
+    const surveyJson = serializeFeedbackDeliveryVisualSurveyForPlaywright();
+    const prefsJson = serializeFeedbackVisualPrefsForPlaywright();
+    await page.addInitScript(
+      ({ prefs, survey }: { prefs: string; survey: string }) => {
+        localStorage.setItem("metrio-connection-connected", "true");
+        localStorage.setItem("metrio-dev-fixture", "lead");
+        localStorage.setItem("metrio-theme", "light");
+        localStorage.setItem("metrio-visual-preferences", prefs);
+        localStorage.setItem("metrio-visual-survey-data", survey);
+      },
+      { prefs: prefsJson, survey: surveyJson },
+    );
+    await page.goto("/");
+    await expect(page.getByTestId("dashboard-ready")).toBeVisible({ timeout: 30_000 });
+    await page.getByRole("button", { name: /^feedback$/i }).click();
+    await page.getByRole("button", { name: /^Delivery$/i }).click();
+    await expect(page.getByTestId("feedback-tab-panel-delivery")).toBeVisible({
+      timeout: 15_000,
+    });
+    await expect(page.getByTestId("feedback-tab-panel-delivery")).toHaveScreenshot(
+      "feedback-delivery.png",
+      { maxDiffPixelRatio: 0.02 },
+    );
+  });
+
+  test("feedback-results", async ({ page }) => {
+    await bootMetrioFeedback(page, "light");
+    await page.getByRole("button", { name: /^feedback$/i }).click();
+    await page.getByRole("button", { name: /^Results$/i }).click();
+    await expect(page.getByTestId("feedback-tab-panel-results")).toBeVisible({
+      timeout: 15_000,
+    });
+    await expect(page.getByTestId("feedback-tab-panel-results")).toHaveScreenshot(
+      "feedback-results.png",
+      { maxDiffPixelRatio: 0.02 },
+    );
+  });
+
+  test("feedback-history", async ({ page }) => {
+    await bootMetrioFeedback(page, "light");
+    await page.getByRole("button", { name: /^feedback$/i }).click();
+    await page.getByRole("button", { name: /^History$/i }).click();
+    await expect(page.getByTestId("feedback-tab-panel-history")).toBeVisible({
+      timeout: 15_000,
+    });
+    await expect(page.getByTestId("feedback-tab-panel-history")).toHaveScreenshot(
+      "feedback-history.png",
+      { maxDiffPixelRatio: 0.02 },
+    );
+  });
+
+  test("feedback-cycle-populated", async ({ page }) => {
+    test.setTimeout(60_000);
+    const surveyJson = serializeFeedbackCyclesPopulatedSurveyForPlaywright();
+    await page.addInitScript(
+      ({ fixtureId, prefs, survey }: { fixtureId: string; prefs: string; survey: string }) => {
+        localStorage.setItem("metrio-connection-connected", "true");
+        localStorage.setItem("metrio-dev-fixture", fixtureId);
+        localStorage.setItem("metrio-theme", "light");
+        localStorage.setItem("metrio-visual-preferences", prefs);
+        localStorage.setItem("metrio-visual-survey-data", survey);
+      },
+      {
+        fixtureId: "lead",
+        prefs: serializeFeedbackVisualPrefsForPlaywright(),
+        survey: surveyJson,
+      },
+    );
+    await page.goto("/");
+    await expect(page.getByTestId("dashboard-ready")).toBeVisible({ timeout: 30_000 });
+    await page.getByRole("button", { name: /^feedback$/i }).click();
+    await page.getByRole("button", { name: /^Cycles$/i }).click();
+    await expect(page.getByTestId("feedback-cycle-card")).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByTestId("feedback-cycle-card")).toHaveScreenshot(
+      "feedback-cycle-populated.png",
+      { maxDiffPixelRatio: 0.02 },
+    );
+  });
+
+  test("notifications-empty-source", async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem("metrio-connection-connected", "true");
+      localStorage.setItem("metrio-dev-fixture", "lead");
+      localStorage.setItem("metrio-theme", "light");
+      localStorage.setItem("metrio-notification-events", "[]");
+    });
+    await page.goto("/");
+    await expect(page.getByTestId("dashboard-ready")).toBeVisible({ timeout: 30_000 });
+    await page.getByRole("button", { name: /^Notifications$/i }).click();
+    await page
+      .locator(".drawer--notifications")
+      .getByRole("button", { name: "Jira", exact: true })
+      .click();
+    await expect(page.getByText("No Jira notifications")).toBeVisible();
+    await expect(page.locator(".drawer--notifications")).toHaveScreenshot(
+      "notifications-empty-source.png",
+      { maxDiffPixelRatio: 0.02 },
+    );
   });
 });

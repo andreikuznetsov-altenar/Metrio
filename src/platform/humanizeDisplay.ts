@@ -12,6 +12,10 @@ const ENUM_LABELS: Record<string, string> = {
   pulse: "Pulse",
   monthly: "Monthly",
   active: "Active",
+  paused: "Paused",
+  archived: "Archived",
+  weekly: "Weekly",
+  quarterly: "Quarterly",
 };
 
 export function humanizeMachineEnum(value: string | null | undefined): string {

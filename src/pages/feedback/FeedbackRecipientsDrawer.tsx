@@ -47,6 +47,7 @@ export function FeedbackRecipientsDrawer({
       title={`Recipients · ${recipientCount}`}
       onClose={onClose}
     >
+      <div className="ds-feedback-recipients" data-testid="feedback-recipients-drawer">
       <div className="ds-feedback-recipients-summary">
         <Badge variant="info">{counts.selected} selected</Badge>
         <Badge variant="success">{counts.ready} ready</Badge>
@@ -110,6 +111,7 @@ export function FeedbackRecipientsDrawer({
             ))}
           </tbody>
         </table>
+      </div>
       </div>
     </Drawer>
   );

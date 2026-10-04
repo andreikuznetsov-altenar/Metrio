@@ -7,6 +7,7 @@ import {
   PREFERENCES_SCHEMA_VERSION,
   type AppPreferences,
 } from '../platform/preferences';
+import { createDefaultSurveyData } from '../domain/survey/defaults';
 
 export const FEEDBACK_WORKFLOW_FIXTURE = {
   google: {
@@ -88,6 +89,90 @@ export function serializeFeedbackCyclesPopulatedSurveyForPlaywright(): string {
         updatedAt: now,
       },
     ],
+    templates: [],
+  });
+}
+
+/** Active survey with recipients for Delivery / Recipients visual tests. */
+export function serializeFeedbackDeliveryVisualSurveyForPlaywright(): string {
+  const now = new Date().toISOString();
+  const surveyId = 'survey_visual_delivery';
+  const defaults = createDefaultSurveyData();
+  return JSON.stringify({
+    schemaVersion: 2,
+    defaults,
+    activeSurveyId: surveyId,
+    surveys: [
+      {
+        id: surveyId,
+        cycleId: null,
+        periodKey: null,
+        googleFormId: 'visual-form-id',
+        responderUri: 'https://docs.google.com/forms/d/visual',
+        createdAt: now,
+        updatedAt: now,
+        dateFrom: '2026-09-01',
+        dateTo: '2026-09-30',
+        scope: 'direct',
+        projects: ['UX'],
+        title: defaults.title,
+        emailSubject: defaults.emailSubject,
+        introText: defaults.introText,
+        buttonLabel: defaults.buttonLabel,
+        signature: defaults.signature,
+        questions: defaults.questions,
+        recipients: [
+          {
+            id: 'recipient_visual_1',
+            reporterAccountId: 'person-02',
+            reporterName: 'Daria Chernova',
+            reporterEmail: 'daria.chernova@altenar.com',
+            issueKeys: ['UX-6124'],
+            projects: ['UX'],
+            emailSource: 'jira',
+            selected: true,
+            status: 'ready',
+            sentAt: null,
+            respondedAt: null,
+            gmailMessageId: null,
+            sendBatchId: null,
+            error: null,
+            notes: null,
+            lastReminderAt: null,
+            reminderCount: 0,
+            lastReminderError: null,
+          },
+          {
+            id: 'recipient_visual_2',
+            reporterAccountId: 'person-03',
+            reporterName: 'Nikita Volkov',
+            reporterEmail: 'nikita.volkov@altenar.com',
+            issueKeys: ['UX-5446'],
+            projects: ['UX'],
+            emailSource: 'jira',
+            selected: true,
+            status: 'sent',
+            sentAt: now,
+            respondedAt: null,
+            gmailMessageId: null,
+            sendBatchId: null,
+            error: null,
+            notes: null,
+            lastReminderAt: null,
+            reminderCount: 0,
+            lastReminderError: null,
+          },
+        ],
+        responses: [],
+        sendBatches: [],
+        status: 'ready',
+        questionsLocked: true,
+        emailsSent: false,
+        lastResponseSyncAt: null,
+        error: null,
+      },
+    ],
+    cycles: [],
     templates: [],
   });
 }
