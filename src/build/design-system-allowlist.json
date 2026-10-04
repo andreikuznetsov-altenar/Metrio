@@ -1,0 +1,10 @@
+{
+  "suppressions": [
+    {
+      "file": "src/shell/ConnectionHealthBadge.css",
+      "rule": "border-radius-literal",
+      "match": "border-radius: 50%",
+      "reason": "Circular connection status dot — data indicator, not a control radius."
+    }
+  ]
+}

@@ -11,6 +11,7 @@
     "test:backend": "cd backend && npm install && npm test",
     "test:visual": "playwright test",
     "test:visual:update": "playwright test --update-snapshots",
+    "verify:design-system": "vitest run src/build/designSystemVerify.test.ts",
     "reconcile:kpi": "METRIO_REAL_RECONCILE=1 vitest run src/domain/analytics/kpiReconciliation.real.test.ts",
     "tauri": "tauri",
     "version:sync": "node scripts/sync-app-version.mjs",

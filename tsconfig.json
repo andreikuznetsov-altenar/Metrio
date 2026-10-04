@@ -26,7 +26,8 @@
     "src/**/*.test.tsx",
     "src/**/*.real.test.ts",
     "src/test/helpers/metrioRealInvoke.ts",
-    "src/platform/diagnosticsExport.ts"
+    "src/platform/diagnosticsExport.ts",
+    "src/build/designSystemVerify.ts"
   ],
   "references": [{ "path": "./tsconfig.node.json" }]
 }
