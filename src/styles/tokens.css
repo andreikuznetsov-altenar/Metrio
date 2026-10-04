@@ -84,7 +84,6 @@
   /* Control states */
   --control-disabled-opacity: 0.45;
   --control-error-border: var(--color-danger);
-  --control-error-ring: 0 0 0 2px var(--color-danger);
 }
 
 [data-theme="light"] {

@@ -23,7 +23,7 @@
 }
 
 .efficiency-component-row__points--penalty {
-  color: var(--color-danger, #b91c1c);
+  color: var(--color-danger);
 }
 
 .efficiency-component-row__detail {

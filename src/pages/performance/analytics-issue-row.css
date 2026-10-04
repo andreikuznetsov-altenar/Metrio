@@ -10,7 +10,7 @@
 .analytics-issue-row--card {
   padding: var(--space-4);
   border: 1px solid var(--color-border);
-  border-radius: var(--radius-control);
+  border-radius: var(--radius-card);
   background: var(--color-surface-secondary);
   border-bottom: 1px solid var(--color-border);
 }

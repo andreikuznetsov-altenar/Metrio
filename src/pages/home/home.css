@@ -189,9 +189,13 @@
   margin-bottom: var(--space-4);
 }
 
+.dashboard-digest-card {
+  min-width: 0;
+}
+
 @media (min-width: 900px) {
   .dashboard-digest-row {
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
@@ -208,6 +212,7 @@
   font-size: 13px;
   line-height: 1.45;
   color: var(--color-text-secondary);
+  overflow-wrap: anywhere;
 }
 
 .home-card__lead {

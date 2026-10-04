@@ -25,6 +25,7 @@
 }
 
 .input--error:focus-visible,
+.textarea--error:focus-visible,
 .select-trigger--error:focus-visible {
   border-color: var(--control-error-border);
   box-shadow: none;

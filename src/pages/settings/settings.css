@@ -405,7 +405,7 @@
 
 .about-update__error {
   font-size: 13px;
-  color: var(--color-danger, #c0392b);
+  color: var(--color-danger);
 }
 
 .diagnostics-section {

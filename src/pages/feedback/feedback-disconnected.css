@@ -2,7 +2,7 @@
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
-  gap: 8px;
+  gap: var(--button-group-gap);
   margin-top: var(--space-2);
 }
 
@@ -14,7 +14,7 @@
 
 .feedback-setup-instructions__card {
   padding: var(--space-4);
-  border-radius: var(--radius-control);
+  border-radius: var(--radius-card);
   border: 1px solid var(--color-border);
   background: var(--color-surface-secondary);
 }
@@ -46,6 +46,6 @@
 .feedback-setup-instructions__actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: var(--button-group-gap);
   margin-top: var(--space-3);
 }

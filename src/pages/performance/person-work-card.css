@@ -1,6 +1,6 @@
 .person-work-card {
   border: 1px solid var(--color-border);
-  border-radius: var(--radius-control);
+  border-radius: var(--radius-card);
   padding: var(--space-4);
   background: var(--color-surface-secondary);
   display: flex;

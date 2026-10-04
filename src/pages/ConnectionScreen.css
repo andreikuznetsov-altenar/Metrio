@@ -23,7 +23,7 @@
   font-size: 28px;
   font-weight: 600;
   letter-spacing: -0.03em;
-  color: var(--color-accent, #2563eb);
+  color: var(--color-accent);
   text-align: center;
 }
 

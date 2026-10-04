@@ -44,14 +44,6 @@
   box-shadow: none;
 }
 
-.select-trigger:focus-visible {
-  outline: none;
-  border-color: var(--color-focus-border);
-  border-width: 2px;
-  padding-inline: calc(var(--space-3) - 1px);
-  box-shadow: none;
-}
-
 .select-trigger--error {
   border-color: var(--control-error-border);
 }

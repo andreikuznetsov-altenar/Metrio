@@ -1,5 +1,5 @@
 import { Bell, Settings } from "lucide-react";
-import { IconButton } from "../components/ui/IconButton";
+import { IconButton } from "../components/IconButton/IconButton";
 import "./AppHeader.css";
 
 export type DemoSection = "performance" | "feedback";

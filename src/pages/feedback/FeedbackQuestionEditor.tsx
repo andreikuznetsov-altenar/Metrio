@@ -1,5 +1,6 @@
 import { ChevronDown, ChevronUp, Trash2 } from 'lucide-react';
 import type { SurveyQuestion } from '../../domain/survey/types';
+import { IconButton } from '../../components/IconButton/IconButton';
 import { Switch } from '../../components/Switch/Switch';
 import { Input, SelectDropdown } from './design-system';
 import { questionTypeLabel } from './feedbackUi';
@@ -31,24 +32,22 @@ export function FeedbackQuestionEditor({
     <article className="ds-feedback-question">
       <header className="ds-feedback-question__header">
         <div className="ds-feedback-question__reorder">
-          <button
-            type="button"
-            className="ds-feedback-question__icon-btn"
+          <IconButton
+            size="compact"
+            label="Move question up"
             disabled={disabled || !canMoveUp}
-            aria-label="Move question up"
             onClick={onMoveUp}
           >
-            <ChevronUp size={16} strokeWidth={1.75} aria-hidden />
-          </button>
-          <button
-            type="button"
-            className="ds-feedback-question__icon-btn"
+            <ChevronUp strokeWidth={1.75} aria-hidden />
+          </IconButton>
+          <IconButton
+            size="compact"
+            label="Move question down"
             disabled={disabled || !canMoveDown}
-            aria-label="Move question down"
             onClick={onMoveDown}
           >
-            <ChevronDown size={16} strokeWidth={1.75} aria-hidden />
-          </button>
+            <ChevronDown strokeWidth={1.75} aria-hidden />
+          </IconButton>
         </div>
         <span className="ds-feedback-question__number">Q{index + 1}</span>
         <SelectDropdown
@@ -79,15 +78,15 @@ export function FeedbackQuestionEditor({
             onCheckedChange={(v) => onChange({ required: v })}
           />
         </label>
-        <button
-          type="button"
-          className="ds-feedback-question__icon-btn ds-feedback-question__delete"
+        <IconButton
+          size="compact"
+          className="ds-feedback-question__delete"
+          label="Delete question"
           disabled={disabled}
-          aria-label="Delete question"
           onClick={onDelete}
         >
-          <Trash2 size={16} strokeWidth={1.75} aria-hidden />
-        </button>
+          <Trash2 strokeWidth={1.75} aria-hidden />
+        </IconButton>
       </header>
       <div className="ds-feedback-question__body">
         <Input

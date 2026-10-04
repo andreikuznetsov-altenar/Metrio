@@ -1,9 +1,14 @@
 import { join } from "node:path";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import {
   extractCssRuleBlocks,
+  filterChangedPaths,
   formatViolations,
+  LEGACY_UI_IMPORT_ALLOWED_FILES,
+  resolveDiffBaseSha,
+  resolveDiffFiles,
   scanFileContent,
+  scanTsImportContent,
   verifyDesignSystem,
 } from "./designSystemVerify";
 
@@ -80,6 +85,35 @@ describe("design system verification", () => {
     expect(violations.some((v) => v.rule === "background-color-raw")).toBe(true);
   });
 
+  it("flags raw text color in feature CSS", () => {
+    const violations = scanFileContent("src/pages/foo.css", "color: #111827;");
+    expect(violations.some((v) => v.rule === "text-color-raw")).toBe(true);
+  });
+
+  it("flags token hex fallbacks in feature CSS", () => {
+    const violations = scanFileContent(
+      "src/pages/foo.css",
+      "color: var(--color-danger, #dc2626);",
+    );
+    expect(violations.some((v) => v.rule === "color-token-fallback")).toBe(true);
+  });
+
+  it("flags card surfaces using control radius", () => {
+    const violations = scanFileContent(
+      "src/pages/foo.css",
+      ".feedback-surface-card { border-radius: var(--radius-control); }",
+    );
+    expect(violations.some((v) => v.rule === "card-radius-semantics")).toBe(true);
+  });
+
+  it("flags button group gap literals", () => {
+    const violations = scanFileContent(
+      "src/pages/foo.css",
+      ".feedback-empty-state__actions { display: flex; gap: 8px; }",
+    );
+    expect(violations.some((v) => v.rule === "button-group-gap-literal")).toBe(true);
+  });
+
   it("flags unexpected control heights", () => {
     const violations = scanFileContent("src/shell/foo.css", "height: 35px;");
     expect(violations.some((v) => v.rule === "control-height-literal")).toBe(true);
@@ -109,9 +143,68 @@ describe("design system verification", () => {
     expect(violations).toEqual([]);
   });
 
-  it("uses DESIGN_SYSTEM_BASE_SHA for diff comparisons when set", () => {
-    const violations = verifyDesignSystem(repoRoot);
-    expect(Array.isArray(violations)).toBe(true);
+  it("flags legacy ui import from production page", () => {
+    const violations = scanTsImportContent(
+      "src/pages/Foo.tsx",
+      `import { Button } from "../components/ui/Button";`,
+    );
+    expect(violations.some((v) => v.rule === "legacy-ui-production-import")).toBe(
+      true,
+    );
+  });
+
+  it("flags legacy ui import from shell", () => {
+    const violations = scanTsImportContent(
+      "src/shell/Bar.tsx",
+      `import { IconButton } from "../components/ui/IconButton";`,
+    );
+    expect(violations.some((v) => v.rule === "legacy-ui-production-import")).toBe(
+      true,
+    );
+  });
+
+  it("allows legacy ui import in Foundation gallery", () => {
+    for (const file of LEGACY_UI_IMPORT_ALLOWED_FILES) {
+      const violations = scanTsImportContent(
+        file,
+        `import { Card } from "../components/ui/Card";`,
+      );
+      expect(violations).toEqual([]);
+    }
+  });
+
+  it("allows canonical component imports", () => {
+    const violations = scanTsImportContent(
+      "src/pages/Foo.tsx",
+      `import { Button } from "../components/Button/Button";`,
+    );
+    expect(violations).toEqual([]);
+  });
+
+  it("filterChangedPaths keeps only files present in diff output", () => {
+    const all = ["src/pages/a.css", "src/pages/b.css", "src/shell/c.css"];
+    const filtered = filterChangedPaths(all, "src/pages/a.css\nsrc/shell/c.css\n");
+    expect(filtered).toEqual(["src/pages/a.css", "src/shell/c.css"]);
+  });
+
+  it("resolveDiffFiles uses DESIGN_SYSTEM_BASE_SHA in git command", () => {
+    vi.stubEnv("DESIGN_SYSTEM_BASE_SHA", "abcdef1");
+    const execMock = vi.fn().mockReturnValue("src/pages/changed.css\n");
+    const all = ["src/pages/changed.css", "src/pages/unchanged.css"];
+    const result = resolveDiffFiles(repoRoot, all, execMock);
+    expect(execMock).toHaveBeenCalledWith("git diff --name-only abcdef1...HEAD", {
+      cwd: repoRoot,
+      encoding: "utf8",
+    });
+    expect(result).toEqual(["src/pages/changed.css"]);
+    vi.unstubAllEnvs();
+  });
+
+  it("resolveDiffBaseSha prefers DESIGN_SYSTEM_BASE_SHA", () => {
+    vi.stubEnv("DESIGN_SYSTEM_BASE_SHA", "deadbeef");
+    vi.stubEnv("DESIGN_SYSTEM_DIFF_BASE", "ignored");
+    expect(resolveDiffBaseSha()).toBe("deadbeef");
+    vi.unstubAllEnvs();
   });
 
   it("formats actionable errors", () => {

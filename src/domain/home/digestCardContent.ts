@@ -10,8 +10,7 @@ export function digestCardContent(digest: OperationalDigest): DigestCardContent 
     const headline = digest.summaryLine.trim() || "Weekly summary";
     return {
       headline,
-      detail:
-        "Review delivery changes, workload signals and upcoming availability for this week.",
+      detail: "Delivery, workload, and team availability for this week.",
     };
   }
 

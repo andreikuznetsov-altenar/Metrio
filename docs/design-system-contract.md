@@ -88,20 +88,23 @@ Use semantic tokens: `--border-subtle`, `--border-default`, `--border-accent`, `
 
 ## Scrollbars
 
-Defined only in:
+Production visual source (single implementation):
 
-- `src/styles/ui-interaction-system.css` (`.metrio-scroll`)
-- `src/components/ScrollArea/ScrollArea.css`
-- `src/components/Drawer/Drawer.css` (drawer body)
-- `src/components/ui/ui.css` (legacy scroll area)
+- `src/styles/ui-interaction-system.css` — **`.metrio-scroll`** (thumb, track, width, hover)
 
-Feature CSS (`src/pages/**`, `src/shell/**`) must **not** define `::-webkit-scrollbar`, `scrollbar-color`, or `scrollbar-width`.
+`ScrollArea` and `Drawer` **consume** `.metrio-scroll` on their scroll bodies — they do not redefine scrollbar pseudo-elements.
+
+`src/components/ui/ui.css` is **dev/Foundation gallery only** (not imported in production).
+
+Feature CSS must **not** define `::-webkit-scrollbar`, `scrollbar-color`, or `scrollbar-width`.
 
 ---
 
 ## Primitives (TSX)
 
 Use shared components — do not restyle native `<button>` / `<input>` to mimic them.
+
+**Legacy dev gallery:** `src/components/ui/**` is for Foundation only. Production TS/TSX must import canonical primitives under `src/components/<Name>/`, not `components/ui/`. Allowed importers: `FoundationDevApp.tsx`, `FoundationPage.tsx` (enforced by `legacy-ui-production-import`).
 
 | Primitive | Path |
 |-----------|------|
@@ -144,6 +147,20 @@ Use `Drawer` — feature CSS may set width, header content, and body layout only
 - Charts, avatars (`50%`), data-viz geometry  
 - Illustration dimensions  
 
+### Documented color exceptions
+
+- Chart / KPI visualization palettes in analytics modules  
+- Canonical primitive `box-shadow` rgba stacks (e.g. popover elevation) in `src/components/*`  
+- `src/components/ui/**` and `FoundationPage.css` (dev gallery only)  
+
+Production feature CSS must not use raw hex/rgb UI colors or `var(--token, #hex)` fallbacks.
+
+---
+
+## Field focus (single source)
+
+Field focus geometry lives in `ui-interaction-system.css` (`.metrio-field`, `.input`, `.textarea`, `.select-trigger`, error modifiers). Component CSS files define borders, hover, and disabled states only — not duplicate `:focus-visible` blocks.
+
 ---
 
 ## Exception process
@@ -169,4 +186,4 @@ Optional diff mode (CI on changed files):
 DESIGN_SYSTEM_DIFF=1 npm run verify:design-system
 ```
 
-See `src/build/designSystemVerify.ts` for enforced rules on `src/pages/**` and `src/shell/**`.
+Enforced scope: `src/pages/**`, `src/shell/**`, product `src/components/*` (excluding `components/ui`), canonical primitive CSS (token/motion/scrollbar discipline), and **TS/TSX import** checks (`legacy-ui-production-import`). See `src/build/designSystemVerify.ts`.

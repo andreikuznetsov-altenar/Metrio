@@ -5,6 +5,7 @@ import allowlist from "./design-system-allowlist.json";
 
 export type DesignSystemRuleId =
   | "border-radius-literal"
+  | "card-radius-semantics"
   | "control-height-literal"
   | "transition-duration-literal"
   | "scrollbar-local"
@@ -12,7 +13,11 @@ export type DesignSystemRuleId =
   | "focus-outline-local"
   | "border-color-raw"
   | "background-color-raw"
-  | "legacy-token";
+  | "color-token-fallback"
+  | "text-color-raw"
+  | "button-group-gap-literal"
+  | "legacy-token"
+  | "legacy-ui-production-import";
 
 export interface DesignSystemViolation {
   file: string;
@@ -67,6 +72,26 @@ const FEATURE_PREFIXES = [
 ];
 
 const LEGACY_TOKEN_PATTERN = /var\(--radius-md/;
+
+/** Foundation / dev gallery only — not production AuthenticatedApp. */
+export const LEGACY_UI_IMPORT_ALLOWED_FILES = new Set([
+  "src/app/FoundationDevApp.tsx",
+  "src/pages/FoundationPage.tsx",
+]);
+
+const LEGACY_UI_IMPORT_PATTERN =
+  /from\s+["'][^"']*\/components\/ui\/[^"']+["']/;
+
+const COLOR_TOKEN_FALLBACK_PATTERN =
+  /var\(--[a-zA-Z0-9-]+,\s*#[0-9a-fA-F]{3,8}\b/;
+
+const CARD_LIKE_SELECTOR =
+  /surface-card|empty-state__card|[\w-]*(?:card|panel)[\w-]*/i;
+
+const CARD_RADIUS_CONTROL_EXEMPT =
+  /trigger|button|input|select|badge|chip|tab-|icon-btn|popover|toast|skeleton|segment|nav-btn|metric-tag|banner|strip__|field|row-btn|credential|help-btn/i;
+
+const BUTTON_GROUP_ACTIONS_SELECTOR = /__actions|button-group|btn-group/i;
 
 export interface CssRuleBlock {
   selector: string;
@@ -206,9 +231,23 @@ function scanLine(
     },
     {
       id: "background-color-raw",
-      regex: /background:\s*#[0-9a-fA-F]{3,8}\b/,
+      regex: /background(-color)?:\s*#[0-9a-fA-F]{3,8}\b/,
       message:
         "Hard-coded background colors are not allowed in feature CSS. Use semantic surface/status tokens.",
+      strictOnly: true,
+    },
+    {
+      id: "text-color-raw",
+      regex: /(?<!-)color:\s*(#[0-9a-fA-F]{3,8}\b|rgb\(|rgba\(|hsl\()/,
+      message:
+        "Hard-coded text/UI colors are not allowed in feature CSS. Use semantic color tokens.",
+      strictOnly: true,
+    },
+    {
+      id: "color-token-fallback",
+      regex: COLOR_TOKEN_FALLBACK_PATTERN,
+      message:
+        "Do not use hex fallbacks in var() — tokens are defined globally (e.g. var(--color-danger)).",
       strictOnly: true,
     },
     {
@@ -266,6 +305,11 @@ function scanLine(
   }
 }
 
+function isCardLikeContentSelector(selector: string): boolean {
+  if (CARD_RADIUS_CONTROL_EXEMPT.test(selector)) return false;
+  return CARD_LIKE_SELECTOR.test(selector);
+}
+
 function scanRuleBlock(
   file: string,
   block: CssRuleBlock,
@@ -275,6 +319,39 @@ function scanRuleBlock(
   const bodyLines = block.body.split("\n");
   const combined = block.body.replace(/\s+/g, " ");
   const isFocusBlock = /:focus(-visible|-within)?/.test(block.selector);
+
+  if (
+    strict &&
+    isCardLikeContentSelector(block.selector) &&
+    /border-radius:\s*var\(--radius-control\)/.test(combined)
+  ) {
+    if (!isAllowlisted(file, "card-radius-semantics", combined)) {
+      violations.push({
+        file,
+        line: block.startLine,
+        rule: "card-radius-semantics",
+        message:
+          "Content cards/panels must use --radius-card, not --radius-control.",
+        snippet: combined.trim().slice(0, 120),
+      });
+    }
+  }
+
+  if (
+    strict &&
+    BUTTON_GROUP_ACTIONS_SELECTOR.test(block.selector) &&
+    /gap:\s*(8|16)px/.test(combined)
+  ) {
+    if (!isAllowlisted(file, "button-group-gap-literal", combined)) {
+      violations.push({
+        file,
+        line: block.startLine,
+        rule: "button-group-gap-literal",
+        message: "Button groups must use gap: var(--button-group-gap).",
+        snippet: combined.trim().slice(0, 120),
+      });
+    }
+  }
 
   if (
     strict &&
@@ -344,53 +421,129 @@ function listApplicableCssFiles(repoRoot: string): string[] {
   return [...new Set(files)].sort();
 }
 
-function resolveDiffFiles(repoRoot: string, allFiles: string[]): string[] {
-  const base =
+export function resolveDiffBaseSha(): string {
+  return (
     process.env.DESIGN_SYSTEM_BASE_SHA?.trim() ||
     process.env.DESIGN_SYSTEM_DIFF_BASE?.trim() ||
-    "origin/main";
+    "origin/main"
+  );
+}
+
+export function filterChangedPaths(
+  allFiles: string[],
+  diffOutput: string,
+): string[] {
+  const changed = new Set(
+    diffOutput
+      .split("\n")
+      .map((f) => f.trim())
+      .filter(Boolean),
+  );
+  return allFiles.filter((f) => changed.has(f));
+}
+
+export type GitExec = (
+  command: string,
+  options: { cwd: string; encoding: "utf8" },
+) => string;
+
+export function resolveDiffFiles(
+  repoRoot: string,
+  allFiles: string[],
+  runGit: GitExec = execSync as GitExec,
+): string[] {
+  const base = resolveDiffBaseSha();
   try {
-    const diff = execSync(`git diff --name-only ${base}...HEAD`, {
+    const diff = runGit(`git diff --name-only ${base}...HEAD`, {
       cwd: repoRoot,
       encoding: "utf8",
     });
-    const changed = new Set(
-      diff
-        .split("\n")
-        .map((f: string) => f.trim())
-        .filter(Boolean),
-    );
-    return allFiles.filter((f) => changed.has(f));
+    return filterChangedPaths(allFiles, diff);
   } catch {
     try {
-      const diff = execSync("git diff --name-only HEAD", {
+      const diff = runGit("git diff --name-only HEAD", {
         cwd: repoRoot,
         encoding: "utf8",
       });
-      const changed = new Set(
-        diff
-          .split("\n")
-          .map((f: string) => f.trim())
-          .filter(Boolean),
-      );
-      return allFiles.filter((f) => changed.has(f));
+      return filterChangedPaths(allFiles, diff);
     } catch {
       return allFiles;
     }
   }
 }
 
+function shouldScanTsFile(rel: string): boolean {
+  if (!rel.endsWith(".ts") && !rel.endsWith(".tsx")) return false;
+  if (rel.startsWith("src/components/ui/")) return false;
+  if (/\.(test|spec)\.(ts|tsx)$/.test(rel)) return false;
+  if (rel.startsWith("src/pages/")) return true;
+  if (rel.startsWith("src/shell/")) return true;
+  if (rel.startsWith("src/app/")) return true;
+  if (rel.startsWith("src/components/")) return true;
+  return false;
+}
+
+function walkTsFiles(dir: string, root: string, out: string[]): void {
+  for (const entry of readdirSync(dir)) {
+    const full = join(dir, entry);
+    const stat = statSync(full);
+    if (stat.isDirectory()) {
+      if (full.includes(`${join("src", "components", "ui")}`)) continue;
+      walkTsFiles(full, root, out);
+      continue;
+    }
+    if (!entry.endsWith(".ts") && !entry.endsWith(".tsx")) continue;
+    const rel = relative(root, full).replace(/\\/g, "/");
+    if (shouldScanTsFile(rel)) out.push(rel);
+  }
+}
+
+function listApplicableTsFiles(repoRoot: string): string[] {
+  const files: string[] = [];
+  walkTsFiles(join(repoRoot, "src"), repoRoot, files);
+  return [...new Set(files)].sort();
+}
+
+export function scanTsImportContent(
+  file: string,
+  content: string,
+): DesignSystemViolation[] {
+  if (LEGACY_UI_IMPORT_ALLOWED_FILES.has(file)) return [];
+  const violations: DesignSystemViolation[] = [];
+  const lines = content.split("\n");
+  lines.forEach((line, index) => {
+    if (!LEGACY_UI_IMPORT_PATTERN.test(line)) return;
+    const snippet = line.trim();
+    if (isAllowlisted(file, "legacy-ui-production-import", snippet)) return;
+    violations.push({
+      file,
+      line: index + 1,
+      rule: "legacy-ui-production-import",
+      message:
+        "Production code must not import src/components/ui/** (Foundation dev gallery only).",
+      snippet,
+    });
+  });
+  return violations;
+}
+
 export function verifyDesignSystem(repoRoot: string): DesignSystemViolation[] {
-  const files = listApplicableCssFiles(repoRoot);
+  const cssFiles = listApplicableCssFiles(repoRoot);
+  const tsFiles = listApplicableTsFiles(repoRoot);
+  const allFiles = [...cssFiles, ...tsFiles];
   const targetFiles =
     process.env.DESIGN_SYSTEM_DIFF === "1"
-      ? resolveDiffFiles(repoRoot, files)
-      : files;
+      ? resolveDiffFiles(repoRoot, allFiles)
+      : allFiles;
 
   const all: DesignSystemViolation[] = [];
   for (const file of targetFiles) {
     const content = readFileSync(join(repoRoot, file), "utf8");
-    all.push(...scanFileContent(file, content));
+    if (file.endsWith(".css")) {
+      all.push(...scanFileContent(file, content));
+    } else {
+      all.push(...scanTsImportContent(file, content));
+    }
   }
   return all;
 }

@@ -164,7 +164,7 @@ export function ConnectionScreen() {
               />
               <Button
                 type="button"
-                variant="ghost"
+                variant="secondary"
                 className="connection-panel__help-btn"
                 disabled={isBusy}
                 onClick={() => openHelp(ATLASSIAN_API_TOKEN_URL)}
@@ -202,7 +202,7 @@ export function ConnectionScreen() {
               />
               <Button
                 type="button"
-                variant="ghost"
+                variant="secondary"
                 className="connection-panel__help-btn"
                 disabled={isBusy}
                 onClick={() => openHelp(getBambooApiKeyHelpUrl())}

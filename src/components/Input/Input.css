@@ -36,23 +36,9 @@
   border-color: color-mix(in srgb, var(--color-border) 70%, var(--color-text-tertiary));
 }
 
-.input:focus-visible {
-  outline: none;
-  border-color: var(--color-focus-border);
-  border-width: 2px;
-  padding-inline: calc(var(--space-3) - 1px);
-  box-shadow: none;
-}
-
 .input--error,
 .input--error:hover:not(:disabled) {
   border-color: var(--control-error-border);
-}
-
-.input--error:focus-visible {
-  border-color: var(--control-error-border);
-  border-width: 2px;
-  box-shadow: none;
 }
 
 .input:disabled {

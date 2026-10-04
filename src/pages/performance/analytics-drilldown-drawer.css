@@ -157,7 +157,7 @@
   gap: var(--space-3);
   align-items: flex-start;
   margin-top: -8px;
-  color: var(--color-success, #15803d);
+  color: var(--color-success);
 }
 
 .analytics-drawer__positive-empty-title {
