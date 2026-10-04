@@ -884,6 +884,50 @@ test.describe("Metrio visual regression", () => {
     });
   });
 
+  test("notifications header close-up", async ({ page }) => {
+    await bootMetrioWithNotificationFixture(page, 6);
+    await page.getByRole("button", { name: /Notifications, 6 unread/i }).click();
+    const header = page.locator(".drawer--notifications .drawer__header");
+    await expect(header).toBeVisible();
+    await expect(header).toHaveScreenshot("notifications-header-closeup.png", {
+      maxDiffPixelRatio: 0.02,
+    });
+  });
+
+  test("notifications source tabs", async ({ page }) => {
+    await bootMetrioWithNotificationFixture(page, 6);
+    await page.getByRole("button", { name: /Notifications, 6 unread/i }).click();
+    const filters = page.locator(".notification-center__filters");
+    await expect(filters).toBeVisible();
+    await expect(filters).toHaveScreenshot("notifications-source-tabs.png", {
+      maxDiffPixelRatio: 0.02,
+    });
+  });
+
+  test("notifications jira task cta", async ({ page }) => {
+    await bootMetrioWithNotificationFixture(page, 6);
+    await page.getByRole("button", { name: /Notifications, 6 unread/i }).click();
+    const card = page
+      .locator(".drawer--notifications")
+      .getByTestId("notification-card")
+      .filter({ hasText: "Task needs attention" })
+      .first();
+    await expect(card.getByRole("button", { name: "Open Jira" })).toBeVisible();
+    await expect(card).toHaveScreenshot("notifications-jira-task-cta.png", {
+      maxDiffPixelRatio: 0.02,
+    });
+  });
+
+  test("notifications dense list", async ({ page }) => {
+    await bootMetrioWithNotificationFixture(page, 6);
+    await page.getByRole("button", { name: /Notifications, 6 unread/i }).click();
+    const list = page.locator(".drawer--notifications .notification-center__list").first();
+    await expect(list).toBeVisible();
+    await expect(list).toHaveScreenshot("notifications-dense-list.png", {
+      maxDiffPixelRatio: 0.02,
+    });
+  });
+
   test("notification workload opens person drawer", async ({ page }) => {
     await bootMetrio(page, "lead");
     await page.evaluate(() => {
@@ -1501,6 +1545,64 @@ test.describe("Metrio visual regression", () => {
     });
   });
 
+  async function bootDashboardManager(page: Page, width?: number) {
+    if (width) {
+      await page.setViewportSize({ width, height: 900 });
+    }
+    await page.addInitScript((fixtureId: string) => {
+      localStorage.setItem("metrio-connection-connected", "true");
+      localStorage.setItem("metrio-dev-fixture", fixtureId);
+      localStorage.setItem("metrio-theme", "light");
+    }, "lead");
+    await page.goto("/");
+    await expect(page.getByTestId("dashboard-ready")).toBeVisible({ timeout: 30_000 });
+  }
+
+  test("dashboard team actions 1280", async ({ page }) => {
+    await bootDashboardManager(page, 1280);
+    const teamActions = page.getByRole("region", { name: "Team actions" });
+    await expect(teamActions).toBeVisible();
+    await expect(teamActions).toHaveScreenshot("dashboard-team-actions-1280.png", {
+      maxDiffPixelRatio: 0.02,
+    });
+  });
+
+  test("dashboard team actions 1440", async ({ page }) => {
+    await bootDashboardManager(page, 1440);
+    const teamActions = page.getByRole("region", { name: "Team actions" });
+    await expect(teamActions).toHaveScreenshot("dashboard-team-actions-1440.png", {
+      maxDiffPixelRatio: 0.02,
+    });
+  });
+
+  test("dashboard team actions 1728", async ({ page }) => {
+    await bootDashboardManager(page, 1728);
+    const teamActions = page.getByRole("region", { name: "Team actions" });
+    await expect(teamActions).toHaveScreenshot("dashboard-team-actions-1728.png", {
+      maxDiffPixelRatio: 0.02,
+    });
+  });
+
+  test("goal reviews dashboard card", async ({ page }) => {
+    const goalsJson = serializeGoalsVisualFixtureForPlaywright();
+    await page.addInitScript(
+      ({ fixtureId, goals }: { fixtureId: string; goals: string }) => {
+        localStorage.setItem("metrio-connection-connected", "true");
+        localStorage.setItem("metrio-dev-fixture", fixtureId);
+        localStorage.setItem("metrio-theme", "light");
+        localStorage.setItem("metrio-visual-goals", goals);
+      },
+      { fixtureId: "lead", goals: goalsJson },
+    );
+    await page.goto("/");
+    await expect(page.getByTestId("dashboard-ready")).toBeVisible({ timeout: 30_000 });
+    const card = page.getByTestId("home-goals-summary");
+    await expect(card).toBeVisible();
+    await expect(card).toHaveScreenshot("goal-reviews-dashboard-card.png", {
+      maxDiffPixelRatio: 0.02,
+    });
+  });
+
   test("dashboard manager 1440", async ({ page }) => {
     await page.addInitScript((fixtureId: string) => {
       localStorage.setItem("metrio-connection-connected", "true");
@@ -1594,6 +1696,30 @@ test.describe("Metrio visual regression", () => {
     await bootMetrioWithNotificationFixture(page, 6);
     await expect(page.getByTestId("notification-unread-badge")).toHaveText("6");
     await expect(page.locator(".app-header")).toHaveScreenshot("notification-badge-single.png", {
+      maxDiffPixelRatio: 0.02,
+    });
+  });
+
+  test("bell badge four", async ({ page }) => {
+    const eventsJson = serializeNotificationFixtureForPlaywright();
+    await page.addInitScript((payload: string) => {
+      localStorage.setItem("metrio-connection-connected", "true");
+      localStorage.setItem("metrio-dev-fixture", "lead");
+      localStorage.setItem("metrio-theme", "light");
+      const parsed = JSON.parse(payload) as Array<Record<string, unknown>>;
+      const fourUnread = parsed.slice(0, 4).map((event, index) => ({
+        ...event,
+        id: `visual-unread-4-${index}`,
+        readAt: undefined,
+        dedupeKey: `visual-unread-4-${index}`,
+      }));
+      localStorage.setItem("metrio-notification-events", JSON.stringify(fourUnread));
+    }, eventsJson);
+    await page.goto("/");
+    await expect(page.getByTestId("dashboard-ready")).toBeVisible({ timeout: 30_000 });
+    await expect(page.getByTestId("notification-unread-badge")).toHaveText("4");
+    const bell = page.locator(".app-header__bell-wrap");
+    await expect(bell).toHaveScreenshot("bell-badge-4.png", {
       maxDiffPixelRatio: 0.02,
     });
   });

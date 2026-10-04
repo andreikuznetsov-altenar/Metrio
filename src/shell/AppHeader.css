@@ -124,9 +124,8 @@
 
 .app-header__bell-badge {
   position: absolute;
-  top: 50%;
-  right: 4px;
-  transform: translateY(-50%);
+  top: 2px;
+  right: 2px;
   min-width: 16px;
   height: 16px;
   padding: 0 4px;
@@ -135,7 +134,8 @@
   color: #fff;
   font-size: 10px;
   font-weight: 700;
-  text-align: center;
+  line-height: 1;
+  letter-spacing: -0.02em;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -146,6 +146,7 @@
 }
 
 .app-header__bell-badge--wide {
+  min-width: 18px;
   padding: 0 3px;
   font-size: 9px;
 }
