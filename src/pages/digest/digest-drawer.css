@@ -1,46 +1,102 @@
 .digest-drawer__header {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 2px;
+  min-width: 0;
 }
 
 .digest-drawer__title {
   margin: 0;
-  font-size: 1.125rem;
+  font-size: 15px;
   font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.digest-drawer__range {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text-primary);
 }
 
 .digest-drawer__meta {
   margin: 0;
-  font-size: 0.8125rem;
-  color: var(--color-text-muted);
+  font-size: 12px;
+  color: var(--color-text-tertiary);
 }
 
 .digest-drawer__body {
   display: flex;
   flex-direction: column;
-  gap: 16px;
-  padding-bottom: 24px;
+  gap: var(--space-3);
+  padding-bottom: var(--space-2);
 }
 
-.digest-drawer__section h3 {
-  margin: 0 0 8px;
-  font-size: 0.875rem;
+.digest-drawer__card {
+  padding: 16px;
+  border-radius: var(--radius-control);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+}
+
+.digest-drawer__card-title {
+  margin: 0 0 var(--space-3);
+  font-size: 12px;
   font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--color-text-tertiary);
 }
 
-.digest-drawer__section ul {
+.digest-drawer__card-body {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--color-text-secondary);
+}
+
+.digest-drawer__line-list {
   margin: 0;
   padding-left: 1.1rem;
-  font-size: 0.875rem;
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--color-text-secondary);
 }
 
-.digest-drawer__muted {
-  margin: 0;
-  color: var(--color-text-muted);
-  font-size: 0.8125rem;
+.digest-drawer__metric-grid {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
 }
 
-.digest-drawer__actions {
-  margin-top: 8px;
+.digest-drawer__metric-grid--week {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-3) var(--space-4);
+}
+
+.digest-drawer__metric {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.digest-drawer__metric-label {
+  font-size: 12px;
+  color: var(--color-text-tertiary);
+}
+
+.digest-drawer__metric-value {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.drawer--digest .digest-drawer__metric-grid:not(.digest-drawer__metric-grid--week) .digest-drawer__metric {
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--space-3);
 }

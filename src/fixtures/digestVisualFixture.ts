@@ -82,30 +82,49 @@ export const MANAGER_DAILY_VISUAL: OperationalDigest = sampleDigest({
 export const WEEKLY_DIGEST_VISUAL: OperationalDigest = sampleDigest({
   kind: "weekly",
   role: "manager",
-  id: "weekly:2026-02-24:manager",
-  periodLabel: "Week of 24 Feb – 2 Mar 2026",
-  summaryLine: "5 completed · 2 new attention signals",
+  id: "weekly:2026-09-28:manager",
+  periodLabel: "Week of 2026-09-28",
+  summaryLine: "1 completed · 20 at risk",
   sinceLabel: "This calendar week (Mon–Sun, local)",
   sections: [
     {
       id: "week",
       title: "This week",
-      lines: ["16 tasks completed", "1 backflow event"],
+      lines: [
+        "Completed: 1",
+        "First pass: 100%",
+        "Avg cycle: 0.1d",
+        "Backflows: 1",
+      ],
+    },
+    {
+      id: "delivery",
+      title: "Delivery changes",
+      lines: ["No significant delivery changes since your previous brief."],
     },
     {
       id: "attention",
-      title: "New attention signals",
-      lines: ["2 new problematic tasks"],
+      title: "Attention",
+      lines: [
+        "20 tasks at delivery risk",
+        "5 people on Team Radar",
+        "2 with high or overloaded workload",
+      ],
     },
     {
-      id: "resolved",
-      title: "Resolved signals",
-      lines: ["2 previous attention items are no longer active"],
+      id: "availability",
+      title: "Upcoming availability",
+      lines: ["No planned team leave next week."],
     },
     {
       id: "starters",
       title: "New starters",
-      lines: ["Konstantin · Day 43"],
+      lines: ["No new starters among direct reports."],
+    },
+    {
+      id: "feedback",
+      title: "Feedback",
+      lines: ["No feedback activity this week."],
     },
   ],
 });
