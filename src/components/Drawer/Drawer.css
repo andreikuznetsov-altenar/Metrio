@@ -85,7 +85,7 @@
 
 .drawer__body::-webkit-scrollbar-thumb {
   background: color-mix(in srgb, var(--color-text-tertiary) 35%, transparent);
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
 }
 
 .drawer__body:hover::-webkit-scrollbar-thumb {
