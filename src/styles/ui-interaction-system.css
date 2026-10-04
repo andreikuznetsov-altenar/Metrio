@@ -146,12 +146,33 @@
   max-width: 100%;
 }
 
-.performance-table__cell--clamp-2 > .performance-table__clamp {
+.performance-table__cell--clamp-2 > .performance-table__clamp,
+.performance-table__cell--clamp-3 > .performance-table__clamp {
   display: -webkit-box;
-  -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
   line-height: 1.35;
+}
+
+.performance-table__cell--clamp-2 > .performance-table__clamp {
+  -webkit-line-clamp: 2;
+}
+
+.performance-table__cell--clamp-3 > .performance-table__clamp {
+  -webkit-line-clamp: 3;
+}
+
+.performance-table__cell--clamp-2,
+.performance-table__cell--clamp-3 {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.performance-table--interactive tbody tr.performance-table__row--selected {
+  background: color-mix(in srgb, var(--color-accent) 10%, var(--color-surface));
+  box-shadow:
+    inset 3px 0 0 var(--color-accent),
+    inset 0 -1px 0 var(--color-border);
 }
 
 .performance-table__action {

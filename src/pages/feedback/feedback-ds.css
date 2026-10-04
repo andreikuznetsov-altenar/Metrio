@@ -222,21 +222,25 @@
   min-height: 0;
 }
 
+.ds-feedback-page {
+  width: 100%;
+  max-width: 1320px;
+  margin: 0 auto;
+  min-height: 0;
+}
+
 .ds-feedback-stack {
   display: flex;
   flex-direction: column;
-  gap: var(--space-4);
+  gap: var(--space-6);
   width: 100%;
-  max-width: 1280px;
-  margin: 0 auto;
-  padding-top: var(--space-2);
+  min-width: 0;
 }
 
 .ds-feedback-content {
   display: flex;
   flex-direction: column;
-  gap: var(--space-4);
-  padding-top: var(--space-4);
+  gap: var(--space-6);
   min-width: 0;
 }
 

@@ -93,7 +93,7 @@ export function FeedbackCyclesView() {
         <p className="feedback-cycles-intro__description">
           Create reusable pulse, onboarding or project feedback programs.
         </p>
-        {canManage ? (
+        {canManage && cycles.length > 0 ? (
           <div className="feedback-cycles-intro__actions">
             <Button type="button" variant="secondary" onClick={() => void addPulseCycle()}>
               New pulse cycle

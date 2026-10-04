@@ -1,10 +1,20 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Badge } from "../../components/Badge/Badge";
 import { EntityLink } from "../../components/EntityLink/EntityLink";
+import { METRIO_TABLE_CLASS, MetrioTableWrap } from "../../components/Table/MetrioTable";
+import { SortableTableHeader } from "../../components/Table/SortableTableHeader";
+import { useTableSort } from "../../components/Table/useTableSort";
 import { buildJiraIssueBrowseUrl } from "../../platform/jiraIssueUrl";
 import type { GroupedAttentionSignal } from "./groupAttentionSignals";
 
 const INITIAL_KEY_COUNT = 2;
+
+const SIGNAL_COLUMNS = [
+  { id: "signal", type: "text" as const },
+  { id: "tasks", type: "number" as const },
+  { id: "reason", type: "text" as const },
+  { id: "issues", type: "number" as const },
+];
 
 export interface AttentionSignalsTableProps {
   groups: GroupedAttentionSignal[];
@@ -17,19 +27,53 @@ export function AttentionSignalsTable({
 }: AttentionSignalsTableProps) {
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
 
+  const getValue = useMemo(
+    () => (row: GroupedAttentionSignal, columnId: string) => {
+      switch (columnId) {
+        case "signal":
+          return row.label;
+        case "tasks":
+          return row.taskCount;
+        case "reason":
+          return row.reason;
+        case "issues":
+          return row.issueKeys.length;
+        default:
+          return "";
+      }
+    },
+    [],
+  );
+
+  const { sortedRows, sort, toggleSort } = useTableSort(groups, SIGNAL_COLUMNS, getValue);
+
   return (
-    <div className="performance-table-wrap" data-testid="attention-signals-table">
-      <table className="performance-table performance-table--attention-signals">
+    <MetrioTableWrap testId="attention-signals-table">
+      <table className={`${METRIO_TABLE_CLASS} performance-table--attention-signals`}>
         <thead>
           <tr>
-            <th>Signal</th>
-            <th className="performance-table__num">Tasks</th>
-            <th>Reason</th>
-            <th>Issues</th>
+            <SortableTableHeader columnId="signal" label="Signal" sort={sort} onToggle={toggleSort} />
+            <SortableTableHeader
+              columnId="tasks"
+              label="Tasks"
+              sort={sort}
+              onToggle={toggleSort}
+              className="performance-table__num"
+              align="right"
+            />
+            <SortableTableHeader columnId="reason" label="Reason" sort={sort} onToggle={toggleSort} />
+            <SortableTableHeader
+              columnId="issues"
+              label="Issues"
+              sort={sort}
+              onToggle={toggleSort}
+              className="performance-table__num"
+              align="right"
+            />
           </tr>
         </thead>
         <tbody>
-          {groups.map((group) => {
+          {sortedRows.map((group) => {
             const rowKey = `${group.label}-${group.reason}`;
             const showAll = expanded[rowKey];
             const visibleKeys = showAll
@@ -77,6 +121,6 @@ export function AttentionSignalsTable({
           })}
         </tbody>
       </table>
-    </div>
+    </MetrioTableWrap>
   );
 }

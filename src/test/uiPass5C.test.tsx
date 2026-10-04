@@ -11,7 +11,7 @@ describe('UI pass 5C — feedback empty states', () => {
     );
     expect(css).toContain('.feedback-empty-state__card');
     expect(css).toContain('.ds-feedback-content');
-    expect(css).toMatch(/max-width:\s*1280px/);
+    expect(css).toMatch(/max-width:\s*1320px/);
   });
 
   it('exports disconnected panel test ids for production route', () => {

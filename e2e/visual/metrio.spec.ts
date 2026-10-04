@@ -411,6 +411,11 @@ test.describe("Metrio visual regression", () => {
       fullPage: true,
       maxDiffPixelRatio: 0.02,
     });
+    await page.getByRole("button", { name: /Person/i }).click();
+    await expect(page.locator(".performance-table-wrap").first()).toHaveScreenshot(
+      "performance-people-sorted.png",
+      { maxDiffPixelRatio: 0.02 },
+    );
   });
 
   test("performance trend charts", async ({ page }) => {
@@ -2449,6 +2454,30 @@ test.describe("Metrio visual regression", () => {
     await expect(section).toHaveScreenshot("dependencies.png", {
       maxDiffPixelRatio: 0.02,
     });
+    const table = page.getByTestId("project-cockpit-dependencies-table");
+    if ((await table.count()) > 0) {
+      await expect(table).toHaveScreenshot("dependencies-table.png", {
+        maxDiffPixelRatio: 0.02,
+      });
+    }
+  });
+
+  test("multiline table row global", async ({ page }) => {
+    await bootMetrio(page, "lead");
+    await page.evaluate(() => {
+      window.dispatchEvent(
+        new CustomEvent("metrio-open-project-cockpit", {
+          detail: { projectKey: "UX" },
+        }),
+      );
+    });
+    await expect(page.getByTestId("project-cockpit")).toBeVisible();
+    const wrap = page.locator(".performance-table-wrap .performance-table__clamp").first();
+    if ((await wrap.count()) > 0) {
+      await expect(wrap).toHaveScreenshot("multiline-row-global.png", {
+        maxDiffPixelRatio: 0.02,
+      });
+    }
   });
 
   test("meetings", async ({ page }) => {
@@ -2573,6 +2602,10 @@ test.describe("Metrio visual regression", () => {
       "feedback-delivery.png",
       { maxDiffPixelRatio: 0.02 },
     );
+    await expect(page.getByTestId("feedback-delivery-table")).toHaveScreenshot(
+      "feedback-delivery-table.png",
+      { maxDiffPixelRatio: 0.02 },
+    );
   });
 
   test("feedback-results", async ({ page }) => {
@@ -2589,14 +2622,62 @@ test.describe("Metrio visual regression", () => {
   });
 
   test("feedback-history", async ({ page }) => {
-    await bootMetrioFeedback(page, "light");
+    const surveyJson = serializeFeedbackDeliveryVisualSurveyForPlaywright();
+    const prefsJson = serializeFeedbackVisualPrefsForPlaywright();
+    await page.addInitScript(
+      ({ prefs, survey }: { prefs: string; survey: string }) => {
+        localStorage.setItem("metrio-connection-connected", "true");
+        localStorage.setItem("metrio-dev-fixture", "lead");
+        localStorage.setItem("metrio-theme", "light");
+        localStorage.setItem("metrio-visual-preferences", prefs);
+        localStorage.setItem("metrio-visual-survey-data", survey);
+      },
+      { prefs: prefsJson, survey: surveyJson },
+    );
+    await page.goto("/");
+    await expect(page.getByTestId("dashboard-ready")).toBeVisible({ timeout: 30_000 });
     await page.getByRole("button", { name: /^feedback$/i }).click();
     await page.getByRole("button", { name: /^History$/i }).click();
-    await expect(page.getByTestId("feedback-tab-panel-history")).toBeVisible({
+    await expect(page.getByTestId("feedback-history-table")).toBeVisible({
       timeout: 15_000,
     });
+    await expect(page.getByTestId("feedback-history-table")).toHaveScreenshot(
+      "feedback-history-table.png",
+      { maxDiffPixelRatio: 0.02 },
+    );
+    await page.getByRole("button", { name: /Survey/i }).click();
+    await expect(page.getByTestId("feedback-history-table")).toHaveScreenshot(
+      "feedback-history-sorted.png",
+      { maxDiffPixelRatio: 0.02 },
+    );
     await expect(page.getByTestId("feedback-tab-panel-history")).toHaveScreenshot(
       "feedback-history.png",
+      { maxDiffPixelRatio: 0.02 },
+    );
+  });
+
+  test("feedback-history-dark", async ({ page }) => {
+    const surveyJson = serializeFeedbackDeliveryVisualSurveyForPlaywright();
+    const prefsJson = serializeFeedbackVisualPrefsForPlaywright();
+    await page.addInitScript(
+      ({ prefs, survey }: { prefs: string; survey: string }) => {
+        localStorage.setItem("metrio-connection-connected", "true");
+        localStorage.setItem("metrio-dev-fixture", "lead");
+        localStorage.setItem("metrio-theme", "dark");
+        localStorage.setItem("metrio-visual-preferences", prefs);
+        localStorage.setItem("metrio-visual-survey-data", survey);
+      },
+      { prefs: prefsJson, survey: surveyJson },
+    );
+    await page.goto("/");
+    await expect(page.getByTestId("dashboard-ready")).toBeVisible({ timeout: 30_000 });
+    await page.getByRole("button", { name: /^feedback$/i }).click();
+    await page.getByRole("button", { name: /^History$/i }).click();
+    await expect(page.getByTestId("feedback-history-table")).toBeVisible({
+      timeout: 15_000,
+    });
+    await expect(page.getByTestId("feedback-history-table")).toHaveScreenshot(
+      "feedback-history-dark.png",
       { maxDiffPixelRatio: 0.02 },
     );
   });

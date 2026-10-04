@@ -11,10 +11,11 @@ import type { SurveyQuestion } from '../../domain/survey/types';
 import {
   Button,
   MetrioScrollArea,
-  Segmented,
   StatusBanner,
   StickyActionBar,
 } from './design-system';
+import { PageSubnav } from '../../shell/PageSubnav';
+import '../page-content.css';
 import {
   FEEDBACK_TABS,
   type FeedbackTab,
@@ -362,7 +363,7 @@ export function FeedbackPage() {
   return (
     <div className="ds-feedback-page-shell">
       <MetrioScrollArea className="ds-feedback-scroll">
-        <div className="metrio-canvas ds-feedback-canvas">
+        <div className="metrio-canvas ds-feedback-canvas page-content ds-feedback-page">
           {initializing ? (
             <FeedbackPageSkeleton />
           ) : (
@@ -392,7 +393,12 @@ export function FeedbackPage() {
               ) : null}
 
               <>
-                <Segmented tabs={FEEDBACK_TABS} active={tab} onChange={(id) => setTab(id as FeedbackTab)} />
+                <PageSubnav
+                  items={FEEDBACK_TABS}
+                  activeId={tab}
+                  onChange={(id) => setTab(id)}
+                  ariaLabel="Feedback sections"
+                />
 
                 <div
                   className="ds-feedback-content"

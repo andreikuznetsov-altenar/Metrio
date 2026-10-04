@@ -1,7 +1,17 @@
+import { useMemo } from "react";
 import type { OrganizationOverviewModel } from "../../../domain/organization/organizationTypes";
 import type { OrganizationSignal } from "../../../domain/organization/organizationTypes";
 import { Button } from "../../../components/Button/Button";
 import { Badge } from "../../../components/Badge/Badge";
+import { METRIO_TABLE_CLASS, MetrioTableWrap } from "../../../components/Table/MetrioTable";
+import { SortableTableHeader } from "../../../components/Table/SortableTableHeader";
+import { useTableSort } from "../../../components/Table/useTableSort";
+
+const TEAMS_ATTENTION_COLUMNS = [
+  { id: "team", type: "text" as const },
+  { id: "attention", type: "number" as const },
+  { id: "active", type: "number" as const },
+];
 
 export interface DirectorOverviewViewProps {
   model: OrganizationOverviewModel;
@@ -15,6 +25,30 @@ export function DirectorOverviewView({
   onOpenTeams,
 }: DirectorOverviewViewProps) {
   const topSignals = model.signals.slice(0, 5);
+
+  const teamsAttention = model.teamsNeedingAttention.slice(0, 6);
+
+  const getValue = useMemo(
+    () => (row: (typeof teamsAttention)[number], columnId: string) => {
+      switch (columnId) {
+        case "team":
+          return row.teamName;
+        case "attention":
+          return row.attentionCount;
+        case "active":
+          return row.activeWork;
+        default:
+          return "";
+      }
+    },
+    [],
+  );
+
+  const { sortedRows, sort, toggleSort } = useTableSort(
+    teamsAttention,
+    TEAMS_ATTENTION_COLUMNS,
+    getValue,
+  );
 
   return (
     <div data-testid="director-overview">
@@ -36,26 +70,40 @@ export function DirectorOverviewView({
           No high-priority organization signals in this period.
         </p>
       ) : (
-        <div className="performance-table-wrap">
-          <table className="performance-table">
+        <MetrioTableWrap>
+          <table className={METRIO_TABLE_CLASS}>
             <thead>
               <tr>
-                <th>Team</th>
-                <th>Attention</th>
-                <th>Active work</th>
+                <SortableTableHeader columnId="team" label="Team" sort={sort} onToggle={toggleSort} />
+                <SortableTableHeader
+                  columnId="attention"
+                  label="Attention"
+                  sort={sort}
+                  onToggle={toggleSort}
+                  className="performance-table__num"
+                  align="right"
+                />
+                <SortableTableHeader
+                  columnId="active"
+                  label="Active work"
+                  sort={sort}
+                  onToggle={toggleSort}
+                  className="performance-table__num"
+                  align="right"
+                />
               </tr>
             </thead>
             <tbody>
-              {model.teamsNeedingAttention.slice(0, 6).map((team) => (
+              {sortedRows.map((team) => (
                 <tr key={team.teamId}>
                   <td>{team.teamName}</td>
-                  <td>{team.attentionCount}</td>
-                  <td>{team.activeWork}</td>
+                  <td className="performance-table__num">{team.attentionCount}</td>
+                  <td className="performance-table__num">{team.activeWork}</td>
                 </tr>
               ))}
             </tbody>
           </table>
-        </div>
+        </MetrioTableWrap>
       )}
 
       {model.teamCapacity.some((row) => row.awayNextWeek > 0) ? (

@@ -30,6 +30,24 @@ import { TrendValue } from "./TrendValue";
 import { severityAttentionLabel } from "./trendPresentation";
 import { CalendarDays } from "lucide-react";
 import { TeamUpcomingAvailabilitySection } from "./TeamUpcomingAvailabilitySection";
+import { SortableTableHeader } from "../../components/Table/SortableTableHeader";
+import { useTableSort } from "../../components/Table/useTableSort";
+
+const ATTENTION_OVERVIEW_COLUMNS = [
+  { id: "person", type: "person" as const },
+  { id: "attention", type: "text" as const },
+  { id: "issues", type: "number" as const },
+  { id: "severity", type: "status" as const },
+  { id: "workload", type: "text" as const },
+];
+
+const WORKLOAD_OVERVIEW_COLUMNS = [
+  { id: "person", type: "person" as const },
+  { id: "active", type: "number" as const },
+  { id: "atRisk", type: "number" as const },
+  { id: "workload", type: "text" as const },
+  { id: "availability", type: "text" as const },
+];
 
 export interface TeamOverviewViewProps {
   snapshot: TeamPerformanceSnapshot;
@@ -125,6 +143,58 @@ export function TeamOverviewView({
       },
     });
   };
+
+  const attentionGetValue = useMemo(
+    () =>
+      (row: TeamPerformanceSnapshot["attention"][number], columnId: string) => {
+        switch (columnId) {
+          case "person":
+            return row.personName || row.personId;
+          case "attention":
+            return row.reason;
+          case "issues":
+            return row.issueCount;
+          case "severity":
+            return severityAttentionLabel(row.severity);
+          case "workload":
+            return row.workload ?? "";
+          default:
+            return "";
+        }
+      },
+    [],
+  );
+
+  const workloadGetValue = useMemo(
+    () => (row: TeamPerformanceSnapshot["workload"][number], columnId: string) => {
+      switch (columnId) {
+        case "person":
+          return row.personName || row.personId;
+        case "active":
+          return row.activeWork;
+        case "atRisk":
+          return row.atRisk;
+        case "workload":
+          return row.workload;
+        case "availability":
+          return row.availability;
+        default:
+          return "";
+      }
+    },
+    [],
+  );
+
+  const attentionSort = useTableSort(
+    snapshot.attention,
+    ATTENTION_OVERVIEW_COLUMNS,
+    attentionGetValue,
+  );
+  const workloadSort = useTableSort(
+    snapshot.workload,
+    WORKLOAD_OVERVIEW_COLUMNS,
+    workloadGetValue,
+  );
 
   const summaryMetrics = useMemo(() => {
     if (!visualKpiNoComparisonFixture) return snapshot.summary;
@@ -284,15 +354,42 @@ export function TeamOverviewView({
             <table className="performance-table performance-table--interactive performance-table--attention">
               <thead>
                 <tr>
-                  <th>Person</th>
-                  <th>Attention</th>
-                  <th>Issues</th>
-                  <th>Severity</th>
-                  <th>Workload</th>
+                  <SortableTableHeader
+                    columnId="person"
+                    label="Person"
+                    sort={attentionSort.sort}
+                    onToggle={attentionSort.toggleSort}
+                  />
+                  <SortableTableHeader
+                    columnId="attention"
+                    label="Attention"
+                    sort={attentionSort.sort}
+                    onToggle={attentionSort.toggleSort}
+                  />
+                  <SortableTableHeader
+                    columnId="issues"
+                    label="Issues"
+                    sort={attentionSort.sort}
+                    onToggle={attentionSort.toggleSort}
+                    className="performance-table__num"
+                    align="right"
+                  />
+                  <SortableTableHeader
+                    columnId="severity"
+                    label="Severity"
+                    sort={attentionSort.sort}
+                    onToggle={attentionSort.toggleSort}
+                  />
+                  <SortableTableHeader
+                    columnId="workload"
+                    label="Workload"
+                    sort={attentionSort.sort}
+                    onToggle={attentionSort.toggleSort}
+                  />
                 </tr>
               </thead>
               <tbody>
-                {snapshot.attention.map((item) => {
+                {attentionSort.sortedRows.map((item) => {
                   const name = item.personName || item.personId;
                   return (
                     <tr
@@ -383,19 +480,44 @@ export function TeamOverviewView({
           <table className="performance-table performance-table--interactive">
             <thead>
               <tr>
-                <th>Person</th>
-                <th className="performance-table__num">Active</th>
-                <th className="performance-table__num">
-                  <Tooltip content={performanceHelp.atRiskTasks}>
-                    <span>At-risk tasks</span>
-                  </Tooltip>
-                </th>
-                <th>Workload</th>
-                <th>Availability</th>
+                <SortableTableHeader
+                  columnId="person"
+                  label="Person"
+                  sort={workloadSort.sort}
+                  onToggle={workloadSort.toggleSort}
+                />
+                <SortableTableHeader
+                  columnId="active"
+                  label="Active"
+                  sort={workloadSort.sort}
+                  onToggle={workloadSort.toggleSort}
+                  className="performance-table__num"
+                  align="right"
+                />
+                <SortableTableHeader
+                  columnId="atRisk"
+                  label="At-risk tasks"
+                  sort={workloadSort.sort}
+                  onToggle={workloadSort.toggleSort}
+                  className="performance-table__num"
+                  align="right"
+                />
+                <SortableTableHeader
+                  columnId="workload"
+                  label="Workload"
+                  sort={workloadSort.sort}
+                  onToggle={workloadSort.toggleSort}
+                />
+                <SortableTableHeader
+                  columnId="availability"
+                  label="Availability"
+                  sort={workloadSort.sort}
+                  onToggle={workloadSort.toggleSort}
+                />
               </tr>
             </thead>
             <tbody>
-              {snapshot.workload.map((row) => (
+              {workloadSort.sortedRows.map((row) => (
                 <tr key={row.personId}>
                   <td>
                     <button

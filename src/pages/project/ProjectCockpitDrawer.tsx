@@ -16,9 +16,27 @@ import { openExternalUrl } from "../../platform/openExternal";
 import { buildJiraProjectBrowseUrl } from "../../platform/atlassianUrls";
 import { buildJiraIssueBrowseUrl } from "../../platform/jiraIssueUrl";
 import { DependencyDetailDrawer } from "./DependencyDetailDrawer";
+import type { ProjectDependencyRow } from "../../domain/dependencies/dependencyTypes";
 import type { WorkDependency } from "../../domain/dependencies/dependencyTypes";
+import { METRIO_TABLE_CLASS, MetrioTableWrap, TableClampCell } from "../../components/Table/MetrioTable";
+import { SortableTableHeader } from "../../components/Table/SortableTableHeader";
+import { useTableSort } from "../../components/Table/useTableSort";
 import type { AuditIssue } from "../../domain/jira/types";
 import "./project-cockpit.css";
+
+const WORK_COLUMNS = [
+  { id: "key", type: "issueKey" as const },
+  { id: "title", type: "text" as const },
+  { id: "status", type: "status" as const },
+  { id: "owner", type: "text" as const },
+  { id: "age", type: "duration" as const },
+];
+
+const DEP_COLUMNS = [
+  { id: "source", type: "issueKey" as const },
+  { id: "target", type: "issueKey" as const },
+  { id: "route", type: "text" as const },
+];
 
 const FILTER_OPTIONS: { value: ProjectWorkFilter; label: string }[] = [
   { value: "all", label: "All" },
@@ -82,6 +100,51 @@ export function ProjectCockpitDrawer({
     () => (model ? filterProjectWorkRows(model.workRows, filter) : []),
     [model, filter],
   );
+
+  const workGetValue = useMemo(
+    () => (row: import("../../domain/projectCockpit/projectCockpitTypes").ProjectWorkRow, columnId: string) => {
+      switch (columnId) {
+        case "key":
+          return row.issueKey;
+        case "title":
+          return row.title;
+        case "status":
+          return row.status;
+        case "owner":
+          return row.ownerName;
+        case "age":
+          return row.stageAge;
+        default:
+          return "";
+      }
+    },
+    [],
+  );
+
+  const workSort = useTableSort(filteredRows, WORK_COLUMNS, workGetValue);
+
+  const blockedDeps = model?.dependencies.blocked ?? [];
+
+  const depGetValue = useMemo(
+    () => (row: ProjectDependencyRow, columnId: string) => {
+      const dep = row.dependency;
+      switch (columnId) {
+        case "source":
+          return dep.sourceIssueKey;
+        case "target":
+          return dep.targetIssueKey;
+        case "route":
+          return dep.crossProject
+            ? `${dep.sourceProject}→${dep.targetProject}`
+            : dep.sourceProject;
+        default:
+          return "";
+      }
+    },
+    [],
+  );
+
+  const depSort = useTableSort(blockedDeps, DEP_COLUMNS, depGetValue);
 
   const issueByKey = useMemo(() => {
     const map = new Map<string, AuditIssue>();
@@ -184,24 +247,50 @@ export function ProjectCockpitDrawer({
           >
             <h3>Dependencies</h3>
             <p className="project-cockpit__muted">{model.dependencies.summaryLine}</p>
-            {model.dependencies.blocked.length ? (
-              <ul className="project-cockpit__signals">
-                {model.dependencies.blocked.map((row) => (
-                  <li key={row.dependency.id}>
-                    <button
-                      type="button"
-                      className="project-cockpit__link"
-                      onClick={() => setSelectedDependency(row.dependency)}
-                    >
-                      {row.dependency.sourceIssueKey} blocked by{" "}
-                      {row.dependency.targetIssueKey}
-                      {row.dependency.crossProject
-                        ? ` · ${row.dependency.sourceProject}→${row.dependency.targetProject}`
-                        : ""}
-                    </button>
-                  </li>
-                ))}
-              </ul>
+            {blockedDeps.length ? (
+              <MetrioTableWrap testId="project-cockpit-dependencies-table">
+                <table className={METRIO_TABLE_CLASS}>
+                  <thead>
+                    <tr>
+                      <SortableTableHeader
+                        columnId="source"
+                        label="Blocked issue"
+                        sort={depSort.sort}
+                        onToggle={depSort.toggleSort}
+                      />
+                      <SortableTableHeader
+                        columnId="target"
+                        label="Blocked by"
+                        sort={depSort.sort}
+                        onToggle={depSort.toggleSort}
+                      />
+                      <SortableTableHeader
+                        columnId="route"
+                        label="Route"
+                        sort={depSort.sort}
+                        onToggle={depSort.toggleSort}
+                      />
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {depSort.sortedRows.map((row) => (
+                      <tr
+                        key={row.dependency.id}
+                        className="performance-table__clickable-row"
+                        onClick={() => setSelectedDependency(row.dependency)}
+                      >
+                        <td>{row.dependency.sourceIssueKey}</td>
+                        <td>{row.dependency.targetIssueKey}</td>
+                        <td>
+                          {row.dependency.crossProject
+                            ? `${row.dependency.sourceProject}→${row.dependency.targetProject}`
+                            : "—"}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </MetrioTableWrap>
             ) : null}
           </section>
 
@@ -213,19 +302,46 @@ export function ProjectCockpitDrawer({
               options={FILTER_OPTIONS}
               onChange={setFilter}
             />
-            <div className="project-cockpit__table-wrap">
-              <table className="project-cockpit__table">
+            <MetrioTableWrap>
+              <table className={METRIO_TABLE_CLASS}>
                 <thead>
                   <tr>
-                    <th>Key</th>
-                    <th>Title</th>
-                    <th>Status</th>
-                    <th>Owner</th>
-                    <th>Age</th>
+                    <SortableTableHeader
+                      columnId="key"
+                      label="Key"
+                      sort={workSort.sort}
+                      onToggle={workSort.toggleSort}
+                    />
+                    <SortableTableHeader
+                      columnId="title"
+                      label="Title"
+                      sort={workSort.sort}
+                      onToggle={workSort.toggleSort}
+                    />
+                    <SortableTableHeader
+                      columnId="status"
+                      label="Status"
+                      sort={workSort.sort}
+                      onToggle={workSort.toggleSort}
+                    />
+                    <SortableTableHeader
+                      columnId="owner"
+                      label="Owner"
+                      sort={workSort.sort}
+                      onToggle={workSort.toggleSort}
+                    />
+                    <SortableTableHeader
+                      columnId="age"
+                      label="Age"
+                      sort={workSort.sort}
+                      onToggle={workSort.toggleSort}
+                      className="performance-table__num"
+                      align="right"
+                    />
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredRows.slice(0, 40).map((row) => (
+                  {workSort.sortedRows.slice(0, 40).map((row) => (
                     <tr key={row.issueKey}>
                       <td>
                         <button
@@ -240,7 +356,7 @@ export function ProjectCockpitDrawer({
                           {row.issueKey}
                         </button>
                       </td>
-                      <td>{row.title}</td>
+                      <TableClampCell title={row.title}>{row.title}</TableClampCell>
                       <td>{row.status}</td>
                       <td>
                         {row.canOpenPerson && row.personId ? (
@@ -261,12 +377,12 @@ export function ProjectCockpitDrawer({
                           row.ownerName
                         )}
                       </td>
-                      <td>{row.stageAge}</td>
+                      <td className="performance-table__num">{row.stageAge}</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
-            </div>
+            </MetrioTableWrap>
           </section>
 
           <section className="project-cockpit__section">
