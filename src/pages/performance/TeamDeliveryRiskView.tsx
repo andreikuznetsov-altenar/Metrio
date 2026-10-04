@@ -6,6 +6,7 @@ import type { DeliveryRiskRow } from "../../domain/performance";
 import { performanceHelp } from "../../domain/performance/performanceHelp";
 import { buildJiraIssueBrowseUrl } from "../../platform/jiraIssueUrl";
 import { loadPreferences } from "../../platform/preferences";
+import { EntityLink } from "../../components/EntityLink/EntityLink";
 import { openExternalUrl } from "../../platform/openExternal";
 
 function statusVariant(status: string): "danger" | "warning" | "neutral" {
@@ -68,23 +69,12 @@ export function TeamDeliveryRiskView({
               return (
                 <tr key={row.issueKey}>
                   <td className="performance-delivery-risk__key">
-                    {issueUrl ? (
-                      <a
-                        href={issueUrl}
-                        className="performance-entity-link"
-                        onClick={(event) => {
-                          event.preventDefault();
-                          void openExternalUrl(issueUrl);
-                        }}
-                      >
-                        {row.issueKey}
-                      </a>
-                    ) : (
-                      <span className="performance-issue-key">{row.issueKey}</span>
-                    )}
+                    <EntityLink href={issueUrl} mono>
+                      {row.issueKey}
+                    </EntityLink>
                   </td>
-                  <td className="performance-delivery-risk__description" title={row.issueTitle}>
-                    {row.issueTitle}
+                  <td className="performance-table__cell--clamp-2" title={row.issueTitle}>
+                    <span className="performance-table__clamp">{row.issueTitle}</span>
                   </td>
                   <td>
                     <button
