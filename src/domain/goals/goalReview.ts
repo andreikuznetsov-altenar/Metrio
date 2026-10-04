@@ -68,6 +68,8 @@ export function summarizeGoalsForHome(
 ): {
   activeCount: number;
   reviewApproachingCount: number;
+  overdueReviewCount: number;
+  needsAttention: boolean;
   nearestReviewLabel: string | null;
 } {
   const active = goals.filter((g) => g.status === "active");
@@ -76,6 +78,12 @@ export function summarizeGoalsForHome(
       ? calendarDaysUntilReview(g.reviewDate, now)
       : null;
     return days != null && days >= 0 && days <= 7;
+  });
+  const overdueReview = active.filter((g) => {
+    const days = g.reviewDate
+      ? calendarDaysUntilReview(g.reviewDate, now)
+      : null;
+    return days != null && days < 0;
   });
 
   let nearestReviewLabel: string | null = null;
@@ -93,6 +101,8 @@ export function summarizeGoalsForHome(
   return {
     activeCount: active.length,
     reviewApproachingCount: reviewApproaching.length,
+    overdueReviewCount: overdueReview.length,
+    needsAttention: reviewApproaching.length > 0 || overdueReview.length > 0,
     nearestReviewLabel,
   };
 }

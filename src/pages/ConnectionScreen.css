@@ -11,7 +11,7 @@
 
 .connection-screen__inner {
   width: 100%;
-  max-width: 400px;
+  max-width: 440px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -53,8 +53,31 @@
   color: var(--color-text-secondary);
 }
 
-.connection-panel__section-label {
-  margin: var(--space-2) 0 0;
+.connection-panel__field-block {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.connection-panel__field-hint {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--color-text-tertiary);
+}
+
+.connection-panel__integration {
+  padding: var(--space-3);
+  border: 1px solid var(--color-border-subtle, var(--color-border));
+  border-radius: var(--radius-md);
+  background: var(--color-surface-secondary, var(--color-surface));
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.connection-panel__integration-title {
+  margin: 0;
   font-size: 14px;
   font-weight: 600;
   color: var(--color-text-primary);

@@ -71,7 +71,7 @@ describe("ConnectionScreen", () => {
   it("renders token help links", () => {
     renderAuth();
     expect(panel().getByRole("button", { name: /^get api token$/i })).toBeInTheDocument();
-    expect(panel().getByRole("button", { name: /^get api key$/i })).toBeInTheDocument();
+    expect(panel().getByRole("button", { name: /how to get api key/i })).toBeInTheDocument();
     expect(panel().getByText(/credentials are stored securely/i)).toBeInTheDocument();
   });
 });

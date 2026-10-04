@@ -12,6 +12,7 @@ import {
   isAppConnected,
   markSessionConnected,
   persistConnectionConfig,
+  readSavedConnection,
 } from "./connectionStorage";
 
 describe("connection session marker", () => {
@@ -34,6 +35,19 @@ describe("connection session marker", () => {
   it("marks connected only when explicitly requested", () => {
     markSessionConnected();
     expect(isAppConnected()).toBe(true);
+  });
+
+  it("reports stored credentials in visual fixture mode", async () => {
+    vi.stubEnv("VITE_VISUAL_FIXTURE", "1");
+    localStorage.setItem("metrio-visual-secure-store", "all");
+    localStorage.setItem(
+      "metrio-connection-config",
+      JSON.stringify({ workEmail: "lead@altenar.com" }),
+    );
+    const saved = await readSavedConnection();
+    expect(saved?.hasJiraToken).toBe(true);
+    expect(saved?.hasBambooApiKey).toBe(true);
+    vi.unstubAllEnvs();
   });
 
   it("clears stale marker without removing config", async () => {

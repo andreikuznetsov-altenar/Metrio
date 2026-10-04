@@ -49,6 +49,19 @@ export async function readSavedConnection(): Promise<SavedConnection | null> {
 
   try {
     const config = JSON.parse(raw) as ConnectionConfig;
+    if (
+      import.meta.env.VITE_VISUAL_FIXTURE === "1" &&
+      typeof window !== "undefined" &&
+      window.localStorage.getItem("metrio-visual-secure-store") === "all"
+    ) {
+      return {
+        workEmail: config.workEmail?.trim() ?? "",
+        jiraBaseUrl: resolveJiraBaseUrl(),
+        bambooSubdomain: resolveBambooSubdomain(),
+        hasJiraToken: true,
+        hasBambooApiKey: true,
+      };
+    }
     const [hasJiraToken, hasBambooApiKey] = await Promise.all([
       secureStoreHas(SECRET_KEYS.JIRA_API_TOKEN),
       secureStoreHas(SECRET_KEYS.BAMBOO_API_TOKEN),

@@ -215,8 +215,8 @@ function buildTeamSection(
   };
   const actions =
     input.role === "director"
-      ? buildDirectorTeamActions(actionsInput).slice(0, 5)
-      : buildTeamActions(actionsInput).slice(0, 5);
+      ? buildDirectorTeamActions(actionsInput)
+      : buildTeamActions(actionsInput);
 
   const availabilityRows = buildManagerAvailabilityRows(
     snapshot,

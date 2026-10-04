@@ -31,15 +31,35 @@ export function applyVisualHomeOverrides(workspace: HomeWorkspace): HomeWorkspac
   if (import.meta.env.VITE_VISUAL_FIXTURE !== "1" || typeof window === "undefined") {
     return workspace;
   }
-  if (new URLSearchParams(window.location.search).get("visualHomeKnowledge") !== "1") {
-    return workspace;
-  }
-  return {
-    ...workspace,
-    personal: {
-      ...workspace.personal,
+  const params = new URLSearchParams(window.location.search);
+  let personal = workspace.personal;
+
+  if (params.get("visualHomeKnowledge") === "1") {
+    personal = {
+      ...personal,
       knowledge: VISUAL_HOME_KNOWLEDGE,
       knowledgeStatus: "ready",
-    },
+    };
+  }
+
+  if (params.get("visualHomeTimeOff") === "1") {
+    personal = {
+      ...personal,
+      timeOff: {
+        headline: "Starts in 6 days",
+        rangeLabel: "12–16 Oct",
+        activeCount: 5,
+        inReviewCount: 2,
+      },
+    };
+  }
+
+  if (personal === workspace.personal) {
+    return workspace;
+  }
+
+  return {
+    ...workspace,
+    personal,
   };
 }

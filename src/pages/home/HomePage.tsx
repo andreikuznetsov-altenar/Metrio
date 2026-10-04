@@ -69,6 +69,9 @@ import { syncOnboardingChecklistInbox } from "../../platform/onboardingChecklist
 import { listNotificationEvents } from "../../platform/notificationEvents";
 import { useUpcomingMeetings } from "../../hooks/useUpcomingMeetings";
 import { HomeUpcomingMeetings } from "./HomeUpcomingMeetings";
+import { HomeGoalsSummaryCard } from "./HomeGoalsSummaryCard";
+
+const DASHBOARD_QUEUE_PREVIEW = 5;
 import type {
   DateRangeKey,
   TeamPerformanceSnapshot,
@@ -403,6 +406,15 @@ export function HomePage() {
   const dashboardReadyTestId =
     visualHomeState === "partial" ? "dashboard-partial" : "dashboard-ready";
 
+  const focusPreview = personal.focus.slice(0, DASHBOARD_QUEUE_PREVIEW);
+  const focusHasMore = personal.focus.length > DASHBOARD_QUEUE_PREVIEW;
+  const teamActionsPreview = team?.actions.slice(0, DASHBOARD_QUEUE_PREVIEW) ?? [];
+  const teamActionsHasMore = (team?.actions.length ?? 0) > DASHBOARD_QUEUE_PREVIEW;
+  const showGoalsSummary =
+    goalsFeatureOn &&
+    (goalsHomeSummary.activeCount > 0 || goalsHomeSummary.reviewApproachingCount > 0);
+  const goalsProminent = Boolean(showGoalsSummary && goalsHomeSummary.needsAttention);
+
   return (
     <div className="home-page dashboard-page" data-testid={dashboardReadyTestId}>
       <PerformanceStatusBanner />
@@ -420,29 +432,6 @@ export function HomePage() {
           Refresh
         </Button>
       </div>
-
-      {calendarConnected && upcomingMeetings?.meetings.length ? (
-        <HomeUpcomingMeetings
-          meetings={upcomingMeetings.meetings}
-          managerView={Boolean(team)}
-          jiraBaseUrl={homeJiraBaseUrl}
-          onPrepareOneOnOne={(personId, periodPreset: DateRangeKey) => {
-            window.dispatchEvent(
-              new CustomEvent("metrio-open-person-brief", {
-                detail: {
-                  personId,
-                  periodPreset,
-                  prepForOneOnOne: true,
-                },
-              }),
-            );
-          }}
-          onOpenTeamOverview={() => {
-            dispatchAppRoute("performance");
-            dispatchPerformanceTab("overview");
-          }}
-        />
-      ) : null}
 
       {(digestModel?.prefs.showDailyOnHome && digestModel.daily) ||
       (digestModel?.prefs.showWeeklyOnHome && digestModel.weekly && team) ? (
@@ -467,7 +456,7 @@ export function HomePage() {
               })()}
               <div className="home-card__actions">
                 <Button variant="secondary" onClick={() => openDigest("daily")}>
-                  View details
+                  {team ? "Open team brief" : "Open today’s brief"}
                 </Button>
               </div>
             </section>
@@ -490,7 +479,7 @@ export function HomePage() {
               })()}
               <div className="home-card__actions">
                 <Button variant="secondary" onClick={() => openDigest("weekly")}>
-                  View details
+                  Open weekly digest
                 </Button>
               </div>
             </section>
@@ -498,77 +487,58 @@ export function HomePage() {
         </div>
       ) : null}
 
-      {goalsFeatureOn &&
-      (goalsHomeSummary.activeCount > 0 || goalsHomeSummary.reviewApproachingCount > 0) ? (
-        <section
-          className="home-card home-card--compact"
-          aria-label="Goals"
-          data-testid="home-goals-summary"
-        >
-          <h2 className="home-card__title home-card__title--section">
-            {team ? "Goal reviews" : "Goals"}
-          </h2>
-          <p className="dashboard-digest-card__headline">
-            {goalsHomeSummary.activeCount} active goal
-            {goalsHomeSummary.activeCount === 1 ? "" : "s"}
-          </p>
-          <p className="dashboard-digest-card__detail">
-            {team
-              ? "Review your active goals and upcoming review dates."
-              : "Track progress on your active goals and review dates."}
-            {goalsHomeSummary.nearestReviewLabel
-              ? ` Next review: ${goalsHomeSummary.nearestReviewLabel}.`
-              : ""}
-          </p>
-          <div className="home-card__actions">
-            <Button
-              variant="secondary"
-              onClick={() => {
-                dispatchAppRoute("performance");
-                if (team) {
-                  window.dispatchEvent(
-                    new CustomEvent("metrio-open-performance-tab", {
-                      detail: "goals",
-                    }),
-                  );
-                } else {
-                  dispatchEmployeeView("goals");
-                }
-              }}
-            >
-              View goals
-            </Button>
-          </div>
-        </section>
+      {goalsProminent ? (
+        <HomeGoalsSummaryCard
+          teamView={Boolean(team)}
+          summary={goalsHomeSummary}
+          prominent
+        />
       ) : null}
 
-      <div className="home-layout">
-        <div className="home-column home-column--personal">
-          {selfPerson?.bamboo.hireDate && isNewStarter(selfPerson.bamboo.hireDate) ? (
-            selfOnboarding ? (
-              <OnboardingChecklistCard
-                model={selfOnboarding}
-                onOpenDetail={() => setChecklistDrawerOpen(true)}
-                compact
-              />
-            ) : (
-              <GettingStartedResources
-                bamboo={selfPerson.bamboo}
-                matched={onboardingMatched}
-                onViewAll={resourceLibrary.openLibrary}
-                compact
-              />
-            )
-          ) : null}
-
+      <div
+        className="dashboard-operational-row"
+        data-testid="dashboard-first-viewport"
+      >
+        <ActionQueueSection
+          title="My focus"
+          items={focusPreview}
+          emptyMessage="Nothing needs your attention right now."
+          onOpen={handleAction}
+          openLabel={actionOpenLabel}
+          variant="dashboard"
+          footerAction={
+            focusHasMore
+              ? {
+                  label: "View all assignments",
+                  onClick: () => {
+                    dispatchAppRoute("performance");
+                    dispatchEmployeeView("my-week");
+                  },
+                }
+              : undefined
+          }
+        />
+        {team ? (
           <ActionQueueSection
-            title="My focus"
-            items={personal.focus}
-            emptyMessage="Nothing needs your attention right now."
+            title="Team actions"
+            items={teamActionsPreview}
+            emptyMessage="No high-priority team actions right now."
             onOpen={handleAction}
             openLabel={actionOpenLabel}
             variant="dashboard"
+            footerAction={{
+              label: teamActionsHasMore ? "View all team actions" : "Open team overview",
+              onClick: () => {
+                dispatchAppRoute("performance");
+                dispatchPerformanceTab("overview");
+              },
+            }}
           />
+        ) : null}
+      </div>
+
+      <div className="home-layout">
+        <div className="home-column home-column--personal">
 
           <section className="home-card" aria-label="New assignments">
             <h2 className="home-card__title">New assignments</h2>
@@ -684,6 +654,27 @@ export function HomePage() {
             </Button>
           </section>
 
+          {selfPerson?.bamboo.hireDate && isNewStarter(selfPerson.bamboo.hireDate) ? (
+            selfOnboarding ? (
+              <OnboardingChecklistCard
+                model={selfOnboarding}
+                onOpenDetail={() => setChecklistDrawerOpen(true)}
+                compact
+              />
+            ) : (
+              <GettingStartedResources
+                bamboo={selfPerson.bamboo}
+                matched={onboardingMatched}
+                onViewAll={resourceLibrary.openLibrary}
+                compact
+              />
+            )
+          ) : null}
+
+          {showGoalsSummary && !team && !goalsProminent ? (
+            <HomeGoalsSummaryCard teamView={false} summary={goalsHomeSummary} />
+          ) : null}
+
           {selfPerson?.bamboo &&
           (!selfPerson.bamboo.hireDate || !isNewStarter(selfPerson.bamboo.hireDate)) ? (
             <section className="home-card" aria-label="Resources">
@@ -696,19 +687,33 @@ export function HomePage() {
               </Button>
             </section>
           ) : null}
+
+          {calendarConnected && upcomingMeetings?.meetings.length ? (
+            <HomeUpcomingMeetings
+              meetings={upcomingMeetings.meetings}
+              managerView={Boolean(team)}
+              jiraBaseUrl={homeJiraBaseUrl}
+              onPrepareOneOnOne={(personId, periodPreset: DateRangeKey) => {
+                window.dispatchEvent(
+                  new CustomEvent("metrio-open-person-brief", {
+                    detail: {
+                      personId,
+                      periodPreset,
+                      prepForOneOnOne: true,
+                    },
+                  }),
+                );
+              }}
+              onOpenTeamOverview={() => {
+                dispatchAppRoute("performance");
+                dispatchPerformanceTab("overview");
+              }}
+            />
+          ) : null}
         </div>
 
         {team ? (
           <div className="home-column home-column--team">
-            <ActionQueueSection
-              title="Team actions"
-              items={team.actions}
-              emptyMessage="No high-priority team actions right now."
-              onOpen={handleAction}
-              openLabel={actionOpenLabel}
-              variant="dashboard"
-            />
-
             {team.dependencySignals.length ? (
               <section
                 className="home-card"
@@ -716,14 +721,20 @@ export function HomePage() {
                 data-testid="home-dependency-signals"
               >
                 <h2 className="home-card__title">Dependencies</h2>
-                <ul className="home-calendar-list">
+                <div className="home-compact-rows">
                   {team.dependencySignals.map((signal) => (
-                    <li key={signal.id} className="home-calendar-row">
-                      <span className="home-calendar-row__title">{signal.title}</span>
-                      <span className="home-calendar-row__meta">{signal.description}</span>
-                    </li>
+                    <DashboardCompactRow
+                      key={signal.id}
+                      subject={signal.title}
+                      secondary={signal.description}
+                      actionLabel="Open Delivery Risk"
+                      onAction={() => {
+                        dispatchAppRoute("performance");
+                        dispatchPerformanceTab("delivery-risk");
+                      }}
+                    />
                   ))}
-                </ul>
+                </div>
               </section>
             ) : null}
 
@@ -777,19 +788,19 @@ export function HomePage() {
                         : row.daysUntil != null
                           ? `Starts in ${row.daysUntil} days`
                           : "Upcoming leave";
-                  const workloadLabel = `${row.activeCount} active tasks${
-                    row.inReviewCount > 0 ? ` · ${row.inReviewCount} in Review` : ""
-                  }`;
                   return (
                     <DashboardCompactRow
                       key={row.personId}
                       subject={row.personName}
-                      secondary={`${startsLabel}\n${row.rangeLabel}\n${workloadLabel}`}
-                      badge={{
-                        label: row.severity === "warning" ? "Coverage risk" : "On leave",
-                        variant:
-                          row.severity === "warning" ? "warning" : "neutral",
-                      }}
+                      secondary={`Away ${row.rangeLabel}\n${startsLabel}`}
+                      badge={
+                        row.severity === "warning"
+                          ? {
+                              label: "Coverage risk",
+                              variant: "warning",
+                            }
+                          : undefined
+                      }
                       actionLabel="View person"
                       onAction={() => openPerson(row.personId, "overview")}
                     />
@@ -815,30 +826,74 @@ export function HomePage() {
                     const person = data?.teamSnapshot?.persons.find(
                       (p) => p.id === row.personId,
                     );
-                    const secondaryLines = [
-                      [row.dayLabel, row.jobTitle].filter(Boolean).join(" · "),
-                      row.stepsCompleteLabel,
-                      row.actionsRemainingLabel,
-                    ].filter(Boolean);
+                    const [completeSteps, totalSteps] = (row.progressLabel ?? "")
+                      .split("/")
+                      .map((part) => Number.parseInt(part, 10));
+                    const progressRatio =
+                      Number.isFinite(completeSteps) &&
+                      Number.isFinite(totalSteps) &&
+                      totalSteps > 0
+                        ? completeSteps / totalSteps
+                        : null;
                     return (
-                      <div key={row.personId} className="home-new-starter-block">
-                        <DashboardCompactRow
-                          subject={row.personName}
-                          secondary={secondaryLines.join("\n")}
-                          avatar={
-                            person ? (
-                              <PersonAvatar
-                                displayName={person.bamboo.displayName}
-                                employeeId={person.bamboo.id || person.id}
-                                size="sm"
-                              />
-                            ) : undefined
-                          }
-                          actionLabel="View person"
-                          onAction={() => openPerson(row.personId)}
-                        />
-                        {canOpenPersonBrief(currentUser, row.personId) ? (
-                          <div className="home-new-starter-block__actions">
+                      <article
+                        key={row.personId}
+                        className="home-new-starter-card"
+                        data-testid="dashboard-new-starter-row"
+                      >
+                        <div className="home-new-starter-card__head">
+                          {person ? (
+                            <PersonAvatar
+                              displayName={person.bamboo.displayName}
+                              employeeId={person.bamboo.id || person.id}
+                              size="sm"
+                            />
+                          ) : null}
+                          <div className="home-new-starter-card__identity">
+                            <p className="home-new-starter-card__name">{row.personName}</p>
+                            {row.jobTitle ? (
+                              <p className="home-new-starter-card__meta">{row.jobTitle}</p>
+                            ) : null}
+                            <p className="home-new-starter-card__meta">{row.dayLabel}</p>
+                          </div>
+                        </div>
+                        {row.stepsCompleteLabel ? (
+                          <div className="home-new-starter-card__onboarding">
+                            <p className="home-new-starter-card__label">Onboarding</p>
+                            <p className="home-new-starter-card__meta">
+                              {row.stepsCompleteLabel}
+                            </p>
+                            {progressRatio != null ? (
+                              <div
+                                className="home-new-starter-card__progress"
+                                role="progressbar"
+                                aria-valuenow={completeSteps}
+                                aria-valuemin={0}
+                                aria-valuemax={totalSteps}
+                                aria-label="Onboarding progress"
+                              >
+                                <span
+                                  className="home-new-starter-card__progress-fill"
+                                  style={{ width: `${Math.round(progressRatio * 100)}%` }}
+                                />
+                              </div>
+                            ) : null}
+                            {row.actionsRemainingLabel ? (
+                              <p className="home-new-starter-card__meta">
+                                {row.actionsRemainingLabel}
+                              </p>
+                            ) : null}
+                          </div>
+                        ) : null}
+                        <div className="home-new-starter-card__actions">
+                          <Button
+                            type="button"
+                            variant="secondary"
+                            onClick={() => openPerson(row.personId)}
+                          >
+                            View person
+                          </Button>
+                          {canOpenPersonBrief(currentUser, row.personId) ? (
                             <Button
                               type="button"
                               variant="secondary"
@@ -852,9 +907,9 @@ export function HomePage() {
                             >
                               Prepare for 1:1
                             </Button>
-                          </div>
-                        ) : null}
-                      </div>
+                          ) : null}
+                        </div>
+                      </article>
                     );
                   })}
                 </div>
@@ -878,6 +933,13 @@ export function HomePage() {
                   Open Feedback
                 </Button>
               </section>
+            ) : null}
+
+            {showGoalsSummary && !goalsProminent ? (
+              <HomeGoalsSummaryCard
+                teamView
+                summary={goalsHomeSummary}
+              />
             ) : null}
           </div>
         ) : null}

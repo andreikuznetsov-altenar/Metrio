@@ -205,13 +205,14 @@ export function SettingsPage({
       {section === "connections" ? (
         <div className="settings-panel" data-testid="connections-settings">
           <p className="settings-intro">
-            Manage secure credentials for your company integrations.
+            Manage secure credentials for your company integrations. Credentials are stored
+            securely on this Mac.
           </p>
 
           <section className="settings-card settings-card--compact">
             <h3 className="settings-card__title">Work email</h3>
             <p className="settings-card__description">
-              Used to match your Metrio account with Jira and Bamboo.
+              Used to match your Metrio profile with Jira and BambooHR.
             </p>
             <Input
               readOnly
@@ -237,24 +238,29 @@ export function SettingsPage({
               hasValue={Boolean(connection?.hasJiraToken)}
               busy={busy}
               onSave={onSaveJiraToken}
+              securityHint="Stored securely on this Mac."
+              editActions={
+                <>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    disabled={busy}
+                    onClick={() => void onTestJira()}
+                  >
+                    Test connection
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    disabled={busy}
+                    data-testid="jira-get-api-token"
+                    onClick={() => void openExternalUrl(ATLASSIAN_API_TOKEN_URL)}
+                  >
+                    Get API token
+                  </Button>
+                </>
+              }
             />
-            <div
-              className="settings-button-group settings-credential-actions"
-              data-testid="jira-credential-actions"
-            >
-              <Button type="button" variant="secondary" disabled={busy} onClick={() => void onTestJira()}>
-                Test connection
-              </Button>
-              <Button
-                type="button"
-                variant="secondary"
-                disabled={busy}
-                data-testid="jira-get-api-token"
-                onClick={() => void openExternalUrl(ATLASSIAN_API_TOKEN_URL)}
-              >
-                Get API token
-              </Button>
-            </div>
           </section>
 
           <section className="settings-card" data-testid="settings-bamboo-card">
@@ -275,24 +281,29 @@ export function SettingsPage({
               hasValue={Boolean(connection?.hasBambooApiKey)}
               busy={busy}
               onSave={onSaveBambooKey}
+              securityHint="Stored securely on this Mac."
+              editActions={
+                <>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    disabled={busy}
+                    onClick={() => void onTestBamboo()}
+                  >
+                    Test connection
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    disabled={busy}
+                    data-testid="bamboo-api-key-help"
+                    onClick={() => void openExternalUrl(getBambooApiKeyHelpUrl())}
+                  >
+                    How to get API key
+                  </Button>
+                </>
+              }
             />
-            <div
-              className="settings-button-group settings-credential-actions"
-              data-testid="bamboo-credential-actions"
-            >
-              <Button type="button" variant="secondary" disabled={busy} onClick={() => void onTestBamboo()}>
-                Test connection
-              </Button>
-              <Button
-                type="button"
-                variant="secondary"
-                disabled={busy}
-                data-testid="bamboo-api-key-help"
-                onClick={() => void openExternalUrl(getBambooApiKeyHelpUrl())}
-              >
-                How to get API key
-              </Button>
-            </div>
           </section>
 
           <section className="settings-card">

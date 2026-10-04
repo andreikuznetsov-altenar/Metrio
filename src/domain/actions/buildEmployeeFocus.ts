@@ -4,7 +4,7 @@ import type { ActionItem } from "./actionTypes";
 import { dedupeActions } from "./dedupeActions";
 import { sortActionsByPriority } from "./actionPriority";
 
-const MAX_FOCUS = 5;
+const MAX_FOCUS = 12;
 
 export function buildEmployeeFocusActions(input: {
   workspace: PersonAnalyticsWorkspace;

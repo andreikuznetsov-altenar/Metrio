@@ -91,6 +91,10 @@ export async function connectAndContinue(input: ConnectFormInput): Promise<void>
   const jiraBaseUrl = resolveJiraBaseUrl();
   const bambooSubdomain = resolveBambooSubdomain();
 
+  if (import.meta.env.VITE_VISUAL_FIXTURE === "1" && jiraToken === "bad") {
+    throw new ConnectError("Could not verify your Jira API token.", "jiraToken");
+  }
+
   await secureStoreSet(SECRET_KEYS.JIRA_API_TOKEN, jiraToken);
   await secureStoreSet(SECRET_KEYS.BAMBOO_API_TOKEN, bambooApiKey);
 

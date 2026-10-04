@@ -109,6 +109,7 @@ export function ConnectionScreen() {
 
   const showEmailError =
     emailError && (emailTouched || status === "error");
+  const showFormError = formError && !jiraError && !bambooError && !showEmailError;
 
   return (
     <div className="connection-screen" data-testid="connection-screen">
@@ -120,87 +121,107 @@ export function ConnectionScreen() {
         <div className="connection-panel">
           <h1 className="connection-panel__title">Connect your work tools</h1>
           <p className="connection-panel__intro">
-            Metrio uses Jira for work context and BambooHR for people and availability.
-            Credentials are stored securely on this Mac.
+            Metrio combines Jira work context with BambooHR people and availability
+            data. Credentials are stored securely on this Mac.
           </p>
 
-          <Input
-            label="Work email"
-            name="work-email"
-            type="email"
-            autoComplete="username"
-            placeholder="name@altenar.com"
-            value={workEmail}
-            onChange={(event) => setWorkEmail(event.target.value)}
-            onBlur={onEmailBlur}
-            disabled={isBusy}
-            error={!!showEmailError}
-          />
-          {showEmailError ? (
-            <p className="connection-panel__field-error" role="alert">
-              {emailError}
-            </p>
-          ) : null}
-
-          <h2 className="connection-panel__section-label">Jira</h2>
-          <div className="connection-panel__credential-row">
+          <div className="connection-panel__field-block">
             <Input
-              label="API token"
-              name="jira-token"
-              type="password"
-              autoComplete="off"
-              placeholder="Paste your token"
-              value={jiraToken}
-              onChange={(event) => setJiraToken(event.target.value)}
+              label="Work email"
+              name="work-email"
+              type="email"
+              autoComplete="username"
+              placeholder="name@altenar.com"
+              value={workEmail}
+              onChange={(event) => setWorkEmail(event.target.value)}
+              onBlur={onEmailBlur}
               disabled={isBusy}
-              error={!!jiraError}
+              error={!!showEmailError}
             />
-            <Button
-              type="button"
-              variant="ghost"
-              className="connection-panel__help-btn"
-              disabled={isBusy}
-              onClick={() => openHelp(ATLASSIAN_API_TOKEN_URL)}
-            >
-              Get API token
-            </Button>
-          </div>
-          {jiraError ? (
-            <p className="connection-panel__field-error" role="alert">
-              {jiraError}
+            <p className="connection-panel__field-hint">
+              Used to match your Metrio profile with Jira and BambooHR.
             </p>
-          ) : null}
-
-          <h2 className="connection-panel__section-label">BambooHR</h2>
-          <div className="connection-panel__credential-row">
-            <Input
-              label="API key"
-              name="bamboo-api-key"
-              type="password"
-              autoComplete="off"
-              placeholder="Paste your API key"
-              value={bambooApiKey}
-              onChange={(event) => setBambooApiKey(event.target.value)}
-              disabled={isBusy}
-              error={!!bambooError}
-            />
-            <Button
-              type="button"
-              variant="ghost"
-              className="connection-panel__help-btn"
-              disabled={isBusy}
-              onClick={() => openHelp(getBambooApiKeyHelpUrl())}
-            >
-              Get API key
-            </Button>
+            {showEmailError ? (
+              <p className="connection-panel__field-error" role="alert">
+                {emailError}
+              </p>
+            ) : null}
           </div>
-          {bambooError ? (
-            <p className="connection-panel__field-error" role="alert">
-              {bambooError}
-            </p>
-          ) : null}
 
-          {formError ? (
+          <section className="connection-panel__integration" aria-label="Jira">
+            <h2 className="connection-panel__integration-title">Jira</h2>
+            <div className="connection-panel__credential-row">
+              <Input
+                label="API token"
+                name="jira-token"
+                type="password"
+                autoComplete="off"
+                placeholder="Paste your token"
+                value={jiraToken}
+                onChange={(event) => setJiraToken(event.target.value)}
+                disabled={isBusy}
+                error={!!jiraError}
+              />
+              <Button
+                type="button"
+                variant="ghost"
+                className="connection-panel__help-btn"
+                disabled={isBusy}
+                onClick={() => openHelp(ATLASSIAN_API_TOKEN_URL)}
+              >
+                Get API token
+              </Button>
+            </div>
+            <p className="connection-panel__field-hint">
+              Use an Atlassian API token associated with your work account.
+            </p>
+            {jiraError ? (
+              <p
+                className="connection-panel__field-error"
+                role="alert"
+                data-testid="connection-jira-error"
+              >
+                {jiraError}
+              </p>
+            ) : null}
+          </section>
+
+          <section className="connection-panel__integration" aria-label="BambooHR">
+            <h2 className="connection-panel__integration-title">BambooHR</h2>
+            <div className="connection-panel__credential-row">
+              <Input
+                label="API key"
+                name="bamboo-api-key"
+                type="password"
+                autoComplete="off"
+                placeholder="Paste your API key"
+                value={bambooApiKey}
+                onChange={(event) => setBambooApiKey(event.target.value)}
+                disabled={isBusy}
+                error={!!bambooError}
+              />
+              <Button
+                type="button"
+                variant="ghost"
+                className="connection-panel__help-btn"
+                disabled={isBusy}
+                onClick={() => openHelp(getBambooApiKeyHelpUrl())}
+              >
+                How to get API key
+              </Button>
+            </div>
+            {bambooError ? (
+              <p
+                className="connection-panel__field-error"
+                role="alert"
+                data-testid="connection-bamboo-error"
+              >
+                {bambooError}
+              </p>
+            ) : null}
+          </section>
+
+          {showFormError ? (
             <p className="connection-panel__form-error" role="alert">
               {formError}
             </p>

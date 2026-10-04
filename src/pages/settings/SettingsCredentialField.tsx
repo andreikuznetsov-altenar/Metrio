@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { Button } from "../../components/Button/Button";
 import { Input } from "../../components/Input/Input";
 
@@ -7,6 +7,9 @@ export interface SettingsCredentialFieldProps {
   hasValue: boolean;
   busy?: boolean;
   onSave: (value: string) => Promise<void>;
+  /** Shown only while editing (Save / Cancel / Test / help links). */
+  editActions?: ReactNode;
+  securityHint?: string;
 }
 
 export function SettingsCredentialField({
@@ -14,6 +17,8 @@ export function SettingsCredentialField({
   hasValue,
   busy = false,
   onSave,
+  editActions,
+  securityHint,
 }: SettingsCredentialFieldProps) {
   const [editing, setEditing] = useState(false);
   const [value, setValue] = useState("");
@@ -24,13 +29,18 @@ export function SettingsCredentialField({
       <div className="settings-credential">
         <span className="settings-row__label">{label}</span>
         <div className="settings-credential__row settings-credential__row--stored">
-          <p className="settings-credential__stored" role="status">
+          <p
+            className="settings-credential__stored"
+            role="status"
+            data-testid="settings-credential-stored"
+          >
             {hasValue ? "Stored securely" : "Not configured"}
           </p>
           <Button
             type="button"
             variant="secondary"
             disabled={busy}
+            data-testid="credential-change"
             onClick={() => {
               setEditing(true);
               setValue("");
@@ -40,6 +50,9 @@ export function SettingsCredentialField({
             Change
           </Button>
         </div>
+        {securityHint && hasValue ? (
+          <p className="settings-row__hint">{securityHint}</p>
+        ) : null}
       </div>
     );
   }
@@ -87,6 +100,9 @@ export function SettingsCredentialField({
           Cancel
         </Button>
       </div>
+      {editActions ? (
+        <div className="settings-button-group settings-credential-actions">{editActions}</div>
+      ) : null}
       {error ? <p className="settings-row__hint settings-row__hint--error">{error}</p> : null}
     </div>
   );
