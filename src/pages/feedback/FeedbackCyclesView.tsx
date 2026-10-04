@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { Repeat } from 'lucide-react';
 import { useFeedbackSurveyStore } from '../../app/feedbackSurveyStore';
 import { useFeedbackAppStore } from '../../app/FeedbackTeamProvider';
 import { useCurrentUser } from '../../app/CurrentUserContext';
@@ -10,8 +11,35 @@ import type { FeedbackCycle } from '../../domain/feedbackCycles/feedbackCycleTyp
 import { BUILTIN_FEEDBACK_TEMPLATES } from '../../domain/feedbackCycles/feedbackTemplates';
 import { useOptionalCompanyConfig } from '../../app/CompanyConfigContext';
 import { saveSurveyData } from '../../services/survey/surveyPersistence';
-import { Button } from './design-system';
+import { Badge, Button } from './design-system';
+import { FeedbackEmptyState } from './FeedbackEmptyState';
 import { FeedbackTemplateLibrary } from './FeedbackTemplateLibrary';
+
+function cycleTypeLabel(type: FeedbackCycle['type']): string {
+  switch (type) {
+    case 'pulse':
+      return 'Pulse';
+    case 'onboarding':
+      return 'Onboarding';
+    case 'project':
+      return 'Project';
+    default:
+      return type;
+  }
+}
+
+function cycleStatusVariant(
+  status: FeedbackCycle['status'],
+): 'success' | 'warning' | 'neutral' {
+  switch (status) {
+    case 'active':
+      return 'success';
+    case 'paused':
+      return 'warning';
+    default:
+      return 'neutral';
+  }
+}
 
 export function FeedbackCyclesView() {
   const { data, setActiveSurvey, init } = useFeedbackSurveyStore();
@@ -68,74 +96,125 @@ export function FeedbackCyclesView() {
 
   return (
     <div className="feedback-cycles" data-testid="feedback-cycles">
-      <p className="feedback-cycles__lead">
-        Reusable feedback programs. Delivery still uses Google Forms and your existing send flow.
-      </p>
-      {canManage ? (
-        <div className="feedback-cycles__actions">
-          <Button type="button" variant="secondary" onClick={() => void addPulseCycle()}>
-            New pulse cycle
-          </Button>
-          <Button type="button" variant="ghost" onClick={() => setShowTemplates((v) => !v)}>
-            Template library
-          </Button>
-        </div>
-      ) : null}
+      <section className="feedback-surface-card feedback-cycles-intro">
+        <h2 className="feedback-cycles-intro__title">Feedback cycles</h2>
+        <p className="feedback-cycles-intro__description">
+          Create reusable pulse, onboarding or project feedback programs.
+        </p>
+        {canManage ? (
+          <div className="feedback-cycles-intro__actions">
+            <Button type="button" variant="secondary" onClick={() => void addPulseCycle()}>
+              New pulse cycle
+            </Button>
+            <Button type="button" variant="secondary" onClick={() => setShowTemplates((v) => !v)}>
+              Template library
+            </Button>
+          </div>
+        ) : null}
+      </section>
 
       {showTemplates ? <FeedbackTemplateLibrary templates={templates} /> : null}
 
-      <ul className="feedback-cycles__list">
-        {cycleRows.map(({ cycle, current, progress, runs }) => (
-          <li key={cycle.id} className="feedback-cycle-card" data-testid="feedback-cycle-card">
-            <h3>{cycle.name}</h3>
-            <p className="feedback-cycle-card__meta">
-              {cycle.type} · {cycle.status}
-              {cycle.cadence ? ` · ${cycle.cadence.unit}` : ''}
-            </p>
-            <p className="feedback-cycle-card__meta">
-              {confidentialityLabel(cycle.confidentiality, prefs.google)}
-            </p>
-            {current ? (
-              <p>
-                {progress.responded} / {progress.total} responses · {runs.length} run
-                {runs.length === 1 ? '' : 's'}
-              </p>
-            ) : (
-              <p>No runs yet — scheduler creates draft runs on refresh.</p>
-            )}
-            {canManage && current ? (
-              <Button
-                type="button"
-                variant="secondary"
-                onClick={() => setActiveSurvey(current.id)}
-              >
-                Open current run
-              </Button>
-            ) : null}
-            {canManage ? (
-              <div className="feedback-cycles__row-actions">
-                {cycle.status === 'active' ? (
-                  <Button type="button" variant="ghost" onClick={() => void setCycleStatus(cycle.id, 'paused')}>
-                    Pause
-                  </Button>
-                ) : null}
-                {cycle.status === 'paused' ? (
-                  <Button type="button" variant="ghost" onClick={() => void setCycleStatus(cycle.id, 'active')}>
-                    Resume
-                  </Button>
-                ) : null}
-                <Button type="button" variant="ghost" onClick={() => void setCycleStatus(cycle.id, 'archived')}>
-                  Archive
-                </Button>
-              </div>
-            ) : null}
-          </li>
-        ))}
-      </ul>
-
       {cycles.length === 0 ? (
-        <p role="status">No cycles yet. Legacy surveys remain under History as one-off runs.</p>
-      ) : null}
+        <FeedbackEmptyState
+          testId="feedback-cycles-empty"
+          icon={Repeat}
+          title="No feedback cycles yet"
+          description="Create a recurring pulse or start from a template."
+          primary={
+            canManage
+              ? {
+                  label: 'New pulse cycle',
+                  onClick: () => void addPulseCycle(),
+                  variant: 'secondary',
+                }
+              : undefined
+          }
+          secondary={
+            canManage
+              ? {
+                  label: 'Template library',
+                  onClick: () => setShowTemplates(true),
+                  variant: 'secondary',
+                }
+              : undefined
+          }
+        />
+      ) : (
+        <ul className="feedback-cycles__list">
+          {cycleRows.map(({ cycle, current, progress, runs }) => (
+            <li key={cycle.id} className="feedback-cycle-card" data-testid="feedback-cycle-card">
+              <div className="feedback-cycle-card__head">
+                <h3 className="feedback-cycle-card__title">{cycle.name}</h3>
+                <div className="feedback-cycle-card__badges">
+                  <Badge variant="neutral">{cycleTypeLabel(cycle.type)}</Badge>
+                  <Badge variant={cycleStatusVariant(cycle.status)}>{cycle.status}</Badge>
+                </div>
+              </div>
+              <div className="feedback-cycle-card__metrics">
+                <span>
+                  Cadence: <strong>{cycle.cadence?.unit ?? '—'}</strong>
+                </span>
+                <span>
+                  Responses:{' '}
+                  <strong>
+                    {progress.responded} / {progress.total}
+                  </strong>
+                </span>
+                <span>
+                  Runs: <strong>{runs.length}</strong>
+                </span>
+              </div>
+              <p className="feedback-cycle-card__meta">
+                {confidentialityLabel(cycle.confidentiality, prefs.google)}
+              </p>
+              {current ? null : (
+                <p className="feedback-cycle-card__hint">
+                  No runs yet — scheduler creates draft runs on refresh.
+                </p>
+              )}
+              {canManage ? (
+                <div className="feedback-cycle-card__actions">
+                  {current ? (
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      onClick={() => setActiveSurvey(current.id)}
+                    >
+                      Open current run
+                    </Button>
+                  ) : null}
+                  {cycle.status === 'active' ? (
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      onClick={() => void setCycleStatus(cycle.id, 'paused')}
+                    >
+                      Pause
+                    </Button>
+                  ) : null}
+                  {cycle.status === 'paused' ? (
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      onClick={() => void setCycleStatus(cycle.id, 'active')}
+                    >
+                      Resume
+                    </Button>
+                  ) : null}
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    onClick={() => void setCycleStatus(cycle.id, 'archived')}
+                  >
+                    Archive
+                  </Button>
+                </div>
+              ) : null}
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   );
 }
