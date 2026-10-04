@@ -665,7 +665,7 @@ test.describe("Metrio visual regression", () => {
     });
   });
 
-  test("operational rules settings", async ({ page }) => {
+  async function openAttentionRulesSettings(page: Page) {
     await page.addInitScript((fixtureId: string) => {
       localStorage.setItem("metrio-connection-connected", "true");
       localStorage.setItem("metrio-dev-fixture", fixtureId);
@@ -676,8 +676,31 @@ test.describe("Metrio visual regression", () => {
     await page.getByRole("button", { name: "Settings" }).click();
     await clickSettingsSection(page, /attention rules/i);
     await expect(page.getByTestId("operational-rules-settings")).toBeVisible();
+  }
+
+  test("operational rules settings", async ({ page }) => {
+    await openAttentionRulesSettings(page);
     await expect(page).toHaveScreenshot("operational-rules-settings.png", {
       fullPage: true,
+      maxDiffPixelRatio: 0.02,
+    });
+  });
+
+  test("attention rules settings 1280", async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await openAttentionRulesSettings(page);
+    const grid = page.getByTestId("attention-rules-field-grid");
+    await expect(grid).toBeVisible();
+    await expect(grid).toHaveScreenshot("attention-rules-1280.png", {
+      maxDiffPixelRatio: 0.02,
+    });
+  });
+
+  test("attention rules settings 1440", async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await openAttentionRulesSettings(page);
+    const grid = page.getByTestId("attention-rules-field-grid");
+    await expect(grid).toHaveScreenshot("attention-rules-1440.png", {
       maxDiffPixelRatio: 0.02,
     });
   });
@@ -1122,6 +1145,28 @@ test.describe("Metrio visual regression", () => {
     });
   });
 
+  test("connections jira card", async ({ page }) => {
+    await bootMetrio(page, "lead");
+    await page.getByRole("button", { name: /^settings$/i }).click();
+    await clickSettingsSection(page, /^connections$/i);
+    const card = page.getByTestId("settings-jira-card");
+    await expect(card.getByTestId("jira-get-api-token")).toBeVisible();
+    await expect(card).toHaveScreenshot("connections-jira-card.png", {
+      maxDiffPixelRatio: 0.02,
+    });
+  });
+
+  test("connections bamboo card", async ({ page }) => {
+    await bootMetrio(page, "lead");
+    await page.getByRole("button", { name: /^settings$/i }).click();
+    await clickSettingsSection(page, /^connections$/i);
+    const card = page.getByTestId("settings-bamboo-card");
+    await expect(card.getByTestId("bamboo-api-key-help")).toBeVisible();
+    await expect(card).toHaveScreenshot("connections-bamboo-card.png", {
+      maxDiffPixelRatio: 0.02,
+    });
+  });
+
   test("settings preferences notifications card", async ({ page }) => {
     await bootMetrio(page, "lead");
     await page.getByRole("button", { name: /^settings$/i }).click();
@@ -1146,10 +1191,53 @@ test.describe("Metrio visual regression", () => {
     await expect(page.getByTestId("diagnostics-checks")).toBeVisible({
       timeout: 15_000,
     });
+    await expect(page.getByTestId("diagnostics-settings")).toHaveScreenshot(
+      "diagnostics-summary.png",
+      { maxDiffPixelRatio: 0.02 },
+    );
     await expect(page).toHaveScreenshot("settings-diagnostics.png", {
       fullPage: true,
       maxDiffPixelRatio: 0.02,
     });
+  });
+
+  test("diagnostics advanced collapsed", async ({ page }) => {
+    await page.addInitScript((fixtureId: string) => {
+      localStorage.setItem("metrio-connection-connected", "true");
+      localStorage.setItem("metrio-dev-fixture", fixtureId);
+      localStorage.setItem("metrio-theme", "light");
+    }, "lead");
+    await page.goto("/");
+    await expect(page.getByTestId("app-shell")).toBeVisible({ timeout: 30_000 });
+    await page.getByRole("button", { name: /^settings$/i }).click();
+    await clickSettingsSection(page, /company & app/i);
+    await expect(page.getByTestId("diagnostics-checks")).toBeVisible({
+      timeout: 15_000,
+    });
+    await expect(page.getByTestId("diagnostics-advanced")).toHaveCount(0);
+    await expect(page.getByTestId("diagnostics-settings")).toHaveScreenshot(
+      "diagnostics-advanced-collapsed.png",
+      { maxDiffPixelRatio: 0.02 },
+    );
+  });
+
+  test("diagnostics dark", async ({ page }) => {
+    await page.addInitScript((fixtureId: string) => {
+      localStorage.setItem("metrio-connection-connected", "true");
+      localStorage.setItem("metrio-dev-fixture", fixtureId);
+      localStorage.setItem("metrio-theme", "dark");
+    }, "lead");
+    await page.goto("/");
+    await expect(page.getByTestId("app-shell")).toBeVisible({ timeout: 30_000 });
+    await page.getByRole("button", { name: /^settings$/i }).click();
+    await clickSettingsSection(page, /company & app/i);
+    await expect(page.getByTestId("diagnostics-checks")).toBeVisible({
+      timeout: 15_000,
+    });
+    await expect(page.getByTestId("diagnostics-settings")).toHaveScreenshot(
+      "diagnostics-dark.png",
+      { maxDiffPixelRatio: 0.02 },
+    );
   });
 
   test("settings diagnostics advanced dark", async ({ page }) => {

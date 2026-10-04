@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { Badge } from "../../components/Badge/Badge";
 import { Button } from "../../components/Button/Button";
 import { Switch } from "../../components/Switch/Switch";
 import { formatBuildLabel, getBuildInfo } from "../../config/build";
@@ -6,10 +7,13 @@ import { useFeedbackSurveyStore } from "../../app/feedbackSurveyStore";
 import { usePerformanceData } from "../../app/PerformanceDataContext";
 import { useToast } from "../../components/Toast/ToastContext";
 import {
-  formatRelativeSync,
   runConnectionDiagnostics,
   type ConnectionCheckRow,
 } from "../../platform/observability/connectionDiagnostics";
+import {
+  badgeVariantForConnectionState,
+  formatConnectionHealthLabel,
+} from "../../platform/observability/diagnosticsHealthPresentation";
 import {
   getApiRequestCounts,
   getRefreshMetrics,
@@ -109,67 +113,78 @@ export function DiagnosticsSettingsPanel({
         <p className="settings-panel__lead">{formatBuildLabel(buildInfo)}</p>
       ) : null}
 
-      <ul className="diagnostics-status-list">
-        <li>
-          <strong>Jira</strong> ·{" "}
-          {prefs.credentials.jiraConfigured ? "Configured" : "Not configured"} · refreshed{" "}
-          {formatRelativeSync(prefs.sync.lastJiraSync)}
-          {prefs.sync.jiraStale ? " · stale" : ""}
-        </li>
-        <li>
-          <strong>BambooHR</strong> ·{" "}
-          {prefs.credentials.bambooConfigured ? "Configured" : "Not configured"} · refreshed{" "}
-          {formatRelativeSync(prefs.sync.lastBambooSync)}
-          {prefs.sync.bambooStale ? " · stale" : ""}
-        </li>
-        <li>
-          <strong>Tray</strong> ·{" "}
-          {prefs.general.keepRunningInTray ? "Background mode on" : "Background mode off"} · Launch
-          at login {prefs.general.launchAtLogin ? "on" : "off"}
-        </li>
-      </ul>
+      <section className="diagnostics-section" aria-labelledby="diagnostics-health-title">
+        <h4 id="diagnostics-health-title" className="diagnostics-section__title">
+          System health
+        </h4>
+        {checks ? (
+          <div className="diagnostics-health-grid" data-testid="diagnostics-checks">
+            {checks.map((row) => (
+              <article key={row.id} className="diagnostics-health-row">
+                <div className="diagnostics-health-row__head">
+                  <span className="diagnostics-health-row__label">{row.label}</span>
+                  <Badge variant={badgeVariantForConnectionState(row.state)}>
+                    {formatConnectionHealthLabel(row.state)}
+                  </Badge>
+                </div>
+                {row.detail ? (
+                  <p className="diagnostics-health-row__detail">{row.detail}</p>
+                ) : null}
+              </article>
+            ))}
+          </div>
+        ) : (
+          <p className="settings-field__hint" aria-busy="true">
+            Running connection checks…
+          </p>
+        )}
+      </section>
 
-      <div className="settings-button-group">
-        <Button type="button" variant="secondary" disabled={checking} onClick={() => void runChecks()}>
+      <section className="diagnostics-section" aria-labelledby="diagnostics-desktop-title">
+        <h4 id="diagnostics-desktop-title" className="diagnostics-section__title">
+          Desktop
+        </h4>
+        <div className="diagnostics-tray-grid">
+          <div className="diagnostics-tray-row">
+            <span className="diagnostics-tray-row__label">Menu bar mode</span>
+            <Badge variant={prefs.general.keepRunningInTray ? "success" : "neutral"}>
+              {prefs.general.keepRunningInTray ? "On" : "Off"}
+            </Badge>
+          </div>
+          <div className="diagnostics-tray-row">
+            <span className="diagnostics-tray-row__label">Launch at login</span>
+            <Badge variant={prefs.general.launchAtLogin ? "success" : "neutral"}>
+              {prefs.general.launchAtLogin ? "On" : "Off"}
+            </Badge>
+          </div>
+          <div className="diagnostics-tray-row diagnostics-tray-row--toggle">
+            <span className="diagnostics-tray-row__label">Debug logging</span>
+            <Switch
+              aria-label="Debug logging"
+              checked={prefs.diagnostics.debugLoggingEnabled}
+              onCheckedChange={(checked) => {
+                void onPersist({
+                  ...prefs,
+                  diagnostics: { ...prefs.diagnostics, debugLoggingEnabled: checked },
+                });
+              }}
+            />
+          </div>
+        </div>
+      </section>
+
+      <div className="settings-button-group diagnostics-actions">
+        <Button
+          type="button"
+          variant="secondary"
+          disabled={checking}
+          onClick={() => void runChecks()}
+        >
           Run connection checks
         </Button>
         <Button type="button" variant="secondary" onClick={() => void openLogsFolder()}>
           Open logs folder
         </Button>
-      </div>
-
-      {checks ? (
-        <ul className="diagnostics-check-list" data-testid="diagnostics-checks">
-          {checks.map((row) => (
-            <li key={row.id}>
-              <span className="diagnostics-check-list__label">{row.label}</span>
-              <span className="diagnostics-check-list__state">{row.state}</span>
-              <span className="diagnostics-check-list__detail">{row.detail}</span>
-            </li>
-          ))}
-        </ul>
-      ) : null}
-
-      <div className="settings-toggle-row settings-toggle-row--stacked">
-        <div className="settings-toggle-row__text">
-          <span className="settings-toggle-row__label">Debug logging</span>
-          <span className="settings-toggle-row__description">
-            Verbose local logs (still redacted). Off by default.
-          </span>
-        </div>
-        <Switch
-          aria-label="Debug logging"
-          checked={prefs.diagnostics.debugLoggingEnabled}
-          onCheckedChange={(checked) => {
-            void onPersist({
-              ...prefs,
-              diagnostics: { ...prefs.diagnostics, debugLoggingEnabled: checked },
-            });
-          }}
-        />
-      </div>
-
-      <div className="settings-button-group">
         <Button
           type="button"
           variant="secondary"
@@ -205,13 +220,16 @@ export function DiagnosticsSettingsPanel({
         </Button>
       </div>
 
-      <Button
-        type="button"
-        variant="secondary"
-        onClick={() => setAdvancedOpen((v) => !v)}
-      >
-        {advancedOpen ? "Hide advanced details" : "Show advanced details"}
-      </Button>
+      <div className="diagnostics-advanced-wrap">
+        <Button
+          type="button"
+          variant="secondary"
+          className="diagnostics-advanced-toggle"
+          onClick={() => setAdvancedOpen((v) => !v)}
+        >
+          {advancedOpen ? "Hide advanced details" : "Show advanced details"}
+        </Button>
+      </div>
 
       {advancedOpen ? (
         <pre className="diagnostics-advanced" data-testid="diagnostics-advanced">
