@@ -23,7 +23,7 @@ export function notificationActionLabel(
     case "performance":
       return "View Performance";
     case "home":
-      return "View Home";
+      return "View Dashboard";
     case "digest":
       return "View digest";
     default:

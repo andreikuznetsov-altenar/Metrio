@@ -29,6 +29,7 @@ async function bootMetrioFeedbackDisconnected(
   );
   await page.goto("/");
   await expect(page.getByTestId("app-shell")).toBeVisible({ timeout: 30_000 });
+  await expect(page.getByTestId("dashboard-ready")).toBeVisible({ timeout: 30_000 });
 }
 
 async function bootMetrioFeedback(page: Page, theme: "light" | "dark" = "light") {
@@ -611,12 +612,17 @@ test.describe("Metrio visual regression", () => {
     });
   });
 
-  test("feedback survey disconnected", async ({ page }) => {
+  async function openFeedbackDisconnectedState(page: Page) {
     await bootMetrioFeedbackDisconnected(page, "light");
-    await page.locator(".app-header__nav-link").filter({ hasText: "Feedback" }).click();
+    await page.getByRole("button", { name: /^feedback$/i }).click();
     await expect(page.getByTestId("feedback-survey-disconnected")).toBeVisible({
       timeout: 15_000,
     });
+  }
+
+  test("feedback survey disconnected", async ({ page }) => {
+    test.setTimeout(60_000);
+    await openFeedbackDisconnectedState(page);
     await expect(page).toHaveScreenshot("feedback-disconnected.png", {
       fullPage: true,
       maxDiffPixelRatio: 0.02,
@@ -624,8 +630,9 @@ test.describe("Metrio visual regression", () => {
   });
 
   test("feedback disconnected dark", async ({ page }) => {
+    test.setTimeout(60_000);
     await bootMetrioFeedbackDisconnected(page, "dark");
-    await page.locator(".app-header__nav-link").filter({ hasText: "Feedback" }).click();
+    await page.getByRole("button", { name: /^feedback$/i }).click();
     await expect(page.getByTestId("feedback-survey-disconnected")).toBeVisible({
       timeout: 15_000,
     });
@@ -636,8 +643,8 @@ test.describe("Metrio visual regression", () => {
   });
 
   test("feedback google setup instructions", async ({ page }) => {
-    await bootMetrioFeedbackDisconnected(page, "light");
-    await page.locator(".app-header__nav-link").filter({ hasText: "Feedback" }).click();
+    test.setTimeout(60_000);
+    await openFeedbackDisconnectedState(page);
     await page.getByRole("button", { name: "Setup instructions" }).click();
     await expect(page.getByTestId("feedback-google-setup-instructions")).toBeVisible();
     await expect(page).toHaveScreenshot("feedback-instructions.png", {
@@ -647,8 +654,8 @@ test.describe("Metrio visual regression", () => {
   });
 
   test("feedback google apps script advanced", async ({ page }) => {
-    await bootMetrioFeedbackDisconnected(page, "light");
-    await page.locator(".app-header__nav-link").filter({ hasText: "Feedback" }).click();
+    test.setTimeout(60_000);
+    await openFeedbackDisconnectedState(page);
     await page.getByRole("button", { name: "Setup instructions" }).click();
     await page.getByRole("button", { name: "Apps Script setup" }).click();
     await expect(page.getByTestId("google-apps-script-setup")).toBeVisible();
@@ -899,7 +906,10 @@ test.describe("Metrio visual regression", () => {
       window.dispatchEvent(new CustomEvent("metrio-notification-events-changed"));
     });
     await page.getByRole("button", { name: /Notifications, 1 unread/i }).click();
-    await page.getByRole("button", { name: "View person" }).click();
+    await page
+      .locator(".drawer--notifications")
+      .getByRole("button", { name: "View person" })
+      .click();
     await expect(page.locator(".drawer--notifications")).toHaveCount(0);
     await expect(page.locator(".person-identity-header__name")).toContainText("Mia");
   });
@@ -945,7 +955,10 @@ test.describe("Metrio visual regression", () => {
   test("notifications jira source", async ({ page }) => {
     await bootMetrioWithNotificationFixture(page, 6);
     await page.getByRole("button", { name: /Notifications, 6 unread/i }).click();
-    await page.getByRole("button", { name: "Jira", exact: true }).click();
+    await page
+      .locator(".drawer--notifications")
+      .getByRole("button", { name: "Jira", exact: true })
+      .click();
     await expect(page).toHaveScreenshot("notifications-jira.png", {
       fullPage: true,
       maxDiffPixelRatio: 0.02,
@@ -955,7 +968,10 @@ test.describe("Metrio visual regression", () => {
   test("notifications bamboo source", async ({ page }) => {
     await bootMetrioWithNotificationFixture(page, 6);
     await page.getByRole("button", { name: /Notifications, 6 unread/i }).click();
-    await page.getByRole("button", { name: "BambooHR" }).click();
+    await page
+      .locator(".drawer--notifications .segmented-control__option")
+      .filter({ hasText: "Bamboo" })
+      .click();
     await expect(page).toHaveScreenshot("notifications-bamboohr.png", {
       fullPage: true,
       maxDiffPixelRatio: 0.02,
@@ -965,7 +981,10 @@ test.describe("Metrio visual regression", () => {
   test("notifications feedback source", async ({ page }) => {
     await bootMetrioWithNotificationFixture(page, 6);
     await page.getByRole("button", { name: /Notifications, 6 unread/i }).click();
-    await page.getByRole("button", { name: "Feedback" }).click();
+    await page
+      .locator(".drawer--notifications")
+      .getByRole("button", { name: "Feedback", exact: true })
+      .click();
     await expect(page).toHaveScreenshot("notifications-feedback.png", {
       fullPage: true,
       maxDiffPixelRatio: 0.02,
@@ -975,7 +994,10 @@ test.describe("Metrio visual regression", () => {
   test("notifications metrio source", async ({ page }) => {
     await bootMetrioWithNotificationFixture(page, 6);
     await page.getByRole("button", { name: /Notifications, 6 unread/i }).click();
-    await page.getByRole("button", { name: "Metrio", exact: true }).click();
+    await page
+      .locator(".drawer--notifications")
+      .getByRole("button", { name: "Metrio", exact: true })
+      .click();
     await expect(page).toHaveScreenshot("notifications-metrio.png", {
       fullPage: true,
       maxDiffPixelRatio: 0.02,
@@ -1015,8 +1037,9 @@ test.describe("Metrio visual regression", () => {
   test("notification clear history", async ({ page }) => {
     await bootMetrioWithNotificationFixture(page, 6);
     await page.getByRole("button", { name: /Notifications, 6 unread/i }).click();
-    await page.getByRole("button", { name: "Notification options" }).click();
-    await page.getByRole("menuitem", { name: "Clear all" }).click();
+    const notificationsDrawer = page.locator(".drawer--notifications");
+    await notificationsDrawer.getByRole("button", { name: "Notification options" }).click();
+    await notificationsDrawer.getByRole("menuitem", { name: "Clear all" }).click();
     await page.getByRole("button", { name: "Clear" }).click();
     await expect(page.getByText("No notifications yet")).toBeVisible();
     await expect(page.getByRole("button", { name: /^Notifications$/i })).toBeVisible();

@@ -74,7 +74,7 @@ function applyCapabilityGates(
 ): FeatureFlags {
   return {
     ...features,
-    feedback: features.feedback && caps.googleFeedbackConfigured,
+    feedback: features.feedback,
     confluence: features.confluence && caps.jiraConfigured,
   };
 }

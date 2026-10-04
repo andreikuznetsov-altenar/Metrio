@@ -353,7 +353,7 @@ export function HomePage() {
         <section className="home-empty-state" role="status">
           <h2 className="home-empty-state__title">Waiting for your profile</h2>
           <p className="home-empty-state__body">
-            Home needs your person record from the latest Jira performance sync.
+            Dashboard needs your person record from the latest Jira performance sync.
           </p>
         </section>
       </div>
@@ -377,7 +377,7 @@ export function HomePage() {
         <section className="home-empty-state" role="status">
           {uiState === "error" ? (
             <>
-              <h2 className="home-empty-state__title">Couldn’t load home data</h2>
+              <h2 className="home-empty-state__title">Couldn’t load dashboard data</h2>
               <p className="home-empty-state__body">
                 {errorMessage || "Performance data is unavailable."}
               </p>
@@ -386,7 +386,7 @@ export function HomePage() {
             <>
               <h2 className="home-empty-state__title">Waiting for your profile</h2>
               <p className="home-empty-state__body">
-                Home needs your person record from the latest Jira performance
+                Dashboard needs your person record from the latest Jira performance
                 sync. Check connections and refresh Performance data.
               </p>
             </>

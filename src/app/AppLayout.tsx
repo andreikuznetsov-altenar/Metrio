@@ -35,7 +35,6 @@ import { loadPreferences } from "../platform/preferences";
 import { readCalendarCache } from "../platform/calendarCache";
 import { buildJiraIssueBrowseUrl } from "../platform/jiraIssueUrl";
 import { isCommandPaletteShortcut } from "../platform/commandPaletteShortcut";
-import { PageToolbar } from "../shell/PageToolbar";
 import { PerformanceToolbar } from "../shell/PerformanceToolbar";
 import { NotificationCenter } from "../shell/NotificationCenter";
 import {
@@ -58,26 +57,6 @@ import {
   PerformanceExportProvider,
   usePerformanceExport,
 } from "./PerformanceExportContext";
-
-function toolbarCopy(route: AppRoute) {
-  if (route === "home") {
-    return {
-      title: "Dashboard",
-      subtitle: "",
-    };
-  }
-  if (route === "performance") {
-    return {
-      title: "Performance",
-      subtitle: "Individual performance overview",
-    };
-  }
-
-  return {
-    title: "Feedback",
-    subtitle: "Surveys and team responses",
-  };
-}
 
 function defaultReviewTarget(role: string): PerformanceReviewTarget {
   return role === "employee" ? "personal" : "team";
@@ -423,56 +402,36 @@ function AppLayoutShell({
     setSettingsOpen(false);
   }, [resetConnection, setSettingsOpen]);
 
-  const feedbackToolbar = useMemo(() => toolbarCopy("feedback"), []);
-
   const pageToolbar = useMemo(() => {
-    if (settingsOpen) {
-      return (
-        <PageToolbar title="Settings" subtitle="Preferences and integrations" />
-      );
-    }
-    if (showPerformanceToolbar) {
-      return (
-        <PerformanceToolbar
-          audience={showEmployeePerformance ? "employee" : "team"}
-          dateRange={dateRange}
-          reviewTarget={reviewTarget}
-          controlsDisabled={
-            performanceDataEnabled ? performanceControlsDisabled : false
-          }
-          refreshing={
-            performanceDataEnabled ? performanceControlsDisabled : false
-          }
-          onDateRangeChange={setDateRange}
-          onReviewTargetChange={setReviewTarget}
-          onRefresh={onRefresh}
-          onExportPdf={
-            performanceDataEnabled
-              ? () => {
-                  void performanceExport.exportCurrentView();
-                }
-              : undefined
-          }
-          exportDisabled={!performanceExport.canExport}
-          exportBusy={performanceExport.exporting}
-        />
-      );
-    }
-    if (activeRoute === "home") {
+    if (!showPerformanceToolbar) {
       return null;
     }
-    if (activeRoute === "performance") {
-      const copy = toolbarCopy("performance");
-      return <PageToolbar title={copy.title} subtitle={copy.subtitle} />;
-    }
     return (
-      <PageToolbar
-        title={feedbackToolbar.title}
-        subtitle={feedbackToolbar.subtitle}
+      <PerformanceToolbar
+        audience={showEmployeePerformance ? "employee" : "team"}
+        dateRange={dateRange}
+        reviewTarget={reviewTarget}
+        controlsDisabled={
+          performanceDataEnabled ? performanceControlsDisabled : false
+        }
+        refreshing={
+          performanceDataEnabled ? performanceControlsDisabled : false
+        }
+        onDateRangeChange={setDateRange}
+        onReviewTargetChange={setReviewTarget}
+        onRefresh={onRefresh}
+        onExportPdf={
+          performanceDataEnabled
+            ? () => {
+                void performanceExport.exportCurrentView();
+              }
+            : undefined
+        }
+        exportDisabled={!performanceExport.canExport}
+        exportBusy={performanceExport.exporting}
       />
     );
   }, [
-    settingsOpen,
     showPerformanceToolbar,
     showEmployeePerformance,
     dateRange,
@@ -483,10 +442,6 @@ function AppLayoutShell({
     performanceExport.canExport,
     performanceExport.exporting,
     performanceExport.exportCurrentView,
-    activeRoute,
-    homeActive,
-    feedbackToolbar,
-    onRefresh,
     setDateRange,
   ]);
 

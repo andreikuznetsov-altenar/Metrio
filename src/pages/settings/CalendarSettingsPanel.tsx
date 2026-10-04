@@ -64,7 +64,7 @@ export function CalendarSettingsPanel({
       )}
       <p className={embedded ? "settings-card__description" : "settings-intro"}>
         Optional read-only access to upcoming meetings for 1:1 preparation on
-        Home. Metrio does not store your full calendar history or use meeting
+        Dashboard. Metrio does not store your full calendar history or use meeting
         attendance in performance scoring.
       </p>
       <p className="settings-intro settings-intro--muted">

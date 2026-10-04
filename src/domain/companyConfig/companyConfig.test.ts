@@ -104,7 +104,23 @@ describe("company config", () => {
         googleFeedbackConfigured: false,
       },
     });
-    expect(effective.features.feedback).toBe(false);
+    expect(effective.features.feedback).toBe(true);
     expect(effective.isCompanyAdmin).toBe(false);
+  });
+
+  it("disables feedback when company feature flag is off", () => {
+    const company = buildDefaultCompanyConfig();
+    company.features.feedback = false;
+    const effective = buildEffectiveConfig({
+      company,
+      prefs: DEFAULT_PREFERENCES,
+      currentUser: { person: { id: "x", name: "X", role: "employee" } },
+      capabilities: {
+        jiraConfigured: true,
+        bambooConfigured: true,
+        googleFeedbackConfigured: true,
+      },
+    });
+    expect(effective.features.feedback).toBe(false);
   });
 });

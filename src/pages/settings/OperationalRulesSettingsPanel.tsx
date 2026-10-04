@@ -155,7 +155,7 @@ export function OperationalRulesSettingsPanel({
                 patchTask({ longReviewHighlightDays: Number(e.target.value) })
               }
             />
-            <p className="settings-field__hint">Home delivery summary threshold</p>
+            <p className="settings-field__hint">Dashboard delivery summary threshold</p>
           </div>
         </div>
         <div className="settings-field settings-field--narrow">
