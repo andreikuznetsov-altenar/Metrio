@@ -2,6 +2,7 @@ import type { Survey } from '../../domain/survey/types';
 import { computeDeliveryCounts } from '../../domain/survey/deliveryMetrics';
 import { surveyStatusLabel } from '../../domain/survey/status';
 import { Badge, Section } from './design-system';
+import { FeedbackHistoryEmptyPanel } from './FeedbackDisconnectedPanels';
 
 export function FeedbackHistoryView({
   surveys,
@@ -13,17 +14,12 @@ export function FeedbackHistoryView({
   onSelectSurvey: (id: string) => void;
 }) {
   if (surveys.length === 0) {
-    return (
-      <Section title="History" variant="plain">
-        <p className="ds-feedback-empty-inline">No surveys yet</p>
-        <p className="ds-feedback-connect__hint">Prepared and sent surveys will appear here.</p>
-      </Section>
-    );
+    return <FeedbackHistoryEmptyPanel />;
   }
 
   return (
     <Section title="History" variant="plain">
-      <div className="ds-feedback-history">
+      <div className="ds-feedback-history feedback-surface-card">
         {surveys.map((survey) => {
           const counts = computeDeliveryCounts(survey.recipients);
           const active = survey.id === activeSurveyId;

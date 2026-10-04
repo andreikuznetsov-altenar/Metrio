@@ -38,7 +38,13 @@ import {
   FeedbackReminderConfirmDrawer,
   FeedbackSendConfirmDrawer,
 } from './FeedbackConfirmDrawers';
-import { FeedbackSurveyDisconnected } from './FeedbackSurveyDisconnected';
+import {
+  FeedbackDeliveryDisconnectedPanel,
+  FeedbackDeliveryNoSurveyPanel,
+  FeedbackResultsDisconnectedPanel,
+  FeedbackResultsEmptyPanel,
+  FeedbackSurveyDisconnectedPanel,
+} from './FeedbackDisconnectedPanels';
 import { FeedbackGoogleSetupInstructions } from './FeedbackGoogleSetupInstructions';
 import { openSettingsSection } from '../../platform/settingsNavigation';
 
@@ -388,17 +394,21 @@ export function FeedbackPage() {
               <>
                 <Segmented tabs={FEEDBACK_TABS} active={tab} onChange={(id) => setTab(id as FeedbackTab)} />
 
-                {tab === 'cycles' ? <FeedbackCyclesView /> : null}
+                <div
+                  className="ds-feedback-content"
+                  data-testid={`feedback-tab-panel-${tab}`}
+                >
+                  {tab === 'cycles' ? <FeedbackCyclesView /> : null}
 
-                {tab === 'survey' && !googleSurveyReady ? (
-                  <FeedbackSurveyDisconnected
-                    connecting={googleConnecting}
-                    onConnectGoogle={() => void runOAuthConnect()}
-                    onOpenSetupInstructions={() => setSetupInstructionsOpen(true)}
-                  />
-                ) : null}
+                  {tab === 'survey' && !googleSurveyReady ? (
+                    <FeedbackSurveyDisconnectedPanel
+                      connecting={googleConnecting}
+                      onConnectGoogle={() => void runOAuthConnect()}
+                      onOpenSetupInstructions={() => setSetupInstructionsOpen(true)}
+                    />
+                  ) : null}
 
-                {tab === 'survey' && googleSurveyReady && (
+                  {tab === 'survey' && googleSurveyReady && (
                     <>
                       <FeedbackSurveySetup
                         dateFrom={dateFrom}
@@ -463,11 +473,15 @@ export function FeedbackPage() {
                     </>
                   )}
 
-                {tab === 'delivery' && !googleSurveyReady && (
-                  <p className="ds-feedback-empty-inline">Connect Google to send surveys.</p>
-                )}
+                  {tab === 'delivery' && !googleSurveyReady ? (
+                    <FeedbackDeliveryDisconnectedPanel
+                      connecting={googleConnecting}
+                      onConnectGoogle={() => void runOAuthConnect()}
+                      onOpenSetupInstructions={() => setSetupInstructionsOpen(true)}
+                    />
+                  ) : null}
 
-                {tab === 'delivery' && googleSurveyReady && activeSurvey && counts && (
+                  {tab === 'delivery' && googleSurveyReady && activeSurvey && counts ? (
                     <FeedbackDeliveryView
                       recipients={activeSurvey.recipients}
                       counts={counts}
@@ -479,25 +493,31 @@ export function FeedbackPage() {
                       selectedSendCount={selectedSendCount}
                       sendDisabled={sending || !activeSurvey.responderUri || selectedSendCount === 0}
                     />
-                  )}
+                  ) : null}
 
-                {tab === 'delivery' && googleSurveyReady && !activeSurvey && (
-                    <p className="ds-feedback-empty-inline">Prepare a survey to track delivery.</p>
-                  )}
+                  {tab === 'delivery' && googleSurveyReady && !activeSurvey ? (
+                    <FeedbackDeliveryNoSurveyPanel />
+                  ) : null}
 
-                {tab === 'results' && !googleSurveyReady && (
-                  <p className="ds-feedback-empty-inline">Connect Google to view survey results.</p>
-                )}
+                  {tab === 'results' && !googleSurveyReady ? (
+                    <FeedbackResultsDisconnectedPanel
+                      connecting={googleConnecting}
+                      onConnectGoogle={() => void runOAuthConnect()}
+                      onOpenSetupInstructions={() => setSetupInstructionsOpen(true)}
+                    />
+                  ) : null}
 
-                {tab === 'results' && googleSurveyReady && metrics && metrics.respondentCount > 0 && (
+                  {tab === 'results' && googleSurveyReady && metrics && metrics.respondentCount > 0 ? (
                     <FeedbackResultsView metrics={metrics} sentCount={counts?.delivered ?? 0} />
-                  )}
+                  ) : null}
 
-                {tab === 'results' && googleSurveyReady && (!metrics || metrics.respondentCount === 0) && (
-                    <p className="ds-feedback-empty-inline">No survey responses yet.</p>
-                  )}
+                  {tab === 'results' &&
+                  googleSurveyReady &&
+                  (!metrics || metrics.respondentCount === 0) ? (
+                    <FeedbackResultsEmptyPanel />
+                  ) : null}
 
-                {tab === 'history' && (
+                  {tab === 'history' ? (
                     <FeedbackHistoryView
                       surveys={[...data.surveys].sort(
                         (a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt),
@@ -508,7 +528,8 @@ export function FeedbackPage() {
                         setTab('survey');
                       }}
                     />
-                  )}
+                  ) : null}
+                </div>
               </>
             </div>
           )}
