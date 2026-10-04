@@ -30,6 +30,8 @@ export interface DrawerProps {
   onClosed?: () => void;
   ariaLabel: string;
   header?: ReactNode;
+  /** Actions rendered beside the close control (overflow menus, etc.). */
+  headerActions?: ReactNode;
   children: ReactNode;
   /** Shared width variant; use instead of ad-hoc width classes. */
   size?: DrawerSize;
@@ -42,6 +44,7 @@ export function Drawer({
   onClosed,
   ariaLabel,
   header,
+  headerActions,
   children,
   size = "default",
   className,
@@ -119,10 +122,13 @@ export function Drawer({
         aria-label={ariaLabel}
       >
         <div className="drawer__header" id={titleId}>
-          {header}
-          <IconButton label="Close drawer" onClick={onClose}>
-            <CloseIcon />
-          </IconButton>
+          <div className="drawer__header-main">{header}</div>
+          <div className="drawer__header-toolbar">
+            {headerActions}
+            <IconButton label="Close drawer" onClick={onClose}>
+              <CloseIcon />
+            </IconButton>
+          </div>
         </div>
         <div className="drawer__body">{children}</div>
       </aside>

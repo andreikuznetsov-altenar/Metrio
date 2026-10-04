@@ -223,46 +223,44 @@ export function NotificationCenter({
       ariaLabel="Notifications"
       size="notification"
       className="drawer--notifications"
-      header={
-        <div className="notification-center__header">
-          <h2 className="notification-center__title">Notifications</h2>
-          <div className="notification-center__header-actions" ref={menuRef}>
-            <IconButton
-              label="Notification options"
-              data-testid="notification-overflow"
-              onClick={() => setMenuOpen((value) => !value)}
-            >
-              <MoreHorizontal size={16} strokeWidth={1.75} />
-            </IconButton>
-            {menuOpen ? (
-              <div className="notification-center__menu" role="menu">
-                <button
-                  type="button"
-                  role="menuitem"
-                  className="notification-center__menu-item"
-                  disabled={unreadCount === 0}
-                  onClick={() => {
-                    setMenuOpen(false);
-                    void markAllActionInboxItemsRead().then(() => refresh());
-                  }}
-                >
-                  Mark all as read
-                </button>
-                <button
-                  type="button"
-                  role="menuitem"
-                  className="notification-center__menu-item"
-                  disabled={!hasNotifications}
-                  onClick={() => {
-                    setMenuOpen(false);
-                    setConfirmClear(true);
-                  }}
-                >
-                  Clear all
-                </button>
-              </div>
-            ) : null}
-          </div>
+      header={<h2 className="notification-center__title">Notifications</h2>}
+      headerActions={
+        <div className="notification-center__header-actions" ref={menuRef}>
+          <IconButton
+            label="Notification options"
+            data-testid="notification-overflow"
+            onClick={() => setMenuOpen((value) => !value)}
+          >
+            <MoreHorizontal size={16} strokeWidth={1.75} />
+          </IconButton>
+          {menuOpen ? (
+            <div className="notification-center__menu" role="menu">
+              <button
+                type="button"
+                role="menuitem"
+                className="notification-center__menu-item"
+                disabled={unreadCount === 0}
+                onClick={() => {
+                  setMenuOpen(false);
+                  void markAllActionInboxItemsRead().then(() => refresh());
+                }}
+              >
+                Mark all as read
+              </button>
+              <button
+                type="button"
+                role="menuitem"
+                className="notification-center__menu-item"
+                disabled={!hasNotifications}
+                onClick={() => {
+                  setMenuOpen(false);
+                  setConfirmClear(true);
+                }}
+              >
+                Clear all
+              </button>
+            </div>
+          ) : null}
         </div>
       }
     >
