@@ -34,17 +34,18 @@ export function ActionQueueSection({
             {items.map((item) => {
               const row = buildDashboardActionRow(item);
               return (
-                <li key={item.id} className="action-queue__dashboard-row">
+                <li
+                  key={item.id}
+                  className="action-queue__dashboard-row"
+                  data-testid="dashboard-action-row"
+                >
                   <span className="action-queue__dashboard-subject">{row.subject}</span>
-                  {row.statusLabel ? (
-                    <span className="action-queue__dashboard-status">{row.statusLabel}</span>
-                  ) : null}
-                  <Badge variant="neutral">
+                  <Badge variant="neutral" className="action-queue__dashboard-badge">
                     {row.reasonTag}
                   </Badge>
-                  {row.contextLine ? (
-                    <span className="action-queue__dashboard-context">{row.contextLine}</span>
-                  ) : null}
+                  <span className="action-queue__dashboard-context">
+                    {row.contextLine || row.statusLabel || ""}
+                  </span>
                   <Button
                     type="button"
                     variant="secondary"
