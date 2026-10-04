@@ -33,7 +33,7 @@ function formatValue(
   return String(Math.round(value));
 }
 
-function ChartTooltip({
+export function ChartTooltip({
   active,
   payload,
   trend,

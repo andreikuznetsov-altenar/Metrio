@@ -32,5 +32,19 @@ describe("AnalyticsDrilldownDrawer", () => {
     expect(screen.getByText("Backflows")).toBeTruthy();
     expect(screen.getByText("0")).toBeTruthy();
     expect(screen.queryByText("Daria Chernova · Backflows")).toBeNull();
+    expect(screen.getByText("Daria Chernova")).toBeTruthy();
+    expect(screen.getByText(/4 Sep – 4 Oct 2026/)).toBeTruthy();
+  });
+
+  it("shows healthy zero backflows state in body", () => {
+    render(
+      <AnalyticsDrilldownDrawer
+        open
+        evidence={evidence}
+        onClose={vi.fn()}
+        onOpenPerson={vi.fn()}
+      />,
+    );
+    expect(screen.getAllByText("No backflows in this period").length).toBeGreaterThan(0);
   });
 });
