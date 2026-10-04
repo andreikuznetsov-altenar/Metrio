@@ -4,12 +4,11 @@ import {
   sortRows,
   type ColumnSortType,
   type TableSortState,
+  type TableSortColumnMeta,
 } from "./tableSort";
+import type { StatusSortKind } from "./tableSemanticRank";
 
-export interface TableSortColumn {
-  id: string;
-  type: ColumnSortType;
-}
+export type TableSortColumn = TableSortColumnMeta;
 
 export function useTableSort<T>(
   rows: T[],
@@ -26,10 +25,24 @@ export function useTableSort<T>(
     return map;
   }, [columns]);
 
+  const statusKindById = useMemo(() => {
+    const map = new Map<string, StatusSortKind>();
+    for (const column of columns) {
+      if (column.statusKind) map.set(column.id, column.statusKind);
+    }
+    return map;
+  }, [columns]);
+
   const sortedRows = useMemo(
     () =>
-      sortRows(rows, sort, getValue, (columnId) => typeById.get(columnId) ?? "text"),
-    [rows, sort, getValue, typeById],
+      sortRows(
+        rows,
+        sort,
+        getValue,
+        (columnId) => typeById.get(columnId) ?? "text",
+        (columnId) => statusKindById.get(columnId),
+      ),
+    [rows, sort, getValue, typeById, statusKindById],
   );
 
   const toggleSort = useCallback((columnId: string) => {

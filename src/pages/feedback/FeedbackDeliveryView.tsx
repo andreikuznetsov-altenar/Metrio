@@ -14,7 +14,11 @@ const DELIVERY_COLUMNS = [
   { id: "name", type: "text" as const },
   { id: "tasks", type: "number" as const },
   { id: "email", type: "text" as const },
-  { id: "status", type: "status" as const },
+  {
+    id: "status",
+    type: "status" as const,
+    statusKind: "feedbackRecipient" as const,
+  },
 ];
 
 export function FeedbackDeliveryView({

@@ -1,3 +1,8 @@
+import {
+  compareSemanticStatus,
+  type StatusSortKind,
+} from "./tableSemanticRank";
+
 export type ColumnSortType =
   | "text"
   | "number"
@@ -5,7 +10,14 @@ export type ColumnSortType =
   | "duration"
   | "status"
   | "person"
-  | "issueKey";
+  | "issueKey"
+  | "boolean";
+
+export interface TableSortColumnMeta {
+  id: string;
+  type: ColumnSortType;
+  statusKind?: StatusSortKind;
+}
 
 export type SortDirection = "asc" | "desc";
 
@@ -64,6 +76,12 @@ function compareScalar(a: unknown, b: unknown, type: ColumnSortType): number {
     return ta - tb;
   }
 
+  if (type === "boolean") {
+    const ba = Boolean(a);
+    const bb = Boolean(b);
+    return Number(ba) - Number(bb);
+  }
+
   const sa = String(a).toLocaleLowerCase();
   const sb = String(b).toLocaleLowerCase();
   return sa.localeCompare(sb, undefined, { sensitivity: "base" });
@@ -74,17 +92,26 @@ export function sortRows<T>(
   sort: TableSortState,
   getValue: (row: T, columnId: string) => unknown,
   getType: (columnId: string) => ColumnSortType,
+  getStatusKind?: (columnId: string) => StatusSortKind | undefined,
 ): T[] {
   if (!sort) return rows;
   const { columnId, direction } = sort;
   const type = getType(columnId);
+  const statusKind = getStatusKind?.(columnId);
   const indexed = rows.map((row, index) => ({ row, index }));
   indexed.sort((left, right) => {
-    const cmp = compareScalar(
-      getValue(left.row, columnId),
-      getValue(right.row, columnId),
-      type,
-    );
+    const cmp =
+      type === "status" && statusKind
+        ? compareSemanticStatus(
+            getValue(left.row, columnId),
+            getValue(right.row, columnId),
+            statusKind,
+          )
+        : compareScalar(
+            getValue(left.row, columnId),
+            getValue(right.row, columnId),
+            type,
+          );
     if (cmp !== 0) {
       return direction === "asc" ? cmp : -cmp;
     }

@@ -11,10 +11,15 @@ import {
 } from "./feedbackUi";
 
 const RECIPIENT_COLUMNS = [
+  { id: "selected", type: "boolean" as const },
   { id: "name", type: "text" as const },
   { id: "email", type: "text" as const },
   { id: "tasks", type: "number" as const },
-  { id: "status", type: "status" as const },
+  {
+    id: "status",
+    type: "status" as const,
+    statusKind: "feedbackRecipient" as const,
+  },
 ];
 
 export function FeedbackRecipientsDrawer({
@@ -54,10 +59,12 @@ export function FeedbackRecipientsDrawer({
   const getValue = useMemo(
     () => (row: SurveyRecipient, columnId: string) => {
       switch (columnId) {
+        case "selected":
+          return row.selected;
         case "name":
           return row.reporterName;
         case "email":
-          return row.reporterEmail;
+          return row.reporterEmail.trim() ? row.reporterEmail : null;
         case "tasks":
           return row.issueKeys.length;
         case "status":
@@ -112,7 +119,12 @@ export function FeedbackRecipientsDrawer({
           <table className={METRIO_TABLE_CLASS}>
             <thead>
               <tr>
-                <th aria-label="Select" />
+                <SortableTableHeader
+                  columnId="selected"
+                  label="Select"
+                  sort={sort}
+                  onToggle={toggleSort}
+                />
                 <SortableTableHeader columnId="name" label="Name" sort={sort} onToggle={toggleSort} />
                 <SortableTableHeader columnId="email" label="Email" sort={sort} onToggle={toggleSort} />
                 <SortableTableHeader

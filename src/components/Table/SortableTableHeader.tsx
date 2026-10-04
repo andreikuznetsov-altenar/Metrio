@@ -9,8 +9,8 @@ export interface SortableTableHeaderProps {
   align?: "left" | "right";
 }
 
-function sortIndicator(sort: TableSortState, columnId: string): string {
-  if (!sort || sort.columnId !== columnId) return "↕";
+function sortIndicator(sort: TableSortState, columnId: string): string | null {
+  if (!sort || sort.columnId !== columnId) return null;
   return sort.direction === "asc" ? "↑" : "↓";
 }
 
@@ -42,8 +42,15 @@ export function SortableTableHeader({
         onClick={() => onToggle(columnId)}
       >
         <span>{label}</span>
-        <span className="performance-table__sort-icon" aria-hidden>
-          {sortIndicator(sort, columnId)}
+        <span
+          className={
+            active
+              ? "performance-table__sort-icon is-active"
+              : "performance-table__sort-icon"
+          }
+          aria-hidden
+        >
+          {sortIndicator(sort, columnId) ?? "↕"}
         </span>
       </button>
     </th>

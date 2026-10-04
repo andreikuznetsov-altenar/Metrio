@@ -37,16 +37,16 @@ const ATTENTION_OVERVIEW_COLUMNS = [
   { id: "person", type: "person" as const },
   { id: "attention", type: "text" as const },
   { id: "issues", type: "number" as const },
-  { id: "severity", type: "status" as const },
-  { id: "workload", type: "text" as const },
+  { id: "severity", type: "status" as const, statusKind: "attentionSeverity" as const },
+  { id: "workload", type: "status" as const, statusKind: "workload" as const },
 ];
 
 const WORKLOAD_OVERVIEW_COLUMNS = [
   { id: "person", type: "person" as const },
   { id: "active", type: "number" as const },
   { id: "atRisk", type: "number" as const },
-  { id: "workload", type: "text" as const },
-  { id: "availability", type: "text" as const },
+  { id: "workload", type: "status" as const, statusKind: "workload" as const },
+  { id: "availability", type: "status" as const, statusKind: "availability" as const },
 ];
 
 export interface TeamOverviewViewProps {
@@ -155,7 +155,7 @@ export function TeamOverviewView({
           case "issues":
             return row.issueCount;
           case "severity":
-            return severityAttentionLabel(row.severity);
+            return row.severity;
           case "workload":
             return row.workload ?? "";
           default:
