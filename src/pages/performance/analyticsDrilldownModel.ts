@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import type { PerformanceReviewTarget } from "../../domain/performance";
 import { formatPerformanceDateDisplay } from "../../domain/performance/performanceDateRange";
+import { buildKpiFromIssues } from "../../domain/jira/kpi";
 import { buildAnalyticsEvidence } from "../../domain/analytics/buildAnalyticsEvidence";
 import type { AnalyticsDrilldownMetric } from "../../domain/analytics/analyticsEvidenceTypes";
 import {
@@ -75,28 +76,34 @@ export function useAnalyticsEvidence(
     if (!data || !request) return null;
     const report = data.reportData;
     const personScope = resolvePersonScope(data, request);
-    const issues = personScope
+    const scopedIssues = personScope
       ? personScope.scopedIssues
       : flattenTeamKpiIssues(report.grouped);
     const attributionIndex = buildIssueAttributionIndex(report.grouped);
     const params = report.params;
     const rangeLabel = `${formatPerformanceDateDisplay(params.dateFrom)} – ${formatPerformanceDateDisplay(params.dateTo)}`;
-    const personKpi = personScope?.personKpi;
+    const personReportKey = personScope?.personReportKey;
+    const personDerivedKpi =
+      personReportKey && scopedIssues.length > 0
+        ? buildKpiFromIssues(scopedIssues, {}, params)
+        : null;
+    const personKpi =
+      personDerivedKpi ?? personScope?.personKpi ?? report.teamKpi;
 
     return buildAnalyticsEvidence({
       metric: request.metric,
-      issues: personScope ? flattenTeamKpiIssues(report.grouped) : issues,
+      issues: scopedIssues,
       params,
-      kpi: personKpi ?? report.teamKpi,
+      kpi: personScope ? personKpi : report.teamKpi,
       attributionIndex,
       rangeLabel,
       targetLabel: targetScopeLabel(reviewTarget),
       comparisonLabel: request.comparisonLabel ?? summaryMetric?.contextLabel,
       bucketDate: request.bucketDate,
       trendBackflowEvents: request.trendBackflowEvents,
-      issuesAvailable: issues.length > 0,
-      personReportKey: personScope?.personReportKey,
-      personKpi: personKpi ?? undefined,
+      issuesAvailable: scopedIssues.length > 0,
+      personReportKey,
+      personKpi: personScope ? personKpi : undefined,
       personDisplayName: personScope?.personDisplayName,
       personId: personScope?.personId,
     });

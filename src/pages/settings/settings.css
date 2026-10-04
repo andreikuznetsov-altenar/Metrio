@@ -257,6 +257,17 @@
   min-width: 0;
 }
 
+.settings-credential__stored {
+  margin: 0;
+  flex: 1 1 220px;
+  font-size: 14px;
+  color: var(--color-text-secondary);
+}
+
+.settings-credential__row--stored {
+  justify-content: space-between;
+}
+
 .settings-integration {
   display: flex;
   flex-direction: column;

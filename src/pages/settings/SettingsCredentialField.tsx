@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { Button } from "../../components/Button/Button";
 import { Input } from "../../components/Input/Input";
-import { MASKED_CREDENTIAL } from "../../platform/integrationCredentials";
 
 export interface SettingsCredentialFieldProps {
   label: string;
@@ -24,8 +23,10 @@ export function SettingsCredentialField({
     return (
       <div className="settings-credential">
         <span className="settings-row__label">{label}</span>
-        <div className="settings-credential__row">
-          <Input readOnly value={hasValue ? MASKED_CREDENTIAL : "Not configured"} />
+        <div className="settings-credential__row settings-credential__row--stored">
+          <p className="settings-credential__stored" role="status">
+            {hasValue ? "Stored securely" : "Not configured"}
+          </p>
           <Button
             type="button"
             variant="secondary"

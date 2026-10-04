@@ -11,6 +11,12 @@ import type {
   AnalyticsEvidenceIssue,
   IssueAttribution,
 } from "./analyticsEvidenceTypes";
+import { formatDuration } from "../jira/dates";
+import {
+  analyticsEvidenceInvariant,
+  ARCHIVED_AGGREGATE_NOTE,
+  downgradeToAggregateIfNeeded,
+} from "./analyticsEvidenceTrust";
 import {
   backflowEventsInCycle,
   collectBackflowEventsOnDate,
@@ -125,7 +131,7 @@ function valueLabelForMetric(metric: AnalyticsDrilldownMetric, kpi: KpiData, buc
   }
   if (metric === "avg_cycle") {
     if (kpi.avgTodoToApprovedMs == null) return "—";
-    return `${(kpi.avgTodoToApprovedMs / 86400000).toFixed(1)}d`;
+    return formatDuration(kpi.avgTodoToApprovedMs) || "—";
   }
   if (metric === "completed") return String(kpi.completedCount);
   return String(kpi.backflowCount);
@@ -180,8 +186,7 @@ export function buildAnalyticsEvidence(input: BuildAnalyticsEvidenceInput): Anal
       comparisonLabel,
       description,
       detailLevel: "aggregate",
-      aggregateNote:
-        "Task-level detail is unavailable for this archived snapshot. Counts reflect stored aggregates only.",
+      aggregateNote: ARCHIVED_AGGREGATE_NOTE,
       summaryLines: [],
       issues: [],
       totalCountable: 0,
@@ -355,27 +360,30 @@ export function buildAnalyticsEvidence(input: BuildAnalyticsEvidenceInput): Anal
     const rate =
       mapped.length > 0 ? Math.round((firstPass / mapped.length) * 100) : 0;
 
-    return {
-      metric,
-      title,
-      valueLabel: bucketDate ? `${rate}%` : valueLabelForMetric(metric, kpi),
-      rangeLabel: bucketDate ? formatShortDate(`${bucketDate}T12:00:00.000Z`) : rangeLabel,
-      targetLabel,
-      comparisonLabel,
-      description,
-      detailLevel: "task",
-      summaryLines: [
-        { label: "First pass", value: String(firstPass) },
-        { label: "Rework", value: String(rework) },
-        { label: "Completed cycles", value: String(mapped.length) },
-      ],
-      issues: sortIssues(metric, mapped),
-      totalCountable: mapped.length,
-      params,
-      kpi,
-      bucketDate,
-      ...personScope,
-    };
+    return downgradeToAggregateIfNeeded(
+      {
+        metric,
+        title,
+        valueLabel: bucketDate ? `${rate}%` : valueLabelForMetric(metric, kpi),
+        rangeLabel: bucketDate ? formatShortDate(`${bucketDate}T12:00:00.000Z`) : rangeLabel,
+        targetLabel,
+        comparisonLabel,
+        description,
+        detailLevel: "task",
+        summaryLines: [
+          { label: "First pass", value: String(firstPass) },
+          { label: "Rework", value: String(rework) },
+          { label: "Completed cycles", value: String(mapped.length) },
+        ],
+        issues: sortIssues(metric, mapped),
+        totalCountable: mapped.length,
+        params,
+        kpi,
+        bucketDate,
+        ...personScope,
+      },
+      mapped.length,
+    );
   }
 
   if (metric === "avg_cycle") {
@@ -387,70 +395,62 @@ export function buildAnalyticsEvidence(input: BuildAnalyticsEvidenceInput): Anal
         ? mapped.reduce((sum, row) => sum + (row.cycleDurationMs ?? 0), 0) / mapped.length
         : null;
 
-    return {
-      metric,
-      title,
-      valueLabel:
-        avgMs != null ? `${(avgMs / 86400000).toFixed(1)}d` : valueLabelForMetric(metric, kpi),
-      rangeLabel: bucketDate ? formatShortDate(`${bucketDate}T12:00:00.000Z`) : rangeLabel,
-      targetLabel,
-      comparisonLabel,
-      description,
-      detailLevel: "task",
-      summaryLines: [
-        { label: "Completed cycles", value: String(mapped.length) },
-        {
-          label: "Average cycle",
-          value: avgMs != null ? `${(avgMs / 86400000).toFixed(1)} days` : "—",
-        },
-      ],
-      issues: sortIssues(metric, mapped),
-      totalCountable: mapped.length,
-      params,
-      kpi,
-      bucketDate,
-      ...personScope,
-    };
+    return downgradeToAggregateIfNeeded(
+      {
+        metric,
+        title,
+        valueLabel:
+          avgMs != null ? formatDuration(avgMs) || "—" : valueLabelForMetric(metric, kpi),
+        rangeLabel: bucketDate ? formatShortDate(`${bucketDate}T12:00:00.000Z`) : rangeLabel,
+        targetLabel,
+        comparisonLabel,
+        description,
+        detailLevel: "task",
+        summaryLines: [
+          { label: "Completed cycles", value: String(mapped.length) },
+          {
+            label: "Average cycle",
+            value: avgMs != null ? formatDuration(avgMs) || "—" : "—",
+          },
+        ],
+        issues: sortIssues(metric, mapped),
+        totalCountable: mapped.length,
+        params,
+        kpi,
+        bucketDate,
+        ...personScope,
+      },
+      mapped.length,
+    );
   }
 
   // completed
   const mapped = scopedRecords.map((record) => mapCycleRecord(record, attributionIndex));
 
-  return {
-    metric,
-    title,
-    valueLabel: bucketDate ? String(mapped.length) : valueLabelForMetric(metric, kpi),
-    rangeLabel: bucketDate ? formatShortDate(`${bucketDate}T12:00:00.000Z`) : rangeLabel,
-    targetLabel,
-    comparisonLabel,
-    description,
-    detailLevel: "task",
-    summaryLines: [{ label: "Completed cycles", value: String(mapped.length) }],
-    issues: sortIssues(metric, mapped),
-    totalCountable: bucketDate ? mapped.length : kpi.completedCount,
-    params,
-    kpi,
-    bucketDate,
-    ...personScope,
-  };
+  return downgradeToAggregateIfNeeded(
+    {
+      metric,
+      title,
+      valueLabel: bucketDate ? String(mapped.length) : valueLabelForMetric(metric, kpi),
+      rangeLabel: bucketDate ? formatShortDate(`${bucketDate}T12:00:00.000Z`) : rangeLabel,
+      targetLabel,
+      comparisonLabel,
+      description,
+      detailLevel: "task",
+      summaryLines: [{ label: "Completed cycles", value: String(mapped.length) }],
+      issues: sortIssues(metric, mapped),
+      totalCountable: bucketDate ? mapped.length : kpi.completedCount,
+      params,
+      kpi,
+      bucketDate,
+      ...personScope,
+    },
+    mapped.length,
+  );
 }
 
 export function reconcileEvidenceCount(
   evidence: AnalyticsEvidence,
 ): boolean {
-  if (evidence.detailLevel === "aggregate") return true;
-  if (evidence.metric === "efficiency") return true;
-  if (evidence.metric === "first_pass") {
-    return evidence.issues.length === evidence.kpi.completedCount || Boolean(evidence.bucketDate);
-  }
-  if (evidence.metric === "completed") {
-    return (
-      evidence.totalCountable === evidence.issues.length &&
-      (evidence.bucketDate != null || evidence.totalCountable === evidence.kpi.completedCount)
-    );
-  }
-  if (evidence.metric === "backflows" && !evidence.bucketDate) {
-    return evidence.totalCountable === evidence.kpi.backflowCount;
-  }
-  return true;
+  return analyticsEvidenceInvariant(evidence);
 }

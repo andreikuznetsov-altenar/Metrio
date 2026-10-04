@@ -195,7 +195,6 @@ export function AnalyticsDrilldownDrawer({
                   Task-level detail unavailable
                 </p>
                 <p className="analytics-drawer__aggregate-copy">
-                  This historical point is stored as an aggregate snapshot.{" "}
                   {evidence.aggregateNote}
                 </p>
                 <p className="analytics-drawer__aggregate-value">

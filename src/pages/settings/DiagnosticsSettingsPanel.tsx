@@ -124,7 +124,7 @@ export function DiagnosticsSettingsPanel({
                 <div className="diagnostics-health-row__head">
                   <span className="diagnostics-health-row__label">{row.label}</span>
                   <Badge variant={badgeVariantForConnectionState(row.state)}>
-                    {formatConnectionHealthLabel(row.state)}
+                    {row.displayLabel ?? formatConnectionHealthLabel(row.state)}
                   </Badge>
                 </div>
                 {row.detail ? (

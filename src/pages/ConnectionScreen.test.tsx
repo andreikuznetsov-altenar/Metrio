@@ -48,8 +48,8 @@ describe("ConnectionScreen", () => {
     expect(submit).toBeDisabled();
 
     await user.type(panel().getByLabelText(/work email/i), "user@gmail.com");
-    await user.type(panel().getByLabelText(/jira api token/i), "token");
-    await user.type(panel().getByLabelText(/bamboohr api key/i), "key");
+    await user.type(panel().getByLabelText(/^api token$/i), "token");
+    await user.type(panel().getByLabelText(/^api key$/i), "key");
     expect(submit).toBeDisabled();
 
     await user.clear(panel().getByLabelText(/work email/i));

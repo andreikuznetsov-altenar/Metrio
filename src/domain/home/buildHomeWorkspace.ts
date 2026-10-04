@@ -238,6 +238,9 @@ function buildTeamSection(
       personId: person.id,
       personName: person.bamboo.displayName,
       dayLabel: `Day ${newStarterDayNumber(hireDate, now)}`,
+      jobTitle: person.bamboo.jobTitle,
+      stepsCompleteLabel: onboardingRow?.stepsCompleteLabel,
+      actionsRemainingLabel: onboardingRow?.actionsRemainingLabel,
       progressLabel: onboardingRow?.progressLabel,
       remainingTitles: onboardingRow?.remainingTitles,
     });

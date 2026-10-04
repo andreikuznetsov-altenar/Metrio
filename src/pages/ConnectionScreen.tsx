@@ -118,6 +118,12 @@ export function ConnectionScreen() {
         </p>
 
         <div className="connection-panel">
+          <h1 className="connection-panel__title">Connect your work tools</h1>
+          <p className="connection-panel__intro">
+            Metrio uses Jira for work context and BambooHR for people and availability.
+            Credentials are stored securely on this Mac.
+          </p>
+
           <Input
             label="Work email"
             name="work-email"
@@ -136,9 +142,10 @@ export function ConnectionScreen() {
             </p>
           ) : null}
 
+          <h2 className="connection-panel__section-label">Jira</h2>
           <div className="connection-panel__credential-row">
             <Input
-              label="Jira API token"
+              label="API token"
               name="jira-token"
               type="password"
               autoComplete="off"
@@ -164,9 +171,10 @@ export function ConnectionScreen() {
             </p>
           ) : null}
 
+          <h2 className="connection-panel__section-label">BambooHR</h2>
           <div className="connection-panel__credential-row">
             <Input
-              label="BambooHR API key"
+              label="API key"
               name="bamboo-api-key"
               type="password"
               autoComplete="off"
@@ -209,17 +217,6 @@ export function ConnectionScreen() {
           </Button>
         </div>
 
-        <button
-          type="button"
-          className="connection-screen__help-link"
-          disabled={isBusy}
-          onClick={() => openHelp(getBambooApiKeyHelpUrl())}
-        >
-          Can&apos;t find API Keys?
-        </button>
-        <p className="connection-screen__footnote">
-          Credentials are stored securely on this device.
-        </p>
       </div>
     </div>
   );

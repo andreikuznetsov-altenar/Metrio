@@ -10,6 +10,8 @@ export interface ConnectionCheckRow {
   label: string;
   state: IntegrationHealthSnapshot["connectionState"];
   detail: string;
+  /** Overrides default health badge label (e.g. Confluence via Jira). */
+  displayLabel?: string;
 }
 
 export async function runConnectionDiagnostics(
@@ -46,9 +48,10 @@ export async function runConnectionDiagnostics(
   rows.push({
     id: "confluence",
     label: "Confluence",
-    state: prefs.credentials.jiraConfigured ? "connected" : "not_configured",
+    state: prefs.credentials.jiraConfigured ? "permission_limited" : "not_configured",
+    displayLabel: prefs.credentials.jiraConfigured ? "Available via Jira" : undefined,
     detail: prefs.credentials.jiraConfigured
-      ? "Search uses Jira-authenticated session (no separate test in this build)."
+      ? "Uses the Jira-authenticated session (no independent health check)."
       : "Configure Jira to enable knowledge search.",
   });
 

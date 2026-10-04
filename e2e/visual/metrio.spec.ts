@@ -1754,6 +1754,47 @@ test.describe("Metrio visual regression", () => {
     await expect(page.getByTestId("dashboard-ready")).toBeVisible({ timeout: 30_000 });
   }
 
+  test("dashboard new assignments compact row", async ({ page }) => {
+    await bootDashboardManager(page, 1440);
+    const card = page.getByRole("region", { name: "New assignments" });
+    await expect(card).toBeVisible();
+    await expect(card).toHaveScreenshot("dashboard-new-assignments-row.png", {
+      maxDiffPixelRatio: 0.02,
+    });
+  });
+
+  test("dashboard upcoming availability row", async ({ page }) => {
+    await bootDashboardManager(page, 1440);
+    const card = page.getByRole("region", { name: "Upcoming availability" });
+    await expect(card).toBeVisible();
+    await expect(card).toHaveScreenshot("dashboard-upcoming-availability.png", {
+      maxDiffPixelRatio: 0.02,
+    });
+  });
+
+  test("initial connection screen", async ({ page }) => {
+    await page.goto("/");
+    await expect(page.getByTestId("connection-screen")).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByText("Connect your work tools")).toBeVisible();
+    await expect(page).toHaveScreenshot("connection-initial-screen.png", {
+      fullPage: true,
+      maxDiffPixelRatio: 0.02,
+    });
+  });
+
+  test("analytics drawer shows aggregate state without empty contradiction", async ({
+    page,
+  }) => {
+    await bootMetrio(page, "lead");
+    await page.getByRole("button", { name: /View Completed details/i }).click();
+    await expect(page.locator(".drawer--analytics")).toBeVisible();
+    await expect(page.getByText("No completed work in this period.")).toHaveCount(0);
+    await expect(page).toHaveScreenshot("analytics-completed-drawer-trust.png", {
+      fullPage: true,
+      maxDiffPixelRatio: 0.02,
+    });
+  });
+
   test("dashboard team actions 1280", async ({ page }) => {
     await bootDashboardManager(page, 1280);
     const teamActions = page.getByRole("region", { name: "Team actions" });

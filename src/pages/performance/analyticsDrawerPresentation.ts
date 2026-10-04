@@ -1,3 +1,4 @@
+import { formatDuration } from "../../domain/jira/dates";
 import { getEfficiencyScoreBreakdown } from "../../domain/jira/kpi";
 import type { AnalyticsEvidence, AnalyticsEvidenceIssue } from "../../domain/analytics/analyticsEvidenceTypes";
 
@@ -39,9 +40,8 @@ export function medianCycleMs(values: number[]): number | null {
 
 export function formatCycleDurationShort(ms: number | null | undefined): string | null {
   if (ms == null || ms < 0) return null;
-  const days = ms / 86400000;
-  if (days >= 1) return `${days.toFixed(1)}d`;
-  return `${(ms / 3600000).toFixed(1)}h`;
+  const formatted = formatDuration(ms);
+  return formatted || null;
 }
 
 export interface EfficiencyRowPresentation {

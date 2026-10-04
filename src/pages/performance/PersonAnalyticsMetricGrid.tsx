@@ -86,14 +86,16 @@ export function PersonAnalyticsMetricGrid({
                   <div
                     className={`performance-metric-card__context performance-metric-card__context--${metric.contextSemantic || "neutral"}`}
                   >
-                    <Tooltip
-                      content={
-                        metric.contextCaption
-                          ? `${metric.contextCaption}`
-                          : metric.contextLabel
-                      }
-                    >
-                      <span>{metric.contextLabel}</span>
+                    <Tooltip content={metric.contextCaption ?? metric.contextLabel}>
+                      <span>
+                        {metric.contextLabel}
+                        {metric.contextCaption ? (
+                          <span className="performance-metric-card__context-caption">
+                            {" "}
+                            · {metric.contextCaption}
+                          </span>
+                        ) : null}
+                      </span>
                     </Tooltip>
                   </div>
                 ) : metric.status ? (
@@ -113,7 +115,15 @@ export function PersonAnalyticsMetricGrid({
                   <div
                     className={`performance-metric-card__context performance-metric-card__context--${metric.contextSemantic || "neutral"}`}
                   >
-                    <span>{metric.contextLabel}</span>
+                    <span>
+                      {metric.contextLabel}
+                      {metric.contextCaption ? (
+                        <span className="performance-metric-card__context-caption">
+                          {" "}
+                          · {metric.contextCaption}
+                        </span>
+                      ) : null}
+                    </span>
                   </div>
                 ) : metric.status ? (
                   <div className="performance-metric-card__status">

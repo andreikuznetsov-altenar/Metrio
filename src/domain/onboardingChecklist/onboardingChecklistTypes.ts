@@ -102,5 +102,7 @@ export interface ManagerOnboardingProgressRow {
   personName: string;
   dayLabel: string;
   progressLabel: string;
+  stepsCompleteLabel: string;
+  actionsRemainingLabel: string;
   remainingTitles: string[];
 }

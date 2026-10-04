@@ -86,7 +86,7 @@ export function formatDuration(ms: number | null | undefined): string {
   const parts: string[] = [];
   if (days) parts.push(`${days}d`);
   if (hours) parts.push(`${hours}h`);
-  if (minutes || parts.length === 0) parts.push(`${minutes}m`);
+  if (!days && (minutes || parts.length === 0)) parts.push(`${minutes}m`);
 
   return parts.join(' ');
 }

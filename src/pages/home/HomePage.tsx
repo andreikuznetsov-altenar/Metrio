@@ -45,6 +45,8 @@ import { canOpenPersonBrief } from "../../domain/personAccess";
 import { ActionQueueSection } from "../performance/ActionQueueSection";
 import { PerformanceStatusBanner } from "../performance/PerformanceStatusBanner";
 import { Button } from "../../components/Button/Button";
+import { DashboardCompactRow } from "../../components/DashboardCompactRow/DashboardCompactRow";
+import { PersonAvatar } from "../../components/PersonAvatar/PersonAvatar";
 import { ResourceRow } from "../../components/ResourceRow/ResourceRow";
 import {
   applyVisualHomeOverrides,
@@ -573,19 +575,22 @@ export function HomePage() {
             {personal.newAssignments.length === 0 ? (
               <p className="home-card__empty">No unread Jira assignments.</p>
             ) : (
-              <ul className="home-link-list">
+              <div className="home-compact-rows">
                 {personal.newAssignments.map((record) => (
-                  <li key={record.issueKey}>
-                    <button
-                      type="button"
-                      className="home-link-list__button"
-                      onClick={() => void openJiraAssignment(record.issueKey)}
-                    >
-                      {record.issueKey} · {record.title}
-                    </button>
-                  </li>
+                  <DashboardCompactRow
+                    key={record.issueKey}
+                    subject={
+                      <>
+                        <span className="home-compact-rows__key">{record.issueKey}</span>
+                        {record.title}
+                      </>
+                    }
+                    actionLabel="Open Jira"
+                    onAction={() => void openJiraAssignment(record.issueKey)}
+                    subjectAction={() => void openJiraAssignment(record.issueKey)}
+                  />
                 ))}
-              </ul>
+              </div>
             )}
             <Button
               variant="secondary"
@@ -594,7 +599,7 @@ export function HomePage() {
                 dispatchEmployeeView("my-week");
               }}
             >
-              View all · My Week
+              Open My Week
             </Button>
           </section>
 
@@ -736,26 +741,24 @@ export function HomePage() {
                   dispatchPerformanceTab("delivery-risk");
                 }}
               >
-                Delivery Risk
+                Open Delivery Risk
               </Button>
             </section>
 
             {team.projectSignals.length > 0 ? (
               <section className="home-card" aria-label="Project signals">
                 <h2 className="home-card__title">Project signals</h2>
-                <ul className="home-link-list">
+                <div className="home-compact-rows">
                   {team.projectSignals.map((signal) => (
-                    <li key={signal.projectKey}>
-                      <button
-                        type="button"
-                        className="home-link-list__button"
-                        onClick={() => openProjectCockpit(signal.projectKey)}
-                      >
-                        {signal.projectKey} · {signal.label}
-                      </button>
-                    </li>
+                    <DashboardCompactRow
+                      key={signal.projectKey}
+                      subject={signal.projectKey}
+                      secondary={signal.label}
+                      actionLabel="Open project"
+                      onAction={() => openProjectCockpit(signal.projectKey)}
+                    />
                   ))}
-                </ul>
+                </div>
               </section>
             ) : null}
 
@@ -764,19 +767,35 @@ export function HomePage() {
               <p className="home-card__meta">
                 {team.awayNextWeek} people away next week
               </p>
-              <ul className="home-link-list">
-                {team.availabilityPreview.map((row) => (
-                  <li key={row.personId}>
-                    <button
-                      type="button"
-                      className="home-link-list__button"
-                      onClick={() => openPerson(row.personId, "overview")}
-                    >
-                      {row.personName} · {row.rangeLabel}
-                    </button>
-                  </li>
-                ))}
-              </ul>
+              <div className="home-compact-rows">
+                {team.availabilityPreview.map((row) => {
+                  const startsLabel =
+                    row.daysUntil === 0
+                      ? "Starts today"
+                      : row.daysUntil === 1
+                        ? "Starts tomorrow"
+                        : row.daysUntil != null
+                          ? `Starts in ${row.daysUntil} days`
+                          : "Upcoming leave";
+                  const workloadLabel = `${row.activeCount} active tasks${
+                    row.inReviewCount > 0 ? ` · ${row.inReviewCount} in Review` : ""
+                  }`;
+                  return (
+                    <DashboardCompactRow
+                      key={row.personId}
+                      subject={row.personName}
+                      secondary={`${startsLabel}\n${row.rangeLabel}\n${workloadLabel}`}
+                      badge={{
+                        label: row.severity === "warning" ? "Coverage risk" : "On leave",
+                        variant:
+                          row.severity === "warning" ? "warning" : "neutral",
+                      }}
+                      actionLabel="View person"
+                      onAction={() => openPerson(row.personId, "overview")}
+                    />
+                  );
+                })}
+              </div>
               <Button
                 variant="secondary"
                 onClick={() => {
@@ -784,47 +803,61 @@ export function HomePage() {
                   dispatchPerformanceTab("overview");
                 }}
               >
-                Team overview
+                View team overview
               </Button>
             </section>
 
             {team.newStarters.length > 0 ? (
               <section className="home-card" aria-label="New starters">
                 <h2 className="home-card__title">New starters</h2>
-                <ul className="home-link-list">
-                  {team.newStarters.map((row) => (
-                    <li key={row.personId} className="home-new-starter-row">
-                      <button
-                        type="button"
-                        className="home-link-list__button"
-                        onClick={() => openPerson(row.personId)}
-                      >
-                        {row.personName} · {row.dayLabel}
-                        {row.progressLabel ? ` · ${row.progressLabel}` : ""}
-                      </button>
-                      {row.remainingTitles?.length ? (
-                        <p className="home-card__meta">
-                          Remaining: {row.remainingTitles.join(" · ")}
-                        </p>
-                      ) : null}
-                      {canOpenPersonBrief(currentUser, row.personId) ? (
-                        <Button
-                          type="button"
-                          variant="secondary"
-                          onClick={() => {
-                            window.dispatchEvent(
-                              new CustomEvent("metrio-open-person-brief", {
-                                detail: { personId: row.personId },
-                              }),
-                            );
-                          }}
-                        >
-                          Prepare for 1:1
-                        </Button>
-                      ) : null}
-                    </li>
-                  ))}
-                </ul>
+                <div className="home-compact-rows home-compact-rows--starters">
+                  {team.newStarters.map((row) => {
+                    const person = data?.teamSnapshot?.persons.find(
+                      (p) => p.id === row.personId,
+                    );
+                    const secondaryLines = [
+                      [row.dayLabel, row.jobTitle].filter(Boolean).join(" · "),
+                      row.stepsCompleteLabel,
+                      row.actionsRemainingLabel,
+                    ].filter(Boolean);
+                    return (
+                      <div key={row.personId} className="home-new-starter-block">
+                        <DashboardCompactRow
+                          subject={row.personName}
+                          secondary={secondaryLines.join("\n")}
+                          avatar={
+                            person ? (
+                              <PersonAvatar
+                                displayName={person.bamboo.displayName}
+                                employeeId={person.bamboo.id || person.id}
+                                size="sm"
+                              />
+                            ) : undefined
+                          }
+                          actionLabel="View person"
+                          onAction={() => openPerson(row.personId)}
+                        />
+                        {canOpenPersonBrief(currentUser, row.personId) ? (
+                          <div className="home-new-starter-block__actions">
+                            <Button
+                              type="button"
+                              variant="secondary"
+                              onClick={() => {
+                                window.dispatchEvent(
+                                  new CustomEvent("metrio-open-person-brief", {
+                                    detail: { personId: row.personId },
+                                  }),
+                                );
+                              }}
+                            >
+                              Prepare for 1:1
+                            </Button>
+                          </div>
+                        ) : null}
+                      </div>
+                    );
+                  })}
+                </div>
               </section>
             ) : null}
 

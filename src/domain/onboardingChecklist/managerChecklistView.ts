@@ -23,16 +23,16 @@ export function buildManagerOnboardingRow(
   const safeItems = model.items.map(redactManagerChecklistItem);
   const countable = safeItems.filter((i) => !i.isMilestone);
   const complete = countable.filter((i) => i.status === "complete").length;
-  const remainingTitles = countable
-    .filter((i) => i.status !== "complete")
-    .slice(0, 3)
-    .map((i) => i.title);
+  const remaining = countable.filter((i) => i.status !== "complete");
+  const remainingTitles = remaining.slice(0, 3).map((i) => i.title);
 
   return {
     personId,
     personName,
     dayLabel: formatNewStarterHeadline(model.hireDate).replace("Getting started · ", ""),
     progressLabel: `${complete}/${countable.length}`,
+    stepsCompleteLabel: `${complete} of ${countable.length} onboarding steps complete`,
+    actionsRemainingLabel: `${remaining.length} action${remaining.length === 1 ? "" : "s"} remaining`,
     remainingTitles,
   };
 }

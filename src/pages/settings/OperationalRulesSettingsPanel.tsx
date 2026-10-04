@@ -112,7 +112,7 @@ export function OperationalRulesSettingsPanel({
         >
           <div className="settings-field">
             <label className="settings-field__label" htmlFor="review-attention-days">
-              Review attention
+              Flag Review after
             </label>
             <div className="settings-number-field">
               <Input
@@ -134,7 +134,7 @@ export function OperationalRulesSettingsPanel({
           </div>
           <div className="settings-field">
             <label className="settings-field__label" htmlFor="no-activity-days">
-              No activity
+              No activity after
             </label>
             <div className="settings-number-field">
               <Input
@@ -154,7 +154,7 @@ export function OperationalRulesSettingsPanel({
           </div>
           <div className="settings-field">
             <label className="settings-field__label" htmlFor="long-review-days">
-              Long review highlight
+              Long Review threshold
             </label>
             <div className="settings-number-field">
               <Input
@@ -174,7 +174,7 @@ export function OperationalRulesSettingsPanel({
           </div>
           <div className="settings-field">
             <label className="settings-field__label" htmlFor="vacation-soon-days">
-              Vacation soon window
+              Upcoming leave window
             </label>
             <div className="settings-number-field">
               <Input

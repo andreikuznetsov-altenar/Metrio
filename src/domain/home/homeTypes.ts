@@ -50,6 +50,9 @@ export interface HomeNewStarterTeamRow {
   personId: string;
   personName: string;
   dayLabel: string;
+  jobTitle?: string;
+  stepsCompleteLabel?: string;
+  actionsRemainingLabel?: string;
   progressLabel?: string;
   remainingTitles?: string[];
 }
