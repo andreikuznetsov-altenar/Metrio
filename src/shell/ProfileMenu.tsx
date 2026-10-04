@@ -76,7 +76,7 @@ export function ProfileMenu({
       {open ? (
         <div
           id={menuId}
-          className="profile-menu__popover"
+          className="profile-menu__popover metrio-popover-surface"
           role="menu"
           aria-label="Profile menu"
         >

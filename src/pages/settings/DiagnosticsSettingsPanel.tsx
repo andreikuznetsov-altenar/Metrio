@@ -231,11 +231,19 @@ export function DiagnosticsSettingsPanel({
         </Button>
       </div>
 
-      {advancedOpen ? (
-        <pre className="diagnostics-advanced" data-testid="diagnostics-advanced">
-          {summaryText}
-        </pre>
-      ) : null}
+      <div
+        className={`metrio-collapsible${advancedOpen ? " is-open" : ""}`}
+        aria-hidden={!advancedOpen}
+      >
+        <div className="metrio-collapsible__inner">
+          <pre
+            className="diagnostics-advanced metrio-collapsible__content"
+            data-testid="diagnostics-advanced"
+          >
+            {summaryText}
+          </pre>
+        </div>
+      </div>
     </div>
   );
 }
