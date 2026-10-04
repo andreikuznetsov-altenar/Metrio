@@ -43,6 +43,11 @@ use api::company_config_store::{
     company_config_cache_load,
     company_config_cache_save,
 };
+use api::dashboard_cache_store::{
+    dashboard_cache_clear,
+    dashboard_cache_load,
+    dashboard_cache_save,
+};
 use keyring::Entry;
 use diagnostics_bundle::{logs_read_tail, support_bundle_export};
 use logs::{log_write, logs_get_path, logs_open_folder, write_setup_log};
@@ -554,6 +559,9 @@ pub fn run() {
             onboarding_checklist_data_save,
             company_config_cache_load,
             company_config_cache_save,
+            dashboard_cache_load,
+            dashboard_cache_save,
+            dashboard_cache_clear,
             kpi_snapshot_load,
             kpi_snapshot_save,
             credential_import_legacy,

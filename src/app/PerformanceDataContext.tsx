@@ -48,6 +48,12 @@ import {
   installKpiReconciliationDevTools,
   registerKpiReconciliationDataSource,
 } from "../domain/analytics/kpiReconciliationDev";
+import {
+  DASHBOARD_CACHE_SCHEMA_VERSION,
+  loadDashboardCache,
+  saveDashboardCache,
+  type DashboardCacheIdentity,
+} from "../platform/dashboard/dashboardCache";
 
 export type PerformanceLoadStatus =
   | "idle"
@@ -71,6 +77,9 @@ export interface PerformanceDataContextValue {
   performanceControlsDisabled: boolean;
   uiState: PerformanceUiState;
   longLoadingMessage: string | null;
+  /** True while the visible snapshot came from disk and a fetch is in flight or failed. */
+  revalidatingFromCache: boolean;
+  performanceLastUpdatedAt: string | null;
 }
 
 const PerformanceDataContext =
@@ -126,11 +135,12 @@ export function PerformanceDataProvider({
   const [longLoadingMessage, setLongLoadingMessage] = useState<string | null>(
     null,
   );
+  const [revalidatingFromCache, setRevalidatingFromCache] = useState(false);
   const dataRef = useRef(data);
   const viewModelsRef = useRef(viewModels);
   const managerTeamTrayRef = useRef(managerTeamTray);
   const requestSeqRef = useRef(0);
-  const initialLoadDoneRef = useRef(false);
+  const bootstrappedRef = useRef(false);
   const datasetKeyRef = useRef<string | null>(null);
   const appliedRulesKeyRef = useRef<string | null>(null);
   dataRef.current = data;
@@ -150,6 +160,17 @@ export function PerformanceDataProvider({
     contentLoadingActive || contentOverlayVisible;
 
   const uiState = derivePerformanceUiState({ status, viewModels, stale });
+
+  const datasetKey = useMemo(
+    () =>
+      buildPerformanceDatasetKey({
+        dateRange,
+        reviewTarget,
+        audience,
+        selfPersonId,
+      }),
+    [audience, dateRange, reviewTarget, selfPersonId],
+  );
 
   useEffect(() => {
     if (!contentLoadingActive) {
@@ -173,9 +194,6 @@ export function PerformanceDataProvider({
       const showOverlay = mode !== "silent";
       if (showOverlay) {
         setStatus(hasData ? "refreshing" : "loading");
-        if (mode === "refresh" && hasData) {
-          setStale(false);
-        }
       }
       setErrorMessage(null);
 
@@ -204,7 +222,23 @@ export function PerformanceDataProvider({
           next.partialWarnings.length > 0 || Boolean(models.statusMessage);
         setStatus(partial ? "partial" : "ready");
         setStale(false);
+        setRevalidatingFromCache(false);
         setErrorMessage(null);
+        const cacheIdentity: DashboardCacheIdentity = {
+          selfPersonId,
+          role: userRole,
+          datasetKey,
+          workEmail:
+            next.identityResolution.find((r) => r.matched)?.workEmail ||
+            undefined,
+        };
+        void saveDashboardCache({
+          schemaVersion: DASHBOARD_CACHE_SCHEMA_VERSION,
+          savedAt: new Date().toISOString(),
+          sourceLastUpdatedAt: next.lastUpdatedAt,
+          identity: cacheIdentity,
+          fetchResult: next,
+        }).catch(() => undefined);
         await applyPerformanceRefreshSideEffects(next, {
           selfPersonId,
           role: userRole,
@@ -227,6 +261,7 @@ export function PerformanceDataProvider({
         setErrorMessage(message);
         if (dataRef.current) {
           setStale(true);
+          setRevalidatingFromCache(true);
           setStatus("partial");
           await markPerformanceIntegrationsStale({
             jira: /jira/i.test(message),
@@ -246,6 +281,7 @@ export function PerformanceDataProvider({
       operationalRules,
       userRole,
       currentUserCtx?.currentUser,
+      datasetKey,
     ],
   );
 
@@ -282,36 +318,103 @@ export function PerformanceDataProvider({
     await coalescedLoadRef.current();
   }, []);
 
-  const datasetKey = useMemo(
-    () =>
-      buildPerformanceDatasetKey({
-        dateRange,
-        reviewTarget,
-        audience,
-        selfPersonId,
-      }),
-    [audience, dateRange, reviewTarget, selfPersonId],
-  );
-
   useEffect(() => {
     if (!enabled) {
       return;
     }
 
-    const keyChanged = datasetKeyRef.current !== datasetKey;
+    let cancelled = false;
 
-    if (!initialLoadDoneRef.current) {
-      initialLoadDoneRef.current = true;
-      datasetKeyRef.current = datasetKey;
-      void load("initial");
-      return;
-    }
+    void (async () => {
+      const keyChanged =
+        bootstrappedRef.current && datasetKeyRef.current !== datasetKey;
 
-    if (keyChanged) {
-      datasetKeyRef.current = datasetKey;
-      void coalescedLoadRef.current();
-    }
-  }, [datasetKey, enabled, load]);
+      if (!bootstrappedRef.current) {
+        const cached = await loadDashboardCache({
+          datasetKey,
+          selfPersonId,
+          role: userRole,
+        });
+        if (cancelled) return;
+
+        datasetKeyRef.current = datasetKey;
+
+        if (cached) {
+          const models = buildPerformanceViewModels(
+            cached.fetchResult,
+            selfPersonId,
+            dateRangeKeyFromPerformanceRange(dateRange),
+            dateRange,
+            reviewTarget,
+            operationalRules,
+          );
+          setData(cached.fetchResult);
+          setViewModels(models);
+          dataRef.current = cached.fetchResult;
+          viewModelsRef.current = models;
+          appliedRulesKeyRef.current = JSON.stringify(operationalRules);
+          registerKpiReconciliationDataSource(cached.fetchResult, reviewTarget);
+          setStale(true);
+          setRevalidatingFromCache(true);
+          await load("refresh");
+        } else {
+          await load("initial");
+        }
+        if (cancelled) return;
+        bootstrappedRef.current = true;
+        return;
+      }
+
+      if (keyChanged) {
+        datasetKeyRef.current = datasetKey;
+        const cached = await loadDashboardCache({
+          datasetKey,
+          selfPersonId,
+          role: userRole,
+        });
+        if (cancelled) return;
+        if (cached) {
+          const models = buildPerformanceViewModels(
+            cached.fetchResult,
+            selfPersonId,
+            dateRangeKeyFromPerformanceRange(dateRange),
+            dateRange,
+            reviewTarget,
+            operationalRules,
+          );
+          setData(cached.fetchResult);
+          setViewModels(models);
+          dataRef.current = cached.fetchResult;
+          viewModelsRef.current = models;
+          appliedRulesKeyRef.current = JSON.stringify(operationalRules);
+          registerKpiReconciliationDataSource(cached.fetchResult, reviewTarget);
+          setStale(true);
+          setRevalidatingFromCache(true);
+        } else if (!dataRef.current) {
+          setData(null);
+          setViewModels(null);
+          dataRef.current = null;
+          viewModelsRef.current = null;
+          setRevalidatingFromCache(false);
+        }
+        await coalescedLoadRef.current();
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    audience,
+    datasetKey,
+    dateRange,
+    enabled,
+    load,
+    operationalRules,
+    reviewTarget,
+    selfPersonId,
+    userRole,
+  ]);
 
   useEffect(() => {
     if (!enabled) {
@@ -363,6 +466,8 @@ export function PerformanceDataProvider({
       performanceControlsDisabled,
       uiState,
       longLoadingMessage,
+      revalidatingFromCache,
+      performanceLastUpdatedAt: data?.lastUpdatedAt ?? null,
     }),
     [
       status,
@@ -378,6 +483,7 @@ export function PerformanceDataProvider({
       performanceControlsDisabled,
       uiState,
       longLoadingMessage,
+      revalidatingFromCache,
     ],
   );
 

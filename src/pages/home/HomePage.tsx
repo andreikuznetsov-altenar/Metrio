@@ -70,6 +70,7 @@ import { listNotificationEvents } from "../../platform/notificationEvents";
 import { useUpcomingMeetings } from "../../hooks/useUpcomingMeetings";
 import { HomeUpcomingMeetings } from "./HomeUpcomingMeetings";
 import { HomeGoalsSummaryCard } from "./HomeGoalsSummaryCard";
+import { buildDashboardSyncStatus } from "../../domain/home/dashboardSyncStatus";
 
 const DASHBOARD_QUEUE_PREVIEW = 5;
 import type {
@@ -81,9 +82,24 @@ import "./home.css";
 
 export function HomePage() {
   const { currentUser } = useCurrentUser();
-  const { data, viewModels, uiState, errorMessage, refresh, status } =
-    usePerformanceData();
+  const {
+    data,
+    viewModels,
+    uiState,
+    errorMessage,
+    refresh,
+    status,
+    refreshing,
+    stale,
+    performanceLastUpdatedAt,
+  } = usePerformanceData();
   const dashboardRefreshing = status === "loading" || status === "refreshing";
+  const dashboardSyncStatus = buildDashboardSyncStatus({
+    lastUpdatedAt: performanceLastUpdatedAt,
+    refreshing,
+    stale,
+    errorMessage,
+  });
   const analytics = useOptionalPerformanceAnalytics();
   const surveyData = useFeedbackSurveyStore((state) => state.data);
   const feedbackSummary = useMemo(
@@ -422,6 +438,26 @@ export function HomePage() {
         <div className="dashboard-greeting-row__text">
           <h1 className="dashboard-greeting-row__title">{displayWorkspace.greeting}</h1>
           <p className="dashboard-greeting-row__summary">{displayWorkspace.contextLine}</p>
+          {dashboardSyncStatus ? (
+            <p
+              className="dashboard-greeting-row__sync"
+              data-testid="dashboard-sync-status"
+            >
+              {dashboardSyncStatus.line}
+              {dashboardSyncStatus.showRetry ? (
+                <>
+                  {" "}
+                  <button
+                    type="button"
+                    className="dashboard-greeting-row__sync-action"
+                    onClick={() => void refresh()}
+                  >
+                    Retry
+                  </button>
+                </>
+              ) : null}
+            </p>
+          ) : null}
         </div>
         <Button
           type="button"
@@ -429,7 +465,7 @@ export function HomePage() {
           disabled={dashboardRefreshing}
           onClick={() => void refresh()}
         >
-          Refresh
+          {dashboardRefreshing ? "Refreshing…" : "Refresh"}
         </Button>
       </div>
 

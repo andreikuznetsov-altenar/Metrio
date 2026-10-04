@@ -132,6 +132,24 @@ export async function fetchPerformanceData(
     const { buildVisualPerformanceFetchResult } = await import(
       "../../fixtures/performanceFetchFixture"
     );
+    const {
+      VISUAL_PERFORMANCE_DELAY_MS_KEY,
+      VISUAL_PERFORMANCE_FAIL_KEY,
+    } = await import("../../fixtures/dashboardCacheVisualFixture");
+    if (
+      typeof window !== "undefined" &&
+      localStorage.getItem(VISUAL_PERFORMANCE_FAIL_KEY) === "1"
+    ) {
+      throw new Error("Visual performance refresh failed");
+    }
+    const delayRaw =
+      typeof window !== "undefined"
+        ? localStorage.getItem(VISUAL_PERFORMANCE_DELAY_MS_KEY)
+        : null;
+    const delayMs = delayRaw ? Number.parseInt(delayRaw, 10) : 0;
+    if (delayMs > 0) {
+      await new Promise((resolve) => window.setTimeout(resolve, delayMs));
+    }
     const presetKey = dateRangeKeyFromPerformanceRange(dateRange);
     const visual = buildVisualPerformanceFetchResult(
       presetKey,

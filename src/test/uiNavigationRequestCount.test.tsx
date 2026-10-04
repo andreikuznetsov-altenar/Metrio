@@ -8,6 +8,15 @@ import { useResourceLibrary } from "../hooks/useResourceLibrary";
 import { searchLocalCommandPalette } from "../domain/commandPalette/localCommandSearch";
 import { listNotificationEventsOrThrow } from "../platform/notificationEvents";
 import { performanceDataLifecycleEmptyResult } from "./helpers/performanceDataLifecycleEmptyResult";
+import {
+  buildPerformanceDatasetKey,
+  createPerformanceDateRange,
+} from "../domain/performance/performanceDateRange";
+import {
+  clearDashboardCacheForTests,
+  DASHBOARD_CACHE_SCHEMA_VERSION,
+  saveDashboardCache,
+} from "../platform/dashboard/dashboardCache";
 
 vi.mock("../services/performance/performanceDataService", () => ({
   fetchPerformanceData: vi.fn(),
@@ -66,11 +75,20 @@ function useBriefOnLoadedData(personId: string) {
   return { status, brief, data };
 }
 
+const dateRangeForCache = createPerformanceDateRange("30d");
+const cacheDatasetKey = buildPerformanceDatasetKey({
+  dateRange: dateRangeForCache,
+  reviewTarget: "team",
+  audience: "team",
+  selfPersonId: "person-sam",
+});
+
 describe("UI navigation request counts", () => {
   beforeEach(() => {
     mockFetch.mockReset();
     mockFetch.mockResolvedValue(performanceDataLifecycleEmptyResult());
     mockRemoteSearch.mockClear();
+    clearDashboardCacheForTests();
   });
 
   it("does not refetch performance when Person Brief model builds on loaded data", async () => {
@@ -158,6 +176,27 @@ describe("UI navigation request counts", () => {
     await act(async () => {
       await Promise.resolve();
     });
+    expect(mockFetch).toHaveBeenCalledTimes(1);
+  });
+
+  it("hydrates dashboard cache with a single startup refresh fetch", async () => {
+    const cached = performanceDataLifecycleEmptyResult();
+    await saveDashboardCache({
+      schemaVersion: DASHBOARD_CACHE_SCHEMA_VERSION,
+      savedAt: "2026-03-01T12:00:00.000Z",
+      sourceLastUpdatedAt: cached.lastUpdatedAt,
+      identity: {
+        selfPersonId: "person-sam",
+        role: "employee",
+        datasetKey: cacheDatasetKey,
+      },
+      fetchResult: cached,
+    });
+    const { result } = renderHook(() => usePerformanceData(), {
+      wrapper: performanceWrapper(),
+    });
+    await waitFor(() => expect(result.current.data).not.toBeNull());
+    await waitFor(() => expect(result.current.status).toBe("ready"));
     expect(mockFetch).toHaveBeenCalledTimes(1);
   });
 });

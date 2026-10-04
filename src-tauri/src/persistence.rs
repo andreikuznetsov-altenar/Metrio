@@ -7,6 +7,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 pub const PREFERENCES_SCHEMA_VERSION: u32 = 1;
 pub const SURVEY_DATA_SCHEMA_VERSION: u32 = 1;
 pub const GOALS_DATA_SCHEMA_VERSION: u32 = 1;
+pub const DASHBOARD_CACHE_SCHEMA_VERSION: u32 = 1;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum JsonLoadSource {

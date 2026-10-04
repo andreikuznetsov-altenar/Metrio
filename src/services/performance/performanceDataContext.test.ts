@@ -28,6 +28,7 @@ import { EMPTY_KPI_SNAPSHOT_FILE } from "../../domain/snapshots/snapshotEngine";
 import { testKpi } from "../../domain/testFixtures";
 import type { TeamSnapshot } from "../../domain/people/types";
 import type { AuditReportData } from "../../domain/jira/types";
+import { clearDashboardCacheForTests } from "../../platform/dashboard/dashboardCache";
 
 const mockFetch = vi.mocked(fetchPerformanceData);
 
@@ -123,6 +124,7 @@ const emptyResult: PerformanceFetchResult = {
 describe("PerformanceDataContext", () => {
   beforeEach(() => {
     mockFetch.mockReset();
+    clearDashboardCacheForTests();
   });
 
   it("refresh calls fetchPerformanceData", async () => {

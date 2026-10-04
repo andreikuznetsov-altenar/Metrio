@@ -27,6 +27,7 @@ import { testKpi } from "../domain/testFixtures";
 import type { TeamSnapshot } from "../domain/people/types";
 import type { AuditReportData } from "../domain/jira/types";
 import { resolvePerformanceReportRanges } from "../domain/performance/reportParams";
+import { clearDashboardCacheForTests } from "../platform/dashboard/dashboardCache";
 
 const mockFetch = vi.mocked(fetchPerformanceData);
 
@@ -129,6 +130,7 @@ describe("PerformanceDataProvider lifecycle", () => {
   beforeEach(() => {
     mockFetch.mockReset();
     mockFetch.mockResolvedValue(emptyResult);
+    clearDashboardCacheForTests();
   });
 
   it("fetches once on mount and keeps data when overlay is toggled off", async () => {
