@@ -2,7 +2,7 @@ import type { AnalyticsEvidence, AnalyticsDrilldownMetric } from "./analyticsEvi
 import type { KpiData } from "../jira/types";
 
 export const TASK_DETAIL_UNAVAILABLE_NOTE =
-  "This KPI is available only as an aggregate. Task-level Jira detail is not available for this scope.";
+  "This historical KPI is stored as an aggregate snapshot, so individual Jira cycles are not available.";
 
 export const ARCHIVED_AGGREGATE_NOTE =
   "Task-level detail is unavailable for this archived snapshot. Counts reflect stored aggregates only.";
@@ -94,10 +94,14 @@ export function downgradeToAggregateIfNeeded(
   cycleCount: number,
 ): AnalyticsEvidence {
   if (evidence.detailLevel === "aggregate") return evidence;
-  if (evidence.metric === "efficiency") return evidence;
 
   const kpiCount = kpiMetricCount(evidence.metric, evidence.kpi);
-  if (kpiCount > 0 && cycleCount === 0) {
+  const needsAggregate =
+    kpiCount > 0 &&
+    cycleCount === 0 &&
+    (evidence.metric !== "efficiency" || evidence.kpi.completedCount > 0);
+
+  if (needsAggregate) {
     return {
       ...evidence,
       detailLevel: "aggregate",

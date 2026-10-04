@@ -16,6 +16,8 @@ import {
   analyticsEvidenceInvariant,
   ARCHIVED_AGGREGATE_NOTE,
   downgradeToAggregateIfNeeded,
+  kpiMetricCount,
+  TASK_DETAIL_UNAVAILABLE_NOTE,
 } from "./analyticsEvidenceTrust";
 import {
   backflowEventsInCycle,
@@ -177,6 +179,10 @@ export function buildAnalyticsEvidence(input: BuildAnalyticsEvidenceInput): Anal
   const description = analyticsDrilldownDescription[metric];
 
   if (!hasIssueDetail || !cycleIssues.length) {
+    const aggregateNote =
+      kpiMetricCount(metric, kpi) > 0 && !hasIssueDetail
+        ? TASK_DETAIL_UNAVAILABLE_NOTE
+        : ARCHIVED_AGGREGATE_NOTE;
     return {
       metric,
       title,
@@ -186,7 +192,7 @@ export function buildAnalyticsEvidence(input: BuildAnalyticsEvidenceInput): Anal
       comparisonLabel,
       description,
       detailLevel: "aggregate",
-      aggregateNote: ARCHIVED_AGGREGATE_NOTE,
+      aggregateNote,
       summaryLines: [],
       issues: [],
       totalCountable: 0,
@@ -215,7 +221,8 @@ export function buildAnalyticsEvidence(input: BuildAnalyticsEvidenceInput): Anal
       scopedRecords.map((record) => mapCycleRecord(record, attributionIndex)),
     ).slice(0, 25);
 
-    return {
+    return downgradeToAggregateIfNeeded(
+      {
       metric,
       title,
       valueLabel: `${breakdown.total}%`,
@@ -277,7 +284,9 @@ export function buildAnalyticsEvidence(input: BuildAnalyticsEvidenceInput): Anal
       kpi,
       bucketDate,
       ...personScope,
-    };
+    },
+      scopedRecords.length,
+    );
   }
 
   if (metric === "backflows" && (trendBackflowEvents || bucketDate)) {

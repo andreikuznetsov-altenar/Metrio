@@ -1,6 +1,6 @@
 import { format, parseISO } from "date-fns";
 import type { BadgeVariant } from "../../components/Badge/Badge";
-import { getEfficiencyStatus } from "../jira/kpi";
+import { buildKpiFromIssues, getEfficiencyStatus } from "../jira/kpi";
 import { formatDuration } from "../jira/dates";
 import type { AuditIssue, ReportParams } from "../jira/types";
 import type { Person } from "../people/types";
@@ -321,7 +321,10 @@ export function buildPersonAnalyticsWorkspace(
     teamEmployeeIds,
   } = input;
 
-  const perf = person.performance;
+  const perf =
+    person.issues.length > 0
+      ? buildKpiFromIssues(person.issues, {}, params)
+      : person.performance;
   const now = new Date();
   const trendContextLabel = displayRange
     ? comparisonPeriodLabel(displayRange)

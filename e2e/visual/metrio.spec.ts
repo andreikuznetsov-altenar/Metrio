@@ -1984,6 +1984,123 @@ test.describe("Metrio visual regression", () => {
     });
   });
 
+  test("person-completed-one-with-evidence", async ({ page }) => {
+    await bootMetrio(page, "lead");
+    await page.getByRole("button", { name: /View Completed details/i }).first().click();
+    await expect(page.locator(".drawer--analytics")).toBeVisible();
+    await expect(page.getByText("No completed work in this period.")).toHaveCount(0);
+    await expect(page).toHaveScreenshot("person-completed-one-with-evidence.png", {
+      fullPage: true,
+      maxDiffPixelRatio: 0.02,
+    });
+  });
+
+  test("person-completed-zero", async ({ page }) => {
+    await bootMetrio(page, "employee");
+    await page.locator(".app-header__nav-link").filter({ hasText: "Performance" }).click();
+    await expect(page.getByTestId("performance-dashboard-ready")).toBeVisible({
+      timeout: 30_000,
+    });
+    const completed = page.getByRole("button", { name: /View Completed details/i });
+    if (await completed.count()) {
+      await completed.first().click();
+      await expect(page.locator(".drawer--analytics")).toBeVisible();
+    }
+    await expect(page).toHaveScreenshot("person-completed-zero.png", {
+      fullPage: true,
+      maxDiffPixelRatio: 0.02,
+    });
+  });
+
+  test("team-first-pass-evidence", async ({ page }) => {
+    await bootMetrio(page, "lead");
+    await page.getByRole("button", { name: /View First pass details/i }).click();
+    await expect(page.locator(".drawer--analytics")).toBeVisible();
+    await expect(page).toHaveScreenshot("team-first-pass-evidence.png", {
+      fullPage: true,
+      maxDiffPixelRatio: 0.02,
+    });
+  });
+
+  test("team-backflow-events", async ({ page }) => {
+    await bootMetrio(page, "lead");
+    await page.getByRole("button", { name: /View Backflows details/i }).click();
+    await expect(page.locator(".drawer--analytics")).toBeVisible();
+    await expect(page).toHaveScreenshot("team-backflow-events.png", {
+      fullPage: true,
+      maxDiffPixelRatio: 0.02,
+    });
+  });
+
+  test("analytics-aggregate-only", async ({ page }) => {
+    await bootMetrio(page, "lead");
+    await page.getByRole("button", { name: /View Completed details/i }).click();
+    await expect(page.locator(".drawer--analytics")).toBeVisible();
+    await expect(page).toHaveScreenshot("analytics-aggregate-only.png", {
+      fullPage: true,
+      maxDiffPixelRatio: 0.02,
+    });
+  });
+
+  test("person-brief-comparison-context", async ({ page }) => {
+    await bootMetrio(page, "lead");
+    const briefButton = page.getByRole("button", { name: /Prepare for 1:1/i }).first();
+    if (await briefButton.count()) {
+      await briefButton.click();
+    } else {
+      await page.getByRole("button", { name: /View person/i }).first().click();
+    }
+    await expect(page.locator(".drawer")).toBeVisible({ timeout: 15_000 });
+    await expect(page).toHaveScreenshot("person-brief-comparison-context.png", {
+      fullPage: true,
+      maxDiffPixelRatio: 0.02,
+    });
+  });
+
+  test("human-duration-short", async ({ page }) => {
+    await bootMetrio(page, "lead");
+    await page.getByRole("button", { name: /View Completed details/i }).click();
+    await expect(page.locator(".drawer--analytics")).toBeVisible();
+    await expect(page).toHaveScreenshot("human-duration-short.png", {
+      fullPage: true,
+      maxDiffPixelRatio: 0.02,
+    });
+  });
+
+  test("human-duration-long", async ({ page }) => {
+    await bootMetrio(page, "lead");
+    const metrics = page.locator(".performance-metrics");
+    await expect(metrics).toBeVisible();
+    await expect(metrics).toHaveScreenshot("human-duration-long.png", {
+      maxDiffPixelRatio: 0.02,
+    });
+  });
+
+  test("humanized-status-values", async ({ page }) => {
+    await page.goto("/");
+    await expect(page.getByTestId("connection-screen")).toBeVisible({ timeout: 15_000 });
+    await expect(page).toHaveScreenshot("humanized-status-values.png", {
+      fullPage: true,
+      maxDiffPixelRatio: 0.02,
+    });
+  });
+
+  test("dark analytics aggregate", async ({ page }) => {
+    await page.addInitScript((fixtureId: string) => {
+      localStorage.setItem("metrio-connection-connected", "true");
+      localStorage.setItem("metrio-dev-fixture", fixtureId);
+      localStorage.setItem("metrio-theme", "dark");
+    }, "lead");
+    await page.goto("/");
+    await openPerformanceFromHome(page);
+    await page.getByRole("button", { name: /View Completed details/i }).click();
+    await expect(page.locator(".drawer--analytics")).toBeVisible();
+    await expect(page).toHaveScreenshot("dark-analytics-aggregate.png", {
+      fullPage: true,
+      maxDiffPixelRatio: 0.02,
+    });
+  });
+
   test("onboarding checklist dark", async ({ page }) => {
     const onboardingJson = serializeOnboardingChecklistVisualFixtureForPlaywright();
     await page.addInitScript((payload: string) => {

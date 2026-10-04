@@ -130,7 +130,18 @@ export function comparisonPeriodExactLabel(range: PerformanceDateRange): string 
 /** Unambiguous display for toolbar (value remains ISO yyyy-MM-dd in state). */
 export function formatPerformanceDateDisplay(iso: string): string {
   if (!iso) return "";
-  return format(parseISO(iso), "dd MMM yyyy");
+  return format(parseISO(iso), "d MMM yyyy");
+}
+
+/** Human range for toolbars and cards (ISO in state unchanged). */
+export function formatPerformanceDateRangeDisplay(from: string, to: string): string {
+  if (!from || !to) return "";
+  const fromDate = parseISO(from);
+  const toDate = parseISO(to);
+  if (from.slice(0, 7) === to.slice(0, 7)) {
+    return `${format(fromDate, "d")} – ${format(toDate, "d MMM yyyy")}`;
+  }
+  return `${format(fromDate, "d MMM")} – ${format(toDate, "d MMM yyyy")}`;
 }
 
 export function trendComparisonDayCount(range: PerformanceDateRange): number {

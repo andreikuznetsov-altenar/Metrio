@@ -4,6 +4,7 @@ import {
   comparisonPeriodLabel,
   comparisonPeriodExactLabel,
   formatPerformanceDateDisplay,
+  formatPerformanceDateRangeDisplay,
   inclusiveRangeDayCount,
 } from "./performanceDateRange";
 
@@ -31,7 +32,10 @@ describe("performanceDateRange display", () => {
   });
 
   it("formats toolbar display dates unambiguously", () => {
-    expect(formatPerformanceDateDisplay("2026-05-01")).toBe("01 May 2026");
-    expect(formatPerformanceDateDisplay("2026-09-02")).toBe("02 Sep 2026");
+    expect(formatPerformanceDateDisplay("2026-05-01")).toBe("1 May 2026");
+    expect(formatPerformanceDateDisplay("2026-09-28")).toBe("28 Sep 2026");
+    expect(formatPerformanceDateRangeDisplay("2026-09-28", "2026-10-04")).toBe(
+      "28 Sep – 4 Oct 2026",
+    );
   });
 });

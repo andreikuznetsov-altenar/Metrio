@@ -1,4 +1,6 @@
 import { describe, expect, it } from "vitest";
+import { formatPerformanceDateDisplay, formatPerformanceDateRangeDisplay } from "../domain/performance/performanceDateRange";
+import { humanizeMachineEnum } from "../platform/humanizeDisplay";
 import { badgeVariantForAttentionLabel } from "../platform/attentionSemanticBadge";
 import { formatDuration } from "../domain/jira/dates";
 import { analyticsEvidenceInvariant } from "../domain/analytics/analyticsEvidenceTrust";
@@ -10,6 +12,19 @@ describe("UI Repair Pass 5D", () => {
     expect(badgeVariantForAttentionLabel("Overloaded")).toBe("warning");
     expect(badgeVariantForAttentionLabel("Available")).toBe("success");
     expect(badgeVariantForAttentionLabel("Not configured")).toBe("neutral");
+  });
+
+  it("humanizes machine enums for display", () => {
+    expect(humanizeMachineEnum("not_configured")).toBe("Not configured");
+    expect(humanizeMachineEnum("first_pass")).toBe("First pass");
+    expect(humanizeMachineEnum("permission_limited")).toBe("Limited permissions");
+  });
+
+  it("formats performance dates for executives", () => {
+    expect(formatPerformanceDateDisplay("2026-09-28")).toBe("28 Sep 2026");
+    expect(formatPerformanceDateRangeDisplay("2026-09-28", "2026-10-04")).toBe(
+      "28 Sep – 4 Oct 2026",
+    );
   });
 
   it("formats durations without decimal days", () => {

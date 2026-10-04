@@ -1,8 +1,13 @@
 import { useMemo } from "react";
 import type { PerformanceReviewTarget } from "../../domain/performance";
-import { formatPerformanceDateDisplay } from "../../domain/performance/performanceDateRange";
+import {
+  formatPerformanceDateRangeDisplay,
+} from "../../domain/performance/performanceDateRange";
 import { buildKpiFromIssues } from "../../domain/jira/kpi";
-import { buildAnalyticsEvidence } from "../../domain/analytics/buildAnalyticsEvidence";
+import {
+  buildAnalyticsEvidence,
+  reconcileEvidenceCount,
+} from "../../domain/analytics/buildAnalyticsEvidence";
 import type { AnalyticsDrilldownMetric } from "../../domain/analytics/analyticsEvidenceTypes";
 import {
   personIssuesFromReport,
@@ -81,7 +86,7 @@ export function useAnalyticsEvidence(
       : flattenTeamKpiIssues(report.grouped);
     const attributionIndex = buildIssueAttributionIndex(report.grouped);
     const params = report.params;
-    const rangeLabel = `${formatPerformanceDateDisplay(params.dateFrom)} – ${formatPerformanceDateDisplay(params.dateTo)}`;
+    const rangeLabel = formatPerformanceDateRangeDisplay(params.dateFrom, params.dateTo);
     const personReportKey = personScope?.personReportKey;
     const personDerivedKpi =
       personReportKey && scopedIssues.length > 0
@@ -90,7 +95,7 @@ export function useAnalyticsEvidence(
     const personKpi =
       personDerivedKpi ?? personScope?.personKpi ?? report.teamKpi;
 
-    return buildAnalyticsEvidence({
+    const evidence = buildAnalyticsEvidence({
       metric: request.metric,
       issues: scopedIssues,
       params,
@@ -107,6 +112,18 @@ export function useAnalyticsEvidence(
       personDisplayName: personScope?.personDisplayName,
       personId: personScope?.personId,
     });
+
+    if (import.meta.env.DEV && evidence && !reconcileEvidenceCount(evidence)) {
+      console.warn("[analytics] KPI evidence invariant failed", {
+        metric: evidence.metric,
+        personId: evidence.personId,
+        detailLevel: evidence.detailLevel,
+        kpiCompleted: evidence.kpi.completedCount,
+        issueCount: evidence.issues.length,
+      });
+    }
+
+    return evidence;
   }, [data, request, reviewTarget, summaryMetric]);
 }
 

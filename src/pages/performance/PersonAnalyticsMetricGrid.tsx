@@ -3,6 +3,7 @@ import { Card } from "../../components/Card/Card";
 import { HelpIcon } from "../../components/HelpIcon/HelpIcon";
 import { Tooltip } from "../../components/Tooltip/Tooltip";
 import type { MetricCardData } from "../../domain/performance";
+import { formatMetricComparisonLine } from "../../domain/performance/kpiComparisonFormat";
 import { performanceHelp } from "../../domain/performance/performanceHelp";
 import { metricLabelToDrilldownMetric } from "./analyticsDrilldownModel";
 
@@ -86,13 +87,19 @@ export function PersonAnalyticsMetricGrid({
                   <div
                     className={`performance-metric-card__context performance-metric-card__context--${metric.contextSemantic || "neutral"}`}
                   >
-                    <Tooltip content={metric.contextCaption ?? metric.contextLabel}>
-                      <span>
-                        {metric.contextLabel}
+                    <Tooltip
+                      content={formatMetricComparisonLine(
+                        metric.contextLabel,
+                        metric.contextCaption,
+                      )}
+                    >
+                      <span className="performance-metric-card__context-line">
+                        <span className="performance-metric-card__context-delta">
+                          {metric.contextLabel}
+                        </span>
                         {metric.contextCaption ? (
                           <span className="performance-metric-card__context-caption">
-                            {" "}
-                            · {metric.contextCaption}
+                            {metric.contextCaption}
                           </span>
                         ) : null}
                       </span>
@@ -115,12 +122,13 @@ export function PersonAnalyticsMetricGrid({
                   <div
                     className={`performance-metric-card__context performance-metric-card__context--${metric.contextSemantic || "neutral"}`}
                   >
-                    <span>
-                      {metric.contextLabel}
+                    <span className="performance-metric-card__context-line">
+                      <span className="performance-metric-card__context-delta">
+                        {metric.contextLabel}
+                      </span>
                       {metric.contextCaption ? (
                         <span className="performance-metric-card__context-caption">
-                          {" "}
-                          · {metric.contextCaption}
+                          {metric.contextCaption}
                         </span>
                       ) : null}
                     </span>

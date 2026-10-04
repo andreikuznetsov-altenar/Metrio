@@ -258,7 +258,23 @@
   gap: var(--space-1);
 }
 
+.performance-metric-card__context-line {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.performance-metric-card__context-delta {
+  font-weight: 600;
+}
+
 .performance-metric-card__context-caption {
+  font-size: 12px;
+  font-weight: 400;
+  opacity: 0.85;
+}
+
+.performance-metric-card__context-caption--legacy {
   color: var(--color-text-tertiary);
   font-size: 10px;
 }

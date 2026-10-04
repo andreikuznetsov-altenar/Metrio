@@ -310,6 +310,15 @@ export function AnalyticsDrilldownDrawer({
             </p>
           ) : null}
 
+          {evidence.metric === "backflows" &&
+          evidence.bucketDate &&
+          evidence.detailLevel === "task" &&
+          filteredIssues.length > 0 ? (
+            <p className="analytics-drawer__caption" role="note">
+              Trend point counts backflow events (not cycles with backflow).
+            </p>
+          ) : null}
+
           {!backflowsZero &&
           evidence.detailLevel === "task" &&
           evidence.metric !== "efficiency" &&

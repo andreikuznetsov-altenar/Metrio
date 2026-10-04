@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { buildVisualPerformanceFetchResult } from "../../fixtures/performanceFetchFixture";
+import { buildKpiFromIssues } from "../jira/kpi";
 import { buildPersonAnalyticsWorkspace } from "./personAnalyticsWorkspace";
 import { EMPTY_KPI_SNAPSHOT_FILE } from "../snapshots/snapshotEngine";
 
@@ -25,9 +26,12 @@ describe("buildPersonAnalyticsWorkspace", () => {
       teamEmployeeIds: new Set(data.teamSnapshot.persons.map((p) => p.id)),
     });
 
-    const currentCompleted = person.performance?.completedCount ?? 0;
+    const derivedCompleted =
+      person.issues.length > 0
+        ? buildKpiFromIssues(person.issues, {}, data.reportData.params).completedCount
+        : (person.performance?.completedCount ?? 0);
     expect(workspace.performanceKpis.find((m) => m.label === "Completed")?.value).toBe(
-      String(currentCompleted),
+      String(derivedCompleted),
     );
     expect(workspace.workload).toMatch(/Light|Balanced|Heavy|Overloaded/);
     expect(workspace.historyMonth.length).toBeGreaterThanOrEqual(0);
