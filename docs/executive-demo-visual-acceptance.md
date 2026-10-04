@@ -1,6 +1,6 @@
 # Executive demo visual acceptance
 
-**Baseline (Design System Final Hardening):** `839f4d2` → **acceptance SHA:** `c7f4a5d`  
+**Baseline (Design System Final Hardening):** `839f4d2` → **acceptance SHA:** `fa81780`  
 **Prior UI baseline:** `aff7d0e` (Pass 5G)  
 **Acceptance harness:** `e2e/visual/executive-acceptance.spec.ts` + `e2e/visual/visualBoot.ts`  
 **Primary viewport:** 1440×900  
