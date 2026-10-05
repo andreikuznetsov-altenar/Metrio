@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { Badge } from "../../components/Badge/Badge";
 import { Button } from "../../components/Button/Button";
 import { Drawer } from "../../components/Drawer/Drawer";
 import { PersonCycleTimeCard } from "../../components/PersonCycleTimeCard/PersonCycleTimeCard";
@@ -13,8 +12,8 @@ import { canOpenPersonBrief } from "../../domain/personAccess";
 import type { DateRangeKey } from "../../domain/performance";
 import { formatPersonBriefPlainText } from "../../domain/personBrief/formatPersonBriefText";
 import { buildPersonBriefPdfPayload } from "../../domain/personBrief/personBriefPdf";
-import type { GroupedAttentionSignal } from "./groupAttentionSignals";
 import { usePersonBriefModel } from "../../hooks/usePersonBriefModel";
+import { AttentionSignalsTable } from "./AttentionSignalsTable";
 import { resolveJiraBaseUrl } from "../../config/product";
 import { loadPreferences } from "../../platform/preferences";
 import { openExternalUrl } from "../../platform/openExternal";
@@ -27,22 +26,14 @@ import { PersonIdentityHeader } from "./PersonIdentityHeader";
 import "./person-brief-drawer.css";
 import "./person-identity-header.css";
 import "./person-work-card.css";
+import "./performance-dashboard.css";
+import "./person-detail-drawer.css";
 
 const PERIOD_OPTIONS: { value: DateRangeKey; label: string }[] = [
   { value: "7d", label: "Last 7 days" },
   { value: "30d", label: "Last 30 days" },
   { value: "3m", label: "Last 3 months" },
 ];
-
-function attentionIssuePreview(group: GroupedAttentionSignal): string {
-  const keys = group.issueKeys.slice(0, 2);
-  if (!keys.length) return `${group.taskCount} tasks`;
-  const suffix =
-    group.issueKeys.length > keys.length
-      ? ` · +${group.issueKeys.length - keys.length}`
-      : "";
-  return `${keys.join(" · ")}${suffix}`;
-}
 
 export interface PersonBriefDrawerProps {
   personId: string | null;
@@ -194,7 +185,12 @@ export function PersonBriefDrawer({
               </p>
               <div className="person-brief__work-list">
                 {brief.currentWork.topTasks.map((task) => (
-                  <PersonWorkRow key={task.key} item={task} variant="inline" />
+                  <PersonWorkRow
+                    key={task.key}
+                    item={task}
+                    variant="inline"
+                    jiraBaseUrl={jiraBaseUrl}
+                  />
                 ))}
               </div>
             </section>
@@ -228,22 +224,11 @@ export function PersonBriefDrawer({
           {brief.attention.length ? (
             <section className="person-brief__section-card">
               <h3 className="person-brief__section-title">Attention</h3>
-              <ul className="person-brief__attention-list">
-                {brief.attention.map((group) => (
-                  <li key={`${group.label}-${group.reason}`} className="person-brief__attention-row">
-                    <div>
-                      <Badge variant={group.variant}>{group.label}</Badge>
-                      <span className="person-brief__muted">
-                        {group.taskCount} task{group.taskCount === 1 ? "" : "s"}
-                      </span>
-                    </div>
-                    <Badge variant="neutral">{group.reason}</Badge>
-                    <span className="person-brief__muted person-brief__attention-keys">
-                      {attentionIssuePreview(group)}
-                    </span>
-                  </li>
-                ))}
-              </ul>
+              <AttentionSignalsTable
+                groups={brief.attention}
+                jiraBaseUrl={jiraBaseUrl}
+                wrapClassName="person-brief__attention-table"
+              />
             </section>
           ) : null}
 

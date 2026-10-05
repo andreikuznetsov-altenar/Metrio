@@ -16,11 +16,13 @@ const SIGNAL_COLUMNS = [
 export interface AttentionSignalsTableProps {
   groups: GroupedAttentionSignal[];
   jiraBaseUrl: string;
+  wrapClassName?: string;
 }
 
 export function AttentionSignalsTable({
   groups,
   jiraBaseUrl,
+  wrapClassName,
 }: AttentionSignalsTableProps) {
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
 
@@ -45,7 +47,7 @@ export function AttentionSignalsTable({
   const { sortedRows, sort, toggleSort } = useTableSort(groups, SIGNAL_COLUMNS, getValue);
 
   return (
-    <MetrioTableWrap testId="attention-signals-table">
+    <MetrioTableWrap testId="attention-signals-table" className={wrapClassName}>
       <table className={`${METRIO_TABLE_CLASS} performance-table--attention-signals`}>
         <thead>
           <tr>

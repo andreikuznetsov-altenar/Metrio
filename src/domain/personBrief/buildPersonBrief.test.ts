@@ -90,4 +90,29 @@ describe("buildPersonBrief", () => {
     expect(brief.prompts.length).toBeGreaterThan(0);
     expect(JSON.stringify(brief)).not.toMatch(/underperform|declined badly/i);
   });
+
+  it("excludes Stable labels from brief.attention", () => {
+    const ws = workspaceStub();
+    ws.attention = [
+      {
+        label: "Stable",
+        variant: "neutral",
+        reason: "Review for 5 days",
+        issueKey: "UX-2",
+      },
+      {
+        label: "Long Review",
+        variant: "warning",
+        reason: "Review for 9 days",
+        issueKey: "UX-1",
+      },
+    ];
+    const brief = buildPersonBrief({
+      person: personStub(),
+      workspace: ws,
+      periodPreset: "30d",
+    });
+    expect(brief.attention.some((group) => group.label === "Stable")).toBe(false);
+    expect(brief.attention.some((group) => group.label === "Long Review")).toBe(true);
+  });
 });

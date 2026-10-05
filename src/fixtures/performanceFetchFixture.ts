@@ -190,6 +190,18 @@ function buildTeamPersons(): Person[] {
           "Blocked",
           "jira-person-02",
         ),
+        activeIssue(
+          "MET-206",
+          "Auth callback retry",
+          "Blocked",
+          "jira-person-02",
+        ),
+        activeIssue(
+          "MET-207",
+          "Webhook signing",
+          "Blocked",
+          "jira-person-02",
+        ),
         // Historical attribution only — current owner is person-01
         activeIssue(
           "UX-2962",

@@ -13,6 +13,10 @@ function groupKey(item: PersonalAttentionItem): string {
   return `${item.variant}|${item.label.toLowerCase()}|${item.reason.trim().toLowerCase()}`;
 }
 
+export function isActionableAttentionLabel(label: string): boolean {
+  return label.trim().toLowerCase() !== "stable";
+}
+
 export function groupAttentionSignals(
   items: PersonalAttentionItem[],
 ): GroupedAttentionSignal[] {

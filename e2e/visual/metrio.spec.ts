@@ -1111,6 +1111,81 @@ test.describe("Metrio visual regression", () => {
     });
   });
 
+  test("person-brief-kpi-three-column", async ({ page }) => {
+    await bootMetrio(page, "lead");
+    await page.evaluate(() => {
+      window.dispatchEvent(
+        new CustomEvent("metrio-open-person-brief", {
+          detail: { personId: "person-01" },
+        }),
+      );
+    });
+    await expect(page.getByTestId("person-brief-drawer")).toBeVisible();
+    const metrics = page.locator(".performance-metrics--brief");
+    await expect(metrics).toBeVisible();
+    await expect(metrics).toHaveScreenshot("person-brief-kpi-three-column.png", {
+      maxDiffPixelRatio: 0.02,
+    });
+  });
+
+  test("person-brief-current-work-links", async ({ page }) => {
+    await bootMetrio(page, "lead");
+    await openFirstAttentionPerson(page);
+    await page.getByRole("button", { name: "Brief" }).click();
+    await expect(page.getByTestId("person-brief-drawer")).toBeVisible();
+    const work = page.locator(".person-brief__work-list").first();
+    if (await work.isVisible().catch(() => false)) {
+      await expect(work).toHaveScreenshot("person-brief-current-work-links.png", {
+        maxDiffPixelRatio: 0.02,
+      });
+    }
+  });
+
+  test("person-brief-attention-table", async ({ page }) => {
+    await bootMetrio(page, "lead");
+    await openFirstAttentionPerson(page);
+    await page.getByRole("button", { name: "Brief" }).click();
+    await expect(page.getByTestId("person-brief-drawer")).toBeVisible();
+    const table = page.getByTestId("person-brief-drawer").getByTestId("attention-signals-table");
+    if (await table.isVisible().catch(() => false)) {
+      await expect(table).toHaveScreenshot("person-brief-attention-table.png", {
+        maxDiffPixelRatio: 0.02,
+      });
+    }
+  });
+
+  test("person-brief-attention-expanded", async ({ page }) => {
+    await bootMetrio(page, "lead");
+    const directReports = ["person-01", "person-02", "person-03", "person-04", "person-05"];
+    let captured = false;
+    for (const personId of directReports) {
+      await page.evaluate((id) => {
+        window.dispatchEvent(
+          new CustomEvent("metrio-open-person-brief", { detail: { personId: id } }),
+        );
+      }, personId);
+      await expect(page.getByTestId("person-brief-drawer")).toBeVisible({ timeout: 15_000 });
+      const table = page.getByTestId("person-brief-drawer").getByTestId("attention-signals-table");
+      const closeBrief = page.locator(".drawer--person-brief .icon-btn[aria-label='Close drawer']");
+      if (!(await table.isVisible().catch(() => false))) {
+        await closeBrief.click();
+        continue;
+      }
+      const expand = table.getByRole("button", { name: /View \d+ more/i });
+      if (!(await expand.isVisible().catch(() => false))) {
+        await closeBrief.click();
+        continue;
+      }
+      await expand.click();
+      await expect(table).toHaveScreenshot("person-brief-attention-expanded.png", {
+        maxDiffPixelRatio: 0.02,
+      });
+      captured = true;
+      break;
+    }
+    expect(captured).toBe(true);
+  });
+
   test("person drawer overloaded workload", async ({ page }) => {
     await bootMetrio(page, "lead");
     await page.evaluate(() => {
@@ -1416,6 +1491,46 @@ test.describe("Metrio visual regression", () => {
       fullPage: true,
       maxDiffPixelRatio: 0.02,
     });
+  });
+
+  test("switch geometry", async ({ page }) => {
+    await gotoSwitchVisualFixture(page);
+    await assertSwitchGeometry(page, "switch-visual-off", "unchecked");
+    await assertSwitchGeometry(page, "switch-visual-on", "checked");
+  });
+
+  test("switch-states-light", async ({ page }) => {
+    await gotoSwitchVisualFixture(page, "light");
+    await expect(page.getByTestId("switch-visual-fixture")).toHaveScreenshot(
+      "switch-states-light.png",
+      { maxDiffPixelRatio: 0.02 },
+    );
+  });
+
+  test("switch-states-dark", async ({ page }) => {
+    await gotoSwitchVisualFixture(page, "dark");
+    await expect(page.getByTestId("switch-visual-fixture")).toHaveScreenshot(
+      "switch-states-dark.png",
+      { maxDiffPixelRatio: 0.02 },
+    );
+  });
+
+  test("switch-focus-light", async ({ page }) => {
+    await gotoSwitchVisualFixture(page, "light");
+    await page.getByTestId("switch-visual-focus-off").focus();
+    await expect(page.getByTestId("switch-visual-fixture")).toHaveScreenshot(
+      "switch-focus-light.png",
+      { maxDiffPixelRatio: 0.02 },
+    );
+  });
+
+  test("switch-focus-dark", async ({ page }) => {
+    await gotoSwitchVisualFixture(page, "dark");
+    await page.getByTestId("switch-visual-focus-on").focus();
+    await expect(page.getByTestId("switch-visual-fixture")).toHaveScreenshot(
+      "switch-focus-dark.png",
+      { maxDiffPixelRatio: 0.02 },
+    );
   });
 
   test("settings preferences section", async ({ page }) => {

@@ -127,6 +127,41 @@ export function classifyIssueAttention(
   return null;
 }
 
+/** Badge label for attention tables — never use raw task health "stable" for actionable signals. */
+export function attentionPresentationSignalLabel(attention: {
+  reason: string;
+  health: TaskHealthResult;
+}): string {
+  const reason = attention.reason.trim();
+  const lower = reason.toLowerCase();
+
+  if (attention.health.status === "no_activity" || lower.includes("no activity")) {
+    return "No activity";
+  }
+  if (attention.health.status === "problematic") {
+    return "Problematic";
+  }
+  if (lower.includes("blocked") || lower.includes("on hold")) {
+    return "Blocked";
+  }
+  if (/^review for /i.test(reason)) {
+    return "Long Review";
+  }
+  if (lower.includes("returned from review") || lower.includes("review → in progress")) {
+    return "Rework";
+  }
+  if (lower.includes("backflow")) {
+    return "Rework";
+  }
+  if (attention.health.status === "at_risk") {
+    return "At risk";
+  }
+  if (lower.includes("in progress for")) {
+    return "Stale progress";
+  }
+  return "Needs attention";
+}
+
 export function vacationRiskSeverity(
   person: Person,
   atRiskCount: number,

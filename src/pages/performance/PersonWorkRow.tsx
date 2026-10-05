@@ -1,5 +1,6 @@
 import { Badge } from "../../components/Badge/Badge";
 import { Button } from "../../components/Button/Button";
+import { EntityLink } from "../../components/EntityLink/EntityLink";
 import type { PersonWorkRowData } from "../../domain/analytics/personAnalyticsWorkspace";
 import { resolveJiraBaseUrl } from "../../config/product";
 import { loadPreferences } from "../../platform/preferences";
@@ -13,6 +14,7 @@ import "./person-work-card.css";
 export interface PersonWorkRowProps {
   item: PersonWorkRowData;
   knowledgeLinks?: WorkKnowledgeLink[];
+  jiraBaseUrl?: string;
   /** Card layout for person work tab and brief sections. */
   variant?: "card" | "inline";
 }
@@ -28,29 +30,58 @@ async function openIssueInJira(issueKey: string) {
   await openExternalUrl(url);
 }
 
+function IssueKeyLink({
+  issueKey,
+  jiraBaseUrl,
+  className,
+}: {
+  issueKey: string;
+  jiraBaseUrl?: string;
+  className?: string;
+}) {
+  const href = jiraBaseUrl
+    ? buildJiraIssueBrowseUrl(jiraBaseUrl, issueKey)
+    : undefined;
+  return (
+    <EntityLink
+      href={href}
+      mono
+      className={className}
+      onNavigate={href ? undefined : () => void openIssueInJira(issueKey)}
+    >
+      {issueKey}
+    </EntityLink>
+  );
+}
+
 export function PersonWorkRow({
   item,
   knowledgeLinks,
+  jiraBaseUrl,
   variant = "card",
 }: PersonWorkRowProps) {
   const attentionBadge = item.attentionLabel ? (
     <Badge variant={item.healthVariant}>{item.attentionLabel}</Badge>
   ) : null;
 
-  const openJira = () => void openIssueInJira(item.key);
+  const openJira = () => {
+    if (jiraBaseUrl) {
+      void openExternalUrl(buildJiraIssueBrowseUrl(jiraBaseUrl, item.key));
+      return;
+    }
+    void openIssueInJira(item.key);
+  };
 
   if (variant === "inline") {
     return (
-      <div className="performance-work-row performance-work-row--person">
+      <div className="performance-work-row performance-work-row--person performance-work-row--person-inline">
         <div className="performance-work-row__main">
           <div className="person-work-row__head">
-            <button
-              type="button"
-              className="performance-entity-link performance-work-row__key"
-              onClick={openJira}
-            >
-              {item.key}
-            </button>
+            <IssueKeyLink
+              issueKey={item.key}
+              jiraBaseUrl={jiraBaseUrl}
+              className="performance-work-row__key"
+            />
             <div className="person-work-row__head-badges">
               <Badge variant="neutral" className="person-work-row__status">
                 {item.status}
@@ -77,13 +108,11 @@ export function PersonWorkRow({
   return (
     <article className="person-work-card" data-testid="person-work-card">
       <div className="person-work-card__head">
-        <button
-          type="button"
-          className="performance-entity-link person-work-card__key"
-          onClick={openJira}
-        >
-          {item.key}
-        </button>
+        <IssueKeyLink
+          issueKey={item.key}
+          jiraBaseUrl={jiraBaseUrl}
+          className="person-work-card__key"
+        />
         <Badge variant="neutral">{item.status}</Badge>
       </div>
       <h4 className="person-work-card__title" title={item.title}>{item.title}</h4>

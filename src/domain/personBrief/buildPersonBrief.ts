@@ -9,7 +9,10 @@ import {
   formatNewStarterHeadline,
   isNewStarter,
 } from "../onboarding/newStarter";
-import { groupAttentionSignals } from "../../pages/performance/groupAttentionSignals";
+import {
+  groupAttentionSignals,
+  isActionableAttentionLabel,
+} from "../../pages/performance/groupAttentionSignals";
 import { summarizeFeedbackActions } from "../feedback/feedbackActionSummary";
 import type { SurveyDataFile } from "../survey/types";
 import type {
@@ -125,7 +128,9 @@ export function buildPersonBrief(input: BuildPersonBriefInput): PersonBriefModel
 
   const feedbackLines = buildBriefFeedbackLines(input.surveyData);
 
-  const attention = groupAttentionSignals(workspace.attention);
+  const attention = groupAttentionSignals(
+    workspace.attention.filter((item) => isActionableAttentionLabel(item.label)),
+  );
   const briefCore: PersonBriefModel = {
     personId: workspace.personId,
     personName: workspace.personName,

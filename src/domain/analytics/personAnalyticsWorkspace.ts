@@ -27,6 +27,7 @@ import {
   type PerformanceDateRange,
 } from "../performance/performanceDateRange";
 import {
+  attentionPresentationSignalLabel,
   classifyIssueAttention,
   formatStageAgeLabel,
   getActiveIssues,
@@ -55,7 +56,6 @@ import {
 import { sparklineValuesFromPoints } from "../snapshots/sparklineSeries";
 import {
   buildTrendCardData,
-  formatAttentionHealthLabel,
   metricContextFromComparison,
 } from "../../pages/performance/trendPresentation";
 import { targetScopeLabel } from "./analyticsReportScope";
@@ -379,7 +379,7 @@ export function buildPersonAnalyticsWorkspace(
       const item = classifyIssueAttention(issue, params, now, operationalRules);
       if (!item) return null;
       return {
-        label: formatAttentionHealthLabel(item.health.status),
+        label: attentionPresentationSignalLabel(item),
         variant: severityToBadge(item.severity),
         reason: item.reason,
         issueKey: issue.issueKey,

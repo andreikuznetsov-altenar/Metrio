@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { Person } from "../people/types";
 import type { AuditIssue } from "../jira/types";
-import { getActiveIssues } from "./taskSignals";
+import { attentionPresentationSignalLabel, getActiveIssues } from "./taskSignals";
 import { testWorkload } from "../testFixtures";
 
 const params = {
@@ -69,5 +69,20 @@ describe("getActiveIssues", () => {
       params,
     );
     expect(active.map((i) => i.issueKey)).toEqual(["UX-1"]);
+  });
+});
+
+describe("attentionPresentationSignalLabel", () => {
+  it("maps review stall reasons to Long Review instead of Stable", () => {
+    const label = attentionPresentationSignalLabel({
+      reason: "Review for 5 days",
+      health: {
+        status: "stable",
+        reasons: [],
+        variant: "neutral",
+      },
+    });
+    expect(label).toBe("Long Review");
+    expect(label).not.toBe("Stable");
   });
 });
