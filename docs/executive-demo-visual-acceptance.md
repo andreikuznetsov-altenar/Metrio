@@ -1,13 +1,13 @@
 # Executive demo visual acceptance
 
-**Baseline (Design System Final Hardening):** `839f4d2` → **acceptance SHA:** `e778c67`  
-**Prior UI baseline:** `aff7d0e` (Pass 5G)  
+**Baseline (Pass 6F):** `c7e2af6` (pre-6F) → **harness green SHA:** `de386e5f930e1e006fb82a97bac8e9113edc7777`  
+**Prior acceptance SHA:** `e778c67` (DS final hardening)  
 **Acceptance harness:** `e2e/visual/executive-acceptance.spec.ts` + `e2e/visual/visualBoot.ts`  
 **Primary viewport:** 1440×900  
 **High-risk viewports:** 1280×800, 1728×1117 (dashboard, performance overview, delivery risk, notifications)  
 **Screenshots:** `e2e/visual/__screenshots__/executive-acceptance.spec.ts/`  
-**Review date:** 2026-10-04 (post–DS final hardening)  
-**Method:** Rendered PNG review on current harness + checklist A–R (not suite green-only)
+**Review date:** 2026-10-05 (post–6C/6D/6E/6A.1 + Pass 6F harness)  
+**Method:** Automated harness green + spot PNG review (full manual re-walk still required)
 
 ## Readiness summary
 
@@ -20,7 +20,7 @@
 | Raw machine UI on reviewed screens | No |
 | Primary CTAs visually present | Yes |
 | Design-system enforcement gaps (imports, card radius, token fallbacks) | Closed in hardening pass |
-| **READY FOR EXECUTIVE DEMO** | **YES** |
+| **READY FOR EXECUTIVE DEMO** | **NO** (await post-6F manual screenshot sign-off) |
 | **READY FOR NOTARIZATION** | **NO** (out of scope) |
 
 ## Scores (/10)
@@ -80,12 +80,30 @@ All **40** primary executive captures + **8** viewport variants + **11** dark su
 | Command | Result |
 |---------|--------|
 | `npm run verify:design-system` | 24 tests passed (includes TS import + diff-base tests) |
-| `npm test` | 735 passed, 1 skipped |
+| `npm test` | 789 passed, 2 skipped (6F tree) |
 | `npm run test:backend` | 4 passed |
 | `npm run build` | OK |
-| `CI=1 npm run test:visual` | **256 passed** |
-| `CI=1 npx playwright test executive-acceptance.spec.ts` | **59 passed** |
-| `cargo test` / `cargo check` (src-tauri) | 49 passed, 1 ignored / OK |
+| `CI=1 npm run test:visual` | **287 passed** (×2, 0 failed) |
+| `CI=1 npx playwright test executive-acceptance.spec.ts` | **59 passed**, 0 serial-bail skips |
+| `cargo test` / `cargo check` (src-tauri) | OK |
+
+## Pass 6F group review (automated + spot check)
+
+| Group | Status | Notes |
+|-------|--------|-------|
+| Dashboard | PASS | 6E layout; cache visuals isolated |
+| Performance | PASS | Subnav, delivery risk, people sort |
+| Person | PASS | Drawer alignment; fixture photo/initials |
+| Analytics | PASS | Drawer headers; backflows zero |
+| Goals | PASS | Harness unchanged |
+| Notifications | PASS | — |
+| Feedback | PASS | 6C width/subnav/history |
+| Settings | PASS | Diagnostics grouping |
+| Resource Library | PASS | Opens via `metrio-open-resources` |
+| Onboarding | POLISH | Re-baseline after 6E |
+| Projects / Calendar | PASS | — |
+| Connection screen | PASS | — |
+| Dark subset | PASS | Spot-checked with harness |
 
 ## Intentional snapshot updates (this pass)
 

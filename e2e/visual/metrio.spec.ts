@@ -15,6 +15,10 @@ import {
 } from "../../src/fixtures/companyConfigVisualFixture";
 import { serializeCalendarVisualFixtureForPlaywright } from "../../src/fixtures/calendarVisualFixture";
 import { serializeDashboardCacheVisualFixtureForPlaywright } from "../../src/fixtures/dashboardCacheVisualFixture";
+import {
+  openResourceLibrary,
+  VISUAL_EPHEMERAL_STORAGE_KEYS,
+} from "./visualBoot";
 
 async function bootMetrioFeedbackDisconnected(
   page: Page,
@@ -63,15 +67,49 @@ async function bootMetrio(
   page: Page,
   fixture: "lead" | "employee" | "director" = "lead",
 ) {
-  await page.addInitScript((fixtureId: string) => {
-    localStorage.setItem("metrio-connection-connected", "true");
-    localStorage.setItem("metrio-dev-fixture", fixtureId);
-    localStorage.setItem("metrio-theme", "light");
-  }, fixture);
+  await page.addInitScript(
+    ({ fixtureId, ephemeralKeys }: { fixtureId: string; ephemeralKeys: string[] }) => {
+      for (const key of ephemeralKeys) {
+        localStorage.removeItem(key);
+      }
+      localStorage.setItem("metrio-connection-connected", "true");
+      localStorage.setItem("metrio-dev-fixture", fixtureId);
+      localStorage.setItem("metrio-theme", "light");
+    },
+    { fixtureId: fixture, ephemeralKeys: [...VISUAL_EPHEMERAL_STORAGE_KEYS] },
+  );
 
   await page.goto("/");
   await expect(page.getByTestId("app-shell")).toBeVisible({ timeout: 30_000 });
   await openPerformanceFromHome(page);
+}
+
+async function bootConnected(
+  page: Page,
+  fixture: "lead" | "employee" | "director",
+  theme: "light" | "dark" = "light",
+) {
+  await page.addInitScript(
+    ({
+      fixtureId,
+      themeId,
+      ephemeralKeys,
+    }: {
+      fixtureId: string;
+      themeId: string;
+      ephemeralKeys: string[];
+    }) => {
+      for (const key of ephemeralKeys) {
+        localStorage.removeItem(key);
+      }
+      localStorage.setItem("metrio-connection-connected", "true");
+      localStorage.setItem("metrio-dev-fixture", fixtureId);
+      localStorage.setItem("metrio-theme", themeId);
+    },
+    { fixtureId: fixture, themeId: theme, ephemeralKeys: [...VISUAL_EPHEMERAL_STORAGE_KEYS] },
+  );
+  await page.goto("/");
+  await expect(page.getByTestId("app-shell")).toBeVisible({ timeout: 30_000 });
 }
 
 async function bootMetrioWithNotificationFixture(
@@ -1110,7 +1148,9 @@ test.describe("Metrio visual regression", () => {
     await page.goto("/");
     await expect(page.getByTestId("dashboard-ready")).toBeVisible({ timeout: 30_000 });
     await page.keyboard.press("Meta+k");
-    await expect(page.getByTestId("command-palette")).toBeVisible();
+    const palette = page.getByTestId("command-palette");
+    await expect(palette).toBeVisible();
+    await expect(palette.getByRole("textbox", { name: "Quick find" })).toBeVisible();
     await expect(page).toHaveScreenshot("search-open.png", {
       fullPage: true,
       maxDiffPixelRatio: 0.02,
@@ -1120,8 +1160,15 @@ test.describe("Metrio visual regression", () => {
   test("command palette search issue", async ({ page }) => {
     await bootMetrio(page, "lead");
     await page.keyboard.press("Meta+k");
-    await page.getByRole("textbox", { name: "Quick find" }).fill("UX-");
-    await expect(page.getByTestId("command-palette")).toBeVisible();
+    const palette = page.getByTestId("command-palette");
+    await expect(palette).toBeVisible();
+    const input = palette.getByRole("textbox", { name: "Quick find" });
+    await expect(input).toBeVisible();
+    await input.fill("UX-2962");
+    await expect(palette.getByRole("option", { name: /UX-2962/ })).toBeVisible({
+      timeout: 15_000,
+    });
+    await expect(palette.locator(".command-palette__hint")).toHaveCount(0);
     await expect(page).toHaveScreenshot("command-palette-search-issue.png", {
       fullPage: true,
       maxDiffPixelRatio: 0.02,
@@ -1137,7 +1184,9 @@ test.describe("Metrio visual regression", () => {
     await page.goto("/");
     await expect(page.getByTestId("dashboard-ready")).toBeVisible({ timeout: 30_000 });
     await page.keyboard.press("Meta+k");
-    await expect(page.getByTestId("command-palette")).toBeVisible();
+    const palette = page.getByTestId("command-palette");
+    await expect(palette).toBeVisible();
+    await expect(palette.getByRole("textbox", { name: "Quick find" })).toBeVisible();
     await expect(page).toHaveScreenshot("search-dark.png", {
       fullPage: true,
       maxDiffPixelRatio: 0.02,
@@ -1696,8 +1745,7 @@ test.describe("Metrio visual regression", () => {
     }, "lead");
     await page.goto("/");
     await expect(page.getByTestId("dashboard-ready")).toBeVisible({ timeout: 30_000 });
-    await page.getByRole("button", { name: "Open resource library", exact: true }).click();
-    await expect(page.getByTestId("resource-library")).toBeVisible();
+    await openResourceLibrary(page);
     await expect(page).toHaveScreenshot("home-resource-library.png", {
       fullPage: true,
       maxDiffPixelRatio: 0.02,
@@ -1833,10 +1881,10 @@ test.describe("Metrio visual regression", () => {
     }, "employee");
     await page.goto("/?visualHomeKnowledge=1");
     await expect(page.getByTestId("dashboard-ready")).toBeVisible({ timeout: 30_000 });
-    await expect(page.getByTestId("home-relevant-knowledge")).toBeVisible();
+    const section = page.locator(".executive-dashboard .executive-lower-section").first();
+    await expect(section).toBeVisible();
     await expect(page.getByText("UX Team Handbook")).toBeVisible();
-    await expect(page).toHaveScreenshot("home-relevant-knowledge.png", {
-      fullPage: false,
+    await expect(section).toHaveScreenshot("home-relevant-knowledge.png", {
       maxDiffPixelRatio: 0.02,
     });
   });
@@ -1897,8 +1945,7 @@ test.describe("Metrio visual regression", () => {
     }, "lead");
     await page.goto("/");
     await expect(page.getByTestId("dashboard-ready")).toBeVisible({ timeout: 30_000 });
-    await page.getByRole("button", { name: "Open resource library", exact: true }).click();
-    await expect(page.getByTestId("resource-library")).toBeVisible();
+    await openResourceLibrary(page);
     await expect(page).toHaveScreenshot("home-resource-library-dark.png", {
       fullPage: true,
       maxDiffPixelRatio: 0.02,
@@ -1909,27 +1956,35 @@ test.describe("Metrio visual regression", () => {
     if (width) {
       await page.setViewportSize({ width, height: 900 });
     }
-    await page.addInitScript((fixtureId: string) => {
-      localStorage.setItem("metrio-connection-connected", "true");
-      localStorage.setItem("metrio-dev-fixture", fixtureId);
-      localStorage.setItem("metrio-theme", "light");
-    }, "lead");
+    await page.addInitScript(
+      ({ fixtureId, ephemeralKeys }: { fixtureId: string; ephemeralKeys: string[] }) => {
+        for (const key of ephemeralKeys) {
+          localStorage.removeItem(key);
+        }
+        localStorage.setItem("metrio-connection-connected", "true");
+        localStorage.setItem("metrio-dev-fixture", fixtureId);
+        localStorage.setItem("metrio-theme", "light");
+      },
+      { fixtureId: "lead", ephemeralKeys: [...VISUAL_EPHEMERAL_STORAGE_KEYS] },
+    );
     await page.goto("/");
     await expect(page.getByTestId("dashboard-ready")).toBeVisible({ timeout: 30_000 });
   }
 
   test("dashboard new assignments compact row", async ({ page }) => {
     await bootDashboardManager(page, 1440);
-    const card = page.getByRole("region", { name: "New assignments" });
-    await expect(card).toBeVisible();
-    await expect(card).toHaveScreenshot("dashboard-new-assignments-row.png", {
+    const teamActions = page.getByRole("region", { name: "Team actions" });
+    await expect(teamActions).toBeVisible();
+    const row = teamActions.locator("tbody tr").first();
+    await expect(row).toBeVisible();
+    await expect(row).toHaveScreenshot("dashboard-new-assignments-row.png", {
       maxDiffPixelRatio: 0.02,
     });
   });
 
   test("dashboard upcoming availability row", async ({ page }) => {
     await bootDashboardManager(page, 1440);
-    const card = page.getByRole("region", { name: "Upcoming availability" });
+    const card = page.getByRole("region", { name: "Team capacity" });
     await expect(card).toBeVisible();
     await expect(card).toHaveScreenshot("dashboard-upcoming-availability.png", {
       maxDiffPixelRatio: 0.02,
@@ -2214,7 +2269,7 @@ test.describe("Metrio visual regression", () => {
   });
 
   test("dashboard-employee", async ({ page }) => {
-    await bootMetrio(page, "employee");
+    await bootConnected(page, "employee", "light");
     await expect(page.getByTestId("dashboard-ready")).toBeVisible({ timeout: 30_000 });
     await expect(page.getByTestId("dashboard-my-focus")).toBeVisible();
     await expect(page).toHaveScreenshot("dashboard-employee.png", {
@@ -2224,9 +2279,9 @@ test.describe("Metrio visual regression", () => {
   });
 
   test("dashboard-director", async ({ page }) => {
-    await bootMetrio(page, "director");
+    await bootConnected(page, "director", "light");
     await expect(page.getByTestId("dashboard-ready")).toBeVisible({ timeout: 30_000 });
-    await expect(page.getByTestId("dashboard-director-org")).toBeVisible();
+    await expect(page.getByTestId("dashboard-first-viewport")).toBeVisible();
     await expect(page).toHaveScreenshot("dashboard-director.png", {
       fullPage: true,
       maxDiffPixelRatio: 0.02,
@@ -2586,8 +2641,10 @@ test.describe("Metrio visual regression", () => {
 
   test("compact-action-row", async ({ page }) => {
     await bootDashboardManager(page, 1440);
-    const card = page.getByRole("region", { name: "New assignments" });
-    await expect(card).toHaveScreenshot("compact-action-row.png", { maxDiffPixelRatio: 0.02 });
+    const teamActions = page.getByRole("region", { name: "Team actions" });
+    const row = teamActions.locator("tbody tr").first();
+    await expect(row).toBeVisible();
+    await expect(row).toHaveScreenshot("compact-action-row.png", { maxDiffPixelRatio: 0.02 });
   });
 
   test("drawer-header-notifications", async ({ page }) => {
@@ -2676,7 +2733,7 @@ test.describe("Metrio visual regression", () => {
     }, "lead");
     await page.goto("/?visualHomeTimeOff=1");
     await expect(page.getByTestId("dashboard-ready")).toBeVisible({ timeout: 30_000 });
-    const card = page.getByRole("region", { name: "Upcoming time off" });
+    const card = page.getByRole("region", { name: "Team capacity" });
     await expect(card).toBeVisible();
     await expect(card).toHaveScreenshot("upcoming-time-off.png", {
       maxDiffPixelRatio: 0.02,
@@ -2685,7 +2742,7 @@ test.describe("Metrio visual regression", () => {
 
   test("team-availability", async ({ page }) => {
     await bootDashboardManager(page, 1440);
-    const card = page.getByRole("region", { name: "Upcoming availability" });
+    const card = page.getByRole("region", { name: "Team capacity" });
     await expect(card).toBeVisible();
     await expect(card).toHaveScreenshot("team-availability.png", {
       maxDiffPixelRatio: 0.02,
@@ -2944,8 +3001,7 @@ test.describe("Metrio visual regression", () => {
     }, "lead");
     await page.goto("/");
     await expect(page.getByTestId("dashboard-ready")).toBeVisible({ timeout: 30_000 });
-    await page.getByRole("button", { name: "Open resource library", exact: true }).click();
-    await expect(page.getByTestId("resource-library")).toBeVisible();
+    await openResourceLibrary(page);
     await expect(page.getByTestId("resource-library")).toHaveScreenshot(
       "resource-library.png",
       { maxDiffPixelRatio: 0.02 },
@@ -3057,7 +3113,8 @@ test.describe("Metrio visual regression", () => {
       "feedback-history-table.png",
       { maxDiffPixelRatio: 0.02 },
     );
-    await page.getByRole("button", { name: /Survey/i }).click();
+    const historyTable = page.getByTestId("feedback-history-table");
+    await historyTable.getByRole("button", { name: /^Survey$/i }).click();
     await expect(page.getByTestId("feedback-history-table")).toHaveScreenshot(
       "feedback-history-sorted.png",
       { maxDiffPixelRatio: 0.02 },

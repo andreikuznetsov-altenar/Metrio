@@ -15,6 +15,7 @@ import {
   clickSettingsSection,
   openFirstAttentionPerson,
   openPerformanceFromHome,
+  openResourceLibrary,
   setViewport,
   serializeFeedbackCyclesPopulatedSurveyForPlaywright,
   serializeFeedbackDeliveryVisualSurveyForPlaywright,
@@ -25,8 +26,6 @@ import {
 import { serializeDigestVisualPrefsForPlaywright } from "../../src/fixtures/digestVisualFixture";
 
 const SHOT = { fullPage: true, maxDiffPixelRatio: 0.03 };
-
-test.describe.configure({ mode: "serial" });
 
 test.beforeEach(async ({ page }) => {
   await setViewport(page, 1440, 900);
@@ -328,8 +327,7 @@ test.describe("Executive acceptance — light 1440×900", () => {
 
   test("34-resource-library", async ({ page }) => {
     await bootDashboardManager(page, "light");
-    await page.getByRole("button", { name: "Open resource library", exact: true }).click();
-    await expect(page.getByTestId("resource-library")).toBeVisible();
+    await openResourceLibrary(page);
     await expect(page).toHaveScreenshot("34-resource-library.png", SHOT);
   });
 

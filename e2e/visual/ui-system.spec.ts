@@ -7,8 +7,6 @@ import {
   setViewport,
 } from "./visualBoot";
 
-test.describe.configure({ mode: "serial" });
-
 test.beforeEach(async ({ page }) => {
   await setViewport(page, 1440, 900);
 });
