@@ -6,6 +6,8 @@ export type HomeVisualState =
   | "partial"
   | "first-run"
   | "refreshing-with-cache"
+  | "refresh-stuck"
+  | "refresh-failed-with-cache"
   | null;
 
 export function readHomeVisualState(): HomeVisualState {
@@ -16,7 +18,9 @@ export function readHomeVisualState(): HomeVisualState {
     value === "blocked" ||
     value === "partial" ||
     value === "first-run" ||
-    value === "refreshing-with-cache"
+    value === "refreshing-with-cache" ||
+    value === "refresh-stuck" ||
+    value === "refresh-failed-with-cache"
   ) {
     return value;
   }

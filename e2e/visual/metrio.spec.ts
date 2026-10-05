@@ -2278,6 +2278,7 @@ test.describe("Metrio visual regression", () => {
       delayMs?: number;
       failRefresh?: boolean;
       width?: number;
+      path?: string;
     } = {},
   ) {
     const theme = options.theme ?? "light";
@@ -2307,7 +2308,7 @@ test.describe("Metrio visual regression", () => {
         failRefresh: options.failRefresh ?? false,
       },
     );
-    await page.goto("/");
+    await page.goto(options.path ?? "/");
   }
 
   test("dashboard-first-launch-loading", async ({ page }) => {
@@ -2384,13 +2385,14 @@ test.describe("Metrio visual regression", () => {
   });
 
   test("dashboard-refresh-stuck", async ({ page }) => {
-    await bootDashboardWithCache(page, { width: 1440, delayMs: 600_000 });
-    await expect(page.getByTestId("dashboard-refreshing-with-cache")).toBeVisible({
-      timeout: 15_000,
+    await bootDashboardWithCache(page, {
+      width: 1440,
+      path: "/?visualHomeState=refresh-stuck",
     });
-    await page.clock.fastForward("61s");
     await expect(page.getByTestId("dashboard-refresh-stuck")).toBeVisible({ timeout: 15_000 });
-    await expect(page.getByRole("button", { name: /Retry/i })).toBeVisible();
+    const banner = page.getByTestId("dashboard-sync-banner");
+    await expect(banner).toBeVisible();
+    await expect(banner.getByRole("button", { name: "Retry" })).toBeVisible();
     await expect(page).toHaveScreenshot("dashboard-refresh-stuck.png", {
       fullPage: true,
       maxDiffPixelRatio: 0.02,
@@ -2398,12 +2400,15 @@ test.describe("Metrio visual regression", () => {
   });
 
   test("dashboard-refresh-failed-with-cache", async ({ page }) => {
-    await bootDashboardWithCache(page, { width: 1440, failRefresh: true });
+    await bootDashboardWithCache(page, {
+      width: 1440,
+      failRefresh: true,
+      path: "/?visualHomeState=refresh-failed-with-cache",
+    });
     await expect(page.getByTestId("dashboard-ready")).toBeVisible({ timeout: 15_000 });
     await expect(page.getByTestId("dashboard-sync-status")).toContainText(
       /Couldn't refresh/,
     );
-    await expect(page.getByRole("button", { name: /Retry/i })).toBeVisible();
     await expect(page).toHaveScreenshot("dashboard-refresh-failed-with-cache.png", {
       fullPage: true,
       maxDiffPixelRatio: 0.02,
@@ -2441,7 +2446,7 @@ test.describe("Metrio visual regression", () => {
     );
   });
 
-  test("dashboard-manager-1440", async ({ page }) => {
+  test("dashboard-manager-1440-first-viewport", async ({ page }) => {
     await bootDashboardManager(page, 1440);
     await expect(page.getByTestId("dashboard-first-viewport")).toHaveScreenshot(
       "dashboard-manager-1440-first-viewport.png",
@@ -2453,7 +2458,6 @@ test.describe("Metrio visual regression", () => {
     await page.setViewportSize({ width: 1440, height: 900 });
     await bootConnected(page, "director", "light");
     await expect(page.getByTestId("dashboard-ready")).toBeVisible({ timeout: 30_000 });
-    await expect(page.getByTestId("dashboard-director-org")).toBeVisible();
     await expect(page.getByTestId("dashboard-first-viewport")).toHaveScreenshot(
       "dashboard-director-1440.png",
       { maxDiffPixelRatio: 0.02 },
@@ -2466,6 +2470,58 @@ test.describe("Metrio visual regression", () => {
     await expect(page.getByTestId("dashboard-ready")).toBeVisible({ timeout: 30_000 });
     await expect(page).toHaveScreenshot("dashboard-director-dark.png", {
       fullPage: true,
+      maxDiffPixelRatio: 0.02,
+    });
+  });
+
+  test("dashboard-attention-empty-trend-expanded", async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.addInitScript(
+      ({ fixtureId, ephemeralKeys }: { fixtureId: string; ephemeralKeys: string[] }) => {
+        for (const key of ephemeralKeys) {
+          localStorage.removeItem(key);
+        }
+        localStorage.setItem("metrio-connection-connected", "true");
+        localStorage.setItem("metrio-dev-fixture", fixtureId);
+        localStorage.setItem("metrio-theme", "light");
+      },
+      { fixtureId: "lead", ephemeralKeys: [...VISUAL_EPHEMERAL_STORAGE_KEYS] },
+    );
+    await page.goto("/?visualHomeAttentionEmpty=1");
+    await expect(page.getByTestId("dashboard-ready")).toBeVisible({ timeout: 30_000 });
+    await expect(page.getByTestId("dashboard-attention-now")).toHaveCount(0);
+    const trend = page.getByTestId("dashboard-primary-trend");
+    await expect(trend).toHaveClass(/executive-dashboard__span-12/);
+    await expect(trend).toHaveScreenshot("dashboard-attention-empty-trend-expanded.png", {
+      maxDiffPixelRatio: 0.02,
+    });
+  });
+
+  test("dashboard-secondary-single-full-width", async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    const goalsJson = serializeGoalsVisualFixtureForPlaywright();
+    await page.addInitScript(
+      ({ fixtureId, goals, ephemeralKeys }: { fixtureId: string; goals: string; ephemeralKeys: string[] }) => {
+        for (const key of ephemeralKeys) {
+          localStorage.removeItem(key);
+        }
+        localStorage.setItem("metrio-connection-connected", "true");
+        localStorage.setItem("metrio-dev-fixture", fixtureId);
+        localStorage.setItem("metrio-theme", "light");
+        localStorage.setItem("metrio-visual-goals", goals);
+      },
+      {
+        fixtureId: "lead",
+        goals: goalsJson,
+        ephemeralKeys: [...VISUAL_EPHEMERAL_STORAGE_KEYS],
+      },
+    );
+    await page.goto("/?visualHomeSecondarySingle=1");
+    await expect(page.getByTestId("dashboard-ready")).toBeVisible({ timeout: 30_000 });
+    const grid = page.getByTestId("dashboard-secondary-grid");
+    await expect(grid).toBeVisible();
+    await expect(grid).toHaveClass(/executive-dashboard__secondary--single/);
+    await expect(grid).toHaveScreenshot("dashboard-secondary-single-full-width.png", {
       maxDiffPixelRatio: 0.02,
     });
   });

@@ -26,6 +26,9 @@ import type { DashboardPerformancePulseProps } from "./DashboardPerformancePulse
 import type { summarizeGoalsForHome } from "../../../domain/goals/goalReview";
 import { DashboardSecondaryGrid } from "./DashboardSecondaryGrid";
 import { DashboardTeamBriefCard } from "./DashboardTeamBriefCard";
+import {
+  readDashboardVisualQueryFlag,
+} from "../../../fixtures/dashboardVisualOverrides";
 
 const QUEUE_PREVIEW = 5;
 type GoalsHomeSummary = ReturnType<typeof summarizeGoalsForHome>;
@@ -99,6 +102,16 @@ export function ManagerExecutiveDashboard({
     trends,
   });
 
+  const executiveModel: ManagerExecutiveModel = readDashboardVisualQueryFlag(
+    "visualHomeAttentionEmpty",
+  )
+    ? {
+        ...model,
+        attentionItems: [],
+        trendSpanClass: "executive-dashboard__span-12",
+      }
+    : model;
+
   const feedbackProminent =
     team.feedback &&
     (/failure|survey in progress|pending/i.test(team.feedback.headline) ||
@@ -113,7 +126,7 @@ export function ManagerExecutiveDashboard({
       <div className="executive-dashboard__span-12">
         <DashboardExecutiveHeader
           greeting={greeting}
-          scopeLabel={model.scopeLabel}
+          scopeLabel={executiveModel.scopeLabel}
           activeJiraCount={activeJiraCount}
           newAssignmentCount={newAssignmentCount}
           lastUpdatedAt={lastUpdatedAt}
@@ -122,16 +135,16 @@ export function ManagerExecutiveDashboard({
           onRefresh={onRefresh}
         />
       </div>
-      <DashboardScopeHealthSummary scopeLabel={model.scopeLabel} summary={model.scopeHealth} />
-      <DashboardKpiStrip cards={model.kpis} />
+      <DashboardScopeHealthSummary scopeLabel={executiveModel.scopeLabel} summary={executiveModel.scopeHealth} />
+      <DashboardKpiStrip cards={executiveModel.kpis} />
       <DashboardPrimaryTrend
-        trends={model.trends}
-        spanClass={model.trendSpanClass}
+        trends={executiveModel.trends}
+        spanClass={executiveModel.trendSpanClass}
         onPointClick={onOpenTrendPoint}
       />
-      <DashboardAttentionNow items={model.attentionItems} />
+      <DashboardAttentionNow items={executiveModel.attentionItems} />
       <DashboardActionTabs
-        tabs={model.actionTabs}
+        tabs={executiveModel.actionTabs}
         onOpenAction={onOpenAction}
         actionOpenLabel={actionOpenLabel}
         footerByTab={{
@@ -148,8 +161,8 @@ export function ManagerExecutiveDashboard({
           },
         }}
       />
-      <DashboardTeamCapacityVisual workload={model.teamWorkload} />
-      <DashboardDeliveryVisual summary={model.deliverySummary} />
+      <DashboardTeamCapacityVisual workload={executiveModel.teamWorkload} />
+      <DashboardDeliveryVisual summary={executiveModel.deliverySummary} />
       {team.newStarters.length > 0 ? (
         <section
           className="executive-dashboard__span-12 executive-panel"

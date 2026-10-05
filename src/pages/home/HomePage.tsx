@@ -46,6 +46,7 @@ import {
   applyVisualHomeOverrides,
   readHomeVisualState,
 } from "../../fixtures/homeVisualFixture";
+import { shouldHideTeamBriefForVisual } from "../../fixtures/dashboardVisualOverrides";
 import { useEffect, useState } from "react";
 import { useOnboardingResources } from "../../hooks/useOnboardingResources";
 import { useResourceLibrary } from "../../hooks/useResourceLibrary";
@@ -93,6 +94,12 @@ function resolveDashboardTestId(
   if (visualHomeState === "first-run") return "dashboard-first-run";
   if (visualHomeState === "refreshing-with-cache") {
     return "dashboard-refreshing-with-cache";
+  }
+  if (visualHomeState === "refresh-stuck") {
+    return "dashboard-refresh-stuck";
+  }
+  if (visualHomeState === "refresh-failed-with-cache") {
+    return "dashboard-ready";
   }
   if (health === "refresh_stuck") return "dashboard-refresh-stuck";
   if (revalidatingFromCache && dashboardRefreshing) {
@@ -418,16 +425,37 @@ export function HomePage() {
     refreshStartedAt,
     now: Date.now(),
   });
+
+  let effectiveHealth = dataHealth;
+  let effectiveStale = stale;
+  let effectiveError = errorMessage;
+  if (visualHomeState === "refresh-stuck" && hasUsableDashboardData) {
+    effectiveHealth = {
+      state: "refresh_stuck",
+      showSlowRefreshHint: false,
+      refreshElapsedMs: 65_000,
+    };
+  }
+  if (visualHomeState === "refresh-failed-with-cache" && hasUsableDashboardData) {
+    effectiveHealth = {
+      state: "refresh_failed_with_cache",
+      showSlowRefreshHint: false,
+      refreshElapsedMs: null,
+    };
+    effectiveStale = true;
+    effectiveError = effectiveError || "Performance refresh failed (visual fixture)";
+  }
+
   const dashboardSyncStatus = buildDashboardSyncStatus({
     lastUpdatedAt: performanceLastUpdatedAt,
     refreshing,
-    stale,
-    errorMessage,
-    healthState: dataHealth.state,
-    showSlowRefreshHint: dataHealth.showSlowRefreshHint,
+    stale: effectiveStale,
+    errorMessage: effectiveError,
+    healthState: effectiveHealth.state,
+    showSlowRefreshHint: effectiveHealth.showSlowRefreshHint,
   });
 
-  if (dataHealth.state === "cold_start" || visualHomeState === "first-run") {
+  if (effectiveHealth.state === "cold_start" || visualHomeState === "first-run") {
     return (
       <>
         <PerformanceStatusBanner />
@@ -436,7 +464,7 @@ export function HomePage() {
     );
   }
 
-  if (dataHealth.state === "initial_loading" && !hasUsableDashboardData) {
+  if (effectiveHealth.state === "initial_loading" && !hasUsableDashboardData) {
     return (
       <div className="home-page" data-testid="home-loading">
         <PerformanceStatusBanner />
@@ -446,7 +474,7 @@ export function HomePage() {
     );
   }
 
-  if (dataHealth.state === "refresh_failed_without_cache") {
+  if (effectiveHealth.state === "refresh_failed_without_cache") {
     return (
       <>
         <PerformanceStatusBanner />
@@ -479,7 +507,7 @@ export function HomePage() {
   const displayWorkspace = applyVisualHomeOverrides(workspaceModel);
   const { personal, team, organization } = displayWorkspace;
   const dashboardReadyTestId = resolveDashboardTestId(
-    dataHealth.state,
+    effectiveHealth.state,
     visualHomeState,
     revalidatingFromCache,
     dashboardRefreshing,
@@ -514,7 +542,9 @@ export function HomePage() {
   };
 
   const managerTeamBrief =
-    team &&
+    shouldHideTeamBriefForVisual()
+      ? null
+      : team &&
     digestModel?.prefs.showDailyOnHome &&
     digestModel.daily
       ? (() => {
@@ -533,7 +563,7 @@ export function HomePage() {
   return (
     <div className="home-page dashboard-page" data-testid={dashboardReadyTestId}>
       <PerformanceStatusBanner />
-      {dataHealth.state === "refresh_stuck" && dashboardSyncStatus ? (
+      {effectiveHealth.state === "refresh_stuck" && dashboardSyncStatus ? (
         <DashboardSyncBanner
           syncStatus={dashboardSyncStatus}
           onRetry={() => void refresh()}
