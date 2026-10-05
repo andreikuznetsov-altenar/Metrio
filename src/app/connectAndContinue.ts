@@ -25,6 +25,7 @@ import {
   secureStoreVerify,
 } from '../platform/secureStorage';
 import { persistConnectionConfig } from './connectionStorage';
+import { resetAvatarSession } from '../services/bamboo/bambooAvatarService';
 
 export interface ConnectFormInput {
   workEmail: string;
@@ -172,6 +173,7 @@ export async function connectAndContinue(input: ConnectFormInput): Promise<void>
     },
   });
 
+  resetAvatarSession();
   await savePreferences(prefs);
   await persistConnectionConfig({ workEmail }, { jiraToken, bambooApiKey });
 }

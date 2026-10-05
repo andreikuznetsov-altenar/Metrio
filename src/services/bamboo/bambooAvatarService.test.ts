@@ -88,6 +88,27 @@ describe("bambooAvatarService", () => {
     expect(peekAvatarCacheStatus("9", "acme")).toBe("forbidden");
   });
 
+  it("does not set permission block on native invoke failure", async () => {
+    const { isEmployeePhotoPermissionBlocked } = await import("./bambooAvatarService");
+    vi.mocked(invoke).mockRejectedValueOnce({
+      message: "invalid args employee_id",
+      code: "unknown",
+    });
+    await fetchEmployeeAvatarDataUrl("12", "acme");
+    expect(isEmployeePhotoPermissionBlocked()).toBe(false);
+    expect(peekAvatarCacheStatus("12", "acme")).toBe("failed");
+  });
+
+  it("rejects invalid image payload without caching as ok", async () => {
+    vi.mocked(invoke).mockResolvedValueOnce({
+      content_type: "text/plain",
+      data_base64: "",
+    });
+    const result = await fetchEmployeeAvatarDataUrl("13", "acme");
+    expect(result).toBeNull();
+    expect(peekAvatarCacheStatus("13", "acme")).toBe("failed");
+  });
+
   it("sets session permission hint after forbidden response", async () => {
     const { isEmployeePhotoPermissionBlocked, getEmployeePhotoPermissionHint } =
       await import("./bambooAvatarService");

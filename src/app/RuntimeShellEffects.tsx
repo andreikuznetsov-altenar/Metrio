@@ -2,9 +2,14 @@ import { useEffect } from "react";
 import { listen } from "@tauri-apps/api/event";
 import { loadPreferences } from "../platform/preferences";
 import { syncGeneralPreferencesToNative } from "../platform/generalPreferencesSync";
+import { resetAvatarSession } from "../services/bamboo/bambooAvatarService";
 
 /** Native lifecycle hooks that are not tied to a single page. */
 export function RuntimeShellEffects() {
+  useEffect(() => {
+    resetAvatarSession();
+  }, []);
+
   useEffect(() => {
     let cancelled = false;
     void loadPreferences()

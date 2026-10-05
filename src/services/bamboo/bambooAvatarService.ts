@@ -2,7 +2,10 @@ import { invoke } from "@tauri-apps/api/core";
 import { resolveBambooSubdomain } from "../../config/product";
 import { clearPersonDirectory } from "../../domain/people/personDirectory";
 import { loadPreferences } from "../../platform/preferences";
-import { parseInvokeError } from "../../platform/apiTypes";
+import {
+  avatarCacheStatusFromPhotoError,
+  classifyBambooPhotoInvokeError,
+} from "./bambooPhotoInvokeError";
 
 export type BambooEmployeePhotoSize = "small" | "medium";
 
@@ -17,7 +20,7 @@ interface CacheEntry {
 const MAX_CACHE_ENTRIES = 500;
 const TRANSIENT_FAILURE_TTL_MS = 30_000;
 /** Bump when invoke contract or failure semantics change (clears stale session cache). */
-const AVATAR_CACHE_KEY_VERSION = "camelCase-v1";
+const AVATAR_CACHE_KEY_VERSION = "camelCase-v2";
 const memoryCache = new Map<string, CacheEntry>();
 const inflight = new Map<string, Promise<string | null>>();
 
@@ -57,13 +60,6 @@ function setCacheEntry(key: string, entry: CacheEntry): void {
     if (oldest === undefined) break;
     memoryCache.delete(oldest);
   }
-}
-
-function statusFromError(error: unknown): AvatarCacheStatus {
-  const api = parseInvokeError(error);
-  if (api.status === 404) return "missing";
-  if (api.status === 403) return "forbidden";
-  return "failed";
 }
 
 export async function resolveAvatarSubdomain(): Promise<string | null> {
@@ -146,11 +142,23 @@ export async function fetchEmployeeAvatarDataUrl(
         employeeId: trimmedId,
         photoSize: size,
       });
+      if (
+        !payload.data_base64?.trim() ||
+        !payload.content_type?.startsWith("image/")
+      ) {
+        setCacheEntry(key, {
+          dataUrl: null,
+          status: "failed",
+          expiresAt: Date.now() + TRANSIENT_FAILURE_TTL_MS,
+        });
+        return null;
+      }
       const src = `data:${payload.content_type};base64,${payload.data_base64}`;
       setCacheEntry(key, { dataUrl: src, status: "ok" });
       return src;
     } catch (error) {
-      const status = statusFromError(error);
+      const classified = classifyBambooPhotoInvokeError(error);
+      const status = avatarCacheStatusFromPhotoError(classified);
       if (status === "forbidden") {
         sessionEmployeePhotosForbidden = true;
       }

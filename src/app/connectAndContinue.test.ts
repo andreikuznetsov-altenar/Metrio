@@ -53,6 +53,11 @@ vi.mock('./connectionStorage', () => ({
   persistConnectionConfig: (...args: unknown[]) => persistConnectionConfig(...args),
 }));
 
+const resetAvatarSession = vi.fn();
+vi.mock('../services/bamboo/bambooAvatarService', () => ({
+  resetAvatarSession: (...args: unknown[]) => resetAvatarSession(...args),
+}));
+
 describe('connectAndContinue', () => {
   beforeEach(() => {
     jiraTest.mockReset();
@@ -119,6 +124,7 @@ describe('connectAndContinue', () => {
     expect(savePreferences.mock.invocationCallOrder[0]).toBeLessThan(
       persistConnectionConfig.mock.invocationCallOrder[0] ?? Number.MAX_SAFE_INTEGER,
     );
+    expect(resetAvatarSession).toHaveBeenCalledTimes(1);
   });
 
   it('does not mark the session connected during connectAndContinue', async () => {

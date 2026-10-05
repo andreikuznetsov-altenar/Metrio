@@ -1,9 +1,9 @@
 import { invoke } from "@tauri-apps/api/core";
-import { parseInvokeError } from "../../platform/apiTypes";
 import {
   noteEmployeePhotoPermissionDenied,
   type BambooPhotoPayload,
 } from "./bambooAvatarService";
+import { classifyBambooPhotoInvokeError } from "./bambooPhotoInvokeError";
 
 export type BambooPhotoFailureClass =
   | "A"
@@ -113,21 +113,21 @@ export async function probeBambooEmployeePhoto(
       byteLength,
     };
   } catch (error) {
-    const api = parseInvokeError(error);
-    const status = api.status;
+    const classified = classifyBambooPhotoInvokeError(error);
     let outcome: BambooPhotoProbeOutcome = "failed";
-    if (status === 404) outcome = "missing";
-    else if (status === 403) {
+    if (classified.kind === "http_not_found") outcome = "missing";
+    else if (classified.kind === "http_forbidden") {
       outcome = "forbidden";
       noteEmployeePhotoPermissionDenied();
     }
+    const httpStatus = classified.httpStatus;
     return {
       employeeId: trimmedId,
       displayName,
       outcome,
-      httpStatus: status,
-      failureClass: classifyPhotoProbeFailure(outcome, status, true),
-      detail: api.message,
+      httpStatus,
+      failureClass: classifyPhotoProbeFailure(outcome, httpStatus, true),
+      detail: classified.message,
     };
   }
 }

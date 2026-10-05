@@ -20,6 +20,7 @@
 - Path: `/employees/{employeeId}/photo/{size}` where `size` is `small` (~50px) or `medium` (~150px).
 - Response: `BambooPhotoPayload { content_type, data_base64 }` — binary fetched server-side with stored Bamboo token (not exposed to the webview).
 - Errors: HTTP status surfaced via `ApiError.status` (404 missing photo, 403 permission, 5xx transient).
+- **Tauri JS invoke** must pass camelCase: `employeeId`, `photoSize` (Rust params remain `employee_id`, `photo_size`).
 
 ## Frontend loading (target)
 
