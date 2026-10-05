@@ -1,7 +1,7 @@
 # Visual stabilization Pass 6F
 
 **Baseline (spec):** `c7e2af6f9a534eef17f7e7fb7d15efb6b4d5acb1`  
-**Branch start on main:** `be8a33c` (auth logo) → **6F landing SHA:** see `git log` after push  
+**Branch start on main:** `be8a33c` (auth logo) → **6F landing SHA:** `3528403afeaee2f993013e34fff05b966354b07e`  
 **Scope:** Stabilize Playwright after 6C–6E and 6A.1 (no product features).
 
 ## Initial failure snapshot (run 1, pre-fix, from `c7e2af6`)
