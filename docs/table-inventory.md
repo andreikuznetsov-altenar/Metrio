@@ -17,6 +17,8 @@ Semantic data tables and table-like lists consolidated on the shared `performanc
 | Feedback history | `FeedbackHistoryView.tsx` | Survey, Period, Sent, Responses, Rate, Status, State | Yes |
 | Project active work | `ProjectCockpitDrawer.tsx` | Key, Title, Status, Owner, Age | Yes |
 | Project dependencies | `ProjectCockpitDrawer.tsx` | Source, Blocked by, Route | Yes |
+| Executive focus / team queues | `DashboardQueuePanel.tsx` | Work, Reason, Status, Action | Yes |
+| Executive project signals | `ManagerExecutiveDashboard.tsx` | Project, Signal, Action | Yes |
 
 **Not tabular (cards / metrics / grouped lists):** Feedback Results (metric cards), Feedback Cycles (cycle cards), Employee work history (grouped issue rows), Performance trends (cards).
 

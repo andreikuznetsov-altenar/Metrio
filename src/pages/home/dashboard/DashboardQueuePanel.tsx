@@ -1,9 +1,19 @@
+import { useMemo } from "react";
 import { Badge } from "../../../components/Badge/Badge";
 import { Button } from "../../../components/Button/Button";
 import { PersonAvatar } from "../../../components/PersonAvatar/PersonAvatar";
+import { SortableTableHeader } from "../../../components/Table/SortableTableHeader";
+import { useTableSort } from "../../../components/Table/useTableSort";
 import type { ActionItem } from "../../../domain/actions/actionTypes";
 import { buildDashboardActionRow } from "../../../domain/actions/actionPresentation";
 import { badgeVariantForAttentionLabel } from "../../../platform/attentionSemanticBadge";
+
+const QUEUE_COLUMNS = [
+  { id: "work", type: "text" as const },
+  { id: "reason", type: "text" as const },
+  { id: "status", type: "text" as const },
+  { id: "action", type: "text" as const },
+];
 
 export interface DashboardQueuePanelProps {
   title: string;
@@ -26,6 +36,27 @@ export function DashboardQueuePanel({
   footerAction,
   testId,
 }: DashboardQueuePanelProps) {
+  const getValue = useMemo(
+    () => (item: ActionItem, columnId: string) => {
+      const row = buildDashboardActionRow(item);
+      switch (columnId) {
+        case "work":
+          return row.subject;
+        case "reason":
+          return row.reasonTag;
+        case "status":
+          return row.contextLine || row.statusLabel || "";
+        case "action":
+          return openLabel(item);
+        default:
+          return "";
+      }
+    },
+    [openLabel],
+  );
+
+  const { sortedRows, sort, toggleSort } = useTableSort(items, QUEUE_COLUMNS, getValue);
+
   return (
     <section
       className="executive-panel executive-panel--flush"
@@ -39,14 +70,36 @@ export function DashboardQueuePanel({
         <table className="executive-queue-table">
           <thead>
             <tr>
-              <th scope="col">{workColumnLabel}</th>
-              <th scope="col">Reason</th>
-              <th scope="col">Status</th>
-              <th scope="col">Action</th>
+              <SortableTableHeader
+                columnId="work"
+                label={workColumnLabel}
+                sort={sort}
+                onToggle={toggleSort}
+              />
+              <SortableTableHeader
+                columnId="reason"
+                label="Reason"
+                sort={sort}
+                onToggle={toggleSort}
+              />
+              <SortableTableHeader
+                columnId="status"
+                label="Status"
+                sort={sort}
+                onToggle={toggleSort}
+              />
+              <SortableTableHeader
+                columnId="action"
+                label="Action"
+                sort={sort}
+                onToggle={toggleSort}
+                className="executive-queue-table__cta"
+                align="right"
+              />
             </tr>
           </thead>
           <tbody>
-            {items.map((item) => {
+            {sortedRows.map((item) => {
               const row = buildDashboardActionRow(item);
               return (
                 <tr key={item.id} data-testid="dashboard-action-row">

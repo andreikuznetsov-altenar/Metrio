@@ -1,9 +1,11 @@
+import { useMemo } from "react";
 import type { ActionItem } from "../../../domain/actions/actionTypes";
 import { buildDashboardAttentionOverview } from "../../../domain/home/buildDashboardAttentionOverview";
 import { buildManagerDashboardKpis } from "../../../domain/home/buildDashboardKpis";
 import type { DashboardSyncStatus } from "../../../domain/home/dashboardSyncStatus";
 import type {
   HomePersonalWorkspace,
+  HomeProjectSignal,
   HomeTeamWorkspace,
 } from "../../../domain/home/homeTypes";
 import type { TeamPerformanceSnapshot, TrendCardData } from "../../../domain/performance";
@@ -17,12 +19,96 @@ import { DashboardQueuePanel } from "./DashboardQueuePanel";
 import { DashboardTeamCapacityCard } from "./DashboardTeamCapacityCard";
 import { DashboardCompactRow } from "../../../components/DashboardCompactRow/DashboardCompactRow";
 import { Button } from "../../../components/Button/Button";
+import { SortableTableHeader } from "../../../components/Table/SortableTableHeader";
+import { useTableSort } from "../../../components/Table/useTableSort";
 import { PersonAvatar } from "../../../components/PersonAvatar/PersonAvatar";
 import { HomeGoalsSummaryCard } from "../HomeGoalsSummaryCard";
 import type { DashboardPerformancePulseProps } from "./DashboardPerformancePulse";
 import type { summarizeGoalsForHome } from "../../../domain/goals/goalReview";
 
 const QUEUE_PREVIEW = 5;
+
+const PROJECT_SIGNAL_COLUMNS = [
+  { id: "project", type: "text" as const },
+  { id: "signal", type: "text" as const },
+  { id: "action", type: "text" as const },
+];
+
+function ExecutiveProjectSignalsTable({
+  signals,
+  onOpenProject,
+}: {
+  signals: HomeProjectSignal[];
+  onOpenProject: (projectKey: string) => void;
+}) {
+  const getValue = useMemo(
+    () => (row: HomeProjectSignal, columnId: string) => {
+      switch (columnId) {
+        case "project":
+          return row.projectKey;
+        case "signal":
+          return row.label;
+        case "action":
+          return "Open project";
+        default:
+          return "";
+      }
+    },
+    [],
+  );
+
+  const { sortedRows, sort, toggleSort } = useTableSort(
+    signals,
+    PROJECT_SIGNAL_COLUMNS,
+    getValue,
+  );
+
+  return (
+    <table className="executive-queue-table">
+      <thead>
+        <tr>
+          <SortableTableHeader
+            columnId="project"
+            label="Project"
+            sort={sort}
+            onToggle={toggleSort}
+          />
+          <SortableTableHeader
+            columnId="signal"
+            label="Signal"
+            sort={sort}
+            onToggle={toggleSort}
+          />
+          <SortableTableHeader
+            columnId="action"
+            label="Action"
+            sort={sort}
+            onToggle={toggleSort}
+            className="executive-queue-table__cta"
+            align="right"
+          />
+        </tr>
+      </thead>
+      <tbody>
+        {sortedRows.map((signal) => (
+          <tr key={signal.projectKey}>
+            <td className="executive-queue-table__work">{signal.projectKey}</td>
+            <td className="executive-queue-table__context">{signal.label}</td>
+            <td className="executive-queue-table__cta">
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={() => onOpenProject(signal.projectKey)}
+              >
+                Open project
+              </Button>
+            </td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  );
+}
 
 type GoalsHomeSummary = ReturnType<typeof summarizeGoalsForHome>;
 
@@ -180,32 +266,10 @@ export function ManagerExecutiveDashboard({
           data-testid="dashboard-project-signals"
         >
           <h2 className="executive-panel__title">Project signals</h2>
-          <table className="executive-queue-table">
-            <thead>
-              <tr>
-                <th scope="col">Project</th>
-                <th scope="col">Signal</th>
-                <th scope="col">Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              {team.projectSignals.map((signal) => (
-                <tr key={signal.projectKey}>
-                  <td className="executive-queue-table__work">{signal.projectKey}</td>
-                  <td className="executive-queue-table__context">{signal.label}</td>
-                  <td className="executive-queue-table__cta">
-                    <Button
-                      type="button"
-                      variant="secondary"
-                      onClick={() => onOpenProject(signal.projectKey)}
-                    >
-                      Open project
-                    </Button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          <ExecutiveProjectSignalsTable
+            signals={team.projectSignals}
+            onOpenProject={onOpenProject}
+          />
         </section>
       ) : null}
 

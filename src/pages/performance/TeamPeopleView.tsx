@@ -14,8 +14,12 @@ const PEOPLE_COLUMNS = [
   { id: "person", type: "person" as const },
   { id: "efficiency", type: "text" as const },
   { id: "attention", type: "text" as const },
-  { id: "availability", type: "text" as const },
-  { id: "workload", type: "text" as const },
+  {
+    id: "availability",
+    type: "status" as const,
+    statusKind: "availability" as const,
+  },
+  { id: "workload", type: "status" as const, statusKind: "workload" as const },
 ];
 
 export interface TeamPeopleViewProps {

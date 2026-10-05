@@ -26,7 +26,11 @@ const DELIVERY_RISK_COLUMNS = [
   { id: "owner", type: "person" as const },
   { id: "age", type: "duration" as const },
   { id: "riskReason", type: "text" as const },
-  { id: "status", type: "status" as const },
+  {
+    id: "status",
+    type: "status" as const,
+    statusKind: "deliveryStatus" as const,
+  },
   { id: "jira", type: "issueKey" as const },
 ];
 

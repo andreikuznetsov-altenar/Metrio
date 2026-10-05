@@ -11,7 +11,11 @@ const RADAR_COLUMNS = [
   { id: "reason", type: "text" as const },
   { id: "tasks", type: "number" as const },
   { id: "action", type: "text" as const },
-  { id: "severity", type: "status" as const },
+  {
+    id: "severity",
+    type: "status" as const,
+    statusKind: "attentionSeverity" as const,
+  },
 ];
 
 export interface TeamRadarViewProps {
