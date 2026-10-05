@@ -6,9 +6,18 @@ import { SessionBootstrapShell } from "./app/SessionBootstrapShell";
 import { StartupErrorShell } from "./app/StartupErrorShell";
 import { bootLog } from "./app/bootDiagnostics";
 import { ConnectionScreen } from "./pages/ConnectionScreen";
+import { SwitchVisualFixturePage } from "./pages/SwitchVisualFixturePage";
 
 function isDevFoundationGallery(): boolean {
   return import.meta.env.DEV && window.location.hash === "#foundation";
+}
+
+function isSwitchVisualFixture(): boolean {
+  return (
+    import.meta.env.VITE_VISUAL_FIXTURE === "1" &&
+    typeof window !== "undefined" &&
+    window.location.hash === "#switch-visual"
+  );
 }
 
 function AppRoot() {
@@ -32,6 +41,10 @@ function AppRoot() {
         onReturnToConnection={resetConnection}
       />
     );
+  }
+
+  if (isSwitchVisualFixture()) {
+    return <SwitchVisualFixturePage />;
   }
 
   if (isDevFoundationGallery()) {

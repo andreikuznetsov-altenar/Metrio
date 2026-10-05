@@ -85,6 +85,9 @@
   /* Control states */
   --control-disabled-opacity: 0.45;
   --control-error-border: var(--color-danger);
+
+  /* Switch thumb — light in both themes */
+  --color-switch-thumb: #ffffff;
 }
 
 [data-theme="light"] {

@@ -1,0 +1,16 @@
+.switch-visual-fixture {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-6);
+  background: var(--color-background);
+}
+
+.switch-visual-fixture__grid {
+  display: grid;
+  grid-template-columns: repeat(3, auto);
+  gap: var(--space-6) var(--space-8);
+  align-items: center;
+  justify-items: center;
+}

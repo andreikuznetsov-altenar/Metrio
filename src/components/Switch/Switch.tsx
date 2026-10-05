@@ -6,6 +6,7 @@ export interface SwitchProps {
   checked: boolean;
   disabled?: boolean;
   "aria-label"?: string;
+  "data-testid"?: string;
   onCheckedChange: (checked: boolean) => void;
 }
 
@@ -15,6 +16,7 @@ export function Switch({
   disabled,
   onCheckedChange,
   "aria-label": ariaLabel,
+  "data-testid": dataTestId,
 }: SwitchProps) {
   return (
     <SwitchPrimitive.Root
@@ -23,6 +25,7 @@ export function Switch({
       checked={checked}
       disabled={disabled}
       aria-label={ariaLabel}
+      data-testid={dataTestId}
       onCheckedChange={onCheckedChange}
     >
       <SwitchPrimitive.Thumb className="metrio-switch__thumb" />

@@ -358,7 +358,7 @@
 }
 
 .settings-toggle-row--stacked {
-  align-items: flex-start;
+  align-items: center;
 }
 
 .settings-toggle-row__text {

@@ -139,6 +139,45 @@ async function bootMetrioWithNotificationFixture(
   });
 }
 
+async function gotoSwitchVisualFixture(page: Page, theme: "light" | "dark" = "light") {
+  await page.addInitScript((themeId: string) => {
+    localStorage.setItem("metrio-theme", themeId);
+  }, theme);
+  await page.goto("/#switch-visual");
+  await expect(page.getByTestId("switch-visual-fixture")).toBeVisible({ timeout: 15_000 });
+}
+
+function expectWithinTolerance(actual: number, expected: number, tolerance = 0.5) {
+  expect(Math.abs(actual - expected)).toBeLessThanOrEqual(tolerance);
+}
+
+async function assertSwitchGeometry(
+  page: Page,
+  testId: string,
+  position: "unchecked" | "checked",
+) {
+  const track = page.getByTestId(testId);
+  const thumb = track.locator(".metrio-switch__thumb");
+  const trackBox = await track.boundingBox();
+  const thumbBox = await thumb.boundingBox();
+  expect(trackBox).not.toBeNull();
+  expect(thumbBox).not.toBeNull();
+  if (!trackBox || !thumbBox) return;
+  expectWithinTolerance(trackBox.width, 36);
+  expectWithinTolerance(trackBox.height, 20);
+  expectWithinTolerance(thumbBox.width, 16);
+  expectWithinTolerance(thumbBox.height, 16);
+  expectWithinTolerance(thumbBox.y - trackBox.y, 2);
+  const bottomInset = trackBox.y + trackBox.height - (thumbBox.y + thumbBox.height);
+  expectWithinTolerance(bottomInset, 2);
+  if (position === "checked") {
+    const rightInset = trackBox.x + trackBox.width - (thumbBox.x + thumbBox.width);
+    expectWithinTolerance(rightInset, 2);
+  } else {
+    expectWithinTolerance(thumbBox.x - trackBox.x, 2);
+  }
+}
+
 async function clickSubnav(page: Page, label: RegExp) {
   await page
     .locator(".performance-subnav")
