@@ -66,9 +66,9 @@ function PerformancePageBody({ reviewTarget }: PerformancePageProps) {
   void asEmployeeReviewTarget(reviewTarget);
 
   const handleOpenPerson = useCallback(
-    (nextPersonId: string) => {
+    (nextPersonId: string, tab?: PersonDrawerTab) => {
       if (performanceControlsDisabled) return;
-      openPersonDrawer({ personId: nextPersonId });
+      openPersonDrawer({ personId: nextPersonId, tab });
     },
     [openPersonDrawer, performanceControlsDisabled],
   );

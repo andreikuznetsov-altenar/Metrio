@@ -1,14 +1,19 @@
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Badge } from "../../components/Badge/Badge";
+import { EntityLink } from "../../components/EntityLink/EntityLink";
 import { PersonAvatar } from "../../components/PersonAvatar/PersonAvatar";
 import { SortableTableHeader } from "../../components/Table/SortableTableHeader";
 import { useTableSort } from "../../components/Table/useTableSort";
+import { resolveJiraBaseUrl } from "../../config/product";
 import type { TeamPeopleRow } from "../../domain/performance";
 import { performanceHelp } from "../../domain/performance/performanceHelp";
 import {
   availabilityBadgeVariant,
   workloadBadgeVariantFromLabel,
 } from "../../domain/performance/performanceStatusBadges";
+import { buildJiraIssueBrowseUrl } from "../../platform/jiraIssueUrl";
+import { loadPreferences } from "../../platform/preferences";
+import type { PersonDrawerTab } from "../../app/performanceAnalyticsContext";
 
 const PEOPLE_COLUMNS = [
   { id: "person", type: "person" as const },
@@ -24,10 +29,18 @@ const PEOPLE_COLUMNS = [
 
 export interface TeamPeopleViewProps {
   rows: TeamPeopleRow[];
-  onOpenPerson: (personId: string) => void;
+  onOpenPerson: (personId: string, tab?: PersonDrawerTab) => void;
 }
 
 export function TeamPeopleView({ rows, onOpenPerson }: TeamPeopleViewProps) {
+  const [jiraBaseUrl, setJiraBaseUrl] = useState("");
+
+  useEffect(() => {
+    void loadPreferences().then((prefs) => {
+      setJiraBaseUrl(resolveJiraBaseUrl(prefs));
+    });
+  }, []);
+
   const getValue = useMemo(
     () => (row: TeamPeopleRow, columnId: string) => {
       switch (columnId) {
@@ -51,7 +64,7 @@ export function TeamPeopleView({ rows, onOpenPerson }: TeamPeopleViewProps) {
   const { sortedRows, sort, toggleSort } = useTableSort(rows, PEOPLE_COLUMNS, getValue);
 
   return (
-    <section aria-label="People">
+    <section aria-label="People" data-testid="team-people-view">
       <p className="performance-section-desc">{performanceHelp.people}</p>
       <div className="performance-table-wrap">
         <table className="performance-table performance-table--interactive">
@@ -105,10 +118,14 @@ export function TeamPeopleView({ rows, onOpenPerson }: TeamPeopleViewProps) {
                         <Badge variant={row.attentionVariant}>
                           {row.attentionSeverityLabel}
                         </Badge>
-                        {row.attentionIssueKey ? (
-                          <span className="performance-people-attention__key">
+                        {row.attentionIssueKey && jiraBaseUrl ? (
+                          <EntityLink
+                            href={buildJiraIssueBrowseUrl(jiraBaseUrl, row.attentionIssueKey)}
+                            mono
+                            className="performance-people-attention__key"
+                          >
                             {row.attentionIssueKey}
-                          </span>
+                          </EntityLink>
                         ) : null}
                       </div>
                       <span className="performance-people-attention__reason">

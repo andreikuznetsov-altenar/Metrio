@@ -1,5 +1,5 @@
 import type { BadgeVariant } from "../components/Badge/Badge";
-import type { RadarSeverity } from "./radar/types";
+import type { RadarPrimaryAction, RadarSeverity } from "./radar/types";
 import type { TrendDirection } from "./trends/trendEngine";
 
 export type DateRangeKey = "7d" | "30d" | "3m" | "6m" | "1y";
@@ -232,7 +232,11 @@ export interface TeamRadarRow {
   personName: string;
   severity: "High" | "Medium" | "Low";
   severityVariant: BadgeVariant;
+  /** Full label for sorting (may include issue key prefix). */
   reason: string;
+  reasonDetail: string;
+  primaryIssueKey?: string;
+  primaryAction: RadarPrimaryAction;
   tasksAffected: number;
   action: string;
 }

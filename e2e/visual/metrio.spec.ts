@@ -2913,6 +2913,36 @@ test.describe("Metrio visual regression", () => {
     });
   });
 
+  test("team-attention-interactive-issues", async ({ page }) => {
+    await bootMetrio(page, "lead");
+    const section = page.getByRole("region", { name: "Team attention" });
+    await expect(section.locator(".entity-link").first()).toBeVisible({ timeout: 15_000 });
+    await expect(section).toHaveScreenshot("team-attention-interactive-issues.png", {
+      maxDiffPixelRatio: 0.02,
+    });
+  });
+
+  test("team-attention-expanded", async ({ page }) => {
+    await bootMetrio(page, "lead");
+    const section = page.getByRole("region", { name: "Team attention" });
+    const more = section.getByRole("button", { name: /View \d+ more/i }).first();
+    if (await more.isVisible().catch(() => false)) {
+      await more.click();
+    }
+    await expect(section).toHaveScreenshot("team-attention-expanded.png", {
+      maxDiffPixelRatio: 0.02,
+    });
+  });
+
+  test("team-workload-identities", async ({ page }) => {
+    await bootMetrio(page, "lead");
+    const section = page.getByRole("region", { name: "Team workload" });
+    await expect(section.getByTestId("person-avatar").first()).toBeVisible();
+    await expect(section).toHaveScreenshot("team-workload-identities.png", {
+      maxDiffPixelRatio: 0.02,
+    });
+  });
+
   test("performance-overview", async ({ page }) => {
     await bootMetrio(page, "lead");
     await expect(page.getByTestId("performance-dashboard-ready")).toBeVisible();
@@ -2931,11 +2961,63 @@ test.describe("Metrio visual regression", () => {
     });
   });
 
+  test("people-clickable-attention", async ({ page }) => {
+    await bootMetrio(page, "lead");
+    await clickSubnav(page, /^people$/i);
+    const people = page.getByTestId("team-people-view");
+    const link = people.locator(".entity-link").first();
+    if (await link.isVisible().catch(() => false)) {
+      await expect(people).toHaveScreenshot("people-clickable-attention.png", {
+        maxDiffPixelRatio: 0.02,
+      });
+    }
+  });
+
+  test("badge-no-wrap", async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await bootMetrio(page, "lead");
+    await expect(page.locator(".badge").first()).toBeVisible();
+    await expect(page.getByRole("region", { name: "Team attention" })).toHaveScreenshot(
+      "badge-no-wrap-1280.png",
+      { maxDiffPixelRatio: 0.02 },
+    );
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await expect(page.getByRole("region", { name: "Team attention" })).toHaveScreenshot(
+      "badge-no-wrap-1440.png",
+      { maxDiffPixelRatio: 0.02 },
+    );
+  });
+
   test("radar", async ({ page }) => {
     await bootMetrio(page, "lead");
     await clickSubnav(page, /^radar$/i);
     await expect(page).toHaveScreenshot("radar.png", {
       fullPage: true,
+      maxDiffPixelRatio: 0.02,
+    });
+  });
+
+  test("radar-action-buttons", async ({ page }) => {
+    await bootMetrio(page, "lead");
+    await clickSubnav(page, /^radar$/i);
+    await expect(
+      page
+        .getByTestId("team-radar-view")
+        .getByRole("button", { name: /Review workload|View person/i })
+        .first(),
+    ).toBeVisible();
+    await expect(page.getByTestId("team-radar-view")).toHaveScreenshot("radar-action-buttons.png", {
+      maxDiffPixelRatio: 0.02,
+    });
+  });
+
+  test("radar-clickable-issue", async ({ page }) => {
+    await bootMetrio(page, "lead");
+    await clickSubnav(page, /^radar$/i);
+    const radar = page.getByTestId("team-radar-view");
+    const issueLink = radar.locator(".entity-link").first();
+    await expect(issueLink).toBeVisible({ timeout: 15_000 });
+    await expect(radar).toHaveScreenshot("radar-clickable-issue.png", {
       maxDiffPixelRatio: 0.02,
     });
   });

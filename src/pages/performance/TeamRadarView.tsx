@@ -1,10 +1,17 @@
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Badge } from "../../components/Badge/Badge";
+import { Button } from "../../components/Button/Button";
+import { EntityLink } from "../../components/EntityLink/EntityLink";
 import { PersonAvatar } from "../../components/PersonAvatar/PersonAvatar";
 import { SortableTableHeader } from "../../components/Table/SortableTableHeader";
 import { useTableSort } from "../../components/Table/useTableSort";
+import { resolveJiraBaseUrl } from "../../config/product";
 import type { TeamRadarRow } from "../../domain/performance";
+import type { RadarPrimaryAction } from "../../domain/radar/types";
 import { performanceHelp } from "../../domain/performance/performanceHelp";
+import { buildJiraIssueBrowseUrl } from "../../platform/jiraIssueUrl";
+import { loadPreferences } from "../../platform/preferences";
+import type { PersonDrawerTab } from "../../app/performanceAnalyticsContext";
 
 const RADAR_COLUMNS = [
   { id: "person", type: "person" as const },
@@ -18,12 +25,27 @@ const RADAR_COLUMNS = [
   },
 ];
 
+function drawerTabForRadarAction(action: RadarPrimaryAction): PersonDrawerTab {
+  if (action === "review_workload" || action === "review_tasks") {
+    return "work";
+  }
+  return "overview";
+}
+
 export interface TeamRadarViewProps {
   rows: TeamRadarRow[];
-  onOpenPerson: (personId: string) => void;
+  onOpenPerson: (personId: string, tab?: PersonDrawerTab) => void;
 }
 
 export function TeamRadarView({ rows, onOpenPerson }: TeamRadarViewProps) {
+  const [jiraBaseUrl, setJiraBaseUrl] = useState("");
+
+  useEffect(() => {
+    void loadPreferences().then((prefs) => {
+      setJiraBaseUrl(resolveJiraBaseUrl(prefs));
+    });
+  }, []);
+
   const getValue = useMemo(
     () => (row: TeamRadarRow, columnId: string) => {
       switch (columnId) {
@@ -61,7 +83,7 @@ export function TeamRadarView({ rows, onOpenPerson }: TeamRadarViewProps) {
   }
 
   return (
-    <section aria-label="Radar">
+    <section aria-label="Radar" data-testid="team-radar-view">
       <p className="performance-section-desc">{performanceHelp.radar}</p>
       <div className="performance-table-wrap">
         <table className="performance-table performance-table--interactive">
@@ -87,22 +109,49 @@ export function TeamRadarView({ rows, onOpenPerson }: TeamRadarViewProps) {
                 <td>
                   <button
                     type="button"
-                    className="performance-table__person-link"
-                    onClick={() => onOpenPerson(row.personId)}
+                    className="performance-table__person-button performance-table__person-button--with-avatar"
+                    onClick={() => onOpenPerson(row.personId, "overview")}
                   >
-                    <span className="performance-table__person-inline">
-                      <PersonAvatar
-                        personId={row.personId}
-                        displayName={row.personName || row.personId}
-                        size="sm"
-                      />
-                      {row.personName}
+                    <PersonAvatar
+                      personId={row.personId}
+                      displayName={row.personName || row.personId}
+                      size="sm"
+                    />
+                    <span className="performance-table__person-text">
+                      <span className="performance-table__person-name">
+                        {row.personName}
+                      </span>
                     </span>
                   </button>
                 </td>
-                <td className="performance-table__reason">{row.reason}</td>
+                <td className="performance-table__reason">
+                  <div className="performance-radar-reason">
+                    {row.primaryIssueKey && jiraBaseUrl ? (
+                      <EntityLink
+                        href={buildJiraIssueBrowseUrl(jiraBaseUrl, row.primaryIssueKey)}
+                        mono
+                      >
+                        {row.primaryIssueKey}
+                      </EntityLink>
+                    ) : null}
+                    <span className="performance-radar-reason__detail">
+                      {row.reasonDetail}
+                    </span>
+                  </div>
+                </td>
                 <td className="performance-table__num">{row.tasksAffected}</td>
-                <td>{row.action}</td>
+                <td>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    className="performance-table__radar-action"
+                    onClick={() =>
+                      onOpenPerson(row.personId, drawerTabForRadarAction(row.primaryAction))
+                    }
+                  >
+                    {row.action}
+                  </Button>
+                </td>
                 <td>
                   <Badge variant={row.severityVariant}>{row.severity}</Badge>
                 </td>

@@ -234,14 +234,19 @@ function buildRadarRows(
           ? "warning"
           : "neutral";
 
+    const issueKey = item.issueKeys[0];
+    const primaryAction = index % 2 === 0 ? "review_workload" : "view_person";
     rows.push({
       personId: item.personId,
       personName: getPerson(item.personId).name,
       severity,
       severityVariant,
-      reason: item.reason,
+      reason: issueKey ? `${issueKey} — ${item.reason}` : item.reason,
+      reasonDetail: item.reason,
+      primaryIssueKey: issueKey,
+      primaryAction,
       tasksAffected: 1 + (seed % 4),
-      action: index % 2 === 0 ? "Review workload" : "Schedule check-in",
+      action: primaryAction === "review_workload" ? "Review workload" : "View person",
     });
   });
 
@@ -252,8 +257,10 @@ function buildRadarRows(
       severity: "Low" as const,
       severityVariant: "neutral",
       reason: "Monitoring baseline signals",
+      reasonDetail: "Monitoring baseline signals",
+      primaryAction: "view_person" as const,
       tasksAffected: 1,
-      action: "No action needed",
+      action: "View person",
     }));
   }
 

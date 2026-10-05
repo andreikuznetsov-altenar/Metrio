@@ -1,4 +1,7 @@
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { resolveJiraBaseUrl } from "../../config/product";
+import { loadPreferences } from "../../platform/preferences";
+import { AttentionIssueLinks } from "./AttentionIssueLinks";
 import { useCurrentUser } from "../../app/CurrentUserContext";
 import { useFeedbackSurveyStore } from "../../app/feedbackSurveyStore";
 import { actionOpenLabel, navigateActionTarget } from "../../app/actionNavigation";
@@ -109,6 +112,24 @@ export function TeamOverviewView({
     [surveyData],
   );
   const { rules: operationalRules } = useOperationalRules();
+  const [jiraBaseUrl, setJiraBaseUrl] = useState("");
+  const [expandedAttentionIssues, setExpandedAttentionIssues] = useState<
+    Record<string, boolean>
+  >({});
+
+  useEffect(() => {
+    void loadPreferences().then((prefs) => {
+      setJiraBaseUrl(resolveJiraBaseUrl(prefs));
+    });
+  }, []);
+
+  const peopleById = useMemo(() => {
+    const map = new Map<string, TeamSecondarySnapshot["people"][number]>();
+    for (const person of secondary.people) {
+      map.set(person.personId, person);
+    }
+    return map;
+  }, [secondary.people]);
 
   const teamActions = useMemo(() => {
     const input = {
@@ -394,11 +415,23 @@ export function TeamOverviewView({
               <tbody>
                 {attentionSort.sortedRows.map((item) => {
                   const name = item.personName || item.personId;
+                  const personRecord = peopleById.get(item.personId);
+                  const roleLine =
+                    personRecord?.role && personRecord.role !== "—"
+                      ? personRecord.role
+                      : item.personRole;
+                  const issueKeys =
+                    item.issueKeys.length > 0
+                      ? item.issueKeys
+                      : item.issueCount > 0
+                        ? []
+                        : [];
                   return (
                     <tr
                       key={item.personId}
                       className="performance-table__clickable-row"
                       onClick={() => onOpenPerson(item.personId)}
+                      data-testid="team-attention-row"
                     >
                       <td>
                         <div className="performance-table__person-inline">
@@ -409,28 +442,33 @@ export function TeamOverviewView({
                           />
                           <span>
                             <span className="performance-table__person-name">{name}</span>
-                            {item.personRole ? (
+                            {roleLine ? (
                               <span className="performance-table__person-role">
-                                {item.personRole}
+                                {roleLine}
                               </span>
                             ) : null}
                           </span>
                         </div>
                       </td>
                       <td className="performance-table__reason">{item.reason}</td>
-                      <td>
-                        <div className="issue-chip-list">
-                          {item.issueKeys.map((key) => (
-                            <Badge key={key} variant="neutral">
-                              {key}
-                            </Badge>
-                          ))}
-                          {item.issueCount > item.issueKeys.length ? (
-                            <span className="issue-chip-list__more">
-                              +{item.issueCount - item.issueKeys.length} more
-                            </span>
-                          ) : null}
-                        </div>
+                      <td className="performance-table__issues-cell">
+                        {issueKeys.length === 0 && item.issueCount > 0 ? (
+                          <span className="performance-table__issues-fallback">
+                            {item.issueCount} tasks
+                          </span>
+                        ) : (
+                          <AttentionIssueLinks
+                            issueKeys={issueKeys}
+                            jiraBaseUrl={jiraBaseUrl}
+                            expanded={expandedAttentionIssues[item.personId] ?? false}
+                            onExpand={() =>
+                              setExpandedAttentionIssues((prev) => ({
+                                ...prev,
+                                [item.personId]: true,
+                              }))
+                            }
+                          />
+                        )}
                       </td>
                       <td>
                         <Badge variant={severityBadgeVariant(item.severity)}>
@@ -520,15 +558,25 @@ export function TeamOverviewView({
               </tr>
             </thead>
             <tbody>
-              {workloadSort.sortedRows.map((row) => (
-                <tr key={row.personId}>
+              {workloadSort.sortedRows.map((row) => {
+                const personRecord = peopleById.get(row.personId);
+                const roleLine = personRecord?.role;
+                const name = row.personName || row.personId;
+                return (
+                <tr key={row.personId} data-testid="team-workload-row">
                   <td>
                     <button
                       type="button"
-                      className="performance-table__person-button"
+                      className="performance-table__person-button performance-table__person-button--with-avatar"
                       onClick={() => onOpenPerson(row.personId)}
                     >
-                      {row.personName || row.personId}
+                      <PersonAvatar personId={row.personId} displayName={name} size="sm" />
+                      <span className="performance-table__person-text">
+                        <span className="performance-table__person-name">{name}</span>
+                        {roleLine && roleLine !== "—" ? (
+                          <span className="performance-table__person-role">{roleLine}</span>
+                        ) : null}
+                      </span>
                     </button>
                   </td>
                   <td className="performance-table__num">{row.activeWork}</td>
@@ -544,7 +592,8 @@ export function TeamOverviewView({
                     </Badge>
                   </td>
                 </tr>
-              ))}
+              );
+              })}
             </tbody>
           </table>
         </div>

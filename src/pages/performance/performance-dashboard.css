@@ -832,14 +832,15 @@
   color: var(--color-accent);
 }
 
-.attention-signals-table__issues {
+.attention-issue-links {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: var(--space-2);
+  min-width: 0;
 }
 
-.attention-signals-table__more {
+.attention-issue-links__more {
   border: none;
   background: transparent;
   padding: 0;
@@ -847,10 +848,60 @@
   font-weight: 500;
   color: var(--color-accent);
   cursor: pointer;
+  white-space: nowrap;
 }
 
-.attention-signals-table__more:hover {
+.attention-issue-links__more:hover {
   text-decoration: underline;
+}
+
+.performance-table--attention th:nth-child(2) {
+  width: 30%;
+}
+
+.performance-table--attention th:nth-child(3) {
+  width: 4.5rem;
+}
+
+.performance-table--attention th:nth-child(4) {
+  min-width: 11rem;
+}
+
+.performance-table--attention th:nth-child(5),
+.performance-table--attention th:nth-child(6) {
+  width: 7.5rem;
+}
+
+.performance-table--attention-signals th:nth-child(1) {
+  width: 11rem;
+}
+
+.performance-table--attention-signals th:nth-child(2) {
+  width: 4.5rem;
+}
+
+.performance-table--attention-signals th:nth-child(4) {
+  min-width: 12rem;
+}
+
+.performance-radar-reason {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  min-width: 0;
+}
+
+.performance-radar-reason__detail {
+  font-size: 13px;
+  color: var(--color-text-secondary);
+  line-height: 1.35;
+}
+
+.performance-table__radar-action {
+  width: auto;
+  max-width: 100%;
+  white-space: nowrap;
 }
 
 .performance-delivery-risk__key {

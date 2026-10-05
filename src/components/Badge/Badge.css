@@ -8,6 +8,7 @@
   font-weight: 600;
   letter-spacing: 0.02em;
   border: 1px solid transparent;
+  white-space: nowrap;
 }
 
 .badge--neutral {

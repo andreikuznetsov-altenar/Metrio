@@ -7,7 +7,10 @@ import {
   writePersistedTeamPerformanceView,
 } from "../../app/performanceViewPersistence";
 import { usePerformanceExport } from "../../app/PerformanceExportContext";
-import { usePerformanceAnalytics } from "../../app/performanceAnalyticsContext";
+import {
+  usePerformanceAnalytics,
+  type PersonDrawerTab,
+} from "../../app/performanceAnalyticsContext";
 import { TeamDeliveryRiskView } from "./TeamDeliveryRiskView";
 import { TeamOverviewView } from "./TeamOverviewView";
 import { TeamPeopleView } from "./TeamPeopleView";
@@ -24,7 +27,7 @@ import type { MetricCardData, TrendCardData } from "../../domain/performance";
 import "./performance-dashboard.css";
 
 export interface TeamPerformanceOverviewProps {
-  onOpenPerson: (personId: string) => void;
+  onOpenPerson: (personId: string, tab?: PersonDrawerTab) => void;
   reviewTarget: PerformanceReviewTarget;
 }
 
@@ -37,7 +40,13 @@ export function TeamPerformanceOverview({
   );
   const { viewModels, uiState } = usePerformanceData();
   const { registerTeamView } = usePerformanceExport();
-  const { openTeamMetricDrilldown, openTeamTrendDrilldown } = usePerformanceAnalytics();
+  const { openTeamMetricDrilldown, openTeamTrendDrilldown, openPersonDrawer } =
+    usePerformanceAnalytics();
+
+  const handleOpenPerson = (personId: string, tab?: PersonDrawerTab) => {
+    openPersonDrawer({ personId, tab: tab ?? "overview" });
+    onOpenPerson(personId, tab);
+  };
 
   const visualForceSkeleton =
     import.meta.env.VITE_VISUAL_FIXTURE === "1" &&
@@ -130,7 +139,7 @@ export function TeamPerformanceOverview({
         <TeamOverviewView
           snapshot={snapshot}
           secondary={secondary}
-          onOpenPerson={onOpenPerson}
+          onOpenPerson={handleOpenPerson}
           onViewAllRadar={() => setActiveView("radar")}
           onOpenMetricDrilldown={openMetricDrilldown}
           onOpenTrendDrilldown={openTrendDrilldown}
@@ -138,15 +147,15 @@ export function TeamPerformanceOverview({
       ) : null}
 
       {activeView === "people" ? (
-        <TeamPeopleView rows={secondary.people} onOpenPerson={onOpenPerson} />
+        <TeamPeopleView rows={secondary.people} onOpenPerson={handleOpenPerson} />
       ) : null}
 
       {activeView === "radar" ? (
-        <TeamRadarView rows={secondary.radar} onOpenPerson={onOpenPerson} />
+        <TeamRadarView rows={secondary.radar} onOpenPerson={handleOpenPerson} />
       ) : null}
 
       {activeView === "delivery-risk" ? (
-        <TeamDeliveryRiskView rows={secondary.deliveryRisk} onOpenPerson={onOpenPerson} />
+        <TeamDeliveryRiskView rows={secondary.deliveryRisk} onOpenPerson={handleOpenPerson} />
       ) : null}
 
       {activeView === "goals" ? <ManagerGoalsView /> : null}

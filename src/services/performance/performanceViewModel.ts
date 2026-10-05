@@ -115,7 +115,7 @@ function mapAttentionPerson(
     personRole: person?.bamboo.jobTitle || undefined,
     reason: primary ? attentionReasonFromSignal(primary.label) : "Needs review",
     severity: item.severity,
-    issueKeys: item.relatedIssueKeys.slice(0, 2),
+    issueKeys: item.relatedIssueKeys,
     issueCount: item.relatedIssueKeys.length || item.signalCount,
     workload: workloadDisplayLabel(person?.workload?.level),
   };
@@ -401,20 +401,31 @@ export function buildPerformanceViewModels(
     };
   });
 
-  const radarRows: TeamRadarRow[] = radar.map((item) => ({
-    personId: item.personId,
-    personName: item.personName,
-    severity:
-      item.severity === "critical"
-        ? "High"
-        : item.severity === "warning"
-          ? "Medium"
-          : "Low",
-    severityVariant: severityToBadge(item.severity),
-    reason: item.signals[0]?.label || "—",
-    tasksAffected: item.relatedIssueKeys.length,
-    action: item.primaryAction === "review_workload" ? "Review workload" : "View person",
-  }));
+  const radarRows: TeamRadarRow[] = radar.map((item) => {
+    const primary = item.signals[0];
+    const primaryAction = item.primaryAction;
+    const actionLabel =
+      primaryAction === "review_workload" || primaryAction === "review_tasks"
+        ? "Review workload"
+        : "View person";
+    return {
+      personId: item.personId,
+      personName: item.personName,
+      severity:
+        item.severity === "critical"
+          ? "High"
+          : item.severity === "warning"
+            ? "Medium"
+            : "Low",
+      severityVariant: severityToBadge(item.severity),
+      reason: primary?.label || "—",
+      reasonDetail: primary ? attentionReasonFromSignal(primary.label) : "—",
+      primaryIssueKey: primary?.issueKey,
+      primaryAction,
+      tasksAffected: item.relatedIssueKeys.length,
+      action: actionLabel,
+    };
+  });
 
   const deliveryRows: DeliveryRiskRow[] = deliveryRisk.map((item) => ({
     issueKey: item.issueKey,

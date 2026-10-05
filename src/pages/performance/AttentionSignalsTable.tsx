@@ -1,13 +1,10 @@
 import { useMemo, useState } from "react";
 import { Badge } from "../../components/Badge/Badge";
-import { EntityLink } from "../../components/EntityLink/EntityLink";
 import { METRIO_TABLE_CLASS, MetrioTableWrap } from "../../components/Table/MetrioTable";
 import { SortableTableHeader } from "../../components/Table/SortableTableHeader";
 import { useTableSort } from "../../components/Table/useTableSort";
-import { buildJiraIssueBrowseUrl } from "../../platform/jiraIssueUrl";
 import type { GroupedAttentionSignal } from "./groupAttentionSignals";
-
-const INITIAL_KEY_COUNT = 2;
+import { AttentionIssueLinks } from "./AttentionIssueLinks";
 
 const SIGNAL_COLUMNS = [
   { id: "signal", type: "text" as const },
@@ -76,10 +73,6 @@ export function AttentionSignalsTable({
           {sortedRows.map((group) => {
             const rowKey = `${group.label}-${group.reason}`;
             const showAll = expanded[rowKey];
-            const visibleKeys = showAll
-              ? group.issueKeys
-              : group.issueKeys.slice(0, INITIAL_KEY_COUNT);
-            const hiddenCount = Math.max(0, group.issueKeys.length - visibleKeys.length);
 
             return (
               <tr key={rowKey}>
@@ -89,32 +82,14 @@ export function AttentionSignalsTable({
                 <td className="performance-table__num">{group.taskCount}</td>
                 <td>{group.reason}</td>
                 <td>
-                  {group.issueKeys.length === 0 ? (
-                    "—"
-                  ) : (
-                    <div className="attention-signals-table__issues">
-                      {visibleKeys.map((key) => (
-                        <EntityLink
-                          key={key}
-                          href={buildJiraIssueBrowseUrl(jiraBaseUrl, key)}
-                          mono
-                        >
-                          {key}
-                        </EntityLink>
-                      ))}
-                      {hiddenCount > 0 ? (
-                        <button
-                          type="button"
-                          className="attention-signals-table__more"
-                          onClick={() =>
-                            setExpanded((prev) => ({ ...prev, [rowKey]: true }))
-                          }
-                        >
-                          View {hiddenCount} more
-                        </button>
-                      ) : null}
-                    </div>
-                  )}
+                  <AttentionIssueLinks
+                    issueKeys={group.issueKeys}
+                    jiraBaseUrl={jiraBaseUrl}
+                    expanded={showAll}
+                    onExpand={() =>
+                      setExpanded((prev) => ({ ...prev, [rowKey]: true }))
+                    }
+                  />
                 </td>
               </tr>
             );
