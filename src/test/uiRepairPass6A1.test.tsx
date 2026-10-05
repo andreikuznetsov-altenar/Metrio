@@ -136,5 +136,6 @@ describe("UI repair pass 6A.1 — table row divider contract", () => {
     expect(css).toMatch(/\.performance-table tbody tr:last-child[\s\S]*box-shadow: none/);
     expect(css).toMatch(/\.performance-table tbody tr[\s\S]*height: auto/);
     expect(css).not.toContain(".performance-table td {\n  border-bottom:");
+    expect(css).toMatch(/\.performance-table__clamp[\s\S]*-webkit-line-clamp:\s*2/);
   });
 });

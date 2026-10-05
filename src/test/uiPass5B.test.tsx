@@ -38,7 +38,9 @@ describe("UI pass 5B — credential helpers", () => {
       resolve(import.meta.dirname, "../pages/settings/settings.css"),
       "utf8",
     );
-    expect(css).toMatch(/\.settings-credential-actions[\s\S]*gap:\s*8px/);
+    expect(css).toMatch(
+      /\.settings-credential-actions[\s\S]*gap:\s*var\(--button-group-gap\)/,
+    );
     expect(css).toMatch(/\.settings-credential-actions \.btn[\s\S]*width:\s*auto/);
   });
 });

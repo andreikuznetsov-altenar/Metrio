@@ -36,6 +36,27 @@ describe("AnalyticsDrilldownDrawer", () => {
     expect(screen.getByText(/4 Sep – 4 Oct 2026/)).toBeTruthy();
   });
 
+  it("keeps drawer header toolbar to close control only", () => {
+    render(
+      <AnalyticsDrilldownDrawer
+        open
+        evidence={evidence}
+        onClose={vi.fn()}
+        onOpenPerson={vi.fn()}
+      />,
+    );
+    const header = document.querySelector(".drawer--analytics .drawer__header");
+    expect(header).toBeTruthy();
+    expect(header!.querySelector("h1, h2")).toBeNull();
+    const toolbar = header!.querySelector(".drawer__header-toolbar");
+    expect(toolbar).toBeTruthy();
+    expect(
+      toolbar!.querySelector('button[aria-label*="Close"]'),
+    ).toBeTruthy();
+    expect(header!.textContent).not.toContain("Backflows");
+    expect(header!.textContent).not.toContain("0");
+  });
+
   it("shows healthy zero backflows state in body", () => {
     render(
       <AnalyticsDrilldownDrawer
