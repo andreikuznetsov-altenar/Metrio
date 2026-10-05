@@ -1,6 +1,17 @@
 import type { AuditIssue, ReportParams } from '../jira/types';
 import type { PersonAvailability } from '../people/types';
 import { classifyTaskHealth } from '../task-health/taskHealthEngine';
+import {
+  calculateCapacityBreakdown,
+  capacityLevelFromPercent,
+  countOperationalWorkload,
+  MONTHLY_CAPACITY_HOURS,
+  requiredHeadcount,
+} from '../workflows/capacityWorkload';
+import type { WorkflowProfileMapping } from '../workflows/types';
+import { resolveWorkflowProfile } from '../workflows/resolveWorkflowProfile';
+import { resolveWorkflowStage } from '../workflows/resolveWorkflowStage';
+import { isWorkflowCapacityEligible } from '../workflows/eligibility';
 
 export type WorkloadLevel = 'low' | 'normal' | 'high' | 'overloaded';
 
@@ -40,7 +51,19 @@ export function normalizeWorkloadThresholds(
 }
 
 export function isIssueActive(issue: AuditIssue, params: ReportParams): boolean {
-  return !classifyTaskHealth({ issue, params }).isCompleted;
+  const profile = resolveWorkflowProfile(issue);
+  const stage = resolveWorkflowStage(profile, issue.currentStatus || '');
+  if (stage.isTerminal || stage.isCompletion) return false;
+  if (!isWorkflowCapacityEligible(issue)) {
+    return !classifyTaskHealth({ issue, params }).isCompleted;
+  }
+  return (
+    stage.countsAsActiveWork ||
+    stage.countsAsReview ||
+    stage.countsAsQa ||
+    stage.countsAsHold ||
+    stage.countsAsWaiting
+  );
 }
 
 export function countActiveIssues(issues: AuditIssue[], params: ReportParams): number {
@@ -49,6 +72,7 @@ export function countActiveIssues(issues: AuditIssue[], params: ReportParams): n
 
 export interface WorkloadResult {
   level: WorkloadLevel;
+  /** Legacy score field — mirrors capacityLoadPercent when capacity model is used. */
   score: number;
   activeCount: number;
   inProgressCount: number;
@@ -57,15 +81,17 @@ export interface WorkloadResult {
   atRiskCount: number;
   overdueCount: number;
   summary: string;
-}
-
-function isInProgress(status: string): boolean {
-  return status.toLowerCase().includes('in progress');
-}
-
-function isInReview(status: string): boolean {
-  const n = status.toLowerCase();
-  return n === 'review' || n.includes('in review');
+  capacityLoadPercent?: number;
+  estimatedMonthlyHours?: number;
+  monthlyCapacityHours?: number;
+  requiredHeadcount?: number;
+  currentAssignedIssueCount?: number;
+  activeWorkCount?: number;
+  reviewCount?: number;
+  qaCount?: number;
+  waitingCount?: number;
+  holdCount?: number;
+  capacityBreakdown?: ReturnType<typeof calculateCapacityBreakdown>;
 }
 
 function isOnVacation(availability?: PersonAvailability): boolean {
@@ -77,11 +103,17 @@ function isOnVacation(availability?: PersonAvailability): boolean {
   );
 }
 
+export interface CalculateWorkloadOptions {
+  mappings?: WorkflowProfileMapping[];
+  now?: Date;
+}
+
 export function calculateWorkload(
   issues: AuditIssue[],
   params: ReportParams,
-  thresholds: WorkloadThresholds = DEFAULT_WORKLOAD_THRESHOLDS,
+  _thresholds: WorkloadThresholds = DEFAULT_WORKLOAD_THRESHOLDS,
   availability?: PersonAvailability,
+  options: CalculateWorkloadOptions = {},
 ): WorkloadResult {
   if (isOnVacation(availability)) {
     return {
@@ -94,63 +126,80 @@ export function calculateWorkload(
       atRiskCount: 0,
       overdueCount: 0,
       summary: availability?.label || 'Away',
+      capacityLoadPercent: 0,
+      estimatedMonthlyHours: 0,
+      monthlyCapacityHours: MONTHLY_CAPACITY_HOURS,
+      requiredHeadcount: 1,
+      currentAssignedIssueCount: 0,
+      activeWorkCount: 0,
+      reviewCount: 0,
+      qaCount: 0,
+      waitingCount: 0,
+      holdCount: 0,
     };
   }
-  let activeCount = 0;
-  let inProgressCount = 0;
-  let inReviewCount = 0;
+
   let problematicCount = 0;
   let atRiskCount = 0;
   let overdueCount = 0;
+  let inProgressCount = 0;
 
   issues.forEach((issue) => {
     const health = classifyTaskHealth({ issue, params });
     if (health.isCompleted) return;
 
-    const status = issue.currentStatus || '';
-    activeCount++;
-    if (isInProgress(status)) inProgressCount++;
-    if (isInReview(status)) inReviewCount++;
+    const profile = resolveWorkflowProfile(issue, { mappings: options.mappings });
+    const stage = resolveWorkflowStage(profile, issue.currentStatus || '');
+    if (stage.canonicalStage === 'active') inProgressCount++;
     if (health.status === 'problematic') problematicCount++;
     if (health.status === 'at_risk') atRiskCount++;
     if (health.reasons.some((r) => r.includes('exceeded'))) overdueCount++;
   });
 
-  const score =
-    activeCount +
-    inProgressCount * 0.5 +
-    inReviewCount * 0.25 +
-    problematicCount * thresholds.problematicWeight +
-    atRiskCount * thresholds.atRiskWeight +
-    overdueCount * thresholds.overdueWeight;
-
-  let level: WorkloadLevel = 'normal';
-  if (score >= thresholds.overloadedScore || problematicCount >= 3) {
-    level = 'overloaded';
-  } else if (score >= thresholds.highScore || inProgressCount >= thresholds.highInProgress) {
-    level = 'high';
-  } else if (activeCount <= 2) {
-    level = 'low';
-  }
+  const operational = countOperationalWorkload(issues, params, options.mappings);
+  const activeCount = countActiveIssues(issues, params);
+  const capacityBreakdown = calculateCapacityBreakdown({
+    issues,
+    params,
+    mappings: options.mappings,
+    now: options.now,
+  });
+  const level = capacityLevelFromPercent(capacityBreakdown.capacityLoadPercent);
 
   const levelLabel =
     level === 'low'
       ? 'Low'
       : level === 'normal'
-        ? 'Normal'
+        ? 'Balanced'
         : level === 'high'
           ? 'High'
           : 'Overloaded';
 
+  const capacityNote =
+    capacityBreakdown.estimatedMonthlyHours > 0
+      ? ` · ~${capacityBreakdown.estimatedMonthlyHours}h/mo (${capacityBreakdown.capacityLoadPercent}% of ${MONTHLY_CAPACITY_HOURS}h)`
+      : '';
+
   return {
     level,
-    score: Math.round(score * 10) / 10,
+    score: capacityBreakdown.capacityLoadPercent,
     activeCount,
     inProgressCount,
-    inReviewCount,
+    inReviewCount: operational.reviewCount,
     problematicCount,
     atRiskCount,
     overdueCount,
-    summary: `${levelLabel} workload · ${activeCount} active · ${inProgressCount} in progress · ${problematicCount} problematic`,
+    summary: `${levelLabel} workload · ${activeCount} active · ${inProgressCount} in progress · ${problematicCount} problematic${capacityNote}`,
+    capacityLoadPercent: capacityBreakdown.capacityLoadPercent,
+    estimatedMonthlyHours: capacityBreakdown.estimatedMonthlyHours,
+    monthlyCapacityHours: MONTHLY_CAPACITY_HOURS,
+    requiredHeadcount: requiredHeadcount(capacityBreakdown.capacityLoadPercent),
+    currentAssignedIssueCount: operational.currentAssignedIssueCount,
+    activeWorkCount: operational.activeWorkCount,
+    reviewCount: operational.reviewCount,
+    qaCount: operational.qaCount,
+    waitingCount: operational.waitingCount,
+    holdCount: operational.holdCount,
+    capacityBreakdown,
   };
 }

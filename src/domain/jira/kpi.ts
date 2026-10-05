@@ -1,15 +1,5 @@
-import { getCycleSegments } from './cycles';
-import {
-  isHoldSegmentInReportingPeriod,
-} from './cycleKpi';
-import { collectReportingPeriodCycles } from '../analytics/kpiCycleEvidence';
+import { buildWorkflowKpi } from '../workflows/buildWorkflowKpi';
 import type { AuditIssue, KpiData, ReportParams } from './types';
-
-function averageMs(items: number[]): number | null {
-  if (!items || !items.length) return null;
-  const sum = items.reduce((acc, value) => acc + value, 0);
-  return Math.round(sum / items.length);
-}
 
 /** Port of legacy calculateEfficiencyIndex_ */
 export function getEfficiencyScoreBreakdown(data: {
@@ -107,96 +97,11 @@ export function getEfficiencyStatus(score: number): string {
   return 'Critical';
 }
 
-/** Port of legacy buildKpiFromIssues_ */
+/** Port of legacy buildKpiFromIssues_ — workflow-profile aware. */
 export function buildKpiFromIssues(
   issues: AuditIssue[],
   _transitionStats: Record<string, number>,
   params: ReportParams,
 ): KpiData {
-  const progressToReviewDurations: number[] = [];
-  const reviewToDoneDurations: number[] = [];
-  const progressToHoldDurations: number[] = [];
-  const todoToApprovedDurations: number[] = [];
-
-  let startedCount = 0;
-  let reviewSubmittedCount = 0;
-  let completedCount = 0;
-  let firstPassAcceptedCount = 0;
-  let holdCount = 0;
-  let backflowCount = 0;
-
-  (issues || []).forEach((issue) => {
-    const segments = getCycleSegments(issue, params);
-    const completedCycles = collectReportingPeriodCycles([issue], params).map(
-      (record) => record.cycle,
-    );
-
-    segments.forEach((segment) => {
-      if (!isHoldSegmentInReportingPeriod(segment, params)) return;
-      holdCount++;
-      if (segment.ms !== null && segment.ms >= 0) {
-        progressToHoldDurations.push(segment.ms);
-      }
-    });
-
-    completedCycles.forEach((cycle) => {
-      startedCount++;
-      reviewSubmittedCount++;
-      completedCount++;
-
-      if (
-        cycle.progressToReview &&
-        cycle.progressToReview.ms !== null &&
-        cycle.progressToReview.ms >= 0
-      ) {
-        progressToReviewDurations.push(cycle.progressToReview.ms);
-      }
-
-      if (cycle.reviewToDone && cycle.reviewToDone.ms !== null && cycle.reviewToDone.ms >= 0) {
-        reviewToDoneDurations.push(cycle.reviewToDone.ms);
-      }
-
-      const fullCycleMs = cycle.reviewToDone?.fullCycleMs;
-      if (fullCycleMs !== null && fullCycleMs !== undefined && fullCycleMs >= 0) {
-        todoToApprovedDurations.push(fullCycleMs);
-      }
-
-      if (cycle.isFirstPass) {
-        firstPassAcceptedCount++;
-      }
-
-      if (cycle.hasBackflow) {
-        backflowCount++;
-      }
-    });
-  });
-
-  const avgProgressToReviewMs = averageMs(progressToReviewDurations);
-  const avgReviewToDoneMs = averageMs(reviewToDoneDurations);
-  const avgProgressToHoldMs = averageMs(progressToHoldDurations);
-  const avgTodoToApprovedMs = averageMs(todoToApprovedDurations);
-
-  const targetReviewDays = Number(params?.targetReviewDays ?? 3);
-
-  return {
-    startedCount,
-    reviewSubmittedCount,
-    completedCount,
-    firstPassAcceptedCount,
-    holdCount,
-    backflowCount,
-    avgProgressToReviewMs,
-    avgReviewToDoneMs,
-    avgProgressToHoldMs,
-    avgTodoToApprovedMs,
-    targetReviewDays,
-    efficiencyIndex: calculateEfficiencyIndex({
-      startedCount,
-      completedCount,
-      firstPassAcceptedCount,
-      backflowCount,
-      avgProgressToReviewMs,
-      targetReviewDays,
-    }),
-  };
+  return buildWorkflowKpi(issues || [], params);
 }

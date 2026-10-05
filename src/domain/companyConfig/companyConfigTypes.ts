@@ -70,6 +70,12 @@ export interface OperationalDefaultsConfig {
   managedFields: Record<string, ManagedSettingPolicy>;
 }
 
+export interface JiraWorkflowProfileOverride {
+  projectKey: string;
+  issueType?: string;
+  profileId: string;
+}
+
 export interface FeatureFlags {
   confluence: boolean;
   feedback: boolean;
@@ -102,6 +108,8 @@ export interface CompanyConfig {
   defaults: OperationalDefaultsConfig;
   features: FeatureFlags;
   accessPolicy: AccessPolicy;
+  /** Optional overrides for workflow profile resolution (project / issue type). */
+  jiraWorkflowProfiles?: JiraWorkflowProfileOverride[];
 }
 
 export interface CompanyConfigHistoryEntry {

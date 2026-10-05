@@ -82,6 +82,21 @@ export function validateCompanyConfig(raw: unknown): ConfigValidationResult {
     errors.push("onboarding.newStarterDays must be 1–120");
   }
 
+  if (input.jiraWorkflowProfiles != null) {
+    if (!Array.isArray(input.jiraWorkflowProfiles)) {
+      errors.push("jiraWorkflowProfiles must be an array");
+    } else {
+      input.jiraWorkflowProfiles.forEach((entry, index) => {
+        if (!entry?.projectKey?.trim()) {
+          errors.push(`jiraWorkflowProfiles[${index}].projectKey is required`);
+        }
+        if (!entry?.profileId?.trim()) {
+          errors.push(`jiraWorkflowProfiles[${index}].profileId is required`);
+        }
+      });
+    }
+  }
+
   if (errors.length) return { ok: false, errors };
 
   const config: CompanyConfig = {
@@ -117,6 +132,7 @@ export function validateCompanyConfig(raw: unknown): ConfigValidationResult {
       projectCockpit: input.features?.projectCockpit ?? true,
     },
     accessPolicy: input.accessPolicy ?? {},
+    jiraWorkflowProfiles: input.jiraWorkflowProfiles,
   };
 
   return { ok: true, errors: [], config };

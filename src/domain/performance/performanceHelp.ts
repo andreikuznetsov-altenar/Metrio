@@ -11,7 +11,7 @@ export const performanceHelp = {
   teamTrends:
     "Change in team performance compared with the previous comparable period.",
   teamWorkload:
-    "Current Jira workload based on issues presently assigned to each person.",
+    "Capacity load extrapolated from completed cycle throughput (monthly hours vs 164h FTE), plus active issue counts for context.",
   timeOff: "Planned team time off over the next 12 months from BambooHR.",
   people:
     "Team performance, workload, availability and attention signals for the selected period.",

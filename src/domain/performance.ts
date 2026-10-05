@@ -55,6 +55,9 @@ export interface WorkloadRow {
   atRisk: number;
   workload: "Light" | "Balanced" | "Heavy" | "Overloaded";
   availability: string;
+  capacityLoadPercent?: number;
+  estimatedMonthlyHours?: number;
+  monthlyCapacityHours?: number;
 }
 
 export interface TimeOffEntry {

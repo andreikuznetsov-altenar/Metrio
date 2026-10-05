@@ -59,6 +59,10 @@ export interface AuditIssue {
   issueSummary: string;
   issueCreated: string;
   assigneeName: string;
+  projectKey?: string;
+  projectName?: string;
+  issueTypeId?: string;
+  isSubtask?: boolean;
   issueTypeName: string;
   contentType: string;
   designImprovementType: string;

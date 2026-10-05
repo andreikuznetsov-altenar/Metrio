@@ -258,6 +258,10 @@ export async function buildEnhancedJiraAuditReport(
     );
     const assigneeName = getAssigneeName(issue);
     const issueTypeName = getIssueTypeName(issue) || 'none';
+    const projectKey = safeGet<string>(issue, ['fields', 'project', 'key']) || '';
+    const projectName = safeGet<string>(issue, ['fields', 'project', 'name']) || '';
+    const issueTypeId = safeGet<string>(issue, ['fields', 'issuetype', 'id']) || '';
+    const isSubtask = !!safeGet<boolean>(issue, ['fields', 'issuetype', 'subtask']);
     const contentType = getContentTypeValue(issue) || 'none';
     const designImprovementType = isDesignImprovement(issue) ? issueTypeName : 'none';
     const currentStatus = safeGet<string>(issue, ['fields', 'status', 'name']) || '';
@@ -302,6 +306,10 @@ export async function buildEnhancedJiraAuditReport(
         issueCreated,
         assigneeName,
         issueTypeName,
+        projectKey: projectKey || undefined,
+        projectName: projectName || undefined,
+        issueTypeId: issueTypeId || undefined,
+        isSubtask,
         contentType,
         designImprovementType,
         epicKey: epicKey || 'none',

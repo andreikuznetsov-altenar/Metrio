@@ -13,6 +13,8 @@ import type { OperationalRules } from '../operationalRules/operationalRulesTypes
 import type { Person } from '../people/types';
 import { getOperationalIssues } from '../people/ownedIssues';
 import type { RadarSeverity } from './types';
+import { resolveWorkflowProfile } from '../workflows/resolveWorkflowProfile';
+import { resolveWorkflowStage } from '../workflows/resolveWorkflowStage';
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
@@ -66,6 +68,8 @@ export function classifyIssueAttention(
   if (health.isCompleted) return null;
 
   const status = issue.currentStatus || '';
+  const workflowStage = resolveWorkflowStage(resolveWorkflowProfile(issue), status);
+  if (!workflowStage.countsAsAttentionEligible) return null;
   const stageDays = stageAgeDays(issue, now);
   const reviewDays = rules.taskAttention.reviewAttentionDays;
   const inProgressDays =

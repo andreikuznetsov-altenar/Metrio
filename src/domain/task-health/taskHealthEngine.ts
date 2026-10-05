@@ -1,8 +1,9 @@
 import { getWorkingDurationMs } from '../jira/dates';
 import { getStatusEventsSorted } from '../jira/events';
 import { getCycleSegments, buildCompletedCyclesFromSegments } from '../jira/cycles';
-import { containsNormalized } from '../jira/transitions';
 import type { AuditIssue, ReportParams } from '../jira/types';
+import { resolveWorkflowProfile } from '../workflows/resolveWorkflowProfile';
+import { resolveWorkflowStage } from '../workflows/resolveWorkflowStage';
 
 export type TaskHealthStatus =
   | 'successful'
@@ -39,25 +40,9 @@ export interface TaskHealthResult {
   lastActivityAt: string | null;
 }
 
-const DONE_STATUSES = ['done', 'approved', 'published', 'closed'];
-
-function isDoneStatus(status: string): boolean {
-  const n = status.toLowerCase();
-  return DONE_STATUSES.some((s) => n.includes(s));
-}
-
 function isBlockedStatus(status: string): boolean {
   const n = status.toLowerCase();
   return n.includes('hold') || n.includes('blocked');
-}
-
-function isInProgressStatus(status: string): boolean {
-  return containsNormalized(status, 'in progress');
-}
-
-function isInReviewStatus(status: string): boolean {
-  const n = status.toLowerCase();
-  return n === 'review' || n.includes('in review');
 }
 
 function daysSince(dateStr: string, now: Date): number {
@@ -107,7 +92,11 @@ export function classifyTaskHealth(input: TaskHealthInput): TaskHealthResult {
 
   const reasons: string[] = [];
   const currentStatus = issue.currentStatus || '';
-  const completed = isDoneStatus(currentStatus);
+  const workflowProfile = resolveWorkflowProfile(issue);
+  const workflowStage = resolveWorkflowStage(workflowProfile, currentStatus);
+  const completed =
+    workflowStage.isCompletion || (workflowStage.isTerminal && workflowStage.canonicalStage === 'done');
+  const attentionEligible = workflowStage.countsAsAttentionEligible;
 
   const segments = getCycleSegments(issue, params);
   const completedCycles = buildCompletedCyclesFromSegments(segments);
@@ -122,6 +111,18 @@ export function classifyTaskHealth(input: TaskHealthInput): TaskHealthResult {
   const lastActivityAt = getLastMeaningfulActivityAt(issue);
 
   if (!completed) {
+    if (!attentionEligible) {
+      return {
+        status: 'stable',
+        reasons: ['Waiting — not attention eligible'],
+        backflowCount,
+        isFirstPass,
+        isCompleted: false,
+        currentStageAgeMs,
+        lastActivityAt,
+      };
+    }
+
     if (lastActivityAt && daysSince(lastActivityAt, now) >= thresholds.noActivityDays) {
       reasons.push(`No activity for ${thresholds.noActivityDays}+ days`);
       return {
@@ -135,7 +136,7 @@ export function classifyTaskHealth(input: TaskHealthInput): TaskHealthResult {
       };
     }
 
-    if (isBlockedStatus(currentStatus)) {
+    if (isBlockedStatus(currentStatus) && workflowStage.countsAsHold) {
       reasons.push('Blocked or on hold');
       return {
         status: 'problematic',
@@ -162,7 +163,11 @@ export function classifyTaskHealth(input: TaskHealthInput): TaskHealthResult {
     }
 
     if (currentStageAgeMs !== null) {
-      if (isInProgressStatus(currentStatus) || isInReviewStatus(currentStatus)) {
+      const stageIsTimed =
+        workflowStage.canonicalStage === 'active' ||
+        workflowStage.countsAsReview ||
+        workflowStage.countsAsQa;
+      if (stageIsTimed) {
         if (currentStageAgeMs > targetMs) {
           reasons.push('Current stage exceeds target duration');
           return {

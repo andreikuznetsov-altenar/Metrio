@@ -3,6 +3,7 @@ import { CURATED_ONBOARDING_RESOURCES } from "../../config/onboardingResources";
 import { ONBOARDING_CHECKLIST_DEFINITIONS } from "../../config/onboardingChecklistDefinitions";
 import { BUILTIN_FEEDBACK_TEMPLATES } from "../feedbackCycles/feedbackTemplates";
 import { DEFAULT_OPERATIONAL_RULES } from "../operationalRules/operationalRulesDefaults";
+import { DEFAULT_WORKFLOW_MAPPINGS } from "../workflows/defaultWorkflowMappings";
 import type { CompanyConfig, CompanyResourceConfig } from "./companyConfigTypes";
 import { COMPANY_CONFIG_SCHEMA_VERSION } from "./companyConfigTypes";
 
@@ -90,5 +91,10 @@ export function buildDefaultCompanyConfig(now = new Date()): CompanyConfig {
       companyAdmins: { emails: [] },
       organizationScopeAllowlist: { emails: [] },
     },
+    jiraWorkflowProfiles: DEFAULT_WORKFLOW_MAPPINGS.flatMap((entry) =>
+      entry.projectKey
+        ? [{ projectKey: entry.projectKey, issueType: entry.issueType, profileId: entry.profileId }]
+        : [],
+    ),
   };
 }

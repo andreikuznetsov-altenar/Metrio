@@ -36,10 +36,11 @@ describe('calculateWorkload', () => {
     expect(result.level).toBe('low');
   });
 
-  it('returns high when many active tasks', () => {
+  it('keeps capacity level low when many active tasks have no completed cycles', () => {
     const issues = Array.from({ length: 6 }, (_, i) => activeIssue(`A-${i}`));
     const result = calculateWorkload(issues, params);
-    expect(result.level).toBe('high');
+    expect(result.level).toBe('low');
+    expect(result.capacityLoadPercent).toBe(0);
   });
 
   it('uses canonical completion semantics for active count (Published is not active)', () => {
@@ -55,7 +56,7 @@ describe('calculateWorkload', () => {
       { status: 'Approved', active: false },
       { status: 'Published', active: false },
       { status: 'Closed', active: false },
-      { status: 'Cancelled', active: true },
+      { status: 'Cancelled', active: false },
       { status: 'In Progress', active: true },
       { status: 'Review', active: true },
       { status: 'On Hold', active: true },
