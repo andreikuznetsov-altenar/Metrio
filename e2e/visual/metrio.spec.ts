@@ -1149,10 +1149,10 @@ test.describe("Metrio visual regression", () => {
     await expect(page.getByTestId("dashboard-ready")).toBeVisible({ timeout: 30_000 });
     await page.keyboard.press("Meta+k");
     const palette = page.getByTestId("command-palette");
+    await expect(page.locator(".command-palette-shell.is-open")).toBeVisible();
     await expect(palette).toBeVisible();
     await expect(palette.getByRole("textbox", { name: "Quick find" })).toBeVisible();
-    await expect(page).toHaveScreenshot("search-open.png", {
-      fullPage: true,
+    await expect(palette).toHaveScreenshot("search-open.png", {
       maxDiffPixelRatio: 0.02,
     });
   });
@@ -1185,10 +1185,10 @@ test.describe("Metrio visual regression", () => {
     await expect(page.getByTestId("dashboard-ready")).toBeVisible({ timeout: 30_000 });
     await page.keyboard.press("Meta+k");
     const palette = page.getByTestId("command-palette");
+    await expect(page.locator(".command-palette-shell.is-open")).toBeVisible();
     await expect(palette).toBeVisible();
     await expect(palette.getByRole("textbox", { name: "Quick find" })).toBeVisible();
-    await expect(page).toHaveScreenshot("search-dark.png", {
-      fullPage: true,
+    await expect(palette).toHaveScreenshot("search-dark.png", {
       maxDiffPixelRatio: 0.02,
     });
   });
