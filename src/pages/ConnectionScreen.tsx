@@ -11,6 +11,7 @@ import { isAltenarWorkEmail } from "../domain/setup/validation";
 import { openExternalUrl } from "../platform/openExternal";
 import { Button } from "../components/Button/Button";
 import { Input } from "../components/Input/Input";
+import { ConnectionScreenLogo } from "./ConnectionScreenLogo";
 import "./ConnectionScreen.css";
 
 export function ConnectionScreen() {
@@ -114,16 +115,16 @@ export function ConnectionScreen() {
   return (
     <div className="connection-screen" data-testid="connection-screen">
       <div className="connection-screen__inner">
-        <p className="connection-screen__logo" aria-label="Metrio">
-          metrio
-        </p>
+        <ConnectionScreenLogo />
 
         <div className="connection-panel">
-          <h1 className="connection-panel__title">Connect your work tools</h1>
-          <p className="connection-panel__intro">
-            Metrio combines Jira work context with BambooHR people and availability
-            data. Credentials are stored securely on this Mac.
-          </p>
+          <div className="connection-panel__header">
+            <h1 className="connection-panel__title">Connect your work tools</h1>
+            <p className="connection-panel__intro">
+              Metrio combines Jira work context with BambooHR people and availability
+              data. Credentials are stored securely on this Mac.
+            </p>
+          </div>
 
           <div className="connection-panel__field-block">
             <Input

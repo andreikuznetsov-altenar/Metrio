@@ -1,5 +1,6 @@
 import { Button } from "../components/Button/Button";
 import { openLogsFolder } from "../platform/logger";
+import { ConnectionScreenLogo } from "../pages/ConnectionScreenLogo";
 import "../pages/ConnectionScreen.css";
 
 export interface StartupErrorShellProps {
@@ -18,9 +19,7 @@ export function StartupErrorShell({
   return (
     <div className="connection-screen" data-testid="startup-error-shell">
       <div className="connection-screen__inner">
-        <p className="connection-screen__logo" aria-label="Metrio">
-          metrio
-        </p>
+        <ConnectionScreenLogo />
         <div className="connection-panel">
           <h1 className="type-heading" style={{ margin: 0 }}>
             {title}

@@ -74,4 +74,13 @@ describe("ConnectionScreen", () => {
     expect(panel().getByRole("button", { name: /how to get api key/i })).toBeInTheDocument();
     expect(panel().getByText(/credentials are stored securely/i)).toBeInTheDocument();
   });
+
+  it("renders canonical Metrio logo and connection form", () => {
+    renderAuth();
+    const logo = panel().getByTestId("connection-screen-logo");
+    expect(logo).toHaveAttribute("src", "/Logo.svg");
+    expect(logo).toHaveAccessibleName("Metrio");
+    expect(panel().getByRole("heading", { name: /connect your work tools/i })).toBeInTheDocument();
+    expect(panel().getByLabelText(/work email/i)).toBeInTheDocument();
+  });
 });

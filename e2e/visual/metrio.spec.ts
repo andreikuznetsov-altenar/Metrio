@@ -1946,6 +1946,39 @@ test.describe("Metrio visual regression", () => {
     });
   });
 
+  test("initial-connection-logo-1280", async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await page.goto("/");
+    await expect(page.getByTestId("connection-screen-logo")).toBeVisible({ timeout: 15_000 });
+    await expect(page).toHaveScreenshot("initial-connection-logo-1280.png", {
+      fullPage: true,
+      maxDiffPixelRatio: 0.02,
+    });
+  });
+
+  test("initial-connection-logo-1440", async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto("/");
+    await expect(page.getByTestId("connection-screen-logo")).toBeVisible({ timeout: 15_000 });
+    await expect(page).toHaveScreenshot("initial-connection-logo-1440.png", {
+      fullPage: true,
+      maxDiffPixelRatio: 0.02,
+    });
+  });
+
+  test("initial-connection-logo-dark", async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.addInitScript(() => {
+      localStorage.setItem("metrio-theme", "dark");
+    });
+    await page.goto("/");
+    await expect(page.getByTestId("connection-screen-logo")).toBeVisible({ timeout: 15_000 });
+    await expect(page).toHaveScreenshot("initial-connection-logo-dark.png", {
+      fullPage: true,
+      maxDiffPixelRatio: 0.02,
+    });
+  });
+
   test("analytics drawer shows aggregate state without empty contradiction", async ({
     page,
   }) => {

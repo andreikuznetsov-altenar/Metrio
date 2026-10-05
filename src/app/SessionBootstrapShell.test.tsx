@@ -6,7 +6,7 @@ describe("SessionBootstrapShell", () => {
   it("renders visible boot content", () => {
     render(<SessionBootstrapShell />);
     expect(screen.getByTestId("session-bootstrapping")).toBeInTheDocument();
-    expect(screen.getByText(/metrio/i)).toBeInTheDocument();
+    expect(screen.getByTestId("connection-screen-logo")).toHaveAttribute("src", "/Logo.svg");
     expect(screen.getByText(/loading your session/i)).toBeInTheDocument();
   });
 });
