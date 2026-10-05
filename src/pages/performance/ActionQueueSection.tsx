@@ -1,9 +1,6 @@
-import { Badge } from "../../components/Badge/Badge";
 import { Button } from "../../components/Button/Button";
-import { PersonAvatar } from "../../components/PersonAvatar/PersonAvatar";
 import type { ActionItem } from "../../domain/actions/actionTypes";
-import { buildDashboardActionRow } from "../../domain/actions/actionPresentation";
-import { badgeVariantForAttentionLabel } from "../../platform/attentionSemanticBadge";
+import { DashboardActionQueueRows } from "./DashboardActionQueueRows";
 import "./action-queue.css";
 
 export interface ActionQueueSectionProps {
@@ -32,45 +29,7 @@ export function ActionQueueSection({
         {items.length === 0 ? (
           <p className="home-card__empty" role="status">{emptyMessage}</p>
         ) : (
-          <ul className="action-queue__dashboard-list">
-            {items.map((item) => {
-              const row = buildDashboardActionRow(item);
-              return (
-                <li
-                  key={item.id}
-                  className="action-queue__dashboard-row"
-                  data-testid="dashboard-action-row"
-                >
-                  {item.personId && item.personName ? (
-                    <PersonAvatar
-                      personId={item.personId}
-                      displayName={item.personName}
-                      size="sm"
-                      className="action-queue__dashboard-avatar"
-                    />
-                  ) : null}
-                  <span className="action-queue__dashboard-subject">{row.subject}</span>
-                  <Badge
-                    variant={badgeVariantForAttentionLabel(row.reasonTag)}
-                    className="action-queue__dashboard-badge"
-                  >
-                    {row.reasonTag}
-                  </Badge>
-                  <span className="action-queue__dashboard-context">
-                    {row.contextLine || row.statusLabel || ""}
-                  </span>
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    className="action-queue__dashboard-cta"
-                    onClick={() => onOpen(item)}
-                  >
-                    {openLabel(item)}
-                  </Button>
-                </li>
-              );
-            })}
-          </ul>
+          <DashboardActionQueueRows items={items} onOpen={onOpen} openLabel={openLabel} />
         )}
         {footerAction ? (
           <div className="home-card__actions">

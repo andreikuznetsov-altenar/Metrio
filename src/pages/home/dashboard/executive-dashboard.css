@@ -172,9 +172,8 @@
   gap: var(--space-3);
   padding: var(--space-3) var(--space-4);
   border-radius: var(--radius-card);
-  border: 1px solid var(--color-border-subtle);
+  border: 1px solid var(--color-warning);
   background: var(--color-surface-secondary);
-  border-left: 3px solid var(--color-warning);
 }
 
 .executive-attention__stat {
@@ -245,13 +244,13 @@
   letter-spacing: 0.04em;
   color: var(--color-text-tertiary);
   padding: 0 var(--space-2) var(--space-2) 0;
-  border-bottom: 1px solid var(--color-border-subtle);
+  border-bottom: 1px solid var(--color-border);
 }
 
 .executive-queue-table td {
   padding: var(--space-2) var(--space-2) var(--space-2) 0;
   vertical-align: middle;
-  border-bottom: 1px solid var(--color-border-subtle);
+  border-bottom: 1px solid var(--color-border);
 }
 
 .executive-queue-table tr:last-child td {

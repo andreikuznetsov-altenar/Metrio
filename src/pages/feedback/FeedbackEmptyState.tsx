@@ -29,8 +29,10 @@ export function FeedbackEmptyState({
     <div className="feedback-empty-state" data-testid={testId}>
       <div className="feedback-empty-state__card">
         <Icon className="feedback-empty-state__icon" size={28} strokeWidth={1.5} aria-hidden />
-        <h3 className="feedback-empty-state__title">{title}</h3>
-        <p className="feedback-empty-state__description">{description}</p>
+        <div className="feedback-empty-state__text">
+          <h3 className="feedback-empty-state__title">{title}</h3>
+          <p className="feedback-empty-state__description">{description}</p>
+        </div>
         {primary || secondary ? (
           <div className="feedback-empty-state__actions">
             {primary ? (

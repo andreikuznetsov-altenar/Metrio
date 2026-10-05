@@ -131,9 +131,11 @@ describe("UI repair pass 6A.1 — table row divider contract", () => {
       resolve(import.meta.dirname, "../styles/ui-interaction-system.css"),
       "utf8",
     );
-    expect(css).toMatch(/\.performance-table tbody tr[\s\S]*box-shadow: inset 0 -1px/);
+    expect(css).toMatch(
+      /\.performance-table tbody tr:not\(:last-child\) td[\s\S]*border-bottom: 1px solid var\(--color-border\)/,
+    );
+    expect(css).toMatch(/\.performance-table thead th[\s\S]*border-bottom: 1px solid var\(--color-border\)/);
     expect(css).toMatch(/\.performance-table th,\s*\n\.performance-table td[\s\S]*border-bottom: none/);
-    expect(css).toMatch(/\.performance-table tbody tr:last-child[\s\S]*box-shadow: none/);
     expect(css).toMatch(/\.performance-table tbody tr[\s\S]*height: auto/);
     expect(css).not.toContain(".performance-table td {\n  border-bottom:");
     expect(css).toMatch(/\.performance-table__clamp[\s\S]*-webkit-line-clamp:\s*2/);

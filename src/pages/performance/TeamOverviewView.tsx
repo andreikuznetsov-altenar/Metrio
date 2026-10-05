@@ -347,7 +347,10 @@ export function TeamOverviewView({
         />
         {snapshot.attention.length === 0 ? (
           <div className="performance-empty performance-empty--compact">
-            No direct reports need attention right now.
+            <span className="performance-empty__icon" aria-hidden>◎</span>
+            <p className="performance-empty__message">
+              No direct reports need attention right now.
+            </p>
           </div>
         ) : (
           <div className="performance-table-wrap performance-table-wrap--attention">
@@ -558,7 +561,7 @@ export function TeamOverviewView({
         {snapshot.timeOff.length === 0 ? (
           <div className="performance-empty performance-empty--compact performance-empty--timeoff">
             <CalendarDays size={18} strokeWidth={1.75} aria-hidden className="performance-empty__icon" />
-            <span>No upcoming time off</span>
+            <p className="performance-empty__message">No upcoming time off</p>
           </div>
         ) : (
           <ul className="performance-timeoff-list">

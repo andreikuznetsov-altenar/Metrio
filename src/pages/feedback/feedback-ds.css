@@ -274,11 +274,24 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: var(--space-3);
+  justify-content: center;
 }
 
 .feedback-empty-state__icon {
+  flex-shrink: 0;
   color: var(--color-text-tertiary);
+}
+
+.feedback-empty-state__text {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  max-width: 22rem;
+}
+
+.feedback-empty-state__icon + .feedback-empty-state__text {
+  margin-top: var(--space-6);
 }
 
 .feedback-empty-state__title {

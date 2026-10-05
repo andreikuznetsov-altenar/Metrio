@@ -19,7 +19,7 @@
   background: rgba(15, 17, 21, 0.28);
   opacity: 0;
   cursor: pointer;
-  transition: opacity var(--motion-drawer) var(--transition-easing);
+  transition: opacity var(--motion-drawer) var(--ease-drawer);
 }
 
 .drawer-root.is-open .drawer-root__backdrop {
@@ -37,7 +37,7 @@
   display: flex;
   flex-direction: column;
   transform: translateX(100%);
-  transition: transform var(--motion-drawer) var(--transition-easing);
+  transition: transform var(--motion-drawer) var(--ease-drawer);
 }
 
 .drawer-root.is-open .drawer {

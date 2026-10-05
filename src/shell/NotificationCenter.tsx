@@ -273,6 +273,7 @@ export function NotificationCenter({
             onChange={setSourceFilter}
           />
         </div>
+        <div className="notification-center__main">
         {confirmClear ? (
           <div className="notification-center__confirm" role="alertdialog" aria-label="Clear notifications">
             <p className="notification-center__confirm-text">
@@ -303,23 +304,30 @@ export function NotificationCenter({
         ) : null}
 
         {loadError ? (
-          <div className="notification-center__error">
-            <p>Couldn&apos;t load notification history.</p>
-            <Button type="button" variant="secondary" onClick={refresh}>
-              Retry
-            </Button>
+          <div className="metrio-placeholder notification-center__error" role="alert">
+            <CircleAlert className="metrio-placeholder__icon" size={24} strokeWidth={1.75} aria-hidden />
+            <div className="metrio-placeholder__text">
+              <p className="metrio-placeholder__title">Couldn&apos;t load notification history.</p>
+            </div>
+            <div className="metrio-placeholder__actions">
+              <Button type="button" variant="secondary" onClick={refresh}>
+                Retry
+              </Button>
+            </div>
           </div>
         ) : filtered.length === 0 ? (
-          <div className="notification-center__empty">
-            <CircleAlert size={20} strokeWidth={1.75} aria-hidden />
-            <p className="notification-center__empty-title">
-              {emptyNotificationsMessage(sourceFilter)}
-            </p>
-            {sourceFilter === "all" ? (
-              <p className="notification-center__empty-copy">
-                Important workload, task, and availability changes will appear here.
+          <div className="metrio-placeholder notification-center__empty" role="status">
+            <CircleAlert className="metrio-placeholder__icon" size={24} strokeWidth={1.75} aria-hidden />
+            <div className="metrio-placeholder__text">
+              <p className="metrio-placeholder__title">
+                {emptyNotificationsMessage(sourceFilter)}
               </p>
-            ) : null}
+              {sourceFilter === "all" ? (
+                <p className="metrio-placeholder__copy">
+                  Important workload, task, and availability changes will appear here.
+                </p>
+              ) : null}
+            </div>
           </div>
         ) : (
           <div className="notification-center__groups">
@@ -388,6 +396,7 @@ export function NotificationCenter({
             ))}
           </div>
         )}
+        </div>
       </div>
     </Drawer>
   );

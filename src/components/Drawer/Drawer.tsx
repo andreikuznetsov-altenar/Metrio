@@ -1,5 +1,6 @@
 import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { IconButton } from "../IconButton/IconButton";
+import { readMotionDrawerMs } from "../../styles/motion";
 import "./Drawer.css";
 
 function CloseIcon() {
@@ -79,7 +80,7 @@ export function Drawer({
     const timer = window.setTimeout(() => {
       setMounted(false);
       onClosed?.();
-    }, 240);
+    }, readMotionDrawerMs());
     return () => window.clearTimeout(timer);
   }, [mounted, onClosed, open, visible]);
 

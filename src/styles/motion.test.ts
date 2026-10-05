@@ -11,6 +11,14 @@ describe("motion tokens", () => {
     expect(css).toContain("--motion-control: 140ms");
     expect(css).toContain("--motion-popover: 160ms");
     expect(css).toContain("--motion-drawer: 240ms");
+    expect(css).toContain("--ease-drawer:");
+
+    const system = fs.readFileSync(
+      path.resolve(process.cwd(), "src/styles/ui-interaction-system.css"),
+      "utf8",
+    );
+    expect(system).toContain(".metrio-placeholder__icon + .metrio-placeholder__text");
+    expect(system).toContain("margin-top: var(--space-6)");
   });
 });
 

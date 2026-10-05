@@ -86,7 +86,7 @@ export function TeamDeliveryRiskView({
         <p className="performance-section-desc">{performanceHelp.deliveryRisk}</p>
         <div className="performance-empty performance-empty--compact">
           <span className="performance-empty__icon" aria-hidden>◎</span>
-          <span>No delivery risks for this period.</span>
+          <p className="performance-empty__message">No delivery risks for this period.</p>
         </div>
       </section>
     );

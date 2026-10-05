@@ -54,7 +54,7 @@ export function TeamRadarView({ rows, onOpenPerson }: TeamRadarViewProps) {
           <span className="performance-empty__icon" aria-hidden>
             ◎
           </span>
-          <span>No active team risks.</span>
+          <p className="performance-empty__message">No active team risks.</p>
         </div>
       </section>
     );

@@ -38,8 +38,10 @@ export function EmptyState({
     >
       <div className="empty-state__card">
         {Icon ? <Icon className="empty-state__icon" size={24} strokeWidth={1.6} aria-hidden /> : null}
-        <h3 className="empty-state__title">{title}</h3>
-        {description ? <p className="empty-state__description">{description}</p> : null}
+        <div className="empty-state__text">
+          <h3 className="empty-state__title">{title}</h3>
+          {description ? <p className="empty-state__description">{description}</p> : null}
+        </div>
         {primary || secondary ? (
           <div className="button-group empty-state__actions">
             {primary ? (
