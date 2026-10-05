@@ -102,11 +102,7 @@ export function EmployeeExecutiveDashboard({
             ))}
           </div>
         </section>
-      ) : (
-        <p className="executive-dashboard__span-12 executive-secondary-line" role="status">
-          No new assignments
-        </p>
-      )}
+      ) : null}
       {goalsFeatureOn && goalsSummary && goalsProminent ? (
         <div className="executive-dashboard__span-12">
           <HomeGoalsSummaryCard teamView={false} summary={goalsSummary} prominent />

@@ -2226,6 +2226,53 @@ test.describe("Metrio visual regression", () => {
     });
   });
 
+  test("dashboard-my-focus-deduped", async ({ page }) => {
+    await bootDashboardManager(page, 1440);
+    const focus = page.getByTestId("dashboard-my-focus");
+    await expect(focus).toBeVisible();
+    const rowCount = await focus.getByTestId("dashboard-action-row").count();
+    if (rowCount > 0) {
+      await expect(focus.getByRole("button", { name: /Context/i })).toBeVisible();
+      await expect(focus).not.toContainText("Status");
+      const issueKeys = await focus.getByTestId("dashboard-action-row").allTextContents();
+      const duplicates = issueKeys.filter((text, index, all) =>
+        all.some((other, otherIndex) => otherIndex !== index && text.split(/\s/)[0] === other.split(/\s/)[0]),
+      );
+      expect(duplicates).toHaveLength(0);
+    }
+    await expect(focus).toHaveScreenshot("dashboard-my-focus-deduped.png", {
+      maxDiffPixelRatio: 0.02,
+    });
+  });
+
+  test("dashboard-team-actions-context", async ({ page }) => {
+    await bootDashboardManager(page, 1440);
+    const teamActions = page.getByTestId("dashboard-team-actions");
+    await expect(teamActions.getByRole("button", { name: /Context/i })).toBeVisible();
+    await expect(teamActions).toHaveScreenshot("dashboard-team-actions-context.png", {
+      maxDiffPixelRatio: 0.02,
+    });
+  });
+
+  test("dashboard-secondary-goals-brief", async ({ page }) => {
+    await bootDashboardManager(page, 1440);
+    await expect(page.getByTestId("dashboard-team-brief")).toBeVisible();
+    const grid = page.getByTestId("dashboard-secondary-grid");
+    await expect(grid).toBeVisible();
+    await expect(grid).toHaveScreenshot("dashboard-secondary-goals-brief.png", {
+      maxDiffPixelRatio: 0.02,
+    });
+  });
+
+  test("dashboard-no-new-assignments", async ({ page }) => {
+    await bootDashboardManager(page, 1440);
+    await expect(page.getByText("No new assignments")).toHaveCount(0);
+    await expect(page).toHaveScreenshot("dashboard-no-new-assignments.png", {
+      fullPage: true,
+      maxDiffPixelRatio: 0.02,
+    });
+  });
+
   test("dashboard-manager-1280", async ({ page }) => {
     await bootDashboardManager(page, 1280);
     await expect(page.getByTestId("dashboard-kpi-strip")).toBeVisible();

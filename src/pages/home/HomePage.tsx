@@ -452,6 +452,23 @@ export function HomePage() {
     onRefresh: () => void refresh(),
   };
 
+  const managerTeamBrief =
+    team &&
+    digestModel?.prefs.showDailyOnHome &&
+    digestModel.daily
+      ? (() => {
+          const content = digestCardContent(digestModel.daily);
+          return {
+            headline: content.headline,
+            detail: content.detail,
+            onOpen: () => openDigest("daily"),
+          };
+        })()
+      : null;
+
+  const showDigestRow =
+    !team && digestModel?.prefs.showDailyOnHome && Boolean(digestModel.daily);
+
   return (
     <div className="home-page dashboard-page" data-testid={dashboardReadyTestId}>
       <PerformanceStatusBanner />
@@ -534,6 +551,7 @@ export function HomePage() {
           goalsFeatureOn={goalsFeatureOn}
           goalsProminent={goalsProminent}
           canOpenPersonBrief={(id) => canOpenPersonBrief(currentUser, id)}
+          teamBrief={managerTeamBrief}
         />
       ) : (
         <EmployeeExecutiveDashboard
@@ -554,18 +572,15 @@ export function HomePage() {
       )}
       </div>
 
-      {(digestModel?.prefs.showDailyOnHome && digestModel.daily) ||
-      (digestModel?.prefs.showWeeklyOnHome && digestModel.weekly && team) ? (
+      {showDigestRow ? (
         <div className="dashboard-digest-row executive-lower-section">
-          {digestModel?.prefs.showDailyOnHome && digestModel.daily ? (
+          {!team && digestModel?.prefs.showDailyOnHome && digestModel.daily ? (
             <section
               className="home-card dashboard-digest-card"
-              aria-label={team ? "Team brief" : "Today's brief"}
-              data-testid="dashboard-team-brief"
+              aria-label="Today's brief"
+              data-testid="dashboard-todays-brief"
             >
-              <h2 className="home-card__title home-card__title--section">
-                {team ? "Team brief" : "Today's brief"}
-              </h2>
+              <h2 className="home-card__title home-card__title--section">Today&apos;s brief</h2>
               {(() => {
                 const content = digestCardContent(digestModel.daily);
                 return (
@@ -577,7 +592,7 @@ export function HomePage() {
               })()}
               <div className="home-card__actions">
                 <Button variant="secondary" onClick={() => openDigest("daily")}>
-                  {team ? "Open team brief" : "Open today’s brief"}
+                  Open today&apos;s brief
                 </Button>
               </div>
             </section>

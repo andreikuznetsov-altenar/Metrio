@@ -18,7 +18,8 @@ describe("actionPresentation", () => {
     };
     const row = buildDashboardActionRow(item);
     expect(row.subject).toBe("UX-6124");
-    expect(row.statusLabel).toBe("In Review");
+    expect(row.statusLabel).toBe("");
     expect(row.reasonTag).toBe("No activity");
+    expect(row.contextLine).toContain("No activity");
   });
 });

@@ -25,6 +25,8 @@ import { PersonAvatar } from "../../../components/PersonAvatar/PersonAvatar";
 import { HomeGoalsSummaryCard } from "../HomeGoalsSummaryCard";
 import type { DashboardPerformancePulseProps } from "./DashboardPerformancePulse";
 import type { summarizeGoalsForHome } from "../../../domain/goals/goalReview";
+import { DashboardSecondaryGrid } from "./DashboardSecondaryGrid";
+import { DashboardTeamBriefCard } from "./DashboardTeamBriefCard";
 
 const QUEUE_PREVIEW = 5;
 
@@ -141,6 +143,7 @@ export interface ManagerExecutiveDashboardProps {
   goalsFeatureOn: boolean;
   goalsProminent: boolean;
   canOpenPersonBrief: (personId: string) => boolean;
+  teamBrief?: { headline: string; detail: string; onOpen: () => void } | null;
 }
 
 export function ManagerExecutiveDashboard({
@@ -165,13 +168,13 @@ export function ManagerExecutiveDashboard({
   onOpenPerson,
   onOpenJiraAssignment,
   onOpenMyWeek,
-  onOpenPerformance,
   onOpenFeedback,
   teamPersons,
   goalsSummary,
   goalsFeatureOn,
   goalsProminent,
   canOpenPersonBrief,
+  teamBrief = null,
 }: ManagerExecutiveDashboardProps) {
   const kpis = buildManagerDashboardKpis({
     deliveryRiskCount,
@@ -190,6 +193,10 @@ export function ManagerExecutiveDashboard({
     team.feedback &&
     (/failure|survey in progress|pending/i.test(team.feedback.headline) ||
       Boolean(team.feedback.detail?.match(/failure|pending/i)));
+
+  const goalsSecondary =
+    goalsFeatureOn && goalsSummary && !goalsProminent ? goalsSummary : null;
+  const showSecondaryGrid = Boolean(goalsSecondary || teamBrief);
 
   return (
     <>
@@ -296,11 +303,7 @@ export function ManagerExecutiveDashboard({
             ))}
           </div>
         </section>
-      ) : (
-        <p className="executive-dashboard__span-12 executive-secondary-line" role="status">
-          No new assignments
-        </p>
-      )}
+      ) : null}
 
       {team.newStarters.length > 0 ? (
         <section
@@ -398,32 +401,48 @@ export function ManagerExecutiveDashboard({
         </section>
       ) : null}
 
-      <div className="executive-dashboard__span-12 executive-lower-section">
-        {personal.knowledge.length > 0 ? (
-          <p className="executive-secondary-line">
-            Knowledge: {personal.knowledge[0]?.title}
-            {personal.knowledge.length > 1
-              ? ` (+${personal.knowledge.length - 1} more)`
-              : ""}
-          </p>
-        ) : null}
-        {goalsFeatureOn && goalsSummary && !goalsProminent ? (
-          <HomeGoalsSummaryCard teamView summary={goalsSummary} />
-        ) : null}
-        {!feedbackProminent && team.feedback ? (
-          <p className="executive-secondary-line">
-            {team.feedback.headline}
-            <Button type="button" variant="secondary" onClick={onOpenFeedback}>
-              Open Feedback
-            </Button>
-          </p>
-        ) : null}
-        <div className="home-card__actions">
-          <Button type="button" variant="secondary" onClick={onOpenPerformance}>
-            Open Performance
-          </Button>
+      {showSecondaryGrid ? (
+        <div className="executive-dashboard__span-12">
+          <DashboardSecondaryGrid>
+            {goalsSecondary ? (
+              <HomeGoalsSummaryCard
+                teamView
+                summary={goalsSecondary}
+                moduleSurface="secondary"
+              />
+            ) : null}
+            {teamBrief ? (
+              <DashboardTeamBriefCard
+                headline={teamBrief.headline}
+                detail={teamBrief.detail}
+                onOpen={teamBrief.onOpen}
+              />
+            ) : null}
+          </DashboardSecondaryGrid>
         </div>
-      </div>
+      ) : null}
+
+      {personal.knowledge.length > 0 ||
+      (!feedbackProminent && team.feedback) ? (
+        <div className="executive-dashboard__span-12 executive-lower-section">
+          {personal.knowledge.length > 0 ? (
+            <p className="executive-secondary-line">
+              Knowledge: {personal.knowledge[0]?.title}
+              {personal.knowledge.length > 1
+                ? ` (+${personal.knowledge.length - 1} more)`
+                : ""}
+            </p>
+          ) : null}
+          {!feedbackProminent && team.feedback ? (
+            <p className="executive-secondary-line">
+              {team.feedback.headline}
+              <Button type="button" variant="secondary" onClick={onOpenFeedback}>
+                Open Feedback
+              </Button>
+            </p>
+          ) : null}
+        </div>
+      ) : null}
     </>
   );
 }

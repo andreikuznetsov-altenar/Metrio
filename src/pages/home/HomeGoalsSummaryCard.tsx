@@ -11,10 +11,12 @@ export function HomeGoalsSummaryCard({
   teamView,
   summary,
   prominent = false,
+  moduleSurface = "default",
 }: {
   teamView: boolean;
   summary: GoalsSummary;
   prominent?: boolean;
+  moduleSurface?: "default" | "secondary";
 }) {
   const openGoals = () => {
     dispatchAppRoute("performance");
@@ -36,14 +38,23 @@ export function HomeGoalsSummaryCard({
         ? `${summary.reviewApproachingCount} review${summary.reviewApproachingCount === 1 ? "" : "s"} in the next 7 days.`
         : null;
 
+  const surfaceClass =
+    moduleSurface === "secondary"
+      ? "executive-panel executive-dashboard__secondary-module"
+      : `home-card${prominent ? " home-card--goals-alert" : ""}`;
+  const titleClass =
+    moduleSurface === "secondary"
+      ? "executive-panel__title"
+      : "home-card__title home-card__title--section";
+
   return (
     <section
-      className={`home-card${prominent ? " home-card--goals-alert" : ""}`}
+      className={surfaceClass}
       aria-label="Goals"
       data-testid="home-goals-summary"
       data-prominent={prominent ? "true" : "false"}
     >
-      <h2 className="home-card__title home-card__title--section">
+      <h2 className={titleClass}>
         {teamView ? "Goal reviews" : "Goals"}
       </h2>
       {attentionLine ? (

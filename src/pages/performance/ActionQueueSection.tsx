@@ -1,5 +1,6 @@
 import { Button } from "../../components/Button/Button";
 import type { ActionItem } from "../../domain/actions/actionTypes";
+import { buildDashboardQueueRows } from "../../domain/actions/buildDashboardQueueRows";
 import { DashboardActionQueueRows } from "./DashboardActionQueueRows";
 import "./action-queue.css";
 
@@ -29,7 +30,11 @@ export function ActionQueueSection({
         {items.length === 0 ? (
           <p className="home-card__empty" role="status">{emptyMessage}</p>
         ) : (
-          <DashboardActionQueueRows items={items} onOpen={onOpen} openLabel={openLabel} />
+          <DashboardActionQueueRows
+            rows={buildDashboardQueueRows(items)}
+            onOpen={onOpen}
+            openLabel={openLabel}
+          />
         )}
         {footerAction ? (
           <div className="home-card__actions">
