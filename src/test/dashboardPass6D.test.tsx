@@ -180,14 +180,23 @@ describe("Dashboard pass 6D — stale-while-revalidate", () => {
         stale: true,
         errorMessage: null,
       })?.line,
-    ).toMatch(/Refreshing/);
+    ).toMatch(/Refreshing|Still working/);
     const failed = buildDashboardSyncStatus({
       lastUpdatedAt: "2026-03-01T22:15:00.000Z",
       refreshing: false,
       stale: true,
       errorMessage: "fail",
+      healthState: "refresh_failed_with_cache",
     });
     expect(failed?.showRetry).toBe(true);
     expect(failed?.line).toMatch(/Couldn't refresh · showing data from/);
+    const stuck = buildDashboardSyncStatus({
+      lastUpdatedAt: "2026-03-01T22:15:00.000Z",
+      refreshing: true,
+      stale: false,
+      errorMessage: null,
+      healthState: "refresh_stuck",
+    });
+    expect(stuck?.showDiagnostics).toBe(true);
   });
 });

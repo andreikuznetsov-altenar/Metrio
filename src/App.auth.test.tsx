@@ -59,7 +59,12 @@ describe("authenticated application", () => {
     expect(viewport).toHaveClass("authenticated-app");
     expect(viewport).toHaveAttribute("data-authenticated-viewport", "true");
     expect(screen.getByTestId("app-shell")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /performance/i })).toBeInTheDocument();
+    const shell = screen.getByTestId("app-shell");
+    const performanceNavTargets = [
+      ...within(shell).queryAllByRole("button", { name: /performance/i }),
+      ...within(shell).queryAllByRole("link", { name: /performance/i }),
+    ];
+    expect(performanceNavTargets.length).toBeGreaterThan(0);
     expect(screen.queryByText(/^Metrio$/)).not.toBeInTheDocument();
   });
 

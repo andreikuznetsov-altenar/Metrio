@@ -1,12 +1,19 @@
 import type { ActionItem } from "../../../domain/actions/actionTypes";
-import { buildEmployeeDashboardKpis } from "../../../domain/home/buildDashboardKpis";
+import {
+  buildEmployeeExecutiveModel,
+  type EmployeeExecutiveModel,
+} from "../../../domain/home/executiveDashboardModel";
 import type { DashboardSyncStatus } from "../../../domain/home/dashboardSyncStatus";
 import type { HomePersonalWorkspace } from "../../../domain/home/homeTypes";
+import type { TrendCardData } from "../../../domain/performance";
+import type { WorkloadResult } from "../../../domain/workload/workloadEngine";
+import { DashboardActionTabs } from "./DashboardActionTabs";
+import { DashboardAttentionNow } from "./DashboardAttentionNow";
 import { DashboardExecutiveHeader } from "./DashboardExecutiveHeader";
 import { DashboardKpiStrip } from "./DashboardKpiStrip";
-import { DashboardQueuePanel } from "./DashboardQueuePanel";
+import { DashboardPrimaryTrend } from "./DashboardPrimaryTrend";
+import { DashboardScopeHealthSummary } from "./DashboardScopeHealthSummary";
 import { DashboardCompactRow } from "../../../components/DashboardCompactRow/DashboardCompactRow";
-import { Button } from "../../../components/Button/Button";
 import { HomeGoalsSummaryCard } from "../HomeGoalsSummaryCard";
 import type { summarizeGoalsForHome } from "../../../domain/goals/goalReview";
 
@@ -22,11 +29,12 @@ export interface EmployeeExecutiveDashboardProps {
   refreshing: boolean;
   onRefresh: () => void;
   personal: HomePersonalWorkspace;
+  selfWorkload: WorkloadResult | null;
+  trends: TrendCardData[];
   onOpenAction: (item: ActionItem) => void;
   actionOpenLabel: (item: ActionItem) => string;
   onOpenJiraAssignment: (issueKey: string) => void;
   onOpenMyWeek: () => void;
-  onOpenPerformance: () => void;
   goalsSummary: GoalsHomeSummary | null;
   goalsFeatureOn: boolean;
   goalsProminent: boolean;
@@ -41,23 +49,29 @@ export function EmployeeExecutiveDashboard({
   refreshing,
   onRefresh,
   personal,
+  selfWorkload,
+  trends,
   onOpenAction,
   actionOpenLabel,
   onOpenJiraAssignment,
   onOpenMyWeek,
-  onOpenPerformance,
   goalsSummary,
   goalsFeatureOn,
   goalsProminent,
 }: EmployeeExecutiveDashboardProps) {
-  const kpis = buildEmployeeDashboardKpis(personal.performanceSnapshot.metrics);
-  const focusPreview = personal.focus.slice(0, QUEUE_PREVIEW);
+  const model: EmployeeExecutiveModel = buildEmployeeExecutiveModel({
+    performanceSnapshot: personal.performanceSnapshot,
+    selfWorkload,
+    focus: personal.focus,
+    trends,
+  });
 
   return (
     <>
       <div className="executive-dashboard__span-12">
         <DashboardExecutiveHeader
           greeting={greeting}
+          scopeLabel={model.scopeLabel}
           activeJiraCount={activeJiraCount}
           newAssignmentCount={newAssignmentCount}
           lastUpdatedAt={lastUpdatedAt}
@@ -66,23 +80,21 @@ export function EmployeeExecutiveDashboard({
           onRefresh={onRefresh}
         />
       </div>
-      <DashboardKpiStrip cards={kpis} />
-      <div className="executive-dashboard__span-12">
-        <DashboardQueuePanel
-          title="My focus"
-          workColumnLabel="Work"
-          items={focusPreview}
-          emptyMessage="Nothing needs your attention right now."
-          onOpen={onOpenAction}
-          openLabel={actionOpenLabel}
-          testId="dashboard-my-focus"
-          footerAction={
+      <DashboardScopeHealthSummary scopeLabel={model.scopeLabel} summary={model.scopeHealth} />
+      <DashboardKpiStrip cards={model.kpis} />
+      <DashboardPrimaryTrend trends={model.trends} spanClass={model.trendSpanClass} />
+      <DashboardAttentionNow items={model.attentionItems} />
+      <DashboardActionTabs
+        tabs={model.actionTabs}
+        onOpenAction={onOpenAction}
+        actionOpenLabel={actionOpenLabel}
+        footerByTab={{
+          focus:
             personal.focus.length > QUEUE_PREVIEW
               ? { label: "View all assignments", onClick: onOpenMyWeek }
-              : undefined
-          }
-        />
-      </div>
+              : undefined,
+        }}
+      />
       {personal.newAssignments.length > 0 ? (
         <section className="executive-dashboard__span-12 executive-panel" aria-label="New assignments">
           <h2 className="executive-panel__title">New assignments</h2>
@@ -108,17 +120,16 @@ export function EmployeeExecutiveDashboard({
           <HomeGoalsSummaryCard teamView={false} summary={goalsSummary} prominent />
         </div>
       ) : null}
-      <div className="executive-dashboard__span-12 executive-lower-section">
-        {personal.knowledge.length > 0 ? (
-          <p className="executive-secondary-line">Knowledge: {personal.knowledge[0]?.title}</p>
-        ) : null}
-        {goalsFeatureOn && goalsSummary && !goalsProminent ? (
+      {goalsFeatureOn && goalsSummary && !goalsProminent ? (
+        <div className="executive-dashboard__span-12 executive-lower-section">
           <HomeGoalsSummaryCard teamView={false} summary={goalsSummary} />
-        ) : null}
-        <Button type="button" variant="secondary" onClick={onOpenPerformance}>
-          Open Performance
-        </Button>
-      </div>
+        </div>
+      ) : null}
+      {personal.knowledge.length > 0 ? (
+        <div className="executive-dashboard__span-12 executive-lower-section">
+          <p className="executive-secondary-line">Knowledge: {personal.knowledge[0]?.title}</p>
+        </div>
+      ) : null}
     </>
   );
 }

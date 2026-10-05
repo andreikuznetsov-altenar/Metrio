@@ -80,6 +80,8 @@ export interface PerformanceDataContextValue {
   /** True while the visible snapshot came from disk and a fetch is in flight or failed. */
   revalidatingFromCache: boolean;
   performanceLastUpdatedAt: string | null;
+  /** Wall-clock ms when the current loading/refresh cycle started; cleared when settled. */
+  refreshStartedAt: number | null;
 }
 
 const PerformanceDataContext =
@@ -136,6 +138,7 @@ export function PerformanceDataProvider({
     null,
   );
   const [revalidatingFromCache, setRevalidatingFromCache] = useState(false);
+  const [refreshStartedAt, setRefreshStartedAt] = useState<number | null>(null);
   const dataRef = useRef(data);
   const viewModelsRef = useRef(viewModels);
   const managerTeamTrayRef = useRef(managerTeamTray);
@@ -160,6 +163,14 @@ export function PerformanceDataProvider({
     contentLoadingActive || contentOverlayVisible;
 
   const uiState = derivePerformanceUiState({ status, viewModels, stale });
+
+  useEffect(() => {
+    if (status === "loading" || status === "refreshing") {
+      setRefreshStartedAt((prev) => prev ?? Date.now());
+    } else {
+      setRefreshStartedAt(null);
+    }
+  }, [status]);
 
   const datasetKey = useMemo(
     () =>
@@ -468,6 +479,7 @@ export function PerformanceDataProvider({
       longLoadingMessage,
       revalidatingFromCache,
       performanceLastUpdatedAt: data?.lastUpdatedAt ?? null,
+      refreshStartedAt,
     }),
     [
       status,
@@ -484,6 +496,7 @@ export function PerformanceDataProvider({
       uiState,
       longLoadingMessage,
       revalidatingFromCache,
+      refreshStartedAt,
     ],
   );
 

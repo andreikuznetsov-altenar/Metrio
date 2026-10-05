@@ -10,6 +10,7 @@ export interface DashboardExecutiveHeaderProps {
   dashboardSyncStatus: DashboardSyncStatus | null;
   refreshing: boolean;
   onRefresh: () => void;
+  scopeLabel?: string;
 }
 
 export function DashboardExecutiveHeader({
@@ -20,10 +21,12 @@ export function DashboardExecutiveHeader({
   dashboardSyncStatus,
   refreshing,
   onRefresh,
+  scopeLabel,
 }: DashboardExecutiveHeaderProps) {
   return (
     <header className="executive-header" data-testid="dashboard-executive-header">
       <div className="executive-header__main">
+        <p className="executive-header__scope">{scopeLabel ?? "Employee"} scope</p>
         <h1 className="executive-header__title">{greeting}</h1>
         <div className="executive-header__meta">
           <span className="executive-header__chip">
@@ -50,6 +53,20 @@ export function DashboardExecutiveHeader({
                   onClick={() => onRefresh()}
                 >
                   Retry
+                </button>
+              </>
+            ) : null}
+            {dashboardSyncStatus.showDiagnostics ? (
+              <>
+                {" "}
+                <button
+                  type="button"
+                  className="executive-header__sync-action"
+                  onClick={() => {
+                    window.dispatchEvent(new CustomEvent("metrio-open-diagnostics"));
+                  }}
+                >
+                  Diagnostics
                 </button>
               </>
             ) : null}

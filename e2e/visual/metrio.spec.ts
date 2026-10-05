@@ -2354,6 +2354,122 @@ test.describe("Metrio visual regression", () => {
     });
   });
 
+  test("dashboard-first-run", async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.addInitScript((fixtureId: string) => {
+      localStorage.setItem("metrio-connection-connected", "true");
+      localStorage.setItem("metrio-dev-fixture", fixtureId);
+      localStorage.setItem("metrio-theme", "light");
+      localStorage.removeItem("metrio-visual-dashboard-cache");
+    }, "lead");
+    await page.goto("/?visualHomeState=first-run");
+    await expect(page.getByTestId("dashboard-first-run")).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByText("No performance data yet")).toBeVisible();
+    await expect(page).toHaveScreenshot("dashboard-first-run.png", {
+      fullPage: true,
+      maxDiffPixelRatio: 0.02,
+    });
+  });
+
+  test("dashboard-refreshing-with-cache", async ({ page }) => {
+    await bootDashboardWithCache(page, { width: 1440, delayMs: 600_000 });
+    await expect(page.getByTestId("dashboard-refreshing-with-cache")).toBeVisible({
+      timeout: 15_000,
+    });
+    await expect(page.getByTestId("dashboard-sync-status")).toContainText(/Refreshing/);
+    await expect(page).toHaveScreenshot("dashboard-refreshing-with-cache.png", {
+      fullPage: true,
+      maxDiffPixelRatio: 0.02,
+    });
+  });
+
+  test("dashboard-refresh-stuck", async ({ page }) => {
+    await bootDashboardWithCache(page, { width: 1440, delayMs: 600_000 });
+    await expect(page.getByTestId("dashboard-refreshing-with-cache")).toBeVisible({
+      timeout: 15_000,
+    });
+    await page.clock.fastForward("61s");
+    await expect(page.getByTestId("dashboard-refresh-stuck")).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByRole("button", { name: /Retry/i })).toBeVisible();
+    await expect(page).toHaveScreenshot("dashboard-refresh-stuck.png", {
+      fullPage: true,
+      maxDiffPixelRatio: 0.02,
+    });
+  });
+
+  test("dashboard-refresh-failed-with-cache", async ({ page }) => {
+    await bootDashboardWithCache(page, { width: 1440, failRefresh: true });
+    await expect(page.getByTestId("dashboard-ready")).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByTestId("dashboard-sync-status")).toContainText(
+      /Couldn't refresh/,
+    );
+    await expect(page.getByRole("button", { name: /Retry/i })).toBeVisible();
+    await expect(page).toHaveScreenshot("dashboard-refresh-failed-with-cache.png", {
+      fullPage: true,
+      maxDiffPixelRatio: 0.02,
+    });
+  });
+
+  test("dashboard-refresh-failed-no-cache", async ({ page }) => {
+    await page.clock.install({ time: new Date("2026-10-03T09:30:00+02:00") });
+    await page.addInitScript((fixtureId: string) => {
+      localStorage.setItem("metrio-connection-connected", "true");
+      localStorage.setItem("metrio-dev-fixture", fixtureId);
+      localStorage.setItem("metrio-theme", "light");
+      localStorage.removeItem("metrio-visual-dashboard-cache");
+      localStorage.setItem("metrio-visual-performance-fail", "1");
+    }, "lead");
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto("/");
+    await expect(page.getByTestId("dashboard-blocking-error")).toBeVisible({ timeout: 30_000 });
+    await expect(page.getByRole("button", { name: /Open Performance/i })).toBeVisible();
+    await expect(page).toHaveScreenshot("dashboard-refresh-failed-no-cache.png", {
+      fullPage: true,
+      maxDiffPixelRatio: 0.02,
+    });
+  });
+
+  test("dashboard-employee-1440", async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await bootConnected(page, "employee", "light");
+    await expect(page.getByTestId("dashboard-ready")).toBeVisible({ timeout: 30_000 });
+    await expect(page.getByTestId("dashboard-scope-health")).toBeVisible();
+    await expect(page.getByTestId("dashboard-kpi-strip")).toBeVisible();
+    await expect(page.getByTestId("dashboard-first-viewport")).toHaveScreenshot(
+      "dashboard-employee-1440.png",
+      { maxDiffPixelRatio: 0.02 },
+    );
+  });
+
+  test("dashboard-manager-1440", async ({ page }) => {
+    await bootDashboardManager(page, 1440);
+    await expect(page.getByTestId("dashboard-first-viewport")).toHaveScreenshot(
+      "dashboard-manager-1440-first-viewport.png",
+      { maxDiffPixelRatio: 0.02 },
+    );
+  });
+
+  test("dashboard-director-1440", async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await bootConnected(page, "director", "light");
+    await expect(page.getByTestId("dashboard-ready")).toBeVisible({ timeout: 30_000 });
+    await expect(page.getByTestId("dashboard-director-org")).toBeVisible();
+    await expect(page.getByTestId("dashboard-first-viewport")).toHaveScreenshot(
+      "dashboard-director-1440.png",
+      { maxDiffPixelRatio: 0.02 },
+    );
+  });
+
+  test("dashboard-director-dark", async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await bootConnected(page, "director", "dark");
+    await expect(page.getByTestId("dashboard-ready")).toBeVisible({ timeout: 30_000 });
+    await expect(page).toHaveScreenshot("dashboard-director-dark.png", {
+      fullPage: true,
+      maxDiffPixelRatio: 0.02,
+    });
+  });
+
   test("dashboard-fresh", async ({ page }) => {
     await page.clock.install({ time: new Date("2026-10-03T09:30:00+02:00") });
     await bootDashboardManager(page, 1440);

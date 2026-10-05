@@ -1,4 +1,5 @@
 import { Badge } from "../../../components/Badge/Badge";
+import { HelpIcon } from "../../../components/HelpIcon/HelpIcon";
 import type { DashboardKpiCard } from "../../../domain/home/buildDashboardKpis";
 
 export function DashboardKpiStrip({ cards }: { cards: DashboardKpiCard[] }) {
@@ -12,7 +13,10 @@ export function DashboardKpiStrip({ cards }: { cards: DashboardKpiCard[] }) {
       <div className="executive-kpi-strip">
         {cards.map((card) => (
           <article key={card.id} className="executive-kpi-card">
-            <p className="executive-kpi-card__label">{card.label}</p>
+            <div className="executive-kpi-card__label-row">
+              <p className="executive-kpi-card__label">{card.label}</p>
+              {card.tooltip ? <HelpIcon label={card.tooltip} /> : null}
+            </div>
             <p className="executive-kpi-card__value">{card.value}</p>
             {card.badge ? (
               <Badge variant={card.badge.variant} className="executive-kpi-card__badge">

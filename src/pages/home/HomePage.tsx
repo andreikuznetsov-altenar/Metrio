@@ -32,7 +32,6 @@ import {
 import { openExternalUrl } from "../../platform/openExternal";
 import { resolveJiraBaseUrl } from "../../config/product";
 import { buildJiraIssueBrowseUrl } from "../../platform/jiraIssueUrl";
-import { openProjectCockpit } from "../../platform/projectCockpitNavigation";
 import { useDigestPreferences } from "../../hooks/useDigestPreferences";
 import { openDigest } from "../../platform/digestNavigation";
 import { useGoals } from "../../hooks/useGoals";
@@ -65,10 +64,17 @@ import { listNotificationEvents } from "../../platform/notificationEvents";
 import { useUpcomingMeetings } from "../../hooks/useUpcomingMeetings";
 import { HomeUpcomingMeetings } from "./HomeUpcomingMeetings";
 import { buildDashboardSyncStatus } from "../../domain/home/dashboardSyncStatus";
+import {
+  resolveDashboardDataHealth,
+  type DashboardDataHealthState,
+} from "../../domain/home/dashboardDataHealth";
 import { parseActiveJiraCount } from "../../domain/home/dashboardContextSummary";
-import { ManagerExecutiveDashboard } from "./dashboard/ManagerExecutiveDashboard";
-import { EmployeeExecutiveDashboard } from "./dashboard/EmployeeExecutiveDashboard";
 import { DirectorExecutiveDashboard } from "./dashboard/DirectorExecutiveDashboard";
+import { EmployeeExecutiveDashboard } from "./dashboard/EmployeeExecutiveDashboard";
+import { ManagerExecutiveDashboard } from "./dashboard/ManagerExecutiveDashboard";
+import { DashboardFirstRunState } from "./dashboard/DashboardFirstRunState";
+import { DashboardBlockingErrorState } from "./dashboard/DashboardBlockingErrorState";
+import { DashboardSyncBanner } from "./dashboard/DashboardSyncBanner";
 import "./dashboard/executive-dashboard.css";
 
 import type {
@@ -78,26 +84,39 @@ import type {
 import "../performance/performance-dashboard.css";
 import "./home.css";
 
+function resolveDashboardTestId(
+  health: DashboardDataHealthState,
+  visualHomeState: ReturnType<typeof readHomeVisualState>,
+  revalidatingFromCache: boolean,
+  dashboardRefreshing: boolean,
+): string {
+  if (visualHomeState === "first-run") return "dashboard-first-run";
+  if (visualHomeState === "refreshing-with-cache") {
+    return "dashboard-refreshing-with-cache";
+  }
+  if (health === "refresh_stuck") return "dashboard-refresh-stuck";
+  if (revalidatingFromCache && dashboardRefreshing) {
+    return "dashboard-refreshing-with-cache";
+  }
+  if (visualHomeState === "partial") return "dashboard-partial";
+  return "dashboard-ready";
+}
+
 export function HomePage() {
   const { currentUser } = useCurrentUser();
   const {
     data,
     viewModels,
-    uiState,
     errorMessage,
     refresh,
     status,
     refreshing,
     stale,
     performanceLastUpdatedAt,
+    revalidatingFromCache,
+    refreshStartedAt,
   } = usePerformanceData();
   const dashboardRefreshing = status === "loading" || status === "refreshing";
-  const dashboardSyncStatus = buildDashboardSyncStatus({
-    lastUpdatedAt: performanceLastUpdatedAt,
-    refreshing,
-    stale,
-    errorMessage,
-  });
   const analytics = useOptionalPerformanceAnalytics();
   const surveyData = useFeedbackSurveyStore((state) => state.data);
   const feedbackSummary = useMemo(
@@ -370,6 +389,7 @@ export function HomePage() {
   };
 
   const visualHomeState = readHomeVisualState();
+  const openPerformanceHome = () => dispatchAppRoute("performance");
 
   if (visualHomeState === "blocked") {
     return (
@@ -385,7 +405,38 @@ export function HomePage() {
     );
   }
 
-  if (uiState === "initial-loading" && !workspaceModel) {
+  const hasEverSuccessfulSnapshot = Boolean(
+    performanceLastUpdatedAt || data?.lastUpdatedAt || revalidatingFromCache,
+  );
+  const hasUsableDashboardData = Boolean(workspaceModel);
+  const dataHealth = resolveDashboardDataHealth({
+    hasEverSuccessfulSnapshot,
+    hasUsableDashboardData,
+    refreshing: dashboardRefreshing,
+    stale,
+    errorMessage,
+    refreshStartedAt,
+    now: Date.now(),
+  });
+  const dashboardSyncStatus = buildDashboardSyncStatus({
+    lastUpdatedAt: performanceLastUpdatedAt,
+    refreshing,
+    stale,
+    errorMessage,
+    healthState: dataHealth.state,
+    showSlowRefreshHint: dataHealth.showSlowRefreshHint,
+  });
+
+  if (dataHealth.state === "cold_start" || visualHomeState === "first-run") {
+    return (
+      <>
+        <PerformanceStatusBanner />
+        <DashboardFirstRunState onOpenPerformance={openPerformanceHome} />
+      </>
+    );
+  }
+
+  if (dataHealth.state === "initial_loading" && !hasUsableDashboardData) {
     return (
       <div className="home-page" data-testid="home-loading">
         <PerformanceStatusBanner />
@@ -395,27 +446,31 @@ export function HomePage() {
     );
   }
 
+  if (dataHealth.state === "refresh_failed_without_cache") {
+    return (
+      <>
+        <PerformanceStatusBanner />
+        <DashboardBlockingErrorState
+          title="Couldn't load dashboard data"
+          body="Performance data couldn't be refreshed and no cached snapshot is available."
+          errorMessage={errorMessage}
+          onRetry={() => void refresh()}
+          onOpenPerformance={openPerformanceHome}
+        />
+      </>
+    );
+  }
+
   if (!workspaceModel) {
     return (
       <div className="home-page" data-testid="dashboard-blocked">
         <PerformanceStatusBanner />
         <section className="home-empty-state" role="status">
-          {uiState === "error" ? (
-            <>
-              <h2 className="home-empty-state__title">Couldn’t load dashboard data</h2>
-              <p className="home-empty-state__body">
-                {errorMessage || "Performance data is unavailable."}
-              </p>
-            </>
-          ) : (
-            <>
-              <h2 className="home-empty-state__title">Waiting for your profile</h2>
-              <p className="home-empty-state__body">
-                Dashboard needs your person record from the latest Jira performance
-                sync. Check connections and refresh Performance data.
-              </p>
-            </>
-          )}
+          <h2 className="home-empty-state__title">Waiting for your profile</h2>
+          <p className="home-empty-state__body">
+            Dashboard needs your person record from the latest Jira performance sync.
+            Check connections and refresh Performance data.
+          </p>
         </section>
       </div>
     );
@@ -423,8 +478,12 @@ export function HomePage() {
 
   const displayWorkspace = applyVisualHomeOverrides(workspaceModel);
   const { personal, team, organization } = displayWorkspace;
-  const dashboardReadyTestId =
-    visualHomeState === "partial" ? "dashboard-partial" : "dashboard-ready";
+  const dashboardReadyTestId = resolveDashboardTestId(
+    dataHealth.state,
+    visualHomeState,
+    revalidatingFromCache,
+    dashboardRefreshing,
+  );
 
   const showGoalsSummary =
     goalsFeatureOn &&
@@ -432,6 +491,8 @@ export function HomePage() {
   const goalsProminent = Boolean(showGoalsSummary && goalsHomeSummary.needsAttention);
   const newAssignmentCount = personal.newAssignments.length;
   const performanceTrends = effectiveTeamSnapshot?.trends ?? [];
+  const employeeTrends = employeeSnapshot?.trends ?? performanceTrends;
+  const selfWorkload = selfPerson?.workload ?? null;
   const openTrendPoint = analytics
     ? (
         trend: import("../../domain/performance").TrendCardData,
@@ -472,12 +533,22 @@ export function HomePage() {
   return (
     <div className="home-page dashboard-page" data-testid={dashboardReadyTestId}>
       <PerformanceStatusBanner />
+      {dataHealth.state === "refresh_stuck" && dashboardSyncStatus ? (
+        <DashboardSyncBanner
+          syncStatus={dashboardSyncStatus}
+          onRetry={() => void refresh()}
+          onDiagnostics={() => {
+            window.dispatchEvent(new CustomEvent("metrio-open-diagnostics"));
+          }}
+        />
+      ) : null}
       <div className="executive-dashboard" data-testid="dashboard-first-viewport">
       {homeRole === "director" && organization && team ? (
         <DirectorExecutiveDashboard
           {...sharedHeader}
           personal={personal}
           team={team}
+          organization={organization}
           teamSnapshot={effectiveTeamSnapshot}
           deliveryRiskCount={deliveryRisk.length}
           trends={performanceTrends}
@@ -488,32 +559,17 @@ export function HomePage() {
             dispatchAppRoute("performance");
             dispatchPerformanceTab("delivery-risk");
           }}
-          onOpenTeamOverview={() => {
-            dispatchAppRoute("performance");
-            dispatchPerformanceTab("overview");
-          }}
-          onOpenProject={openProjectCockpit}
-          onOpenPerson={(personId) => openPerson(personId)}
-          onOpenJiraAssignment={(key) => void openJiraAssignment(key)}
-          onOpenMyWeek={() => {
-            dispatchAppRoute("performance");
-            dispatchEmployeeView("my-week");
-          }}
-          onOpenPerformance={() => dispatchAppRoute("performance")}
-          onOpenFeedback={() => {
-            dispatchAppRoute("feedback");
-            dispatchFeedbackTab("delivery");
-          }}
-          teamPersons={data?.teamSnapshot?.persons ?? []}
-          goalsSummary={showGoalsSummary ? goalsHomeSummary : null}
-          goalsFeatureOn={goalsFeatureOn}
-          goalsProminent={goalsProminent}
-          canOpenPersonBrief={(id) => canOpenPersonBrief(currentUser, id)}
-          organization={organization}
           onOpenDirectorView={() => {
             dispatchAppRoute("performance");
             dispatchPerformanceTab("overview");
           }}
+          onOpenFeedback={() => {
+            dispatchAppRoute("feedback");
+            dispatchFeedbackTab("delivery");
+          }}
+          goalsSummary={showGoalsSummary ? goalsHomeSummary : null}
+          goalsFeatureOn={goalsFeatureOn}
+          goalsProminent={goalsProminent}
         />
       ) : team ? (
         <ManagerExecutiveDashboard
@@ -534,14 +590,12 @@ export function HomePage() {
             dispatchAppRoute("performance");
             dispatchPerformanceTab("overview");
           }}
-          onOpenProject={openProjectCockpit}
           onOpenPerson={(personId) => openPerson(personId)}
           onOpenJiraAssignment={(key) => void openJiraAssignment(key)}
           onOpenMyWeek={() => {
             dispatchAppRoute("performance");
             dispatchEmployeeView("my-week");
           }}
-          onOpenPerformance={() => dispatchAppRoute("performance")}
           onOpenFeedback={() => {
             dispatchAppRoute("feedback");
             dispatchFeedbackTab("delivery");
@@ -557,6 +611,8 @@ export function HomePage() {
         <EmployeeExecutiveDashboard
           {...sharedHeader}
           personal={personal}
+          selfWorkload={selfWorkload}
+          trends={employeeTrends}
           onOpenAction={handleAction}
           actionOpenLabel={actionOpenLabel}
           onOpenJiraAssignment={(key) => void openJiraAssignment(key)}
@@ -564,7 +620,6 @@ export function HomePage() {
             dispatchAppRoute("performance");
             dispatchEmployeeView("my-week");
           }}
-          onOpenPerformance={() => dispatchAppRoute("performance")}
           goalsSummary={showGoalsSummary ? goalsHomeSummary : null}
           goalsFeatureOn={goalsFeatureOn}
           goalsProminent={goalsProminent}

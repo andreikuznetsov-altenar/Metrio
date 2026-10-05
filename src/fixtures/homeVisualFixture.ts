@@ -1,13 +1,25 @@
 import type { HomeKnowledgeItem, HomeWorkspace } from "../domain/home/homeTypes";
 
 /** Visual-test-only Home states (VITE_VISUAL_FIXTURE=1). */
-export type HomeVisualState = "blocked" | "partial" | null;
+export type HomeVisualState =
+  | "blocked"
+  | "partial"
+  | "first-run"
+  | "refreshing-with-cache"
+  | null;
 
 export function readHomeVisualState(): HomeVisualState {
   if (import.meta.env.VITE_VISUAL_FIXTURE !== "1") return null;
   if (typeof window === "undefined") return null;
   const value = new URLSearchParams(window.location.search).get("visualHomeState");
-  if (value === "blocked" || value === "partial") return value;
+  if (
+    value === "blocked" ||
+    value === "partial" ||
+    value === "first-run" ||
+    value === "refreshing-with-cache"
+  ) {
+    return value;
+  }
   return null;
 }
 

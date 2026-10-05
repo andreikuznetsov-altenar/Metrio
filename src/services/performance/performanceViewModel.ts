@@ -321,6 +321,13 @@ export function buildPerformanceViewModels(
       atRisk: row.atRiskCount,
       workload: workloadDisplayLabel(person?.workload?.level),
       availability: person?.availability.label || "—",
+      ...(person?.workload?.capacityLoadPercent != null
+        ? {
+            capacityLoadPercent: person.workload.capacityLoadPercent,
+            estimatedMonthlyHours: person.workload.estimatedMonthlyHours,
+            monthlyCapacityHours: person.workload.monthlyCapacityHours,
+          }
+        : {}),
     };
   });
 
