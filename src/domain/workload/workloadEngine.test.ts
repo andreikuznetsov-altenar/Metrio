@@ -31,15 +31,17 @@ function activeIssue(key: string, status = 'In Progress'): AuditIssue {
 }
 
 describe('calculateWorkload', () => {
-  it('returns low for few active tasks', () => {
+  it('uses normal capacity level when few active tasks have no completed cycles', () => {
     const result = calculateWorkload([activeIssue('A-1')], params);
-    expect(result.level).toBe('low');
+    expect(result.level).toBe('normal');
+    expect(result.capacityDataState).toBe('insufficient_history');
   });
 
-  it('keeps capacity level low when many active tasks have no completed cycles', () => {
+  it('does not treat zero completed cycles as low capacity load', () => {
     const issues = Array.from({ length: 6 }, (_, i) => activeIssue(`A-${i}`));
     const result = calculateWorkload(issues, params);
-    expect(result.level).toBe('low');
+    expect(result.level).toBe('normal');
+    expect(result.capacityDataState).toBe('insufficient_history');
     expect(result.capacityLoadPercent).toBe(0);
   });
 
@@ -75,6 +77,7 @@ describe('calculateWorkload', () => {
       isHoliday: false,
     });
     expect(result.level).toBe('low');
+    expect(result.capacityDataState).toBe('insufficient_history');
     expect(result.summary).toContain('Vacation');
   });
 });

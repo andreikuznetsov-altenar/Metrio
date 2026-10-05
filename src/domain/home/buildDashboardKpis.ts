@@ -1,7 +1,11 @@
 import type { BadgeVariant } from "../../components/Badge/Badge";
 import type { MetricCardData, WorkloadRow } from "../performance";
 import type { WorkloadResult } from "../workload/workloadEngine";
-import { workloadDisplayLabel } from "../workload/workloadDisplay";
+import type { PersonAvailability } from "../people/types";
+import {
+  employeeCapacityKpi,
+  teamCapacityKpiFromRows,
+} from "../workload/capacityPresentation";
 import type { ScopeHealthSummary } from "./executiveDashboardModel";
 
 export interface DashboardKpiCard {
@@ -30,20 +34,14 @@ function scopeBadge(scopeHealth: ScopeHealthSummary): DashboardKpiCard["badge"] 
   return { label: "Critical", variant: "danger" };
 }
 
-function countOverloaded(workload: WorkloadRow[]): number {
-  return workload.filter((row) => row.workload === "Overloaded").length;
-}
-
 function capacityKpiFromWorkload(workload: WorkloadRow[]): DashboardKpiCard {
-  const overloaded = countOverloaded(workload);
-  const heavy = workload.filter((row) => row.workload === "Heavy").length;
-  const hot = overloaded + heavy;
+  const summary = teamCapacityKpiFromRows(workload);
   return {
     id: "capacity",
     label: "Capacity",
-    value: hot > 0 ? String(hot) : "0",
-    badge: badgeForCount(hot, "Balanced"),
-    tooltip: `${overloaded} overloaded · ${heavy} heavy across the team`,
+    value: summary.value,
+    badge: { label: summary.badgeLabel, variant: summary.badgeVariant },
+    tooltip: summary.tooltip,
   };
 }
 
@@ -51,6 +49,7 @@ function capacityKpiFromWorkload(workload: WorkloadRow[]): DashboardKpiCard {
 export function buildEmployeeDashboardKpis(input: {
   metrics: Pick<MetricCardData, "label" | "value">[];
   workload: WorkloadResult | null;
+  availability?: PersonAvailability;
 }): DashboardKpiCard[] {
   const pick = ["Efficiency", "First pass", "Completed"] as const;
   const cards: DashboardKpiCard[] = pick.map((label) => {
@@ -62,24 +61,17 @@ export function buildEmployeeDashboardKpis(input: {
     };
   });
 
-  const wl = input.workload;
-  const percent =
-    wl?.capacityLoadPercent ?? (typeof wl?.score === "number" ? wl.score : null);
-  const levelLabel = wl ? workloadDisplayLabel(wl.level) : "Balanced";
-  const active = wl?.activeWorkCount ?? wl?.activeCount ?? 0;
-  const assigned = wl?.currentAssignedIssueCount ?? 0;
+  const capacity = employeeCapacityKpi({
+    workload: input.workload,
+    availability: input.availability,
+  });
 
   cards.push({
     id: "capacity-load",
     label: "Capacity load",
-    value: percent != null ? `${Math.round(percent)}%` : levelLabel,
-    badge:
-      levelLabel === "Overloaded"
-        ? { label: "Overloaded", variant: "danger" }
-        : levelLabel === "Heavy"
-          ? { label: "Heavy", variant: "warning" }
-          : { label: levelLabel, variant: "neutral" },
-    tooltip: `${active} active work · ${assigned} assigned in Jira`,
+    value: capacity.value,
+    badge: { label: capacity.badgeLabel, variant: capacity.badgeVariant },
+    tooltip: capacity.tooltip,
   });
 
   return cards;
@@ -147,7 +139,7 @@ export function buildDirectorDashboardKpis(input: {
       label: "Capacity imbalance",
       value: String(input.capacityImbalance),
       badge: badgeForCount(input.capacityImbalance, "Balanced"),
-      tooltip: "Gap between heavy/overloaded and light capacity levels across teams.",
+      tooltip: "Gap between heavy/overloaded and light capacity levels across measured team members.",
     },
   ];
 }

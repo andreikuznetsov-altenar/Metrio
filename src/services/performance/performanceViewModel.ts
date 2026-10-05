@@ -12,6 +12,8 @@ import {
   personActiveCount,
   personAtRiskCount,
   personProblematicCount,
+  workloadLabelForPerson,
+  capacityDataStateForPerson,
 } from "../../domain/people/personDisplay";
 import { buildMyWeek } from "../../domain/personal/myWeek";
 import { buildWorkHistory } from "../../domain/personal/workHistory";
@@ -67,9 +69,6 @@ import {
   metricContextFromComparison,
 } from "../../pages/performance/trendPresentation";
 import { buildWorkloadBalance } from "../../domain/workload/workloadBalance";
-import {
-  workloadDisplayLabel,
-} from "../../domain/workload/workloadDisplay";
 import { personRouteKey } from "../../domain/people/personDisplay";
 import type { PerformanceReviewTarget } from "../../domain/performance";
 import { buildPersonAnalyticsWorkspace, auditIssueToPersonWorkRow, type PersonAnalyticsWorkspace } from "../../domain/analytics/personAnalyticsWorkspace";
@@ -117,7 +116,7 @@ function mapAttentionPerson(
     severity: item.severity,
     issueKeys: item.relatedIssueKeys,
     issueCount: item.relatedIssueKeys.length || item.signalCount,
-    workload: workloadDisplayLabel(person?.workload?.level),
+    workload: workloadLabelForPerson(person),
   };
 }
 
@@ -319,7 +318,8 @@ export function buildPerformanceViewModels(
       personName: row.personName,
       activeWork: row.activeCount,
       atRisk: row.atRiskCount,
-      workload: workloadDisplayLabel(person?.workload?.level),
+      workload: workloadLabelForPerson(person),
+      capacityDataState: capacityDataStateForPerson(person),
       availability: person?.availability.label || "—",
       ...(person?.workload?.capacityLoadPercent != null
         ? {
@@ -356,7 +356,10 @@ export function buildPerformanceViewModels(
       completed: person.performance
         ? String(person.performance.completedCount)
         : "0",
-      workload: formatWorkloadLabel(person.workload?.level),
+      workload: formatWorkloadLabel(person.workload?.level, {
+        workload: person.workload,
+        availability: person.availability,
+      }),
       summary: avgCycleLabel(person),
     };
   }
@@ -396,7 +399,10 @@ export function buildPerformanceViewModels(
       efficiency: person.performance
         ? `${person.performance.efficiencyIndex}%`
         : "—",
-      workload: formatWorkloadLabel(person.workload?.level),
+      workload: formatWorkloadLabel(person.workload?.level, {
+        workload: person.workload,
+        availability: person.availability,
+      }),
       availability: person.availability.label,
       attentionState,
       attentionSeverityLabel,
@@ -676,7 +682,10 @@ function buildPersonDetailSnapshot(
     personId: person.id,
     personName: person.bamboo.displayName,
     availability: person.availability.label,
-    workload: formatWorkloadLabel(person.workload?.level),
+    workload: formatWorkloadLabel(person.workload?.level, {
+      workload: person.workload,
+      availability: person.availability,
+    }),
     efficiency: perf ? `${perf.efficiencyIndex}%` : "—",
     firstPass: `${firstPassPercent(person)}%`,
     completed: perf ? String(perf.completedCount) : "0",

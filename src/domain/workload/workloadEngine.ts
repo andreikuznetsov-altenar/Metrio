@@ -7,6 +7,7 @@ import {
   countOperationalWorkload,
   MONTHLY_CAPACITY_HOURS,
   requiredHeadcount,
+  type CapacityDataState,
 } from '../workflows/capacityWorkload';
 import type { WorkflowProfileMapping } from '../workflows/types';
 import { resolveWorkflowProfile } from '../workflows/resolveWorkflowProfile';
@@ -92,6 +93,7 @@ export interface WorkloadResult {
   waitingCount?: number;
   holdCount?: number;
   capacityBreakdown?: ReturnType<typeof calculateCapacityBreakdown>;
+  capacityDataState?: CapacityDataState;
 }
 
 function isOnVacation(availability?: PersonAvailability): boolean {
@@ -136,6 +138,7 @@ export function calculateWorkload(
       qaCount: 0,
       waitingCount: 0,
       holdCount: 0,
+      capacityDataState: 'insufficient_history',
     };
   }
 
@@ -164,21 +167,29 @@ export function calculateWorkload(
     mappings: options.mappings,
     now: options.now,
   });
-  const level = capacityLevelFromPercent(capacityBreakdown.capacityLoadPercent);
+  const capacityDataState = capacityBreakdown.capacityDataState;
+  const level =
+    capacityDataState === 'measured'
+      ? capacityLevelFromPercent(capacityBreakdown.capacityLoadPercent)
+      : 'normal';
 
   const levelLabel =
-    level === 'low'
-      ? 'Low'
-      : level === 'normal'
-        ? 'Balanced'
-        : level === 'high'
-          ? 'High'
-          : 'Overloaded';
+    capacityDataState === 'measured'
+      ? level === 'low'
+        ? 'Low'
+        : level === 'normal'
+          ? 'Balanced'
+          : level === 'high'
+            ? 'High'
+            : 'Overloaded'
+      : 'Not enough history';
 
   const capacityNote =
-    capacityBreakdown.estimatedMonthlyHours > 0
+    capacityDataState === 'measured' && capacityBreakdown.estimatedMonthlyHours > 0
       ? ` · ~${capacityBreakdown.estimatedMonthlyHours}h/mo (${capacityBreakdown.capacityLoadPercent}% of ${MONTHLY_CAPACITY_HOURS}h)`
-      : '';
+      : capacityDataState === 'insufficient_history'
+        ? ' · capacity not measured (no completed cycles in period)'
+        : '';
 
   return {
     level,
@@ -201,5 +212,6 @@ export function calculateWorkload(
     waitingCount: operational.waitingCount,
     holdCount: operational.holdCount,
     capacityBreakdown,
+    capacityDataState,
   };
 }

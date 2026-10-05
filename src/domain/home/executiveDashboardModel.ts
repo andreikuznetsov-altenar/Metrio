@@ -2,13 +2,19 @@ import type { HomeRoleVariant } from "./homeTypes";
 import type { HomeDeliverySummary } from "./homeTypes";
 import type { WorkloadRow } from "../performance";
 import type { WorkloadResult } from "../workload/workloadEngine";
-import { workloadDisplayLabel } from "../workload/workloadDisplay";
+import {
+  capacityPresentationLabel,
+  CAPACITY_INSUFFICIENT_LABEL,
+  capacityDataStateFromWorkload,
+  isMeasuredCapacityLabel,
+} from "../workload/capacityPresentation";
 import {
   buildDirectorDashboardKpis,
   buildEmployeeDashboardKpis,
   buildManagerDashboardKpis,
   type DashboardKpiCard,
 } from "./buildDashboardKpis";
+import type { PersonAvailability } from "../people/types";
 import type { ActionItem } from "../actions/actionTypes";
 import type { TrendCardData } from "../performance";
 import type { HomeOrganizationWorkspace } from "./homeTypes";
@@ -84,12 +90,16 @@ function metricValue(
 
 function countCapacityHot(workload: WorkloadRow[]): number {
   return workload.filter(
-    (row) => row.workload === "Heavy" || row.workload === "Overloaded",
+    (row) =>
+      row.capacityDataState !== "insufficient_history" &&
+      (row.workload === "Heavy" || row.workload === "Overloaded"),
   ).length;
 }
 
 function countOverloaded(workload: WorkloadRow[]): number {
-  return workload.filter((row) => row.workload === "Overloaded").length;
+  return workload.filter(
+    (row) => row.capacityDataState !== "insufficient_history" && row.workload === "Overloaded",
+  ).length;
 }
 
 export function buildScopeHealthSummary(
@@ -108,9 +118,11 @@ export function buildScopeHealthSummary(
 
   if (role === "employee") {
     const capacityLabel = selfWorkload
-      ? workloadDisplayLabel(selfWorkload.level)
-      : "Balanced";
-    const overloaded = capacityLabel === "Overloaded" || capacityLabel === "Heavy";
+      ? capacityPresentationLabel(selfWorkload)
+      : CAPACITY_INSUFFICIENT_LABEL;
+    const overloaded =
+      isMeasuredCapacityLabel(capacityLabel) &&
+      (capacityLabel === "Overloaded" || capacityLabel === "Heavy");
     if (focusCount > 0 || overloaded) {
       return {
         severity: focusCount > 2 || capacityLabel === "Overloaded" ? "critical" : "watch",
@@ -122,10 +134,14 @@ export function buildScopeHealthSummary(
           "Scope health combines your focus queue and capacity load from workflow-aware workload.",
       };
     }
+    const insufficient =
+      capacityDataStateFromWorkload(selfWorkload) === "insufficient_history";
     return {
       severity: "healthy",
       line: "Your scope looks healthy",
-      tooltip: "No urgent focus items and capacity is within normal range.",
+      tooltip: insufficient
+        ? "No urgent focus items. Completed-cycle capacity is not measured for this period."
+        : "No urgent focus items and capacity is within normal range.",
     };
   }
 
@@ -246,6 +262,7 @@ function trendSpan(
 export function buildEmployeeExecutiveModel(input: {
   performanceSnapshot: HomePerformanceSnapshot;
   selfWorkload: WorkloadResult | null;
+  selfAvailability?: PersonAvailability;
   focus: ActionItem[];
   trends: TrendCardData[];
 }): EmployeeExecutiveModel {
@@ -268,6 +285,7 @@ export function buildEmployeeExecutiveModel(input: {
     kpis: buildEmployeeDashboardKpis({
       metrics: input.performanceSnapshot.metrics,
       workload: input.selfWorkload,
+      availability: input.selfAvailability,
     }),
     attentionItems,
     trendSpanClass: trendSpan(attentionItems),
@@ -373,7 +391,10 @@ export function buildDirectorExecutiveModel(input: {
   });
 
   const heavy = countCapacityHot(teamWorkload);
-  const light = teamWorkload.filter((row) => row.workload === "Light").length;
+  const light = teamWorkload.filter(
+    (row) =>
+      row.capacityDataState !== "insufficient_history" && row.workload === "Light",
+  ).length;
 
   return {
     role: "director",
@@ -411,8 +432,8 @@ export function buildDirectorExecutiveModel(input: {
 
 export function capacityDistribution(
   workload: WorkloadRow[],
-): { label: "Light" | "Balanced" | "Heavy" | "Overloaded"; count: number }[] {
-  const labels = ["Light", "Balanced", "Heavy", "Overloaded"] as const;
+): { label: "Light" | "Balanced" | "Heavy" | "Overloaded" | typeof CAPACITY_INSUFFICIENT_LABEL; count: number }[] {
+  const labels = ["Light", "Balanced", "Heavy", "Overloaded", CAPACITY_INSUFFICIENT_LABEL] as const;
   return labels.map((label) => ({
     label,
     count: workload.filter((row) => row.workload === label).length,

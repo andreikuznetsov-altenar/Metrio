@@ -40,7 +40,7 @@ describe('workflowCapacityAudit', () => {
     const legacy = calculateLegacyWorkloadAssessment(issues, params);
     const capacity = calculateWorkload(issues, params);
     expect(legacy.level).toBe('overloaded');
-    expect(capacity.level).toBe('low');
+    expect(capacity.level).toBe('normal');
     expect(capacity.capacityLoadPercent).toBe(0);
   });
 
@@ -73,6 +73,8 @@ describe('workflowCapacityAudit', () => {
       perUserKpi: {},
     });
     expect(report.textReport).toContain('Sample');
+    expect(report.textReport).toContain('insufficient history');
+    expect(report.personRows[0]?.capacityDataState).toBe('insufficient_history');
     expect(report.personRows).toHaveLength(1);
   });
 });

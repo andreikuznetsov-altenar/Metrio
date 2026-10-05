@@ -405,7 +405,10 @@ export function buildPersonAnalyticsWorkspace(
     personName: person.bamboo.displayName,
     role: person.bamboo.jobTitle || "—",
     availability: personAvailabilityDrawerLine(person.availability, now),
-    workload: formatWorkloadLabel(person.workload?.level),
+    workload: formatWorkloadLabel(person.workload?.level, {
+      workload: person.workload,
+      availability: person.availability,
+    }),
     contextLine: buildPersonAnalyticsContextLine(
       params,
       reviewTarget,

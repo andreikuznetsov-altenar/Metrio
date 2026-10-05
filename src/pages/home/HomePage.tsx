@@ -642,6 +642,7 @@ export function HomePage() {
           {...sharedHeader}
           personal={personal}
           selfWorkload={selfWorkload}
+          selfAvailability={selfPerson?.availability}
           trends={employeeTrends}
           onOpenAction={handleAction}
           actionOpenLabel={actionOpenLabel}

@@ -74,7 +74,8 @@ describe('capacityWorkload', () => {
       uxIssue(`UX-${i}`, [], 'In Progress'),
     );
     const result = calculateWorkload(activeOnly, params);
-    expect(result.level).toBe('low');
+    expect(result.level).toBe('normal');
+    expect(result.capacityDataState).toBe('insufficient_history');
     expect(result.score).toBe(0);
     expect(result.activeCount).toBe(12);
   });

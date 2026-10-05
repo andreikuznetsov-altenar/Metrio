@@ -7,6 +7,7 @@ import type { DashboardSyncStatus } from "../../../domain/home/dashboardSyncStat
 import type { HomePersonalWorkspace } from "../../../domain/home/homeTypes";
 import type { TrendCardData } from "../../../domain/performance";
 import type { WorkloadResult } from "../../../domain/workload/workloadEngine";
+import type { PersonAvailability } from "../../../domain/people/types";
 import { DashboardActionTabs } from "./DashboardActionTabs";
 import { DashboardAttentionNow } from "./DashboardAttentionNow";
 import { DashboardExecutiveHeader } from "./DashboardExecutiveHeader";
@@ -30,6 +31,7 @@ export interface EmployeeExecutiveDashboardProps {
   onRefresh: () => void;
   personal: HomePersonalWorkspace;
   selfWorkload: WorkloadResult | null;
+  selfAvailability?: PersonAvailability;
   trends: TrendCardData[];
   onOpenAction: (item: ActionItem) => void;
   actionOpenLabel: (item: ActionItem) => string;
@@ -50,6 +52,7 @@ export function EmployeeExecutiveDashboard({
   onRefresh,
   personal,
   selfWorkload,
+  selfAvailability,
   trends,
   onOpenAction,
   actionOpenLabel,
@@ -62,6 +65,7 @@ export function EmployeeExecutiveDashboard({
   const model: EmployeeExecutiveModel = buildEmployeeExecutiveModel({
     performanceSnapshot: personal.performanceSnapshot,
     selfWorkload,
+    selfAvailability,
     focus: personal.focus,
     trends,
   });

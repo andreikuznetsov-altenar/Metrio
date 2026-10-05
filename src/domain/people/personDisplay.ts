@@ -5,6 +5,12 @@ import { countActiveIssues } from '../workload/workloadEngine';
 import { classifyTaskHealth } from '../task-health/taskHealthEngine';
 import { formatDuration } from '../jira/dates';
 import { workloadDisplayLabel } from '../workload/workloadDisplay';
+import {
+  capacityPresentationLabel,
+  capacityDataStateFromWorkload,
+  type CapacityPresentationLabel,
+} from '../workload/capacityPresentation';
+import type { WorkloadResult } from '../workload/workloadEngine';
 
 export function personRouteKey(person: Person): string {
   return person.jira?.canonicalKey || person.bamboo.workEmail || person.id;
@@ -80,6 +86,24 @@ export function workloadTagVariant(level: string | undefined): 'success' | 'warn
   return 'neutral';
 }
 
-export function formatWorkloadLabel(level: string | undefined): string {
+export function formatWorkloadLabel(
+  level: string | undefined,
+  context?: {
+    workload?: WorkloadResult | null;
+    availability?: Person['availability'];
+  },
+): string {
+  if (context) {
+    return capacityPresentationLabel(context.workload ?? null, context.availability);
+  }
   return workloadDisplayLabel(level);
+}
+
+export function workloadLabelForPerson(person: Person | undefined): CapacityPresentationLabel {
+  if (!person) return workloadDisplayLabel(undefined);
+  return capacityPresentationLabel(person.workload ?? null, person.availability);
+}
+
+export function capacityDataStateForPerson(person: Person | undefined) {
+  return capacityDataStateFromWorkload(person?.workload ?? null);
 }

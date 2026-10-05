@@ -6,6 +6,8 @@ import {
   type WorkloadLevel,
   type WorkloadThresholds,
 } from '../workload/workloadEngine';
+import type { CapacityDataState } from './capacityWorkload';
+import { capacityDataStateFromWorkload } from '../workload/capacityPresentation';
 import { diagnoseWorkflowIssues } from './workflowDiagnostics';
 import { resolveWorkflowProfile } from './resolveWorkflowProfile';
 import { resolveWorkflowStage } from './resolveWorkflowStage';
@@ -77,6 +79,7 @@ export interface WorkflowCapacityPersonRow {
   estimatedMonthlyHours: number;
   capacityLoadPercent: number;
   capacityLevel: WorkloadLevel;
+  capacityDataState: CapacityDataState;
 }
 
 export interface WskinsSampleRow {
@@ -115,7 +118,7 @@ function flattenGroupedIssues(
   return out;
 }
 
-function pickWskinsSamples(flat: AuditIssue[], params: ReportParams): AuditIssue[] {
+function pickWskinsSamples(flat: AuditIssue[], _params: ReportParams): AuditIssue[] {
   const ws = flat.filter(
     (issue) =>
       issue.projectKey === 'WS' ||
@@ -177,6 +180,7 @@ export function runWorkflowCapacityAudit(reportData: AuditReportData): WorkflowC
       estimatedMonthlyHours: workload.estimatedMonthlyHours ?? 0,
       capacityLoadPercent: workload.capacityLoadPercent ?? 0,
       capacityLevel: workload.level,
+      capacityDataState: capacityDataStateFromWorkload(workload),
     });
   });
 
@@ -219,7 +223,11 @@ export function runWorkflowCapacityAudit(reportData: AuditReportData): WorkflowC
         health.reasons.length > 0 &&
         health.reasons.every((r) => r.includes('No activity')) &&
         (health.status === 'at_risk' || health.status === 'problematic');
-      if (staleOnly || (health.status !== 'healthy' && health.reasons.some((r) => r.includes('No activity')))) {
+      const notStable =
+        health.status !== 'stable' &&
+        health.status !== 'successful' &&
+        health.status !== 'no_activity';
+      if (staleOnly || (notStable && health.reasons.some((r) => r.includes('No activity')))) {
         downstreamAttentionFindings.push(
           `${issue.issueKey} @ ${status}: ${health.status} — ${health.reasons.join('; ')}`,
         );
@@ -240,14 +248,17 @@ export function runWorkflowCapacityAudit(reportData: AuditReportData): WorkflowC
   const lines: string[] = [];
   lines.push('=== Workload legacy vs capacity (read-only) ===');
   lines.push(
-    'person | legacyScore | legacyLevel | assigned | active | review | qa | wait | hold | estMonthlyH | capacity% | capacityLevel',
+    'person | capacity evidence | assigned | active | review | qa | wait | hold | estMonthlyH | capacity% (raw) | legacyScore | legacyLevel',
   );
   personRows.forEach((row) => {
+    const evidence =
+      row.capacityDataState === 'insufficient_history'
+        ? 'insufficient history'
+        : `${row.capacityLevel} (measured)`;
     lines.push(
       [
         row.personLabel,
-        row.legacyScore,
-        row.legacyLevel,
+        evidence,
         row.assigned,
         row.activeWorkCount,
         row.reviewCount,
@@ -255,17 +266,26 @@ export function runWorkflowCapacityAudit(reportData: AuditReportData): WorkflowC
         row.waitingCount,
         row.holdCount,
         row.estimatedMonthlyHours.toFixed(1),
-        row.capacityLoadPercent.toFixed(0),
-        row.capacityLevel,
+        row.capacityDataState === 'insufficient_history'
+          ? `${row.capacityLoadPercent.toFixed(0)} (unmeasured)`
+          : row.capacityLoadPercent.toFixed(0),
+        row.legacyScore,
+        row.legacyLevel,
       ].join(' | '),
     );
   });
 
   const legacyOver = personRows.filter((r) => r.legacyLevel === 'overloaded').length;
-  const capacityOver = personRows.filter((r) => r.capacityLevel === 'overloaded').length;
+  const capacityOver = personRows.filter(
+    (r) => r.capacityDataState === 'measured' && r.capacityLevel === 'overloaded',
+  ).length;
+  const insufficientCount = personRows.filter(
+    (r) => r.capacityDataState === 'insufficient_history',
+  ).length;
   lines.push('');
   lines.push(`legacy Overloaded count: ${legacyOver}`);
-  lines.push(`capacity Overloaded count: ${capacityOver}`);
+  lines.push(`capacity Overloaded count (measured): ${capacityOver}`);
+  lines.push(`capacity insufficient history: ${insufficientCount}`);
 
   lines.push('');
   lines.push('=== WSkins samples ===');

@@ -7,6 +7,7 @@ import {
 } from "../app/performanceAnalyticsContext";
 import { personAvailabilityBadgeLabel } from "../domain/availability/personAvailabilityCopy";
 import type { Person } from "../domain/people/types";
+import { testWorkload } from "../domain/testFixtures";
 
 function minimalPerson(overrides: Partial<Person> = {}): Person {
   return {
@@ -20,7 +21,13 @@ function minimalPerson(overrides: Partial<Person> = {}): Person {
     },
     jira: { canonicalKey: "daria@co.com" },
     availability: { state: "available", label: "Available" },
-    workload: { level: "overloaded", activeCount: 5, atRiskCount: 1, problematicCount: 0 },
+    workload: testWorkload({
+      level: "overloaded",
+      capacityLoadPercent: 110,
+      activeCount: 5,
+      atRiskCount: 1,
+      problematicCount: 0,
+    }),
     performance: null,
     issues: [],
     ...overrides,

@@ -10,6 +10,12 @@ import type { WorkflowProfileMapping } from './types';
 
 export const MONTHLY_CAPACITY_HOURS = 164;
 
+export type CapacityDataState = 'measured' | 'insufficient_history';
+
+export function resolveCapacityDataState(completedCyclesInPeriod: number): CapacityDataState {
+  return completedCyclesInPeriod > 0 ? 'measured' : 'insufficient_history';
+}
+
 export interface CapacityBreakdown {
   completedCycleHours: number;
   activeSegmentHours: number;
@@ -19,6 +25,7 @@ export interface CapacityBreakdown {
   monthlyQuantity: number;
   estimatedMonthlyHours: number;
   capacityLoadPercent: number;
+  capacityDataState: CapacityDataState;
 }
 
 export interface CapacityWorkloadInput {
@@ -89,6 +96,7 @@ export function calculateCapacityBreakdown(input: CapacityWorkloadInput): Capaci
     monthlyQuantity,
     estimatedMonthlyHours: Math.round(estimatedMonthlyHours * 10) / 10,
     capacityLoadPercent,
+    capacityDataState: resolveCapacityDataState(completedCyclesInPeriod),
   };
 }
 

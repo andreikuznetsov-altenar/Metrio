@@ -5,8 +5,8 @@ import { personAvailabilityBadgeLabel } from "../../domain/availability/personAv
 import {
   availabilityTagVariant,
   formatWorkloadLabel,
-  workloadTagVariant,
 } from "../../domain/people/personDisplay";
+import { workloadBadgeVariantFromLabel } from "../../domain/performance/performanceStatusBadges";
 
 export interface PersonIdentityHeaderProps {
   personId: string;
@@ -40,10 +40,13 @@ export function PersonIdentityHeader({
       : "neutral";
   const workloadBadge =
     person != null
-      ? formatWorkloadLabel(person.workload?.level)
+      ? formatWorkloadLabel(person.workload?.level, {
+          workload: person.workload,
+          availability: person.availability,
+        })
       : workloadLabel ?? "—";
   const workloadVariant =
-    person != null ? workloadTagVariant(person.workload?.level) : "neutral";
+    person != null ? workloadBadgeVariantFromLabel(workloadBadge) : "neutral";
 
   return (
     <div

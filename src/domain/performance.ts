@@ -1,6 +1,8 @@
 import type { BadgeVariant } from "../components/Badge/Badge";
 import type { RadarPrimaryAction, RadarSeverity } from "./radar/types";
 import type { TrendDirection } from "./trends/trendEngine";
+import type { CapacityDataState } from "./workflows/capacityWorkload";
+import type { CapacityPresentationLabel } from "./workload/capacityPresentation";
 
 export type DateRangeKey = "7d" | "30d" | "3m" | "6m" | "1y";
 export type ReviewTargetKey = "team" | "sprint" | "org";
@@ -53,8 +55,9 @@ export interface WorkloadRow {
   personName?: string;
   activeWork: number;
   atRisk: number;
-  workload: "Light" | "Balanced" | "Heavy" | "Overloaded";
+  workload: CapacityPresentationLabel;
   availability: string;
+  capacityDataState?: CapacityDataState;
   capacityLoadPercent?: number;
   estimatedMonthlyHours?: number;
   monthlyCapacityHours?: number;

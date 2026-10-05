@@ -44,6 +44,6 @@ describe("buildEmployeeDashboardKpis", () => {
     });
     expect(cards).toHaveLength(4);
     expect(cards[3].label).toBe("Capacity load");
-    expect(cards[3].tooltip).toMatch(/4 active work · 6 assigned/);
+    expect(cards[3].tooltip).toMatch(/6 assigned · 4 active/);
   });
 });
