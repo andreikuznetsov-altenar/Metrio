@@ -1,4 +1,5 @@
 import { differenceInCalendarDays, parseISO } from 'date-fns';
+import { isDateWithinRange } from '../jira/dates';
 import type { AuditIssue, ReportParams } from '../jira/types';
 import type { WorkloadLevel } from '../workload/workloadEngine';
 import { isWorkflowCapacityEligible } from './eligibility';
@@ -53,7 +54,9 @@ export function calculateCapacityBreakdown(input: CapacityWorkloadInput): Capaci
 
   issues.filter(isWorkflowCapacityEligible).forEach((issue) => {
     const profile = resolveWorkflowProfile(issue, { mappings: input.mappings });
-    const cycles = extractProfileContributorCycles(issue, profile, params);
+    const cycles = extractProfileContributorCycles(issue, profile, params).filter(
+      (cycle) => cycle.completedAt && isDateWithinRange(cycle.completedAt, params),
+    );
     cycles.forEach((cycle) => {
       completedCyclesInPeriod++;
       const hours =

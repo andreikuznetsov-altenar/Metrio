@@ -27,6 +27,7 @@ import {
 import { buildDiagnosticsSummaryText } from "../../platform/observability/diagnosticsSummary";
 import type { AppPreferences } from "../../platform/preferences";
 import { openLogsFolder } from "../../platform/logger";
+import { runWorkflowCapacityAuditFromPerformanceFetch } from "../../domain/workflows/workflowCapacityAudit";
 
 export function DiagnosticsSettingsPanel({
   prefs,
@@ -44,6 +45,8 @@ export function DiagnosticsSettingsPanel({
   const [checking, setChecking] = useState(false);
   const [advancedOpen, setAdvancedOpen] = useState(false);
   const [exporting, setExporting] = useState(false);
+  const [workflowAuditText, setWorkflowAuditText] = useState<string | null>(null);
+  const [workflowAuditing, setWorkflowAuditing] = useState(false);
 
   const buildInfo = getBuildInfo();
   const refreshMetrics = getRefreshMetrics();
@@ -75,6 +78,27 @@ export function DiagnosticsSettingsPanel({
       }),
     [prefs, checks, buildInfo, refreshMetrics, apiCounts, startup],
   );
+
+  const runWorkflowAudit = async () => {
+    setWorkflowAuditing(true);
+    setWorkflowAuditText(null);
+    try {
+      const { fetchPerformanceData } = await import(
+        "../../services/performance/performanceDataService"
+      );
+      const { loadPreferences } = await import("../../platform/preferences");
+      const result = await runWorkflowCapacityAuditFromPerformanceFetch(
+        fetchPerformanceData,
+        loadPreferences,
+      );
+      setWorkflowAuditText(result.textReport);
+      success("Workflow capacity audit completed (read-only)");
+    } catch (e) {
+      toastError(e instanceof Error ? e.message : "Workflow audit failed");
+    } finally {
+      setWorkflowAuditing(false);
+    }
+  };
 
   const exportBundle = async () => {
     const confirmed = window.confirm(
@@ -171,6 +195,37 @@ export function DiagnosticsSettingsPanel({
             />
           </div>
         </div>
+      </section>
+
+      <section className="diagnostics-section" aria-labelledby="diagnostics-workflow-audit-title">
+        <h4 id="diagnostics-workflow-audit-title" className="diagnostics-section__title">
+          Workflow capacity audit
+        </h4>
+        <p className="settings-field__hint">
+          Read-only comparison of legacy workload scoring vs Pass 8 capacity load using the same
+          Jira fetch path as Performance. Does not modify Jira.
+        </p>
+        <div className="settings-button-group">
+          <Button
+            type="button"
+            variant="secondary"
+            disabled={workflowAuditing}
+            onClick={() => void runWorkflowAudit()}
+            data-testid="diagnostics-workflow-capacity-audit"
+          >
+            {workflowAuditing ? "Running audit…" : "Run workflow capacity audit"}
+          </Button>
+        </div>
+        {workflowAuditText ? (
+          <textarea
+            className="diagnostics-audit-output"
+            readOnly
+            rows={16}
+            value={workflowAuditText}
+            data-testid="diagnostics-workflow-audit-output"
+            aria-label="Workflow capacity audit output"
+          />
+        ) : null}
       </section>
 
       <div className="settings-button-group diagnostics-actions">
