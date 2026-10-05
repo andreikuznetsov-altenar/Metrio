@@ -16,6 +16,8 @@ interface CacheEntry {
 
 const MAX_CACHE_ENTRIES = 500;
 const TRANSIENT_FAILURE_TTL_MS = 30_000;
+/** Bump when invoke contract or failure semantics change (clears stale session cache). */
+const AVATAR_CACHE_KEY_VERSION = "camelCase-v1";
 const memoryCache = new Map<string, CacheEntry>();
 const inflight = new Map<string, Promise<string | null>>();
 
@@ -32,7 +34,7 @@ function cacheKey(
   employeeId: string,
   size: BambooEmployeePhotoSize,
 ): string {
-  return `${subdomain}:${employeeId}:${size}`;
+  return `${AVATAR_CACHE_KEY_VERSION}:${subdomain}:${employeeId}:${size}`;
 }
 
 function getFreshEntry(key: string): CacheEntry | undefined {
@@ -141,8 +143,8 @@ export async function fetchEmployeeAvatarDataUrl(
     try {
       const payload = await invoke<BambooPhotoPayload>("bamboo_get_employee_photo", {
         config: { subdomain },
-        employee_id: trimmedId,
-        photo_size: size,
+        employeeId: trimmedId,
+        photoSize: size,
       });
       const src = `data:${payload.content_type};base64,${payload.data_base64}`;
       setCacheEntry(key, { dataUrl: src, status: "ok" });

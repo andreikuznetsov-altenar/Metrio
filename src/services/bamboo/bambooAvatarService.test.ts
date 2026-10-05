@@ -4,6 +4,7 @@ import {
   fetchEmployeeAvatarDataUrl,
   peekAvatarCacheStatus,
   peekCachedEmployeeAvatar,
+  resetAvatarSession,
 } from "./bambooAvatarService";
 
 vi.mock("@tauri-apps/api/core", () => ({
@@ -17,6 +18,7 @@ import { invoke } from "@tauri-apps/api/core";
 
 describe("bambooAvatarService", () => {
   beforeEach(() => {
+    resetAvatarSession();
     clearEmployeeAvatarCacheForTests();
     vi.mocked(invoke).mockClear();
   });
@@ -35,11 +37,27 @@ describe("bambooAvatarService", () => {
     expect(first).toContain("data:image/jpeg;base64,abc");
     expect(second).toBe(first);
     expect(invoke).toHaveBeenCalledTimes(1);
-    expect(invoke).toHaveBeenCalledWith("bamboo_get_employee_photo", {
+    const args = {
       config: { subdomain: "acme" },
-      employee_id: "7",
-      photo_size: "small",
+      employeeId: "7",
+      photoSize: "small",
+    };
+    expect(invoke).toHaveBeenCalledWith("bamboo_get_employee_photo", args);
+    expect(args).not.toHaveProperty("employee_id");
+    expect(args).not.toHaveProperty("photo_size");
+  });
+
+  it("uses camelCase Tauri invoke args for bamboo_get_employee_photo", async () => {
+    await fetchEmployeeAvatarDataUrl("emp-42", "altenar", "small");
+    expect(invoke).toHaveBeenCalledWith("bamboo_get_employee_photo", {
+      config: { subdomain: "altenar" },
+      employeeId: "emp-42",
+      photoSize: "small",
     });
+    const callArgs = vi.mocked(invoke).mock.calls[0]?.[1] as Record<string, unknown>;
+    expect(callArgs).toBeDefined();
+    expect(callArgs).not.toHaveProperty("employee_id");
+    expect(callArgs).not.toHaveProperty("photo_size");
   });
 
   it("uses separate cache keys per photo size", async () => {

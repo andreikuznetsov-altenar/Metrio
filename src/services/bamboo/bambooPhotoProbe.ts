@@ -89,8 +89,8 @@ export async function probeBambooEmployeePhoto(
   try {
     const payload = await invoke<BambooPhotoPayload>("bamboo_get_employee_photo", {
       config: { subdomain: trimmedSubdomain },
-      employee_id: trimmedId,
-      photo_size: "small",
+      employeeId: trimmedId,
+      photoSize: "small",
     });
     const byteLength = byteLengthFromBase64(payload.data_base64);
     if (!byteLength || !payload.content_type?.startsWith("image/")) {
@@ -139,8 +139,15 @@ export function formatPhotoProbeSummary(result: BambooPhotoProbeResult): string 
   if (result.outcome === "ok") {
     return `${who}: photo loaded (${result.byteLength ?? 0} bytes, ${result.contentType ?? "image"})`;
   }
+  if (result.failureClass === "D") {
+    return `${who}: native invoke/client error${result.detail ? ` — ${result.detail}` : ""}`;
+  }
+  if (result.failureClass === "H") {
+    return `${who}: invalid image payload${result.contentType ? ` (${result.contentType})` : ""}`;
+  }
   if (result.httpStatus) {
-    return `${who}: HTTP ${result.httpStatus} (${result.outcome})`;
+    const suffix = result.detail ? ` — ${result.detail}` : "";
+    return `${who}: HTTP ${result.httpStatus} (${result.outcome})${suffix}`;
   }
   return `${who}: ${result.outcome}${result.detail ? ` — ${result.detail}` : ""}`;
 }
