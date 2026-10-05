@@ -311,7 +311,7 @@ export function buildVisualPerformanceFetchResult(
     })),
     timeOffEntries,
     partialWarnings:
-      import.meta.env.VITE_VISUAL_FIXTURE === "1" &&
+      import.meta.env?.VITE_VISUAL_FIXTURE === "1" &&
       typeof window !== "undefined" &&
       new URLSearchParams(window.location.search).get("visualHomeState") ===
         "partial"

@@ -540,6 +540,68 @@ test.describe("Metrio visual regression", () => {
     });
   });
 
+  test("analytics-backflows-zero-dark", async ({ page }) => {
+    await page.addInitScript((fixtureId: string) => {
+      localStorage.setItem("metrio-connection-connected", "true");
+      localStorage.setItem("metrio-dev-fixture", fixtureId);
+      localStorage.setItem("metrio-theme", "dark");
+    }, "lead");
+    await page.goto("/");
+    await openPerformanceFromHome(page);
+    await page.getByRole("button", { name: /View Backflows details/i }).click();
+    await expect(page.locator(".drawer--analytics")).toBeVisible({ timeout: 10_000 });
+    await expect(page).toHaveScreenshot("analytics-backflows-zero-dark.png", {
+      fullPage: true,
+      maxDiffPixelRatio: 0.02,
+    });
+  });
+
+  test("performance-subnav", async ({ page }) => {
+    await bootMetrio(page, "lead");
+    const subnav = page.locator(".performance-subnav");
+    await expect(subnav).toBeVisible({ timeout: 15_000 });
+    await expect(subnav).toHaveScreenshot("performance-subnav.png", {
+      maxDiffPixelRatio: 0.02,
+    });
+  });
+
+  test("delivery-risk-short-row", async ({ page }) => {
+    await bootMetrio(page, "lead");
+    await clickSubnav(page, /delivery risk/i);
+    const table = page.locator(".performance-table--delivery-risk");
+    await expect(table).toBeVisible();
+    const row = table.locator("tbody tr").first();
+    await expect(row).toHaveScreenshot("delivery-risk-short-row.png", {
+      maxDiffPixelRatio: 0.02,
+    });
+  });
+
+  test("delivery-risk-multiline-row", async ({ page }) => {
+    await bootMetrio(page, "lead");
+    await clickSubnav(page, /delivery risk/i);
+    const table = page.locator(".performance-table--delivery-risk");
+    await expect(table).toBeVisible();
+    const multiline = table.locator("tbody tr").filter({
+      has: page.locator(".performance-table__clamp"),
+    }).first();
+    await expect(multiline).toBeVisible();
+    await expect(multiline).toHaveScreenshot("delivery-risk-multiline-row.png", {
+      maxDiffPixelRatio: 0.02,
+    });
+  });
+
+  test("delivery-risk-sorted", async ({ page }) => {
+    await bootMetrio(page, "lead");
+    await clickSubnav(page, /delivery risk/i);
+    const table = page.locator(".performance-table--delivery-risk");
+    await expect(table).toBeVisible();
+    await table.getByRole("button", { name: /^Age$/i }).click();
+    await table.getByRole("button", { name: /^Age$/i }).click();
+    await expect(table).toHaveScreenshot("delivery-risk-sorted.png", {
+      maxDiffPixelRatio: 0.02,
+    });
+  });
+
   async function bootDigestVisual(
     page: Page,
     variant: "employee" | "manager" | "weekly" | "no-change",
