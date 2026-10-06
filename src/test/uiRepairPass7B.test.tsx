@@ -33,6 +33,12 @@ vi.mock("../platform/preferences", () => ({
   }),
 }));
 
+vi.mock("../app/PerformanceDataContext", () => ({
+  usePerformanceData: () => ({
+    data: { teamSnapshot: { persons: [] } },
+  }),
+}));
+
 const secondary: TeamSecondarySnapshot = {
   people: [
     {
@@ -46,6 +52,7 @@ const secondary: TeamSecondarySnapshot = {
       attentionVariant: "warning",
       attentionSeverityLabel: "Medium",
       attentionIssueKey: "UX-1490",
+      attentionIssueKeys: ["UX-1490"],
       attentionReason: "No activity for 7+ days",
     },
   ],
@@ -58,6 +65,7 @@ const secondary: TeamSecondarySnapshot = {
       reason: "UX-1490 — No activity for 7+ days",
       reasonDetail: "No activity for 7+ days",
       primaryIssueKey: "UX-1490",
+      relatedIssueKeys: ["UX-1490"],
       primaryAction: "review_workload",
       tasksAffected: 3,
       action: "Review workload",
@@ -120,7 +128,7 @@ function renderOverview(ui: React.ReactElement) {
 describe("UI Repair Pass 7B", () => {
   afterEach(() => cleanup());
 
-  it("Team attention renders Jira keys as links and expands View N more", async () => {
+  it("Team attention renders compact preview and opens task modal", async () => {
     const user = userEvent.setup();
     renderOverview(
       <TeamOverviewView
@@ -135,10 +143,8 @@ describe("UI Repair Pass 7B", () => {
     });
     const links = within(row).getAllByRole("link");
     expect(links[0]).toHaveAttribute("href", expect.stringContaining("UX-1"));
-    await user.click(within(row).getByRole("button", { name: /View 1 more/i }));
-    await waitFor(() => {
-      expect(within(row).getAllByRole("link").length).toBe(3);
-    });
+    await user.click(within(row).getByRole("button", { name: /Show 3 tasks/i }));
+    expect(screen.getByTestId("task-list-modal")).toBeTruthy();
     expect(within(row).getByText("Engineer")).toBeTruthy();
   });
 

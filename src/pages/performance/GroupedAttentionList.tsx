@@ -1,17 +1,12 @@
 import { Badge } from "../../components/Badge/Badge";
 import { CheckCircle2 } from "lucide-react";
+import { GroupedIssuePreview } from "../../components/GroupedIssuePreview/GroupedIssuePreview";
 import type { PersonalAttentionItem } from "../../domain/performance";
 import { resolveJiraBaseUrl } from "../../config/product";
 import { loadPreferences } from "../../platform/preferences";
-import { buildJiraIssueBrowseUrl } from "../../platform/jiraIssueUrl";
-import { openExternalUrl } from "../../platform/openExternal";
-import { groupAttentionSignals, hiddenAttentionKeyCount } from "./groupAttentionSignals";
-
-async function openIssueInJira(issueKey: string) {
-  const prefs = await loadPreferences();
-  const url = buildJiraIssueBrowseUrl(resolveJiraBaseUrl(prefs), issueKey);
-  await openExternalUrl(url);
-}
+import { groupAttentionSignals } from "./groupAttentionSignals";
+import { useEffect, useState } from "react";
+import { usePerformanceData } from "../../app/PerformanceDataContext";
 
 export interface GroupedAttentionListProps {
   items: PersonalAttentionItem[];
@@ -22,7 +17,16 @@ export function GroupedAttentionList({
   items,
   emptyMessage = "Nothing needs your attention right now.",
 }: GroupedAttentionListProps) {
+  const { data } = usePerformanceData();
+  const teamPersons = data?.teamSnapshot.persons ?? [];
+  const [jiraBaseUrl, setJiraBaseUrl] = useState("");
   const grouped = groupAttentionSignals(items);
+
+  useEffect(() => {
+    void loadPreferences().then((prefs) => {
+      setJiraBaseUrl(resolveJiraBaseUrl(prefs));
+    });
+  }, []);
 
   if (grouped.length === 0) {
     return (
@@ -35,43 +39,31 @@ export function GroupedAttentionList({
 
   return (
     <div className="performance-work-list">
-      {grouped.map((group) => {
-        const visibleKeys = group.issueKeys.slice(0, 2);
-        const extraKeys = hiddenAttentionKeyCount(group.taskCount, visibleKeys);
-        return (
-          <div
-            key={`${group.label}-${group.reason}`}
-            className="performance-work-row performance-work-row--drawer performance-work-row--attention"
-          >
-            <div className="performance-work-row__main">
-              <div className="performance-attention-group__head">
-                <Badge variant={group.variant}>{group.label}</Badge>
-                <span className="performance-attention-group__count">
-                  {group.taskCount} {group.taskCount === 1 ? "task" : "tasks"}
-                </span>
-              </div>
-              <div className="performance-work-row__meta">{group.reason}</div>
-              {visibleKeys.length > 0 || extraKeys > 0 ? (
-                <div className="issue-chip-list performance-attention-group__keys">
-                  {visibleKeys.map((key) => (
-                    <button
-                      key={key}
-                      type="button"
-                      className="performance-attention-key"
-                      onClick={() => void openIssueInJira(key)}
-                    >
-                      {key}
-                    </button>
-                  ))}
-                  {extraKeys > 0 ? (
-                    <span className="issue-chip-list__more">+{extraKeys}</span>
-                  ) : null}
-                </div>
-              ) : null}
+      {grouped.map((group) => (
+        <div
+          key={`${group.label}-${group.reason}`}
+          className="performance-work-row performance-work-row--drawer performance-work-row--attention"
+        >
+          <div className="performance-work-row__main">
+            <div className="performance-attention-group__head">
+              <Badge variant={group.variant}>{group.label}</Badge>
+              <span className="performance-attention-group__count">
+                {group.taskCount} {group.taskCount === 1 ? "task" : "tasks"}
+              </span>
             </div>
+            <div className="performance-work-row__meta">{group.reason}</div>
+            {group.issueKeys.length > 0 && jiraBaseUrl ? (
+              <GroupedIssuePreview
+                issueKeys={group.issueKeys}
+                jiraBaseUrl={jiraBaseUrl}
+                persons={teamPersons}
+                modalTitle={group.label}
+                className="performance-attention-group__keys"
+              />
+            ) : null}
           </div>
-        );
-      })}
+        </div>
+      ))}
     </div>
   );
 }

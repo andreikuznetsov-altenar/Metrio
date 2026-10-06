@@ -8,31 +8,37 @@ export interface TaskListModalRow {
   issueKey: string;
   title: string;
   status: string;
+  createdAt: string | null;
+  lastStatusChangedAt: string | null;
   createdLabel: string;
   lastStatusChangeLabel: string;
   jiraUrl?: string;
 }
 
-function latestStatusChange(issue: AuditIssue): string | null {
+function latestStatusChangeIso(issue: AuditIssue): string | null {
   const events = [...(issue.events || [])].filter((e) => e.eventType === "Status");
   if (!events.length) return null;
   const sorted = events.sort(
     (a, b) => Date.parse(b.changedAt) - Date.parse(a.changedAt),
   );
-  const at = sorted[0]?.changedAt;
-  if (!at) return null;
+  return sorted[0]?.changedAt ?? null;
+}
+
+export function formatTaskCreatedLabel(issueCreated: string | undefined): string {
+  if (!issueCreated) return "—";
   try {
-    return format(parseISO(at), "MMM d, yyyy · HH:mm");
+    return format(parseISO(issueCreated), "MMM d, yyyy");
   } catch {
-    return at;
+    return "—";
   }
 }
 
-function createdLabel(issue: AuditIssue): string {
+export function formatTaskLastStatusChangeLabel(changedAt: string | null): string {
+  if (!changedAt) return "—";
   try {
-    return format(parseISO(issue.issueCreated), "MMM d, yyyy");
+    return format(parseISO(changedAt), "MMM d, yyyy · HH:mm");
   } catch {
-    return "—";
+    return changedAt;
   }
 }
 
@@ -46,37 +52,67 @@ function findIssue(persons: Person[], issueKey: string): AuditIssue | undefined 
   return undefined;
 }
 
+function rowFromIssueKey(
+  issueKey: string,
+  persons: Person[],
+  jiraBaseUrl: string | undefined,
+  fallbackTitle?: string,
+): TaskListModalRow {
+  const issue = findIssue(persons, issueKey);
+  const lastStatusChangedAt = issue ? latestStatusChangeIso(issue) : null;
+  const createdAt = issue?.issueCreated ?? null;
+  const base = jiraBaseUrl?.replace(/\/$/, "") ?? "";
+
+  return {
+    issueKey,
+    title: issue?.issueSummary ?? fallbackTitle ?? issueKey,
+    status: issue?.currentStatus ?? "—",
+    createdAt,
+    lastStatusChangedAt,
+    createdLabel: issue ? formatTaskCreatedLabel(issue.issueCreated) : "—",
+    lastStatusChangeLabel: issue
+      ? formatTaskLastStatusChangeLabel(lastStatusChangedAt)
+      : "—",
+    jiraUrl: base ? `${base}/browse/${encodeURIComponent(issueKey)}` : undefined,
+  };
+}
+
+export function buildTaskListModalRowsFromIssueKeys(
+  issueKeys: string[],
+  persons: Person[],
+  jiraBaseUrl?: string,
+): TaskListModalRow[] {
+  const unique = [...new Set(issueKeys.filter(Boolean))];
+  return unique.map((issueKey) => rowFromIssueKey(issueKey, persons, jiraBaseUrl));
+}
+
 export function buildTaskListModalRows(
   actions: ActionItem[],
   persons: Person[],
   jiraBaseUrl?: string,
 ): TaskListModalRow[] {
-  const keys = new Set<string>();
+  const keys: string[] = [];
+  const seen = new Set<string>();
   for (const item of actions) {
+    const push = (key: string) => {
+      if (seen.has(key)) return;
+      seen.add(key);
+      keys.push(key);
+    };
     if (item.target.kind === "jira") {
-      keys.add(item.target.issueKey);
+      push(item.target.issueKey);
     }
     for (const key of item.issueKeys ?? []) {
-      keys.add(key);
+      push(key);
     }
   }
 
-  const base = jiraBaseUrl?.replace(/\/$/, "") ?? "";
-
-  return [...keys].map((issueKey) => {
-    const issue = findIssue(persons, issueKey);
+  return keys.map((issueKey) => {
     const item = actions.find(
       (a) =>
         (a.target.kind === "jira" && a.target.issueKey === issueKey) ||
         a.issueKeys?.includes(issueKey),
     );
-    return {
-      issueKey,
-      title: issue?.issueSummary ?? item?.title ?? issueKey,
-      status: issue?.currentStatus ?? "—",
-      createdLabel: issue ? createdLabel(issue) : "—",
-      lastStatusChangeLabel: issue ? latestStatusChange(issue) ?? "—" : "—",
-      jiraUrl: base ? `${base}/browse/${encodeURIComponent(issueKey)}` : undefined,
-    };
+    return rowFromIssueKey(issueKey, persons, jiraBaseUrl, item?.title);
   });
 }

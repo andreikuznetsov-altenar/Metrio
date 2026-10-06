@@ -113,15 +113,14 @@ describe("UI repair pass 6A.1 — attention signals table", () => {
     },
   ];
 
-  it("renders entity links and expands remaining keys", async () => {
+  it("renders entity links and opens grouped task modal", async () => {
     const user = userEvent.setup();
     render(<AttentionSignalsTable groups={groups} jiraBaseUrl="https://jira.example.com" />);
     expect(screen.getByTestId("attention-signals-table")).toBeTruthy();
     const links = screen.getAllByRole("link");
     expect(links.length).toBeGreaterThan(0);
-    const expand = screen.getByRole("button", { name: /View 1 more/i });
-    await user.click(expand);
-    expect(screen.getAllByRole("link").length).toBeGreaterThan(links.length);
+    await user.click(screen.getByRole("button", { name: /Show 3 tasks/i }));
+    expect(screen.getByTestId("task-list-modal")).toBeTruthy();
   });
 });
 

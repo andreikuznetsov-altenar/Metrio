@@ -41,6 +41,7 @@ import type { AuditIssue } from "../../domain/jira/types";
 import { classifyTaskHealth } from "../../domain/task-health/taskHealthEngine";
 import { buildDeliveryRiskItems } from "../../domain/radar/deliveryRisk";
 import { buildTeamRadar } from "../../domain/radar/teamRadar";
+import { readDashboardVisualQueryFlag } from "../../fixtures/dashboardVisualOverrides";
 import type { OperationalRules } from "../../domain/operationalRules/operationalRulesTypes";
 import { DEFAULT_OPERATIONAL_RULES } from "../../domain/operationalRules/operationalRulesDefaults";
 import type { RadarSeverity } from "../../domain/radar/types";
@@ -101,6 +102,18 @@ function attentionReasonFromSignal(label: string): string {
 }
 
 const ATTENTION_OVERVIEW_LIMIT = 5;
+
+function applyVisualGroupedTasksFixture(
+  radar: ReturnType<typeof buildTeamRadar>,
+): ReturnType<typeof buildTeamRadar> {
+  if (!readDashboardVisualQueryFlag("visualGroupedTasks") || radar.length === 0) {
+    return radar;
+  }
+  const keys = Array.from({ length: 10 }, (_, index) => `UX-${2960 + index}`);
+  return radar.map((item, index) =>
+    index === 0 ? { ...item, relatedIssueKeys: keys, signalCount: keys.length } : item,
+  );
+}
 
 function mapAttentionPerson(
   item: ReturnType<typeof buildTeamRadar>[number],
@@ -180,7 +193,8 @@ export function buildPerformanceViewModels(
     data;
   const params = reportData.params;
   const historyParams = historyReportData.params;
-  const radar = buildTeamRadar(teamSnapshot, params, undefined, operationalRules);
+  let radar = buildTeamRadar(teamSnapshot, params, undefined, operationalRules);
+  radar = applyVisualGroupedTasksFixture(radar);
   const deliveryRisk = buildDeliveryRiskItems(
     teamSnapshot,
     params,
@@ -399,6 +413,12 @@ export function buildPerformanceViewModels(
       attentionState,
       attentionSeverityLabel,
       attentionIssueKey,
+      attentionIssueKeys:
+        radarItem && radarItem.relatedIssueKeys.length > 0
+          ? radarItem.relatedIssueKeys
+          : attentionIssueKey
+            ? [attentionIssueKey]
+            : [],
       attentionReason: radarItem ? attentionReason : "—",
       attentionVariant: radarItem
         ? severityToBadge(radarItem.severity)
@@ -426,6 +446,7 @@ export function buildPerformanceViewModels(
       reason: primary?.label || "—",
       reasonDetail: primary ? attentionReasonFromSignal(primary.label) : "—",
       primaryIssueKey: primary?.issueKey,
+      relatedIssueKeys: item.relatedIssueKeys,
       primaryAction,
       tasksAffected: item.relatedIssueKeys.length,
       action: actionLabel,

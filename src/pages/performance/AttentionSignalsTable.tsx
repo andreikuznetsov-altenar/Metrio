@@ -1,10 +1,11 @@
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { Badge } from "../../components/Badge/Badge";
+import { GroupedIssuePreview } from "../../components/GroupedIssuePreview/GroupedIssuePreview";
 import { METRIO_TABLE_CLASS, MetrioTableWrap } from "../../components/Table/MetrioTable";
 import { SortableTableHeader } from "../../components/Table/SortableTableHeader";
 import { useTableSort } from "../../components/Table/useTableSort";
+import type { Person } from "../../domain/people/types";
 import type { GroupedAttentionSignal } from "./groupAttentionSignals";
-import { AttentionIssueLinks } from "./AttentionIssueLinks";
 
 const SIGNAL_COLUMNS = [
   { id: "signal", type: "text" as const },
@@ -16,16 +17,16 @@ const SIGNAL_COLUMNS = [
 export interface AttentionSignalsTableProps {
   groups: GroupedAttentionSignal[];
   jiraBaseUrl: string;
+  persons?: Person[];
   wrapClassName?: string;
 }
 
 export function AttentionSignalsTable({
   groups,
   jiraBaseUrl,
+  persons = [],
   wrapClassName,
 }: AttentionSignalsTableProps) {
-  const [expanded, setExpanded] = useState<Record<string, boolean>>({});
-
   const getValue = useMemo(
     () => (row: GroupedAttentionSignal, columnId: string) => {
       switch (columnId) {
@@ -72,15 +73,12 @@ export function AttentionSignalsTable({
               label="Issues"
               sort={sort}
               onToggle={toggleSort}
-              className="performance-table__num"
-              align="right"
             />
           </tr>
         </thead>
         <tbody>
           {sortedRows.map((group) => {
             const rowKey = `${group.label}-${group.reason}`;
-            const showAll = expanded[rowKey];
 
             return (
               <tr key={rowKey}>
@@ -90,13 +88,11 @@ export function AttentionSignalsTable({
                 <td className="performance-table__num">{group.taskCount}</td>
                 <td>{group.reason}</td>
                 <td>
-                  <AttentionIssueLinks
+                  <GroupedIssuePreview
                     issueKeys={group.issueKeys}
                     jiraBaseUrl={jiraBaseUrl}
-                    expanded={showAll}
-                    onExpand={() =>
-                      setExpanded((prev) => ({ ...prev, [rowKey]: true }))
-                    }
+                    persons={persons}
+                    modalTitle={group.label}
                   />
                 </td>
               </tr>

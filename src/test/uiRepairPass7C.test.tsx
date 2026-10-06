@@ -155,8 +155,8 @@ describe("UI Repair Pass 7C", () => {
     expect(
       within(table).queryByText("No activity for 7+ days", { selector: ".badge" }),
     ).toBeNull();
-    await user.click(within(table).getByRole("button", { name: /View 1 more/i }));
-    expect(within(table).getAllByRole("link").length).toBe(3);
+    await user.click(within(table).getByRole("button", { name: /Show 3 tasks/i }));
+    expect(screen.getByTestId("task-list-modal")).toBeTruthy();
   });
 
   it("PersonBriefDrawer current work key is a navigable link", async () => {

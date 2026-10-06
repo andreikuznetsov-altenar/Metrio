@@ -17,6 +17,7 @@ export function TaskListModal({
 }) {
   return (
     <Modal open={open} onClose={onClose} title={title}>
+      <div data-testid="task-list-modal">
       {rows.length === 0 ? (
         <p className="executive-secondary-line" role="status">
           No tasks to show.
@@ -61,6 +62,7 @@ export function TaskListModal({
           </table>
         </MetrioTableWrap>
       )}
+      </div>
     </Modal>
   );
 }

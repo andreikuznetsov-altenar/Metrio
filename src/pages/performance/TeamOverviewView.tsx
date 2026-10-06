@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { resolveJiraBaseUrl } from "../../config/product";
 import { loadPreferences } from "../../platform/preferences";
-import { AttentionIssueLinks } from "./AttentionIssueLinks";
+import { GroupedIssuePreview } from "../../components/GroupedIssuePreview/GroupedIssuePreview";
+import { usePerformanceData } from "../../app/PerformanceDataContext";
 import { useCurrentUser } from "../../app/CurrentUserContext";
 import { useFeedbackSurveyStore } from "../../app/feedbackSurveyStore";
 import { actionOpenLabel, navigateActionTarget } from "../../app/actionNavigation";
@@ -118,10 +119,9 @@ export function TeamOverviewView({
     [surveyData],
   );
   const { rules: operationalRules } = useOperationalRules();
+  const { data: performanceData } = usePerformanceData();
+  const teamPersons = performanceData?.teamSnapshot.persons ?? [];
   const [jiraBaseUrl, setJiraBaseUrl] = useState("");
-  const [expandedAttentionIssues, setExpandedAttentionIssues] = useState<
-    Record<string, boolean>
-  >({});
 
   useEffect(() => {
     void loadPreferences().then((prefs) => {
@@ -507,16 +507,11 @@ export function TeamOverviewView({
                             {item.issueCount} tasks
                           </span>
                         ) : (
-                          <AttentionIssueLinks
+                          <GroupedIssuePreview
                             issueKeys={issueKeys}
                             jiraBaseUrl={jiraBaseUrl}
-                            expanded={expandedAttentionIssues[item.personId] ?? false}
-                            onExpand={() =>
-                              setExpandedAttentionIssues((prev) => ({
-                                ...prev,
-                                [item.personId]: true,
-                              }))
-                            }
+                            persons={teamPersons}
+                            modalTitle={`Tasks — ${name}`}
                           />
                         )}
                       </td>

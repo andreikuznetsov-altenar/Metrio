@@ -1,15 +1,15 @@
 import { useEffect, useMemo, useState } from "react";
 import { Badge } from "../../components/Badge/Badge";
 import { Button } from "../../components/Button/Button";
-import { EntityLink } from "../../components/EntityLink/EntityLink";
+import { GroupedIssuePreview } from "../../components/GroupedIssuePreview/GroupedIssuePreview";
 import { PersonAvatar } from "../../components/PersonAvatar/PersonAvatar";
 import { SortableTableHeader } from "../../components/Table/SortableTableHeader";
 import { useTableSort } from "../../components/Table/useTableSort";
+import { usePerformanceData } from "../../app/PerformanceDataContext";
 import { resolveJiraBaseUrl } from "../../config/product";
 import type { TeamRadarRow } from "../../domain/performance";
 import type { RadarPrimaryAction } from "../../domain/radar/types";
 import { performanceHelp } from "../../domain/performance/performanceHelp";
-import { buildJiraIssueBrowseUrl } from "../../platform/jiraIssueUrl";
 import { loadPreferences } from "../../platform/preferences";
 import type { PersonDrawerTab } from "../../app/performanceAnalyticsContext";
 
@@ -38,6 +38,8 @@ export interface TeamRadarViewProps {
 }
 
 export function TeamRadarView({ rows, onOpenPerson }: TeamRadarViewProps) {
+  const { data } = usePerformanceData();
+  const teamPersons = data?.teamSnapshot.persons ?? [];
   const [jiraBaseUrl, setJiraBaseUrl] = useState("");
 
   useEffect(() => {
@@ -85,8 +87,15 @@ export function TeamRadarView({ rows, onOpenPerson }: TeamRadarViewProps) {
   return (
     <section aria-label="Radar" data-testid="team-radar-view">
       <p className="performance-section-desc">{performanceHelp.radar}</p>
-      <div className="performance-table-wrap">
-        <table className="performance-table performance-table--interactive">
+      <div className="performance-table-wrap performance-table-wrap--radar">
+        <table className="performance-table performance-table--interactive performance-table--radar">
+          <colgroup>
+            <col className="col-person" />
+            <col className="col-reason" />
+            <col className="col-num" />
+            <col className="col-action" />
+            <col className="col-badge" />
+          </colgroup>
           <thead>
             <tr>
               <SortableTableHeader columnId="person" label="Person" sort={sort} onToggle={toggleSort} />
@@ -126,13 +135,20 @@ export function TeamRadarView({ rows, onOpenPerson }: TeamRadarViewProps) {
                 </td>
                 <td className="performance-table__reason">
                   <div className="performance-radar-reason">
-                    {row.primaryIssueKey && jiraBaseUrl ? (
-                      <EntityLink
-                        href={buildJiraIssueBrowseUrl(jiraBaseUrl, row.primaryIssueKey)}
-                        mono
-                      >
-                        {row.primaryIssueKey}
-                      </EntityLink>
+                    {row.relatedIssueKeys?.length && jiraBaseUrl ? (
+                      <GroupedIssuePreview
+                        issueKeys={row.relatedIssueKeys}
+                        jiraBaseUrl={jiraBaseUrl}
+                        persons={teamPersons}
+                        modalTitle={`Tasks — ${row.personName}`}
+                      />
+                    ) : row.primaryIssueKey && jiraBaseUrl ? (
+                      <GroupedIssuePreview
+                        issueKeys={[row.primaryIssueKey]}
+                        jiraBaseUrl={jiraBaseUrl}
+                        persons={teamPersons}
+                        modalTitle={`Tasks — ${row.personName}`}
+                      />
                     ) : null}
                     <span className="performance-radar-reason__detail">
                       {row.reasonDetail}

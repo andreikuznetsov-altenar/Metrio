@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
 import { Badge } from "../../components/Badge/Badge";
-import { EntityLink } from "../../components/EntityLink/EntityLink";
+import { GroupedIssuePreview } from "../../components/GroupedIssuePreview/GroupedIssuePreview";
 import { PersonAvatar } from "../../components/PersonAvatar/PersonAvatar";
 import { SortableTableHeader } from "../../components/Table/SortableTableHeader";
 import { useTableSort } from "../../components/Table/useTableSort";
+import { usePerformanceData } from "../../app/PerformanceDataContext";
 import { resolveJiraBaseUrl } from "../../config/product";
 import type { TeamPeopleRow } from "../../domain/performance";
 import { performanceHelp } from "../../domain/performance/performanceHelp";
@@ -11,7 +12,6 @@ import {
   availabilityBadgeVariant,
   workloadBadgeVariantFromLabel,
 } from "../../domain/performance/performanceStatusBadges";
-import { buildJiraIssueBrowseUrl } from "../../platform/jiraIssueUrl";
 import { loadPreferences } from "../../platform/preferences";
 import type { PersonDrawerTab } from "../../app/performanceAnalyticsContext";
 
@@ -33,6 +33,8 @@ export interface TeamPeopleViewProps {
 }
 
 export function TeamPeopleView({ rows, onOpenPerson }: TeamPeopleViewProps) {
+  const { data } = usePerformanceData();
+  const teamPersons = data?.teamSnapshot.persons ?? [];
   const [jiraBaseUrl, setJiraBaseUrl] = useState("");
 
   useEffect(() => {
@@ -66,8 +68,15 @@ export function TeamPeopleView({ rows, onOpenPerson }: TeamPeopleViewProps) {
   return (
     <section aria-label="People" data-testid="team-people-view">
       <p className="performance-section-desc">{performanceHelp.people}</p>
-      <div className="performance-table-wrap">
-        <table className="performance-table performance-table--interactive">
+      <div className="performance-table-wrap performance-table-wrap--people">
+        <table className="performance-table performance-table--interactive performance-table--people">
+          <colgroup>
+            <col className="col-person" />
+            <col className="col-num" />
+            <col className="col-attention" />
+            <col className="col-badge" />
+            <col className="col-badge" />
+          </colgroup>
           <thead>
             <tr>
               <SortableTableHeader columnId="person" label="Person" sort={sort} onToggle={toggleSort} />
@@ -118,14 +127,14 @@ export function TeamPeopleView({ rows, onOpenPerson }: TeamPeopleViewProps) {
                         <Badge variant={row.attentionVariant}>
                           {row.attentionSeverityLabel}
                         </Badge>
-                        {row.attentionIssueKey && jiraBaseUrl ? (
-                          <EntityLink
-                            href={buildJiraIssueBrowseUrl(jiraBaseUrl, row.attentionIssueKey)}
-                            mono
-                            className="performance-people-attention__key"
-                          >
-                            {row.attentionIssueKey}
-                          </EntityLink>
+                        {row.attentionIssueKeys?.length && jiraBaseUrl ? (
+                          <GroupedIssuePreview
+                            issueKeys={row.attentionIssueKeys}
+                            jiraBaseUrl={jiraBaseUrl}
+                            persons={teamPersons}
+                            modalTitle={`Tasks — ${row.personName}`}
+                            className="performance-people-attention__keys"
+                          />
                         ) : null}
                       </div>
                       <span className="performance-people-attention__reason">

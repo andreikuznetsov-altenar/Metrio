@@ -230,6 +230,7 @@ export interface TeamPeopleRow {
   attentionVariant: BadgeVariant;
   attentionSeverityLabel: string;
   attentionIssueKey?: string;
+  attentionIssueKeys?: string[];
   attentionReason: string;
 }
 
@@ -242,6 +243,7 @@ export interface TeamRadarRow {
   reason: string;
   reasonDetail: string;
   primaryIssueKey?: string;
+  relatedIssueKeys?: string[];
   primaryAction: RadarPrimaryAction;
   tasksAffected: number;
   action: string;
