@@ -102,6 +102,60 @@ describe('capacity data sufficiency (WF8.1)', () => {
     expect(kpi.value).toBe('—');
   });
 
+  it('CASE F: distribution buckets sum to unique people', () => {
+    const rows: WorkloadRow[] = [
+      {
+        personId: 'a',
+        activeWork: 1,
+        atRisk: 0,
+        workload: 'Light',
+        capacityDataState: 'measured',
+        availability: 'Available',
+      },
+      {
+        personId: 'b',
+        activeWork: 2,
+        atRisk: 0,
+        workload: CAPACITY_INSUFFICIENT_LABEL,
+        capacityDataState: 'insufficient_history',
+        availability: 'Available',
+      },
+      {
+        personId: 'c',
+        activeWork: 0,
+        atRisk: 0,
+        workload: 'Light',
+        capacityDataState: 'insufficient_history',
+        availability: 'Available',
+      },
+    ];
+    const distribution = capacityDistribution(rows);
+    const total = distribution.reduce((sum, bucket) => sum + bucket.count, 0);
+    expect(total).toBe(rows.length);
+    expect(distribution.find((d) => d.label === 'Light')?.count).toBe(1);
+    expect(distribution.find((d) => d.label === CAPACITY_INSUFFICIENT_LABEL)?.count).toBe(2);
+  });
+
+  it('CASE G: stale measured flag with zero cycles still insufficient', () => {
+    const workload = testWorkload({
+      level: 'low',
+      capacityDataState: 'measured',
+      capacityLoadPercent: 12,
+      capacityBreakdown: {
+        completedCycleHours: 0,
+        activeSegmentHours: 0,
+        avgHoursPerCycle: 0,
+        completedCyclesInPeriod: 0,
+        daysInPeriod: 30,
+        monthlyQuantity: 0,
+        estimatedMonthlyHours: 0,
+        capacityLoadPercent: 12,
+        capacityDataState: 'insufficient_history',
+      },
+    });
+    expect(capacityPresentationLabel(workload)).toBe(CAPACITY_INSUFFICIENT_LABEL);
+  });
+
   it('CASE E: mixed measurable + insufficient → neutral no-data count in distribution', () => {
     const rows: WorkloadRow[] = [
       {

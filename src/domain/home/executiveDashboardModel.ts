@@ -436,6 +436,12 @@ export function capacityDistribution(
   const labels = ["Light", "Balanced", "Heavy", "Overloaded", CAPACITY_INSUFFICIENT_LABEL] as const;
   return labels.map((label) => ({
     label,
-    count: workload.filter((row) => row.workload === label).length,
+    count: workload.filter((row) => {
+      if (row.capacityDataState === "insufficient_history") {
+        return label === CAPACITY_INSUFFICIENT_LABEL;
+      }
+      if (label === CAPACITY_INSUFFICIENT_LABEL) return false;
+      return row.workload === label;
+    }).length,
   }));
 }

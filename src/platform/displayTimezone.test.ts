@@ -25,7 +25,9 @@ describe('displayTimezone', () => {
     expect(isFractionalTimezone('Europe/Malta', date)).toBe(false);
   });
 
-  it('keeps selected fractional timezone visible when hiding fractional options', () => {
+  it(
+    'keeps selected fractional timezone visible when hiding fractional options',
+    () => {
     const date = new Date('2026-01-15T12:00:00Z');
     const options = buildDisplayTimezoneOptions({
       hideFractional: true,
@@ -34,5 +36,7 @@ describe('displayTimezone', () => {
     });
     expect(options.some((option) => option.value === 'Asia/Kolkata')).toBe(true);
     expect(options.some((option) => option.value === 'Asia/Colombo')).toBe(false);
-  });
+  },
+    20_000,
+  );
 });

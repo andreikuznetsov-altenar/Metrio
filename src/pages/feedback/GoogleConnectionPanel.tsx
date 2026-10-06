@@ -245,20 +245,15 @@ export function GoogleConnectionPanel({
 
     return (
       <>
-        <Section title="Google">
-          <p className="ds-feedback-connect__hint">
-            Connect Google to create and send Feedback surveys.
-          </p>
-          <div className="ds-feedback-connect__actions">
-            <Button
-              disabled={connecting || loading}
-              onClick={() => (oauthMode ? void runOAuthConnect() : setShowConnectDrawer(true))}
-            >
-              Connect Google
-            </Button>
-          </div>
-          {displayMessage && <StatusBanner tone="danger">{displayMessage}</StatusBanner>}
-        </Section>
+        <div className="ds-feedback-connect__actions">
+          <Button
+            disabled={connecting || loading}
+            onClick={() => (oauthMode ? void runOAuthConnect() : setShowConnectDrawer(true))}
+          >
+            Connect Google
+          </Button>
+        </div>
+        {displayMessage && <StatusBanner tone="danger">{displayMessage}</StatusBanner>}
         {appsScriptConnectDrawer}
       </>
     );
@@ -306,92 +301,86 @@ export function GoogleConnectionPanel({
 
   return (
     <>
-      <Section
-        title="Google"
-        headerRight={
-          <div className="ds-feedback-google__actions">
-            <Button
-              variant="secondary"
-              size="small"
-              disabled={connecting || loading}
-              onClick={() => {
-                setWebAppUrl(prefs.google.appsScriptWebAppUrl);
-                setBridgeSecret('');
-                setShowConnectDrawer(true);
-              }}
-            >
-              Replace
-            </Button>
-            <Button variant="secondary" size="small" onClick={() => setShowDisconnectConfirm(true)}>
-              Disconnect
-            </Button>
-          </div>
-        }
-      >
-        <div className="ds-feedback-google__rows">
-          <div className="ds-feedback-google__row">
-            <span className="ds-feedback-google__label">Google account</span>
-            <Badge variant="success">Connected</Badge>
-            <span className="ds-feedback-google__value">{prefs.google.accountEmail}</span>
-          </div>
-          <div className="ds-feedback-google__row">
-            <span className="ds-feedback-google__label">Google Forms</span>
-            <Badge variant={prefs.google.formsConnected ? 'success' : 'warning'}>
-              {prefs.google.formsConnected ? 'Connected' : 'Needs attention'}
-            </Badge>
-          </div>
-          <div className="ds-feedback-google__row">
-            <span className="ds-feedback-google__label">Google Mail</span>
-            <Badge variant={prefs.google.gmailConnected ? 'success' : 'warning'}>
-              {prefs.google.gmailConnected ? 'Connected' : 'Needs attention'}
-            </Badge>
-          </div>
+      <div className="ds-feedback-google__rows">
+        <div className="ds-feedback-google__row">
+          <span className="ds-feedback-google__label">Google account</span>
+          <Badge variant="success">Connected</Badge>
+          <span className="ds-feedback-google__value">{prefs.google.accountEmail}</span>
         </div>
-        {displayMessage && (
-          <StatusBanner tone={displayMessage.includes('Connected') ? 'success' : 'danger'}>
-            {displayMessage}
-          </StatusBanner>
-        )}
+        <div className="ds-feedback-google__row">
+          <span className="ds-feedback-google__label">Google Forms</span>
+          <Badge variant={prefs.google.formsConnected ? 'success' : 'warning'}>
+            {prefs.google.formsConnected ? 'Connected' : 'Needs attention'}
+          </Badge>
+        </div>
+        <div className="ds-feedback-google__row">
+          <span className="ds-feedback-google__label">Google Mail</span>
+          <Badge variant={prefs.google.gmailConnected ? 'success' : 'warning'}>
+            {prefs.google.gmailConnected ? 'Connected' : 'Needs attention'}
+          </Badge>
+        </div>
+      </div>
+      <div className="ds-feedback-google__actions settings-button-group">
+        <Button
+          variant="secondary"
+          size="small"
+          disabled={connecting || loading}
+          onClick={() => {
+            setWebAppUrl(prefs.google.appsScriptWebAppUrl);
+            setBridgeSecret('');
+            setShowConnectDrawer(true);
+          }}
+        >
+          Replace
+        </Button>
+        <Button variant="secondary" size="small" onClick={() => setShowDisconnectConfirm(true)}>
+          Disconnect
+        </Button>
+      </div>
+      {displayMessage && (
+        <StatusBanner tone={displayMessage.includes('Connected') ? 'success' : 'danger'}>
+          {displayMessage}
+        </StatusBanner>
+      )}
 
-        {showAdvanced && appsScriptMode && (
-          <div className="ds-feedback-google__advanced">
-            <h3 className="ds-feedback-google__advanced-title">Form settings</h3>
-            <p className="ds-help-text">
-              Google Apps Script forms always collect respondent email.
-            </p>
-            <p className="ds-help-text">
-              Response access is <strong>Anyone with the link</strong>. Restricted access and verified Google email are not available in Apps Script mode.
-            </p>
-          </div>
-        )}
-        {showAdvanced && !appsScriptMode && (
-          <div className="ds-feedback-google__advanced">
-            <h3 className="ds-feedback-google__advanced-title">Advanced</h3>
-            <SelectDropdown
-              label="Collect responder email"
-              value={prefs.google.emailCollectionMode}
-              options={[
-                { value: 'RESPONDER_INPUT', label: 'Responder enters email' },
-                { value: 'VERIFIED', label: 'Verified Google account' },
-              ]}
-              onChange={(v) =>
-                onUpdatePrefs({ emailCollectionMode: v as 'VERIFIED' | 'RESPONDER_INPUT' })
-              }
-            />
-            <SelectDropdown
-              label="Who can respond?"
-              value={prefs.google.responseAccess}
-              options={[
-                { value: 'anyone_with_link', label: 'Anyone with the link' },
-                { value: 'restricted', label: 'Restricted' },
-              ]}
-              onChange={(v) =>
-                onUpdatePrefs({ responseAccess: v as 'restricted' | 'anyone_with_link' })
-              }
-            />
-          </div>
-        )}
-      </Section>
+      {showAdvanced && appsScriptMode && (
+        <div className="ds-feedback-google__advanced">
+          <h3 className="ds-feedback-google__advanced-title">Form settings</h3>
+          <p className="ds-help-text">
+            Google Apps Script forms always collect respondent email.
+          </p>
+          <p className="ds-help-text">
+            Response access is <strong>Anyone with the link</strong>. Restricted access and verified Google email are not available in Apps Script mode.
+          </p>
+        </div>
+      )}
+      {showAdvanced && !appsScriptMode && (
+        <div className="ds-feedback-google__advanced">
+          <h3 className="ds-feedback-google__advanced-title">Advanced</h3>
+          <SelectDropdown
+            label="Collect responder email"
+            value={prefs.google.emailCollectionMode}
+            options={[
+              { value: 'RESPONDER_INPUT', label: 'Responder enters email' },
+              { value: 'VERIFIED', label: 'Verified Google account' },
+            ]}
+            onChange={(v) =>
+              onUpdatePrefs({ emailCollectionMode: v as 'VERIFIED' | 'RESPONDER_INPUT' })
+            }
+          />
+          <SelectDropdown
+            label="Who can respond?"
+            value={prefs.google.responseAccess}
+            options={[
+              { value: 'anyone_with_link', label: 'Anyone with the link' },
+              { value: 'restricted', label: 'Restricted' },
+            ]}
+            onChange={(v) =>
+              onUpdatePrefs({ responseAccess: v as 'restricted' | 'anyone_with_link' })
+            }
+          />
+        </div>
+      )}
 
       {appsScriptConnectDrawer}
       {disconnectDrawer}

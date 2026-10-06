@@ -26,6 +26,10 @@ import {
   workloadBadgeVariantFromLabel,
 } from "../../domain/performance/performanceStatusBadges";
 import {
+  CAPACITY_INSUFFICIENT_LABEL,
+  CAPACITY_INSUFFICIENT_TOOLTIP,
+} from "../../domain/workload/capacityPresentation";
+import {
   TrendInsufficientHistory,
   TrendMiniChart,
 } from "./TrendMiniChart";
@@ -260,7 +264,7 @@ export function TeamOverviewView({
       return;
     }
     if (rec.actionKind === "open_jira" && rec.issueKey) {
-      void navigateActionTarget({ kind: "jira", issueKey: rec.issueKey });
+      navigateActionTarget({ kind: "jira", issueKey: rec.issueKey }, { openPerson: onOpenPerson });
       return;
     }
     if (rec.actionKind === "open_team_workload" || rec.actionKind === "open_performance") {
@@ -635,7 +639,14 @@ export function TeamOverviewView({
                   <td className="performance-table__num">{row.activeWork}</td>
                   <td className="performance-table__num">{row.atRisk}</td>
                   <td>
-                    <Badge variant={workloadBadgeVariant(row.workload)}>
+                    <Badge
+                      variant={workloadBadgeVariant(row.workload)}
+                      title={
+                        row.workload === CAPACITY_INSUFFICIENT_LABEL
+                          ? CAPACITY_INSUFFICIENT_TOOLTIP
+                          : undefined
+                      }
+                    >
                       {row.workload}
                     </Badge>
                   </td>

@@ -310,7 +310,13 @@ export function SettingsPage({
             <MetrioCloudSettingsPanel />
           </section>
 
-          <section className="settings-card settings-card--google">
+          <section className="settings-card settings-card--google" data-testid="settings-google-card">
+            <div className="settings-card__head">
+              <h3 className="settings-card__title">Google</h3>
+            </div>
+            <p className="settings-card__description">
+              Connect Google to create and send Feedback surveys.
+            </p>
             <GoogleConnectionPanel
               prefs={prefs}
               loading={googleBusy}

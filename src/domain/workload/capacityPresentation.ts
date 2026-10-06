@@ -28,8 +28,9 @@ export function capacityDataStateFromWorkload(
   workload: WorkloadResult | null | undefined,
 ): CapacityDataState {
   if (!workload) return 'insufficient_history';
-  if (workload.capacityDataState) return workload.capacityDataState;
   const completed = workload.capacityBreakdown?.completedCyclesInPeriod ?? 0;
+  if (completed <= 0) return 'insufficient_history';
+  if (workload.capacityDataState === 'measured') return 'measured';
   return resolveCapacityDataState(completed);
 }
 
@@ -37,10 +38,10 @@ export function capacityPresentationLabel(
   workload: WorkloadResult | null | undefined,
   availability?: PersonAvailability,
 ): CapacityPresentationLabel {
-  if (isAway(availability)) {
+  if (capacityDataStateFromWorkload(workload) === 'insufficient_history') {
     return CAPACITY_INSUFFICIENT_LABEL;
   }
-  if (capacityDataStateFromWorkload(workload) === 'insufficient_history') {
+  if (isAway(availability)) {
     return CAPACITY_INSUFFICIENT_LABEL;
   }
   return workloadDisplayLabel(workload?.level);

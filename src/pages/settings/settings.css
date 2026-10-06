@@ -254,11 +254,17 @@
 }
 
 .settings-card--google .ds-section,
+.settings-card--google .ds-section .card,
 .settings-card--google [class*="ds-feedback-google"] {
   border: none;
   padding: 0;
   background: transparent;
   box-shadow: none;
+  border-radius: 0;
+}
+
+.settings-card--google .card__title {
+  display: none;
 }
 
 .settings-panel {

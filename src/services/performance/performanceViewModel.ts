@@ -13,7 +13,7 @@ import {
   personAtRiskCount,
   personProblematicCount,
   workloadLabelForPerson,
-  capacityDataStateForPerson,
+  buildWorkloadRowFields,
 } from "../../domain/people/personDisplay";
 import { buildMyWeek } from "../../domain/personal/myWeek";
 import { buildWorkHistory } from "../../domain/personal/workHistory";
@@ -316,18 +316,10 @@ export function buildPerformanceViewModels(
     return {
       personId: row.personId,
       personName: row.personName,
-      activeWork: row.activeCount,
-      atRisk: row.atRiskCount,
-      workload: workloadLabelForPerson(person),
-      capacityDataState: capacityDataStateForPerson(person),
-      availability: person?.availability.label || "—",
-      ...(person?.workload?.capacityLoadPercent != null
-        ? {
-            capacityLoadPercent: person.workload.capacityLoadPercent,
-            estimatedMonthlyHours: person.workload.estimatedMonthlyHours,
-            monthlyCapacityHours: person.workload.monthlyCapacityHours,
-          }
-        : {}),
+      ...buildWorkloadRowFields(person, {
+        activeWork: row.activeCount,
+        atRisk: row.atRiskCount,
+      }),
     };
   });
 

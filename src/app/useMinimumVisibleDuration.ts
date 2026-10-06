@@ -24,11 +24,16 @@ export function useMinimumVisibleDuration(
       setVisible(false);
       return;
     }
+    let cancelled = false;
     const timer = window.setTimeout(() => {
+      if (cancelled) return;
       activeSinceRef.current = null;
       setVisible(false);
     }, remaining);
-    return () => window.clearTimeout(timer);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
   }, [active, minMs, visible]);
 
   return visible;

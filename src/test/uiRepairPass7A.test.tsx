@@ -21,7 +21,10 @@ describe("UI Repair Pass 7A", () => {
     );
     expect(source).not.toContain("No new assignments");
     expect(source).not.toContain("Open Performance");
-    expect(source).toContain("DashboardSecondaryGrid");
+    expect(source).toContain("DashboardMetricsPair");
+    expect(source).toContain("DashboardLowerThreeCards");
+    expect(source).toContain("DashboardRecommendations");
+    expect(source).not.toMatch(/newAssignmentCount\s*>\s*0[\s\S]*No new assignments/);
   });
 
   it("employee dashboard hides empty new assignments row", async () => {

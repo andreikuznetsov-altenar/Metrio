@@ -1,16 +1,17 @@
 import type { Person } from './types';
 import type { ReportParams } from '../jira/types';
 import { getOperationalIssues } from './ownedIssues';
-import { countActiveIssues } from '../workload/workloadEngine';
+import { countActiveIssues, type WorkloadResult } from '../workload/workloadEngine';
 import { classifyTaskHealth } from '../task-health/taskHealthEngine';
 import { formatDuration } from '../jira/dates';
 import { workloadDisplayLabel } from '../workload/workloadDisplay';
 import {
+  CAPACITY_INSUFFICIENT_LABEL,
   capacityPresentationLabel,
   capacityDataStateFromWorkload,
   type CapacityPresentationLabel,
 } from '../workload/capacityPresentation';
-import type { WorkloadResult } from '../workload/workloadEngine';
+import type { WorkloadRow } from '../performance';
 
 export function personRouteKey(person: Person): string {
   return person.jira?.canonicalKey || person.bamboo.workEmail || person.id;
@@ -100,8 +101,40 @@ export function formatWorkloadLabel(
 }
 
 export function workloadLabelForPerson(person: Person | undefined): CapacityPresentationLabel {
-  if (!person) return workloadDisplayLabel(undefined);
-  return capacityPresentationLabel(person.workload ?? null, person.availability);
+  if (!person) return CAPACITY_INSUFFICIENT_LABEL;
+  const state = capacityDataStateFromWorkload(person.workload ?? null);
+  if (state === "insufficient_history") {
+    return CAPACITY_INSUFFICIENT_LABEL;
+  }
+  return workloadDisplayLabel(person.workload?.level);
+}
+
+export function buildWorkloadRowFields(
+  person: Person | undefined,
+  counts: { activeWork: number; atRisk: number },
+): Pick<WorkloadRow, 'workload' | 'capacityDataState' | 'availability' | 'activeWork' | 'atRisk'> & {
+  capacityLoadPercent?: number;
+  estimatedMonthlyHours?: number;
+  monthlyCapacityHours?: number;
+} {
+  const capacityDataState = capacityDataStateForPerson(person);
+  const workload = workloadLabelForPerson(person);
+  const base = {
+    activeWork: counts.activeWork,
+    atRisk: counts.atRisk,
+    workload,
+    capacityDataState,
+    availability: person?.availability.label || '—',
+  };
+  if (person?.workload?.capacityLoadPercent != null && capacityDataState === "measured") {
+    return {
+      ...base,
+      capacityLoadPercent: person.workload.capacityLoadPercent,
+      estimatedMonthlyHours: person.workload.estimatedMonthlyHours,
+      monthlyCapacityHours: person.workload.monthlyCapacityHours,
+    };
+  }
+  return base;
 }
 
 export function capacityDataStateForPerson(person: Person | undefined) {

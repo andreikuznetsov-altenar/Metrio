@@ -902,6 +902,33 @@
   width: 7.5rem;
 }
 
+.performance-table--attention-signals {
+  table-layout: fixed;
+  width: 100%;
+}
+
+.performance-table--attention-signals col.col-signal {
+  width: 28%;
+}
+
+.performance-table--attention-signals col.col-num {
+  width: 4.5rem;
+}
+
+.performance-table--attention-signals col.col-reason {
+  width: auto;
+}
+
+.performance-table--attention-signals col.col-issues {
+  width: 34%;
+}
+
+.performance-table--attention-signals td:nth-child(3),
+.performance-table--attention-signals td:nth-child(4) {
+  word-break: break-word;
+  vertical-align: top;
+}
+
 .performance-table--attention-signals th:nth-child(1) {
   width: 11rem;
 }

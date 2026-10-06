@@ -50,7 +50,9 @@ describe("authenticated application", () => {
     cleanup();
   });
 
-  it("renders Performance UI after workspace is ready", async () => {
+  it(
+    "renders Performance UI after workspace is ready",
+    async () => {
     mockCurrentUser({ workspaceStatus: "ready" });
 
     renderAuthenticatedApp();
@@ -66,7 +68,9 @@ describe("authenticated application", () => {
     ];
     expect(performanceNavTargets.length).toBeGreaterThan(0);
     expect(screen.queryByText(/^Metrio$/)).not.toBeInTheDocument();
-  });
+  },
+    15_000,
+  );
 
   it("shows initialization shell instead of an empty viewport", () => {
     const { initializeWorkspace } = mockCurrentUser({

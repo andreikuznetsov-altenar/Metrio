@@ -49,6 +49,12 @@ export function AttentionSignalsTable({
   return (
     <MetrioTableWrap testId="attention-signals-table" className={wrapClassName}>
       <table className={`${METRIO_TABLE_CLASS} performance-table--attention-signals`}>
+        <colgroup>
+          <col className="col-signal" />
+          <col className="col-num" />
+          <col className="col-reason" />
+          <col className="col-issues" />
+        </colgroup>
         <thead>
           <tr>
             <SortableTableHeader columnId="signal" label="Signal" sort={sort} onToggle={toggleSort} />
