@@ -16,11 +16,13 @@
   flex-direction: column;
   align-items: center;
   gap: var(--space-6);
+  /* Slightly raise auth column so the wordmark sits higher without scaling the form. */
+  margin-top: -16px;
 }
 
 .connection-screen__logo {
   display: block;
-  width: min(100%, 200px);
+  width: min(100%, 133px);
   height: auto;
   margin: 0;
   object-fit: contain;

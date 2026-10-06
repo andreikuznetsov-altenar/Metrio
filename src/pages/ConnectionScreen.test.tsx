@@ -80,6 +80,8 @@ describe("ConnectionScreen", () => {
     const logo = panel().getByTestId("connection-screen-logo");
     expect(logo).toHaveAttribute("src", "/Logo.svg");
     expect(logo).toHaveAccessibleName("Metrio");
+    expect(logo).toHaveAttribute("width", "272");
+    expect(logo).toHaveAttribute("height", "58");
     expect(panel().getByRole("heading", { name: /connect your work tools/i })).toBeInTheDocument();
     expect(panel().getByLabelText(/work email/i)).toBeInTheDocument();
   });

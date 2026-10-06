@@ -6,8 +6,8 @@ export function ConnectionScreenLogo() {
       alt="Metrio"
       className="connection-screen__logo"
       data-testid="connection-screen-logo"
-      width={408}
-      height={87}
+      width={272}
+      height={58}
       decoding="async"
     />
   );
