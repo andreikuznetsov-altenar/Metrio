@@ -1,8 +1,5 @@
 import { Button } from "../../components/Button/Button";
-import {
-  dispatchAppRoute,
-  dispatchEmployeeView,
-} from "../../app/actionNavigation";
+import { navigateOpenGoals } from "../../app/ctaRouting";
 import type { summarizeGoalsForHome } from "../../domain/goals/goalReview";
 
 type GoalsSummary = ReturnType<typeof summarizeGoalsForHome>;
@@ -16,20 +13,10 @@ export function HomeGoalsSummaryCard({
   teamView: boolean;
   summary: GoalsSummary;
   prominent?: boolean;
-  moduleSurface?: "default" | "secondary";
+  moduleSurface?: "default" | "secondary" | "lower-card";
 }) {
   const openGoals = () => {
-    if (teamView) {
-      dispatchAppRoute("performance");
-      window.setTimeout(() => {
-        window.dispatchEvent(
-          new CustomEvent("metrio-open-performance-tab", { detail: "goals" }),
-        );
-      }, 0);
-      return;
-    }
-    dispatchAppRoute("performance");
-    dispatchEmployeeView("goals");
+    navigateOpenGoals({ teamView });
   };
 
   const attentionLine =
@@ -40,13 +27,27 @@ export function HomeGoalsSummaryCard({
         : null;
 
   const surfaceClass =
-    moduleSurface === "secondary"
-      ? "executive-panel executive-dashboard__secondary-module"
-      : `home-card${prominent ? " home-card--goals-alert" : ""}`;
+    moduleSurface === "lower-card"
+      ? "executive-lower-card"
+      : moduleSurface === "secondary"
+        ? "executive-panel executive-dashboard__secondary-module"
+        : `home-card${prominent ? " home-card--goals-alert" : ""}`;
   const titleClass =
-    moduleSurface === "secondary"
-      ? "executive-panel__title"
-      : "home-card__title home-card__title--section";
+    moduleSurface === "lower-card"
+      ? "executive-lower-card__title"
+      : moduleSurface === "secondary"
+        ? "executive-panel__title"
+        : "home-card__title home-card__title--section";
+  const headlineClass =
+    moduleSurface === "lower-card"
+      ? "executive-lower-card__headline"
+      : "dashboard-digest-card__headline";
+  const detailClass =
+    moduleSurface === "lower-card"
+      ? "executive-lower-card__description"
+      : "dashboard-digest-card__detail";
+  const actionsClass =
+    moduleSurface === "lower-card" ? "executive-lower-card__cta" : "home-card__actions";
 
   return (
     <section
@@ -59,14 +60,16 @@ export function HomeGoalsSummaryCard({
         {teamView ? "Goal reviews" : "Goals"}
       </h2>
       {attentionLine ? (
-        <p className="home-card__lead">{attentionLine}</p>
+        <p className={moduleSurface === "lower-card" ? "executive-lower-card__headline" : "home-card__lead"}>
+          {attentionLine}
+        </p>
       ) : (
-        <p className="dashboard-digest-card__headline">
+        <p className={headlineClass}>
           {summary.activeCount} active goal
           {summary.activeCount === 1 ? "" : "s"}
         </p>
       )}
-      <p className="dashboard-digest-card__detail">
+      <p className={detailClass}>
         {teamView
           ? "Review active goals and upcoming review dates."
           : "Track progress on your active goals and review dates."}
@@ -74,7 +77,7 @@ export function HomeGoalsSummaryCard({
           ? ` Next review: ${summary.nearestReviewLabel}.`
           : ""}
       </p>
-      <div className="home-card__actions">
+      <div className={actionsClass}>
         <Button variant="secondary" onClick={openGoals}>
           Open goals
         </Button>

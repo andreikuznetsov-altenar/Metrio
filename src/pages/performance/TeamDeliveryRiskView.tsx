@@ -97,6 +97,15 @@ export function TeamDeliveryRiskView({
       <p className="performance-section-desc">{performanceHelp.deliveryRisk}</p>
       <div className="performance-table-wrap performance-table-wrap--delivery-risk">
         <table className="performance-table performance-table--interactive performance-table--delivery-risk">
+          <colgroup>
+            <col className="col-issue" />
+            <col className="col-description" />
+            <col className="col-owner" />
+            <col className="col-num" />
+            <col className="col-reason" />
+            <col className="col-badge" />
+            <col className="col-action" />
+          </colgroup>
           <thead>
             <tr>
               <SortableTableHeader columnId="issue" label="Issue" sort={sort} onToggle={toggleSort} />

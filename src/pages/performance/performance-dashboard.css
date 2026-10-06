@@ -868,6 +868,101 @@
   width: 22%;
 }
 
+.performance-table-wrap--people,
+.performance-table-wrap--radar,
+.performance-table-wrap--delivery-risk,
+.performance-table-wrap--attention {
+  overflow-x: auto;
+}
+
+.performance-table--people {
+  table-layout: fixed;
+  width: 100%;
+  min-width: 960px;
+}
+
+.performance-table--people col.col-person {
+  width: 22%;
+}
+
+.performance-table--people col.col-num {
+  width: 9%;
+}
+
+.performance-table--people col.col-attention {
+  width: 38%;
+}
+
+.performance-table--people col.col-badge {
+  width: 15%;
+}
+
+.performance-table--radar {
+  table-layout: fixed;
+  width: 100%;
+  min-width: 960px;
+}
+
+.performance-table--radar col.col-person {
+  width: 20%;
+}
+
+.performance-table--radar col.col-reason {
+  width: 36%;
+}
+
+.performance-table--radar col.col-num {
+  width: 8%;
+}
+
+.performance-table--radar col.col-action {
+  width: 18%;
+}
+
+.performance-table--radar col.col-badge {
+  width: 12%;
+}
+
+.performance-table--delivery-risk {
+  table-layout: fixed;
+  width: 100%;
+  min-width: 1120px;
+}
+
+.performance-table--delivery-risk col.col-issue {
+  width: 8%;
+}
+
+.performance-table--delivery-risk col.col-description {
+  width: 26%;
+}
+
+.performance-table--delivery-risk col.col-owner {
+  width: 14%;
+}
+
+.performance-table--delivery-risk col.col-num {
+  width: 7%;
+}
+
+.performance-table--delivery-risk col.col-reason {
+  width: 24%;
+}
+
+.performance-table--delivery-risk col.col-badge {
+  width: 12%;
+}
+
+.performance-table--delivery-risk col.col-action {
+  width: 9%;
+}
+
+.performance-table--attention {
+  table-layout: fixed;
+  width: 100%;
+  min-width: 960px;
+}
+
 .performance-table--task-list {
   table-layout: fixed;
   width: 100%;

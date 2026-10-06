@@ -208,9 +208,11 @@ export function ManagerExecutiveDashboard({
       </DashboardMetricsPair>
       <DashboardLowerThreeCards>
         {goalsFeatureOn && goalsSummary ? (
-          <div className="executive-lower-card">
-            <HomeGoalsSummaryCard teamView summary={goalsSummary} moduleSurface="secondary" />
-          </div>
+          <HomeGoalsSummaryCard
+            teamView
+            summary={goalsSummary}
+            moduleSurface="lower-card"
+          />
         ) : null}
         {teamBrief ? (
           <DashboardTeamBriefCard

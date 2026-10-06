@@ -1,7 +1,9 @@
 import type { ActionItem, ActionTarget } from "../domain/actions/actionTypes";
 import { openExternalUrl } from "../platform/openExternal";
 
-export function dispatchPerformanceTab(view: "overview" | "people" | "radar" | "delivery-risk") {
+export function dispatchPerformanceTab(
+  view: "overview" | "people" | "radar" | "delivery-risk" | "goals",
+) {
   window.dispatchEvent(
     new CustomEvent("metrio-open-performance-tab", { detail: view }),
   );
