@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import type { TrendCardData } from "../../../domain/performance";
+import { Select } from "../../../components/Select/Select";
 import { TrendMiniChart } from "../../performance/TrendMiniChart";
 import { TrendValue } from "../../performance/TrendValue";
 
@@ -40,19 +41,17 @@ export function DashboardPrimaryTrend({
       <div className="executive-panel__title-row">
         <h2 className="executive-panel__title">Trend</h2>
         {options.length > 1 ? (
-          <label className="executive-primary-trend__selector">
-            <span className="visually-hidden">Metric</span>
-            <select
+          <div className="executive-primary-trend__selector">
+            <Select
+              label="Metric"
               value={selected.label}
               onChange={(event) => setSelectedLabel(event.target.value)}
-            >
-              {options.map((opt) => (
-                <option key={opt.label} value={opt.label}>
-                  {opt.label}
-                </option>
-              ))}
-            </select>
-          </label>
+              options={options.map((opt) => ({
+                value: opt.label,
+                label: opt.label,
+              }))}
+            />
+          </div>
         ) : null}
       </div>
       <div className="executive-primary-trend__body">

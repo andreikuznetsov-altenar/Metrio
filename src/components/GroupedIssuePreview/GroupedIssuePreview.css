@@ -29,6 +29,22 @@
   white-space: nowrap;
 }
 
+.grouped-issue-preview__count-link {
+  border: none;
+  background: transparent;
+  padding: 0;
+  font-size: inherit;
+  font-weight: 500;
+  color: var(--color-accent);
+  cursor: pointer;
+  white-space: nowrap;
+  text-align: left;
+}
+
+.grouped-issue-preview__count-link:hover {
+  text-decoration: underline;
+}
+
 .grouped-issue-preview__tasks-link:hover {
   text-decoration: underline;
 }

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { resolveJiraBaseUrl } from "../../config/product";
+import { openExternalUrl } from "../../platform/openExternal";
 import { loadPreferences } from "../../platform/preferences";
 import { GroupedIssuePreview } from "../../components/GroupedIssuePreview/GroupedIssuePreview";
 import { usePerformanceData } from "../../app/PerformanceDataContext";
@@ -433,6 +434,13 @@ export function TeamOverviewView({
         ) : (
           <div className="performance-table-wrap performance-table-wrap--attention">
             <table className="performance-table performance-table--interactive performance-table--attention">
+              <colgroup>
+                <col className="col-person" />
+                <col className="col-reason" />
+                <col className="col-issues" />
+                <col className="col-badge" />
+                <col className="col-badge" />
+              </colgroup>
               <thead>
                 <tr>
                   <SortableTableHeader
@@ -511,15 +519,21 @@ export function TeamOverviewView({
                       <td className="performance-table__issues-cell">
                         {issueKeys.length === 0 && item.issueCount > 0 ? (
                           <span className="performance-table__issues-fallback">
-                            {item.issueCount} tasks
+                            {item.issueCount} issues
                           </span>
-                        ) : (
+                        ) : issueKeys.length > 0 ? (
                           <GroupedIssuePreview
                             issueKeys={issueKeys}
                             jiraBaseUrl={jiraBaseUrl}
                             persons={teamPersons}
-                            modalTitle={`Tasks — ${name}`}
+                            display="count"
+                            personNameForModal={name}
+                            onOpenIssue={(_issueKey, url) => {
+                              if (url) void openExternalUrl(url);
+                            }}
                           />
+                        ) : (
+                          "—"
                         )}
                       </td>
                       <td>

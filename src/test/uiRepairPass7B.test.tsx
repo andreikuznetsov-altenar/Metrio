@@ -138,13 +138,9 @@ describe("UI Repair Pass 7B", () => {
       />,
     );
     const row = screen.getByTestId("team-attention-row");
-    await waitFor(() => {
-      expect(within(row).getAllByRole("link").length).toBeGreaterThan(0);
-    });
-    const links = within(row).getAllByRole("link");
-    expect(links[0]).toHaveAttribute("href", expect.stringContaining("UX-1"));
-    await user.click(within(row).getByRole("button", { name: /Show 3 tasks/i }));
+    await user.click(within(row).getByRole("button", { name: /3 issues/i }));
     expect(screen.getByTestId("task-list-modal")).toBeTruthy();
+    expect(screen.getByRole("columnheader", { name: "Title" })).toBeTruthy();
     expect(within(row).getByText("Engineer")).toBeTruthy();
   });
 

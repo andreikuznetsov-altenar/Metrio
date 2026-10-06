@@ -5,6 +5,10 @@ import {
   buildTaskListModalRowsFromIssueKeys,
   type TaskListModalRow,
 } from "../../domain/actions/buildTaskListModalRows";
+import {
+  formatIssueCountLabel,
+  formatPersonTaskListModalTitle,
+} from "../../domain/actions/taskListModalPresentation";
 import type { Person } from "../../domain/people/types";
 import { buildJiraIssueBrowseUrl } from "../../platform/jiraIssueUrl";
 import "./GroupedIssuePreview.css";
@@ -19,6 +23,9 @@ export interface GroupedIssuePreviewProps {
   modalRows?: TaskListModalRow[];
   onOpenIssue?: (issueKey: string, url?: string) => void;
   className?: string;
+  /** Count-only link (no inline issue keys) for Team Attention etc. */
+  display?: "inline" | "count";
+  personNameForModal?: string;
 }
 
 export function GroupedIssuePreview({
@@ -29,6 +36,8 @@ export function GroupedIssuePreview({
   modalRows,
   onOpenIssue,
   className,
+  display = "inline",
+  personNameForModal,
 }: GroupedIssuePreviewProps) {
   const [open, setOpen] = useState(false);
   const uniqueKeys = useMemo(
@@ -47,8 +56,38 @@ export function GroupedIssuePreview({
     return <>—</>;
   }
 
-  const previewKeys = uniqueKeys.slice(0, INLINE_PREVIEW_MAX);
   const total = uniqueKeys.length;
+  const resolvedTitle =
+    personNameForModal && display === "count"
+      ? formatPersonTaskListModalTitle(personNameForModal, total)
+      : modalTitle;
+
+  if (display === "count") {
+    return (
+      <>
+        <button
+          type="button"
+          className="grouped-issue-preview__count-link"
+          data-testid="grouped-issue-count-link"
+          onClick={(event) => {
+            event.stopPropagation();
+            setOpen(true);
+          }}
+        >
+          {formatIssueCountLabel(total)}
+        </button>
+        <TaskListModal
+          open={open}
+          onClose={() => setOpen(false)}
+          title={resolvedTitle}
+          rows={rows}
+          onOpenIssue={onOpenIssue}
+        />
+      </>
+    );
+  }
+
+  const previewKeys = uniqueKeys.slice(0, INLINE_PREVIEW_MAX);
   const showModalLink = total > INLINE_PREVIEW_MAX;
 
   return (
@@ -92,7 +131,7 @@ export function GroupedIssuePreview({
       <TaskListModal
         open={open}
         onClose={() => setOpen(false)}
-        title={modalTitle}
+        title={resolvedTitle}
         rows={rows}
         onOpenIssue={onOpenIssue}
       />

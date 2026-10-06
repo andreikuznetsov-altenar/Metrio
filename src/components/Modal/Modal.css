@@ -33,6 +33,11 @@
   outline: none;
 }
 
+.metrio-modal.metrio-modal--task-list {
+  width: min(1180px, calc(100vw - 64px));
+  max-height: min(80vh, 720px);
+}
+
 .metrio-modal__header {
   flex-shrink: 0;
   display: flex;

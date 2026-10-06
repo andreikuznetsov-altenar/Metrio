@@ -801,10 +801,13 @@
 }
 
 .performance-table__sort-btn {
-  display: inline-flex;
+  display: flex;
   align-items: center;
+  justify-content: flex-start;
   gap: var(--space-1);
+  width: 100%;
   padding: 0;
+  margin: 0;
   border: none;
   background: transparent;
   color: inherit;
@@ -813,6 +816,11 @@
   cursor: pointer;
   max-width: 100%;
   white-space: nowrap;
+  text-align: inherit;
+}
+
+.performance-table th.performance-table__num .performance-table__sort-btn {
+  justify-content: flex-end;
 }
 
 .performance-table__sort-label {
@@ -969,6 +977,35 @@
   width: 100%;
 }
 
+.performance-table--task-list col.col-issues {
+  width: 11%;
+}
+
+.performance-table--task-list col.col-reason {
+  width: 36%;
+}
+
+.performance-table--task-list col.col-num {
+  width: 16%;
+}
+
+.performance-table--task-list col.col-badge {
+  width: 14%;
+}
+
+.performance-table__date-cell {
+  white-space: nowrap;
+}
+
+.performance-table__task-row:hover {
+  background: var(--color-surface-secondary);
+}
+
+.metrio-modal--task-list {
+  width: min(1180px, calc(100vw - 64px));
+  max-height: min(80vh, 720px);
+}
+
 .attention-issue-links {
   display: flex;
   flex-wrap: wrap;
@@ -992,21 +1029,20 @@
   text-decoration: underline;
 }
 
-.performance-table--attention th:nth-child(2) {
-  width: 30%;
+.performance-table--attention col.col-person {
+  width: 22%;
 }
 
-.performance-table--attention th:nth-child(3) {
-  width: 4.5rem;
+.performance-table--attention col.col-reason {
+  width: 28%;
 }
 
-.performance-table--attention th:nth-child(4) {
-  min-width: 11rem;
+.performance-table--attention col.col-issues {
+  width: 22%;
 }
 
-.performance-table--attention th:nth-child(5),
-.performance-table--attention th:nth-child(6) {
-  width: 7.5rem;
+.performance-table--attention col.col-badge {
+  width: 14%;
 }
 
 .performance-table--attention-signals {

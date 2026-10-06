@@ -1,6 +1,9 @@
+import { Badge } from "../Badge/Badge";
 import { Modal } from "../Modal/Modal";
 import type { TaskListModalRow } from "../../domain/actions/buildTaskListModalRows";
+import { issueStatusBadgeVariant } from "../../domain/jira/issueStatusBadgeVariant";
 import { METRIO_TABLE_CLASS, MetrioTableWrap } from "../Table/MetrioTable";
+import { PerformanceTableColgroup } from "../Table/PerformanceTableColgroup";
 
 export function TaskListModal({
   open,
@@ -16,52 +19,63 @@ export function TaskListModal({
   onOpenIssue?: (issueKey: string, url?: string) => void;
 }) {
   return (
-    <Modal open={open} onClose={onClose} title={title}>
+    <Modal open={open} onClose={onClose} title={title} className="metrio-modal--task-list">
       <div data-testid="task-list-modal">
-      {rows.length === 0 ? (
-        <p className="executive-secondary-line" role="status">
-          No tasks to show.
-        </p>
-      ) : (
-        <MetrioTableWrap>
-          <table className={`${METRIO_TABLE_CLASS} performance-table--task-list`}>
-            <thead>
-              <tr>
-                <th scope="col">Issue</th>
-                <th scope="col">Status</th>
-                <th scope="col">Created</th>
-                <th scope="col">Last status change</th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((row) => (
-                <tr key={row.issueKey}>
-                  <td>
-                    {onOpenIssue && row.jiraUrl ? (
-                      <button
-                        type="button"
-                        className="performance-table__link-button"
-                        onClick={() => onOpenIssue(row.issueKey, row.jiraUrl)}
-                      >
-                        <span className="performance-table__issue-key">{row.issueKey}</span>
-                        <span className="performance-table__issue-title">{row.title}</span>
-                      </button>
-                    ) : (
-                      <>
-                        <span className="performance-table__issue-key">{row.issueKey}</span>
-                        <span className="performance-table__issue-title">{row.title}</span>
-                      </>
-                    )}
-                  </td>
-                  <td>{row.status}</td>
-                  <td>{row.createdLabel}</td>
-                  <td>{row.lastStatusChangeLabel}</td>
+        {rows.length === 0 ? (
+          <div className="metrio-placeholder" role="status">
+            <p className="metrio-placeholder__text">No tasks to show for this selection.</p>
+          </div>
+        ) : (
+          <MetrioTableWrap>
+            <table className={`${METRIO_TABLE_CLASS} performance-table--task-list`}>
+              <PerformanceTableColgroup
+                columns={["issues", "reason", "num", "num", "badge"]}
+              />
+              <thead>
+                <tr>
+                  <th scope="col">Issue</th>
+                  <th scope="col">Title</th>
+                  <th scope="col">Created</th>
+                  <th scope="col">Last status change</th>
+                  <th scope="col">Status</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </MetrioTableWrap>
-      )}
+              </thead>
+              <tbody>
+                {rows.map((row) => (
+                  <tr key={row.issueKey} className="performance-table__task-row">
+                    <td className="performance-table__issue-key-cell">
+                      {onOpenIssue && row.jiraUrl ? (
+                        <button
+                          type="button"
+                          className="performance-table__link-button performance-table__issue-key-link"
+                          onClick={() => onOpenIssue(row.issueKey, row.jiraUrl)}
+                        >
+                          {row.issueKey}
+                        </button>
+                      ) : (
+                        <span className="performance-table__issue-key">{row.issueKey}</span>
+                      )}
+                    </td>
+                    <td className="performance-table__issue-title-cell">
+                      <span className="performance-table__clamp" title={row.title}>
+                        {row.title}
+                      </span>
+                    </td>
+                    <td className="performance-table__date-cell">{row.createdLabel}</td>
+                    <td className="performance-table__date-cell">
+                      {row.lastStatusChangeLabel}
+                    </td>
+                    <td>
+                      <Badge variant={issueStatusBadgeVariant(row.status)}>
+                        {row.status}
+                      </Badge>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </MetrioTableWrap>
+        )}
       </div>
     </Modal>
   );
