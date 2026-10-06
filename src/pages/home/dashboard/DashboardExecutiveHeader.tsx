@@ -78,6 +78,7 @@ export function DashboardExecutiveHeader({
           type="button"
           variant="secondary"
           className="executive-header__refresh-btn"
+          data-testid="dashboard-refresh-button"
           disabled={refreshing}
           loading={refreshing}
           onClick={() => onRefresh()}

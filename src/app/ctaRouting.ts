@@ -2,7 +2,7 @@ import type { TeamPerformanceView } from "../domain/performance";
 import {
   dispatchAppRoute,
   dispatchEmployeeView,
-  dispatchPerformanceTab,
+  navigatePerformanceView,
 } from "./actionNavigation";
 
 export type CtaRoutingEvent =
@@ -61,22 +61,20 @@ export function collectCtaRoutingEvents(
 }
 
 export function navigateOpenGoals(options: { teamView: boolean }): void {
-  dispatchAppRoute("performance");
   if (options.teamView) {
-    dispatchPerformanceTab("goals");
+    navigatePerformanceView("goals");
     return;
   }
+  dispatchAppRoute("performance");
   dispatchEmployeeView("goals");
 }
 
 export function navigateOpenDeliveryRisk(): void {
-  dispatchAppRoute("performance");
-  dispatchPerformanceTab("delivery-risk");
+  navigatePerformanceView("delivery-risk");
 }
 
 export function navigateOpenTeamOverview(): void {
-  dispatchAppRoute("performance");
-  dispatchPerformanceTab("overview");
+  navigatePerformanceView("overview");
 }
 
 export function navigateOpenTeamBrief(personId: string): void {

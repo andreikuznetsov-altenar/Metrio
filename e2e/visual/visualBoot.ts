@@ -24,6 +24,16 @@ export const VISUAL_EPHEMERAL_STORAGE_KEYS = [
   VISUAL_PERFORMANCE_FAIL_KEY,
 ];
 
+export type BootDashboardOptions = {
+  theme?: "light" | "dark";
+  width?: number;
+  /** Seeds goals through loadGoalsDataLocal / metrio-visual-goals. */
+  goals?: boolean;
+  performanceRefreshDelayMs?: number;
+  visualGroupedTasks?: boolean;
+  visualCapacityInsufficientAll?: boolean;
+};
+
 export async function setViewport(page: Page, width: number, height: number) {
   await page.setViewportSize({ width, height });
 }
@@ -64,14 +74,90 @@ export async function bootConnected(
   await expect(page.getByTestId("app-shell")).toBeVisible({ timeout: 30_000 });
 }
 
-export async function bootDashboardManager(page: Page, theme: "light" | "dark" = "light") {
-  await bootConnected(page, "lead", theme);
+export async function bootDashboardManager(
+  page: Page,
+  options?: "light" | "dark" | BootDashboardOptions,
+) {
+  const opts: BootDashboardOptions =
+    options === "light" || options === "dark" || options == null
+      ? { theme: options ?? "light" }
+      : options;
+  if (opts.width) {
+    await setViewport(page, opts.width, 900);
+  }
+  const goalsJson = opts.goals ? serializeGoalsVisualFixtureForPlaywright() : null;
+  await page.addInitScript(
+    ({
+      fixtureId,
+      themeId,
+      ephemeralKeys,
+      goals,
+      refreshDelayMs,
+      groupedTasks,
+      capacityInsufficientAll,
+    }: {
+      fixtureId: string;
+      themeId: string;
+      ephemeralKeys: string[];
+      goals: string | null;
+      refreshDelayMs?: number;
+      groupedTasks?: boolean;
+      capacityInsufficientAll?: boolean;
+    }) => {
+      for (const key of ephemeralKeys) {
+        localStorage.removeItem(key);
+      }
+      localStorage.setItem("metrio-connection-connected", "true");
+      localStorage.setItem("metrio-dev-fixture", fixtureId);
+      localStorage.setItem("metrio-theme", themeId);
+      if (goals) {
+        localStorage.setItem("metrio-visual-goals", goals);
+      }
+      if (refreshDelayMs != null && refreshDelayMs > 0) {
+        localStorage.setItem("metrio-visual-performance-delay-ms", String(refreshDelayMs));
+      }
+      if (groupedTasks) {
+        localStorage.setItem("metrio-visual-visualGroupedTasks", "1");
+      }
+      if (capacityInsufficientAll) {
+        localStorage.setItem("metrio-visual-visualCapacityInsufficientAll", "1");
+      }
+    },
+    {
+      fixtureId: "lead",
+      themeId: opts.theme ?? "light",
+      ephemeralKeys: [...VISUAL_EPHEMERAL_STORAGE_KEYS],
+      goals: goalsJson,
+      refreshDelayMs: opts.performanceRefreshDelayMs,
+      groupedTasks: opts.visualGroupedTasks,
+      capacityInsufficientAll: opts.visualCapacityInsufficientAll,
+    },
+  );
+  await page.goto("/");
   await expect(page.getByTestId("dashboard-ready")).toBeVisible({ timeout: 30_000 });
 }
 
 export async function bootMetrio(page: Page, fixture: "lead" | "employee" = "lead") {
   await bootConnected(page, fixture, "light");
   await openPerformanceFromHome(page);
+}
+
+export async function bootMetrioWithFlags(
+  page: Page,
+  flags: { groupedTasks?: boolean; capacityInsufficientAll?: boolean } = {},
+) {
+  await page.addInitScript(
+    ({ groupedTasks, capacityInsufficientAll }: { groupedTasks?: boolean; capacityInsufficientAll?: boolean }) => {
+      if (groupedTasks) {
+        localStorage.setItem("metrio-visual-visualGroupedTasks", "1");
+      }
+      if (capacityInsufficientAll) {
+        localStorage.setItem("metrio-visual-visualCapacityInsufficientAll", "1");
+      }
+    },
+    flags,
+  );
+  await bootMetrio(page);
 }
 
 export async function clickSubnav(page: Page, label: RegExp) {
@@ -91,6 +177,18 @@ export async function openFirstAttentionPerson(page: Page) {
   const row = page.locator(".performance-table--attention tbody tr").first();
   await expect(row).toBeVisible({ timeout: 15_000 });
   await row.click();
+}
+
+export async function expectPerformanceTab(page: Page, label: RegExp) {
+  const btn = page.locator(".performance-subnav").getByRole("button", { name: label });
+  await expect(btn).toHaveClass(/is-active/, { timeout: 15_000 });
+}
+
+export async function assertTableHeadersNowrap(page: Page, tableSelector: string) {
+  const nowrap = await page.locator(`${tableSelector} thead th`).evaluateAll((cells) =>
+    cells.every((cell) => window.getComputedStyle(cell).whiteSpace === "nowrap"),
+  );
+  expect(nowrap).toBe(true);
 }
 
 /** Opens Resource Library via the supported app event (Dashboard 2.0 has no CTA). */

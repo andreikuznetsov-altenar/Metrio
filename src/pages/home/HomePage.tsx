@@ -11,7 +11,7 @@ import {
   dispatchAppRoute,
   dispatchEmployeeView,
   dispatchFeedbackTab,
-  dispatchPerformanceTab,
+  navigatePerformanceView,
   navigateActionTarget,
 } from "../../app/actionNavigation";
 import { useOptionalPerformanceAnalytics } from "../../app/performanceAnalyticsContext";
@@ -587,12 +587,10 @@ export function HomePage() {
           actionOpenLabel={actionOpenLabel}
           onOpenTrendPoint={openTrendPoint}
           onOpenDeliveryRisk={() => {
-            dispatchAppRoute("performance");
-            dispatchPerformanceTab("delivery-risk");
+            navigatePerformanceView("delivery-risk");
           }}
           onOpenDirectorView={() => {
-            dispatchAppRoute("performance");
-            dispatchPerformanceTab("overview");
+            navigatePerformanceView("overview");
           }}
           onOpenFeedback={() => {
             dispatchAppRoute("feedback");
@@ -614,12 +612,10 @@ export function HomePage() {
           actionOpenLabel={actionOpenLabel}
           onOpenTrendPoint={openTrendPoint}
           onOpenDeliveryRisk={() => {
-            dispatchAppRoute("performance");
-            dispatchPerformanceTab("delivery-risk");
+            navigatePerformanceView("delivery-risk");
           }}
           onOpenTeamOverview={() => {
-            dispatchAppRoute("performance");
-            dispatchPerformanceTab("overview");
+            navigatePerformanceView("overview");
           }}
           onOpenPerson={(personId) => openPerson(personId)}
           onOpenJiraAssignment={(key) => void openJiraAssignment(key)}
@@ -704,8 +700,7 @@ export function HomePage() {
             );
           }}
           onOpenTeamOverview={() => {
-            dispatchAppRoute("performance");
-            dispatchPerformanceTab("overview");
+            navigatePerformanceView("overview");
           }}
         />
       ) : null}

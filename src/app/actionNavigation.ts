@@ -1,12 +1,22 @@
 import type { ActionItem, ActionTarget } from "../domain/actions/actionTypes";
 import { openExternalUrl } from "../platform/openExternal";
 
+import type { TeamPerformanceView } from "../domain/performance";
+
 export function dispatchPerformanceTab(
-  view: "overview" | "people" | "radar" | "delivery-risk" | "goals",
+  view: TeamPerformanceView,
 ) {
   window.dispatchEvent(
     new CustomEvent("metrio-open-performance-tab", { detail: view }),
   );
+}
+
+/** Navigate to Performance and activate a team subnav tab after the route mounts. */
+export function navigatePerformanceView(view: TeamPerformanceView): void {
+  dispatchAppRoute("performance");
+  window.setTimeout(() => {
+    dispatchPerformanceTab(view);
+  }, 0);
 }
 
 export function dispatchFeedbackTab(tab: "survey" | "delivery" | "results" | "history") {
