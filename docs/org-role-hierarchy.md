@@ -54,3 +54,13 @@ For `manager_of_managers`:
 ## Failure behavior
 
 If hierarchy cannot be resolved (`unresolved`), the app uses the **narrowest** authorized scope (self / direct reports) and does not elevate permissions.
+
+## Goals (Pass 12)
+
+Branch-level goal aggregation for `manager_of_managers` is **not** enabled in Pass 12. Existing per-person goal authorization and privacy rules are unchanged. Do not roll up private individual goals across the org tree until a safe authorization model exists.
+
+## Title-based logic audit
+
+Product **scope and role gates** must not read `jobTitle` strings. Remaining `jobTitle` usage is display-only (headers, manager contact card, diagnostics-safe labels) or legacy `UserRole` presentation mapping where `orgRole` is unavailable (fail-closed to narrow scope).
+
+`isDirectorRole` / `isManagerRole` remain compatibility helpers for presentation `UserRole` (`lead` / `director`) but primary routing uses `currentUser.orgRole` from the reporting graph.

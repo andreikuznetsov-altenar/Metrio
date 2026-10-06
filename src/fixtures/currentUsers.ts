@@ -3,11 +3,13 @@ import { getPerson } from "./people";
 
 const employeeUser: CurrentUser = {
   person: getPerson("person-alex"),
+  orgRole: "individual_contributor",
 };
 
 const leadUser: CurrentUser = {
   person: getPerson("person-sam"),
   jobTitle: "Design Lead",
+  orgRole: "leaf_manager",
   team: {
     leadId: "person-sam",
     directReportIds: [
@@ -22,6 +24,7 @@ const leadUser: CurrentUser = {
 
 const directorUser: CurrentUser = {
   person: getPerson("person-jordan"),
+  orgRole: "manager_of_managers",
   team: {
     leadId: "person-jordan",
     directReportIds: [

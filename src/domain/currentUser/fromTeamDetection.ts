@@ -2,9 +2,9 @@ import type { CurrentUser, UserRole } from '../types';
 import type { TeamDetectionResult } from '../../services/bamboo/teamDetection';
 import { resolveTeamScope } from '../../services/bamboo/teamScope';
 import {
-  resolveOrgHierarchyScope,
   resolveOrgRole,
 } from '../organization/orgRole';
+import { resolveOrgHierarchyScopeCached } from '../organization/orgHierarchyCache';
 
 export function mapOrgRoleToPresentationRole(
   orgRole: ReturnType<typeof resolveOrgRole>,
@@ -36,7 +36,7 @@ export function buildCurrentUserFromTeamDetection(
   }
 
   const orgRoleState = resolveOrgRole(team);
-  const orgHierarchy = resolveOrgHierarchyScope(team);
+  const orgHierarchy = resolveOrgHierarchyScopeCached(team);
   const role = mapOrgRoleToPresentationRole(orgRoleState);
 
   const person = {

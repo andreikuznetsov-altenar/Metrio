@@ -23,7 +23,8 @@ export function DashboardDirectorTeamHealthVisual({
           <li key={team.teamId} className="executive-director-teams__row">
             <span className="executive-director-teams__name">{team.teamName}</span>
             <span className="executive-director-teams__meta">
-              {team.firstPassPercent}% first pass · {team.attentionCount} attention
+              {team.peopleCount} people in scope · {team.firstPassPercent}% first pass ·{" "}
+              {team.attentionCount} attention
             </span>
           </li>
         ))}

@@ -144,6 +144,9 @@ export function TeamOverviewView({
       feedback: feedbackSummary,
       operationalRules,
     };
+    if (currentUser?.orgRole === "manager_of_managers") {
+      return buildDirectorTeamActions(input);
+    }
     if (currentUser?.person.role === "director") {
       return buildDirectorTeamActions(input);
     }
@@ -153,11 +156,15 @@ export function TeamOverviewView({
     secondary.deliveryRisk,
     feedbackSummary,
     currentUser?.person.role,
+    currentUser?.orgRole,
     operationalRules,
   ]);
 
   const actionTitle =
-    currentUser?.person.role === "director" ? "Organization actions" : "Team actions";
+    currentUser?.orgRole === "manager_of_managers" ||
+    currentUser?.person.role === "director"
+      ? "Organization actions"
+      : "Team actions";
 
   const handleAction = (item: import("../../domain/actions/actionTypes").ActionItem) => {
     navigateActionTarget(item.target, {

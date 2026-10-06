@@ -596,6 +596,9 @@ export function HomePage() {
           personal={personal}
           team={team}
           organization={organization}
+          directIndividualContributorCount={
+            currentUser.orgHierarchy?.directIndividualContributorIds.length ?? 0
+          }
           teamSnapshot={effectiveTeamSnapshot}
           deliveryRiskCount={deliveryRisk.length}
           trends={performanceTrends}

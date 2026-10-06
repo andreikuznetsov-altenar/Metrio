@@ -50,6 +50,7 @@ import {
   parseActiveJiraCount,
 } from "./dashboardContextSummary";
 import { formatDashboardGreeting } from "./dashboardGreeting";
+import { homeRoleVariantFromOrgRole } from "../organization/orgRoleRouting";
 
 export interface BuildHomeWorkspaceInput {
   role: UserRole;
@@ -80,13 +81,13 @@ export function resolveHomeRoleVariant(
   organizationModel: OrganizationOverviewModel | null,
   orgRole?: import("../organization/orgRole").OrgRole | "unresolved",
 ): HomeRoleVariant {
-  if (
-    orgRole === "manager_of_managers" ||
-    (role === "director" && organizationModel?.scope.mode === "organization")
-  ) {
+  if (orgRole && orgRole !== "unresolved") {
+    return homeRoleVariantFromOrgRole(orgRole);
+  }
+  if (role === "director" && organizationModel?.scope.mode === "organization") {
     return "director";
   }
-  if (orgRole === "leaf_manager" || role === "lead" || role === "director") {
+  if (role === "lead" || role === "director") {
     return "manager";
   }
   return "employee";

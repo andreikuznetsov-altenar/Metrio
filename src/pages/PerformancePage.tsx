@@ -60,7 +60,11 @@ function PerformancePageBody({ reviewTarget }: PerformancePageProps) {
     returnFocusRef,
   } = usePerformanceAnalytics();
   const canViewTeamDashboard =
-    isManagerRole(currentUser.person.role) && currentUser.team;
+    currentUser.orgRole === "leaf_manager"
+      ? Boolean(currentUser.team)
+      : currentUser.orgRole === "manager_of_managers"
+        ? true
+        : isManagerRole(currentUser.person.role) && Boolean(currentUser.team);
 
   void asTeamReviewTarget(reviewTarget);
   void asEmployeeReviewTarget(reviewTarget);
@@ -100,11 +104,17 @@ function PerformancePageBody({ reviewTarget }: PerformancePageProps) {
 
   let content;
 
-  if (currentUser.person.role === "employee") {
+  if (
+    currentUser.orgRole === "individual_contributor" ||
+    currentUser.person.role === "employee"
+  ) {
     content = <EmployeePerformanceOverview personId={currentUser.person.id} />;
   } else if (!canViewTeamDashboard) {
     content = <EmployeePerformanceOverview personId={currentUser.person.id} />;
-  } else if (isDirectorRole(currentUser.person.role)) {
+  } else if (
+    currentUser.orgRole === "manager_of_managers" ||
+    isDirectorRole(currentUser.person.role)
+  ) {
     content = <DirectorPerformanceOverview onOpenPerson={handleOpenPerson} />;
   } else {
     content = (
@@ -152,7 +162,11 @@ export function PerformancePage({ reviewTarget }: PerformancePageProps) {
   );
 
   const canViewTeamDashboard =
-    isManagerRole(currentUser.person.role) && Boolean(currentUser.team);
+    currentUser.orgRole === "leaf_manager"
+      ? Boolean(currentUser.team)
+      : currentUser.orgRole === "manager_of_managers"
+        ? true
+        : isManagerRole(currentUser.person.role) && Boolean(currentUser.team);
 
   return (
     <PerformanceAnalyticsProvider

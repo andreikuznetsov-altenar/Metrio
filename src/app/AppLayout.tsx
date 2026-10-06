@@ -85,10 +85,16 @@ export function AppLayout() {
   }, [currentUser.person.id, currentUser.person.role]);
 
   const performanceAudience: "team" | "employee" =
-    isManagerRole(currentUser.person.role) && currentUser.team ? "team" : "employee";
+    currentUser.orgRole === "manager_of_managers" ||
+    (currentUser.orgRole === "leaf_manager" && currentUser.team) ||
+    (isManagerRole(currentUser.person.role) && currentUser.team)
+      ? "team"
+      : "employee";
 
   const showTeamPerformanceToolbar =
-    isManagerRole(currentUser.person.role) && Boolean(currentUser.team);
+    currentUser.orgRole === "manager_of_managers" ||
+    (currentUser.orgRole === "leaf_manager" && Boolean(currentUser.team)) ||
+    (isManagerRole(currentUser.person.role) && Boolean(currentUser.team));
 
   const performanceSurfaceActive = activeRoute === "performance" && !settingsOpen;
 

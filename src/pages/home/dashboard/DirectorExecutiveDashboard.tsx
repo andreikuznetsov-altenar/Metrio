@@ -46,6 +46,7 @@ export interface DirectorExecutiveDashboardProps {
   goalsSummary: GoalsHomeSummary | null;
   goalsFeatureOn: boolean;
   goalsProminent: boolean;
+  directIndividualContributorCount?: number;
 }
 
 export function DirectorExecutiveDashboard({
@@ -71,6 +72,7 @@ export function DirectorExecutiveDashboard({
   goalsSummary,
   goalsFeatureOn,
   goalsProminent,
+  directIndividualContributorCount = 0,
 }: DirectorExecutiveDashboardProps) {
   const model = buildDirectorExecutiveModel({
     focus: personal.focus,
@@ -104,6 +106,15 @@ export function DirectorExecutiveDashboard({
         onPointClick={onOpenTrendPoint}
       />
       <DashboardAttentionNow items={model.attentionItems} />
+      {directIndividualContributorCount > 0 ? (
+        <p
+          className="executive-secondary-line executive-dashboard__span-12"
+          data-testid="dashboard-direct-ic-note"
+        >
+          + {directIndividualContributorCount} direct contributor
+          {directIndividualContributorCount === 1 ? "" : "s"} included in totals
+        </p>
+      ) : null}
       <DashboardDirectorTeamHealthVisual
         organization={organization}
         onOpenDirectorView={onOpenDirectorView}

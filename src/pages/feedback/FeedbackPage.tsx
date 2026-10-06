@@ -112,11 +112,22 @@ export function FeedbackPage() {
   useEffect(() => {
     const handler = (event: Event) => {
       const next = (event as CustomEvent<FeedbackTab>).detail;
-      if (next) setTab(next);
+      if (!next) return;
+      if (!orgAccess.canViewSurveyManagement) {
+        setTab('results');
+        return;
+      }
+      setTab(next);
     };
     window.addEventListener('metrio-open-feedback-tab', handler);
     return () => window.removeEventListener('metrio-open-feedback-tab', handler);
-  }, []);
+  }, [orgAccess.canViewSurveyManagement]);
+
+  useEffect(() => {
+    if (!orgAccess.canViewSurveyManagement && tab !== 'results') {
+      setTab('results');
+    }
+  }, [orgAccess.canViewSurveyManagement, tab]);
   const [editingDefaults, setEditingDefaults] = useState(true);
   const [formDetailsOpen, setFormDetailsOpen] = useState(false);
   const [initializing, setInitializing] = useState(true);

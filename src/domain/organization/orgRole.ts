@@ -80,6 +80,30 @@ export function resolveOrgRole(org: OrgResolutionResult): OrgRoleResolutionState
   );
 }
 
+export function buildLeadershipBranchSummaries(
+  hierarchy: OrgHierarchyScope,
+  roster: ResolvedEmployee[],
+): Array<{
+  leaderId: string;
+  leaderName: string;
+  leaderTitle?: string;
+  directReports: number;
+  totalDescendants: number;
+}> {
+  const rosterById = new Map(roster.map((p) => [p.id, p]));
+  return hierarchy.topLevelManagerBranches.map((branch) => {
+    const leader = rosterById.get(branch.managerId);
+    const graphChildCount = Math.max(0, branch.totalPeople - 1);
+    return {
+      leaderId: branch.managerId,
+      leaderName: leader?.displayName ?? branch.managerId,
+      leaderTitle: leader?.jobTitle,
+      directReports: graphChildCount,
+      totalDescendants: branch.totalPeople,
+    };
+  });
+}
+
 export function resolveOrgHierarchyScope(
   org: OrgResolutionResult,
 ): OrgHierarchyScope | null {
