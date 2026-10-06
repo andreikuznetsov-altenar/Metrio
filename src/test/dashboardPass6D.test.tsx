@@ -179,8 +179,8 @@ describe("Dashboard pass 6D — stale-while-revalidate", () => {
         refreshing: true,
         stale: true,
         errorMessage: null,
-      })?.line,
-    ).toMatch(/Refreshing|Still working/);
+      }),
+    ).toBeNull();
     const failed = buildDashboardSyncStatus({
       lastUpdatedAt: "2026-03-01T22:15:00.000Z",
       refreshing: false,

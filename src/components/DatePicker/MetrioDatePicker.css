@@ -36,11 +36,13 @@
   border-color: color-mix(in srgb, var(--color-border) 70%, var(--color-text-tertiary));
 }
 
-.metrio-date-picker__trigger:focus-visible {
+.metrio-date-picker__trigger:focus-visible,
+.metrio-date-picker__trigger[data-state="open"] {
   outline: none;
-  border-color: var(--color-focus-border);
-  border-width: 2px;
   box-shadow: none;
+  border-color: var(--color-focus-border);
+  border-width: 1px;
+  padding: 0 var(--space-2) 0 32px;
 }
 
 .metrio-date-picker__trigger:focus:not(:focus-visible) {

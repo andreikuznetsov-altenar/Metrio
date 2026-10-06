@@ -566,6 +566,15 @@
   font-size: 18px;
   font-weight: 600;
   letter-spacing: -0.02em;
+  align-self: flex-start;
+}
+
+.performance-trend-card__insufficient {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  align-self: flex-start;
 }
 
 .performance-sparkline {
@@ -802,10 +811,12 @@
   font-weight: 600;
   cursor: pointer;
   max-width: 100%;
+  white-space: nowrap;
 }
 
 .performance-table__sort-label {
   min-width: 0;
+  white-space: nowrap;
 }
 
 .performance-table__sort-btn:focus-visible {

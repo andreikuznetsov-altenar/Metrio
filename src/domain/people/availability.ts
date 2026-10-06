@@ -1,5 +1,6 @@
 import { addDays, format, isAfter, isBefore, isEqual, parseISO, startOfDay } from 'date-fns';
 import type { PersonAvailability } from './types';
+import { formatBambooTimeOffType } from './timeOffTypeLabel';
 
 export interface TimeOffEntry {
   employeeId?: string;
@@ -53,7 +54,7 @@ export function classifyAvailability(
   const returnDate = addDays(end, 1);
 
   if ((isBefore(start, day) || isEqual(start, day)) && (isAfter(end, day) || isEqual(end, day))) {
-    const prefix = isHoliday ? 'Holiday' : 'Vacation';
+    const prefix = formatBambooTimeOffType(entry.type);
     return {
       state: 'on_vacation',
       label: `${prefix} · ${formatRange(start, end)}`,
@@ -90,9 +91,10 @@ export function classifyAvailability(
   const windowDays = Math.max(1, Math.min(21, Math.round(soonWithinDays)));
   const soonLimit = addDays(day, windowDays);
   if (isAfter(start, day) && !isAfter(start, soonLimit)) {
+    const prefix = formatBambooTimeOffType(entry.type);
     return {
       state: 'vacation_soon',
-      label: `Vacation · ${formatRange(start, end)}`,
+      label: `${prefix} · ${formatRange(start, end)}`,
       startDate: format(start, 'yyyy-MM-dd'),
       endDate: format(end, 'yyyy-MM-dd'),
       returnDate: format(returnDate, 'yyyy-MM-dd'),

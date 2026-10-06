@@ -67,7 +67,7 @@ export function TeamUpcomingAvailabilitySection({
                 <div className="performance-availability-row__body">
                   <span className="performance-availability-row__name">{row.personName}</span>
                   <span className="performance-availability-row__meta">
-                    Vacation{" "}
+                    {row.absenceType}{" "}
                     {row.daysUntil === 0
                       ? "today"
                       : row.daysUntil === 1

@@ -6,6 +6,7 @@ export type AvailabilityRowSeverity = "info" | "warning";
 export interface ManagerAvailabilityRow {
   personId: string;
   personName: string;
+  absenceType: string;
   daysUntil: number | null;
   rangeLabel: string;
   activeCount: number;
@@ -69,12 +70,13 @@ export function buildManagerAvailabilityRows(
     rows.push({
       personId: entry.personId,
       personName: name,
+      absenceType: entry.note?.trim() || "Time off",
       daysUntil,
       rangeLabel: entry.rangeLabel,
       activeCount,
       inReviewCount,
       severity,
-      summaryLine: `${name}\nVacation ${countdown} · ${entry.rangeLabel}\n${activeCount} active · ${inReviewCount} in review`,
+      summaryLine: `${name}\n${entry.note || "Time off"} ${countdown} · ${entry.rangeLabel}\n${activeCount} active · ${inReviewCount} in review`,
     });
   }
 

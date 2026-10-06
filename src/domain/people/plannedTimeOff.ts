@@ -1,6 +1,7 @@
 import { addDays, addMonths, format } from "date-fns";
 import type { TimeOffEntry } from "./availability";
 import { parseIsoDateOnly } from "../../components/DatePicker/datePickerValue";
+import { formatBambooTimeOffType } from "./timeOffTypeLabel";
 
 export interface PlannedTimeOffRow {
   employeeId: string;
@@ -85,9 +86,7 @@ export function buildPlannedTimeOffRows(
       ? `${format(startDate, "d")}–${format(endDate, "d MMM yyyy")}`
       : `${format(startDate, "d MMM yyyy")} – ${format(endDate, "d MMM yyyy")}`;
 
-    const typeRaw = String(entry.type || "Time off");
-    const typeLabel =
-      typeRaw.toLowerCase().includes("holiday") ? "Holiday" : "Vacation";
+    const typeLabel = formatBambooTimeOffType(entry.type);
 
     rows.push({
       employeeId,
