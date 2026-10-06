@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { bootConnected, setViewport } from "./visualBoot";
+import { bootConnected, openPerformanceFromHome, setViewport } from "./visualBoot";
 
 test.describe("ORG Pass 12 role surfaces", () => {
   test("leaf manager dashboard shows team scope without leadership branch note", async ({
@@ -21,6 +21,18 @@ test.describe("ORG Pass 12 role surfaces", () => {
     ).toHaveCount(0);
     await expect(page.getByTestId("dashboard-director-team-health")).toBeVisible();
     await expect(page.getByTestId("dashboard-direct-ic-note")).toBeVisible();
+  });
+
+  test("manager of managers performance shows leadership branches", async ({
+    page,
+  }) => {
+    await setViewport(page, 1440, 900);
+    await bootConnected(page, "director");
+    await openPerformanceFromHome(page);
+    await page.locator(".performance-subnav__link").filter({ hasText: "Teams" }).click();
+    await expect(page.getByTestId("leadership-branches-performance")).toBeVisible({
+      timeout: 30_000,
+    });
   });
 
   test("individual contributor dashboard is personal scope", async ({ page }) => {

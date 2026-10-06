@@ -41,6 +41,20 @@ function person(id: string, name: string, title?: string): Person {
 }
 
 describe("searchLocalCommandPalette", () => {
+  it("hides survey shortcut when survey management is disabled", () => {
+    const results = searchLocalCommandPalette({
+      query: "survey",
+      people: [],
+      projects: [],
+      knowledgePages: [],
+      recents: [],
+      feedbackEnabled: true,
+      surveyManagementEnabled: false,
+      jiraBaseUrl: "https://jira.example.com",
+    });
+    expect(results.some((r) => r.id === "feedback-nav")).toBe(false);
+  });
+
   it("prioritizes exact issue key matches", () => {
     const results = searchLocalCommandPalette({
       query: "UX-6124",
@@ -49,6 +63,7 @@ describe("searchLocalCommandPalette", () => {
       knowledgePages: [],
       recents: [],
       feedbackEnabled: true,
+      surveyManagementEnabled: true,
       jiraBaseUrl: "https://jira.example.com",
     });
     expect(results[0]?.type).toBe("jira_issue");
@@ -64,6 +79,7 @@ describe("searchLocalCommandPalette", () => {
       knowledgePages: [],
       recents: [],
       feedbackEnabled: false,
+      surveyManagementEnabled: false,
       jiraBaseUrl: "",
     });
     const withoutPerson = searchLocalCommandPalette({
@@ -73,6 +89,7 @@ describe("searchLocalCommandPalette", () => {
       knowledgePages: [],
       recents: [],
       feedbackEnabled: false,
+      surveyManagementEnabled: false,
       jiraBaseUrl: "",
     });
     expect(withPerson.some((result) => result.type === "person")).toBe(true);
@@ -87,6 +104,7 @@ describe("searchLocalCommandPalette", () => {
       knowledgePages: [],
       recents: [],
       feedbackEnabled: false,
+      surveyManagementEnabled: false,
       jiraBaseUrl: "",
     });
     expect(results.some((result) => result.type === "person")).toBe(true);

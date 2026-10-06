@@ -31,6 +31,7 @@ For `manager_of_managers`:
 - **Visible summary rows** = first managerial layer below the current user (direct reports who are managers)
 - **Metric scope per branch** = that manager plus their full recursive subtree
 - Direct individual contributors under the current user are included in **overall** totals but not shown as peer leadership cards
+- **Dashboard** and **Performance → Teams** use the same `leadershipBranches` aggregates (`leadershipBranchPerformanceRows.ts`)
 
 ## Aggregation rules
 

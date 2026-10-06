@@ -27,6 +27,7 @@ export interface UseCommandPaletteSearchInput {
   teamPersons: Person[];
   workGraph: WorkGraphState;
   feedbackEnabled: boolean;
+  surveyManagementEnabled: boolean;
 }
 
 export function useCommandPaletteSearch({
@@ -36,6 +37,7 @@ export function useCommandPaletteSearch({
   teamPersons,
   workGraph,
   feedbackEnabled,
+  surveyManagementEnabled,
 }: UseCommandPaletteSearchInput) {
   const [remoteResults, setRemoteResults] = useState<CommandResult[]>([]);
   const [remoteHint, setRemoteHint] = useState<string | null>(null);
@@ -75,6 +77,7 @@ export function useCommandPaletteSearch({
       knowledgePages,
       recents: listCommandPaletteRecents(),
       feedbackEnabled,
+      surveyManagementEnabled,
       jiraBaseUrl,
     });
   }, [
@@ -84,6 +87,7 @@ export function useCommandPaletteSearch({
     workGraph.projects,
     knowledgePages,
     feedbackEnabled,
+    surveyManagementEnabled,
     jiraBaseUrl,
   ]);
 

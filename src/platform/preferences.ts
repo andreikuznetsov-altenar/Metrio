@@ -1,6 +1,10 @@
 import { invoke } from '@tauri-apps/api/core';
 import type { TeamDetectionResult } from '../services/bamboo/teamDetection';
 import {
+  resetOrgHierarchyCache,
+  teamDetectionReportingSignature,
+} from '../domain/organization/orgHierarchyCache';
+import {
   DEFAULT_WORKLOAD_THRESHOLDS,
   normalizeWorkloadThresholds,
   type WorkloadThresholds,
@@ -403,7 +407,18 @@ export async function loadPreferencesForMerge(): Promise<AppPreferences> {
   return loadPreferences();
 }
 
+let lastPersistedTeamDetectionSignature = '';
+
 export async function savePreferences(prefs: AppPreferences): Promise<void> {
+  const nextTeamSig = teamDetectionReportingSignature(prefs.teamDetection);
+  if (
+    lastPersistedTeamDetectionSignature &&
+    nextTeamSig !== lastPersistedTeamDetectionSignature
+  ) {
+    resetOrgHierarchyCache();
+  }
+  lastPersistedTeamDetectionSignature = nextTeamSig;
+
   if (isVisualFixtureBuild()) {
     localStorage.setItem(VISUAL_PREFS_STORAGE_KEY, JSON.stringify(prefs));
     window.dispatchEvent(new CustomEvent(PREFERENCES_SAVED_EVENT, { detail: prefs }));

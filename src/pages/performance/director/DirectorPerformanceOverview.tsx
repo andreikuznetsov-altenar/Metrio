@@ -25,6 +25,8 @@ import { DirectorOverviewView } from "./DirectorOverviewView";
 import { DirectorPerformanceSubnav } from "./DirectorPerformanceSubnav";
 import { DirectorSignalsView } from "./DirectorSignalsView";
 import { DirectorTeamsView } from "./DirectorTeamsView";
+import { LeadershipBranchesPerformanceView } from "./LeadershipBranchesPerformanceView";
+import { buildLeadershipBranchPerformanceRows } from "../../../domain/organization/leadershipBranchPerformanceRows";
 import "../performance-dashboard.css";
 
 export interface DirectorPerformanceOverviewProps {
@@ -89,6 +91,14 @@ export function DirectorPerformanceOverview({
       bambooRoster: rosterFromOrgResolution(orgForScope),
     });
   }, [data, org, currentUser.person.role, currentUser.orgHierarchy, surveyData]);
+
+  const leadershipBranchRows = useMemo(
+    () =>
+      model?.leadershipBranches
+        ? buildLeadershipBranchPerformanceRows(model.leadershipBranches)
+        : [],
+    [model],
+  );
 
   const deliveryRows = useMemo(() => {
     if (!model) return [];
@@ -171,12 +181,21 @@ export function DirectorPerformanceOverview({
       ) : null}
 
       {activeView === "teams" ? (
-        <DirectorTeamsView
-          teams={model.teams}
-          selectedTeamId={selectedTeamId}
-          onSelectTeam={setSelectedTeamId}
-          onBack={() => setSelectedTeamId(undefined)}
-        />
+        leadershipBranchRows.length > 0 ? (
+          <LeadershipBranchesPerformanceView
+            rows={leadershipBranchRows}
+            selectedLeaderId={selectedTeamId}
+            onSelectLeader={setSelectedTeamId}
+            onBack={() => setSelectedTeamId(undefined)}
+          />
+        ) : (
+          <DirectorTeamsView
+            teams={model.teams}
+            selectedTeamId={selectedTeamId}
+            onSelectTeam={setSelectedTeamId}
+            onBack={() => setSelectedTeamId(undefined)}
+          />
+        )
       ) : null}
 
       {activeView === "signals" ? (

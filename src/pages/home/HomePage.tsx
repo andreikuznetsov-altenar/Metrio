@@ -76,6 +76,7 @@ import { parseActiveJiraCount } from "../../domain/home/dashboardContextSummary"
 import { DirectorExecutiveDashboard } from "./dashboard/DirectorExecutiveDashboard";
 import { EmployeeExecutiveDashboard } from "./dashboard/EmployeeExecutiveDashboard";
 import { ManagerExecutiveDashboard } from "./dashboard/ManagerExecutiveDashboard";
+import { DashboardRoleRouter } from "./dashboard/DashboardRoleRouter";
 import { DashboardFirstRunState } from "./dashboard/DashboardFirstRunState";
 import { DashboardBlockingErrorState } from "./dashboard/DashboardBlockingErrorState";
 import { DashboardSyncBanner } from "./dashboard/DashboardSyncBanner";
@@ -592,87 +593,96 @@ export function HomePage() {
         />
       ) : null}
       <div className="executive-dashboard" data-testid="dashboard-first-viewport">
-      {dashboardVariant === "leadership" && organization && team ? (
-        <DirectorExecutiveDashboard
-          {...sharedHeader}
-          personal={personal}
-          team={team}
-          organization={organization}
-          directIndividualContributorCount={
-            currentUser.orgHierarchy?.directIndividualContributorIds.length ?? 0
-          }
-          teamSnapshot={effectiveTeamSnapshot}
-          deliveryRiskCount={deliveryRisk.length}
-          trends={performanceTrends}
-          onOpenAction={handleAction}
-          actionOpenLabel={actionOpenLabel}
-          onOpenTrendPoint={openTrendPoint}
-          onOpenDeliveryRisk={() => {
-            navigatePerformanceView("delivery-risk");
-          }}
-          onOpenDirectorView={() => {
-            navigatePerformanceView("overview");
-          }}
-          goalsSummary={showGoalsSummary ? goalsHomeSummary : null}
-          goalsFeatureOn={goalsFeatureOn}
-          goalsProminent={goalsProminent}
-        />
-      ) : dashboardVariant === "team_manager" && team ? (
-        <ManagerExecutiveDashboard
-          {...sharedHeader}
-          personal={personal}
-          team={team}
-          teamSnapshot={effectiveTeamSnapshot}
-          deliveryRiskCount={deliveryRisk.length}
-          trends={performanceTrends}
-          onOpenAction={handleAction}
-          actionOpenLabel={actionOpenLabel}
-          onOpenTrendPoint={openTrendPoint}
-          onOpenDeliveryRisk={() => {
-            navigatePerformanceView("delivery-risk");
-          }}
-          onOpenTeamOverview={() => {
-            navigatePerformanceView("overview");
-          }}
-          onOpenPerson={(personId) => openPerson(personId)}
-          onOpenJiraAssignment={(key) => void openJiraAssignment(key)}
-          onOpenMyWeek={() => {
-            dispatchAppRoute("performance");
-            dispatchEmployeeView("my-week");
-          }}
-          onOpenFeedback={() => {
-            dispatchAppRoute("feedback");
-            dispatchFeedbackTab("delivery");
-          }}
-          teamPersons={data?.teamSnapshot?.persons ?? []}
-          goalsSummary={showGoalsSummary ? goalsHomeSummary : null}
-          goalsFeatureOn={goalsFeatureOn}
-          goalsProminent={goalsProminent}
-          canOpenPersonBrief={(id) => canOpenPersonBrief(currentUser, id)}
-          teamBrief={managerTeamBrief}
-        />
-      ) : (
-        <EmployeeExecutiveDashboard
-          {...sharedHeader}
-          personal={personal}
-          selfWorkload={selfWorkload}
-          selfAvailability={selfPerson?.availability}
-          trends={employeeTrends}
-          onOpenAction={handleAction}
-          actionOpenLabel={actionOpenLabel}
-          onOpenJiraAssignment={(key) => void openJiraAssignment(key)}
-          onOpenMyWeek={() => {
-            dispatchAppRoute("performance");
-            dispatchEmployeeView("my-week");
-          }}
-          goalsSummary={showGoalsSummary ? goalsHomeSummary : null}
-          goalsFeatureOn={goalsFeatureOn}
-          goalsProminent={goalsProminent}
-          showManagerCard={currentUser.orgRole === "individual_contributor"}
-          managerContact={managerContact}
-          selfDepartment={selfPerson?.bamboo.department}
-        />
-      )}
+      <DashboardRoleRouter
+        variant={dashboardVariant}
+        leadership={
+          organization && team ? (
+            <DirectorExecutiveDashboard
+              {...sharedHeader}
+              personal={personal}
+              team={team}
+              organization={organization}
+              directIndividualContributorCount={
+                currentUser.orgHierarchy?.directIndividualContributorIds.length ?? 0
+              }
+              teamSnapshot={effectiveTeamSnapshot}
+              deliveryRiskCount={deliveryRisk.length}
+              trends={performanceTrends}
+              onOpenAction={handleAction}
+              actionOpenLabel={actionOpenLabel}
+              onOpenTrendPoint={openTrendPoint}
+              onOpenDeliveryRisk={() => {
+                navigatePerformanceView("delivery-risk");
+              }}
+              onOpenDirectorView={() => {
+                navigatePerformanceView("overview");
+              }}
+              goalsSummary={showGoalsSummary ? goalsHomeSummary : null}
+              goalsFeatureOn={goalsFeatureOn}
+              goalsProminent={goalsProminent}
+            />
+          ) : null
+        }
+        teamManager={
+          team ? (
+            <ManagerExecutiveDashboard
+              {...sharedHeader}
+              personal={personal}
+              team={team}
+              teamSnapshot={effectiveTeamSnapshot}
+              deliveryRiskCount={deliveryRisk.length}
+              trends={performanceTrends}
+              onOpenAction={handleAction}
+              actionOpenLabel={actionOpenLabel}
+              onOpenTrendPoint={openTrendPoint}
+              onOpenDeliveryRisk={() => {
+                navigatePerformanceView("delivery-risk");
+              }}
+              onOpenTeamOverview={() => {
+                navigatePerformanceView("overview");
+              }}
+              onOpenPerson={(personId) => openPerson(personId)}
+              onOpenJiraAssignment={(key) => void openJiraAssignment(key)}
+              onOpenMyWeek={() => {
+                dispatchAppRoute("performance");
+                dispatchEmployeeView("my-week");
+              }}
+              onOpenFeedback={() => {
+                dispatchAppRoute("feedback");
+                dispatchFeedbackTab("delivery");
+              }}
+              teamPersons={data?.teamSnapshot?.persons ?? []}
+              goalsSummary={showGoalsSummary ? goalsHomeSummary : null}
+              goalsFeatureOn={goalsFeatureOn}
+              goalsProminent={goalsProminent}
+              canOpenPersonBrief={(id) => canOpenPersonBrief(currentUser, id)}
+              teamBrief={managerTeamBrief}
+            />
+          ) : null
+        }
+        employee={
+          <EmployeeExecutiveDashboard
+            {...sharedHeader}
+            personal={personal}
+            selfWorkload={selfWorkload}
+            selfAvailability={selfPerson?.availability}
+            trends={employeeTrends}
+            onOpenAction={handleAction}
+            actionOpenLabel={actionOpenLabel}
+            onOpenJiraAssignment={(key) => void openJiraAssignment(key)}
+            onOpenMyWeek={() => {
+              dispatchAppRoute("performance");
+              dispatchEmployeeView("my-week");
+            }}
+            goalsSummary={showGoalsSummary ? goalsHomeSummary : null}
+            goalsFeatureOn={goalsFeatureOn}
+            goalsProminent={goalsProminent}
+            showManagerCard={currentUser.orgRole === "individual_contributor"}
+            managerContact={managerContact}
+            selfDepartment={selfPerson?.bamboo.department}
+          />
+        }
+      />
       </div>
 
       {showDigestRow ? (

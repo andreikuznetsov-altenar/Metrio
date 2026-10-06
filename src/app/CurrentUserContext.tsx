@@ -11,6 +11,7 @@ import { buildCurrentUserFromTeamDetection } from "../domain/currentUser/fromTea
 import type { CurrentUser, DevFixtureId } from "../domain/types";
 import {
   loadPreferencesOutcome,
+  PREFERENCES_SAVED_EVENT,
   type AppPreferences,
 } from "../platform/preferences";
 import {
@@ -152,6 +153,19 @@ export function CurrentUserProvider({ children }: { children: ReactNode }) {
       Math.round(performance.now() - workspaceStarted),
     );
     bootLog("16", "initializeWorkspace finished status=ready");
+  }, []);
+
+  useEffect(() => {
+    if (import.meta.env.DEV) return;
+    const onPrefsSaved = (event: Event) => {
+      const prefs = (event as CustomEvent<AppPreferences>).detail;
+      if (!prefs?.teamDetection) return;
+      const user = buildCurrentUserFromTeamDetection(prefs.teamDetection);
+      setProductionUser(user);
+      setBootstrapGeneration((value) => value + 1);
+    };
+    window.addEventListener(PREFERENCES_SAVED_EVENT, onPrefsSaved);
+    return () => window.removeEventListener(PREFERENCES_SAVED_EVENT, onPrefsSaved);
   }, []);
 
   const setDevFixture = useCallback((fixtureId: DevFixtureId) => {

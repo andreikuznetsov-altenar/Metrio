@@ -19,6 +19,7 @@ export interface LocalCommandSearchInput {
   knowledgePages: KnowledgePage[];
   recents: CommandPaletteRecent[];
   feedbackEnabled: boolean;
+  surveyManagementEnabled: boolean;
   jiraBaseUrl: string;
 }
 
@@ -243,6 +244,7 @@ export function searchLocalCommandPalette(
 
   if (
     input.feedbackEnabled &&
+    input.surveyManagementEnabled &&
     (!qLower ||
       qLower.includes("feedback") ||
       qLower.includes("survey") ||

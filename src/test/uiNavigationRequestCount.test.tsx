@@ -112,6 +112,7 @@ describe("UI navigation request counts", () => {
       recents: [],
       jiraBaseUrl: "https://jira.example.com",
       feedbackEnabled: true,
+      surveyManagementEnabled: true,
     });
     expect(mockRemoteSearch).not.toHaveBeenCalled();
   });

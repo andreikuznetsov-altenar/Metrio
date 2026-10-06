@@ -514,6 +514,7 @@ function AppLayoutShell({
           teamPersons,
           workGraph,
           feedbackEnabled,
+          surveyManagementEnabled: orgFeatureAccess.canViewSurveyManagement,
         }}
       />
       <PersonBriefDrawer

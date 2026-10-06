@@ -8,6 +8,8 @@ export interface OrgFeatureAccess {
   usesLeadershipBranchView: boolean;
   usesSelfView: boolean;
   canViewManagerContact: boolean;
+  canViewLeadershipBranches: boolean;
+  canViewTeamOperationalTables: boolean;
   showFeedbackTab: boolean;
 }
 
@@ -23,6 +25,8 @@ export function resolveOrgFeatureAccess(
       usesLeadershipBranchView: false,
       usesSelfView: true,
       canViewManagerContact: true,
+      canViewLeadershipBranches: false,
+      canViewTeamOperationalTables: false,
       showFeedbackTab: true,
     };
   }
@@ -36,6 +40,8 @@ export function resolveOrgFeatureAccess(
       usesLeadershipBranchView: false,
       usesSelfView: false,
       canViewManagerContact: false,
+      canViewLeadershipBranches: false,
+      canViewTeamOperationalTables: true,
       showFeedbackTab: true,
     };
   }
@@ -49,6 +55,8 @@ export function resolveOrgFeatureAccess(
       usesLeadershipBranchView: true,
       usesSelfView: false,
       canViewManagerContact: false,
+      canViewLeadershipBranches: true,
+      canViewTeamOperationalTables: false,
       showFeedbackTab: false,
     };
   }
@@ -61,6 +69,8 @@ export function resolveOrgFeatureAccess(
     usesLeadershipBranchView: false,
     usesSelfView: true,
     canViewManagerContact: true,
+    canViewLeadershipBranches: false,
+    canViewTeamOperationalTables: false,
     showFeedbackTab: false,
   };
 }
