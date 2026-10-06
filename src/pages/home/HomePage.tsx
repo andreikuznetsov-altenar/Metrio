@@ -24,6 +24,7 @@ import { resolveAuthorizedPeopleScope } from "../../domain/organization/authoriz
 import { buildOrganizationModel } from "../../domain/organization/buildOrganizationModel";
 import { rosterFromOrgResolution } from "../../domain/organization/orgGraph";
 import { resolveSupervisorEmployee } from "../../domain/organization/orgRole";
+import { resolveDashboardVariant } from "../../domain/organization/orgRoleRouting";
 import { summarizeFeedbackActions } from "../../domain/feedback/feedbackActionSummary";
 import { syncFeedbackInboxFromSummary } from "../../platform/feedbackInboxSync";
 import type { OrgResolutionResult } from "../../services/bamboo/orgResolver";
@@ -198,6 +199,7 @@ export function HomePage() {
     organizationModel,
     currentUser.orgRole,
   );
+  const dashboardVariant = resolveDashboardVariant(currentUser.orgRole);
 
   const managerContact = useMemo(() => {
     if (currentUser.orgRole !== "individual_contributor" || !org?.ok) {
@@ -590,7 +592,7 @@ export function HomePage() {
         />
       ) : null}
       <div className="executive-dashboard" data-testid="dashboard-first-viewport">
-      {homeRole === "director" && organization && team ? (
+      {dashboardVariant === "leadership" && organization && team ? (
         <DirectorExecutiveDashboard
           {...sharedHeader}
           personal={personal}
@@ -611,15 +613,11 @@ export function HomePage() {
           onOpenDirectorView={() => {
             navigatePerformanceView("overview");
           }}
-          onOpenFeedback={() => {
-            dispatchAppRoute("feedback");
-            dispatchFeedbackTab("delivery");
-          }}
           goalsSummary={showGoalsSummary ? goalsHomeSummary : null}
           goalsFeatureOn={goalsFeatureOn}
           goalsProminent={goalsProminent}
         />
-      ) : team ? (
+      ) : dashboardVariant === "team_manager" && team ? (
         <ManagerExecutiveDashboard
           {...sharedHeader}
           personal={personal}

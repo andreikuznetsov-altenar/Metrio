@@ -1,5 +1,6 @@
 import type { CurrentUser, DevFixtureId } from "../domain/types";
 import { getPerson } from "./people";
+import { devOrgHierarchyForFixture } from "./devOrgHierarchy";
 
 const employeeUser: CurrentUser = {
   person: getPerson("person-alex"),
@@ -43,5 +44,7 @@ export const DEV_FIXTURES: Record<DevFixtureId, CurrentUser> = {
 };
 
 export function getFixtureUser(fixtureId: DevFixtureId): CurrentUser {
-  return DEV_FIXTURES[fixtureId];
+  const user = DEV_FIXTURES[fixtureId];
+  const orgHierarchy = devOrgHierarchyForFixture(fixtureId);
+  return orgHierarchy ? { ...user, orgHierarchy } : user;
 }

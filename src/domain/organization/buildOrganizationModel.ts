@@ -18,6 +18,8 @@ import {
   buildLeadershipBranchRow,
   groupPersonsByLeadershipBranch,
 } from "./leadershipBranches";
+import { buildLeadershipBranches } from "./leadershipBranchAggregation";
+import { buildOrgGraph } from "./orgGraph";
 import type { OrgHierarchyScope } from "./orgRole";
 import type { ResolvedEmployee } from "../../services/bamboo/orgResolver";
 import { buildDirectorTeamCapacity } from "../availability/teamAvailabilityContext";
@@ -235,6 +237,17 @@ export function buildOrganizationModel(input: {
     })),
   );
 
+  const leadershipBranches =
+    useLeadershipBranches && input.orgHierarchy
+      ? buildLeadershipBranches({
+          branches: input.orgHierarchy.topLevelManagerBranches,
+          roster: input.bambooRoster ?? [],
+          persons,
+          deliveryRisk,
+          graph: buildOrgGraph(input.bambooRoster ?? []),
+        })
+      : undefined;
+
   return {
     scope: input.scope,
     scopeLabel: scopeLabel(input.scope),
@@ -245,6 +258,7 @@ export function buildOrganizationModel(input: {
     teams: teamRows.sort((a, b) => a.teamName.localeCompare(b.teamName)),
     deliveryRisk,
     teamCapacity,
+    leadershipBranches,
     newStarterSummary: newStarterAggregate(persons),
     feedbackSummary: {
       pendingRecipients: input.feedback.pendingResponseCount,

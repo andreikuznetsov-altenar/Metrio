@@ -19,6 +19,8 @@ test.describe("ORG Pass 12 role surfaces", () => {
     await expect(
       page.locator(".app-header__nav-link").filter({ hasText: "Feedback" }),
     ).toHaveCount(0);
+    await expect(page.getByTestId("dashboard-director-team-health")).toBeVisible();
+    await expect(page.getByTestId("dashboard-direct-ic-note")).toBeVisible();
   });
 
   test("individual contributor dashboard is personal scope", async ({ page }) => {

@@ -12,6 +12,7 @@ import { SetupError } from '../domain/setup/setupErrors';
 import { normalizeEmail, validateConnectInput } from '../domain/setup/validation';
 import { BambooClient } from '../services/bamboo/bambooClient';
 import { detectTeam } from '../services/bamboo/teamDetection';
+import { resetOrgHierarchyCache } from '../domain/organization/orgHierarchyCache';
 import { JiraClient } from '../services/jira/jiraClient';
 import {
   loadPreferencesForMerge,
@@ -173,6 +174,7 @@ export async function connectAndContinue(input: ConnectFormInput): Promise<void>
     },
   });
 
+  resetOrgHierarchyCache();
   resetAvatarSession();
   await savePreferences(prefs);
   await persistConnectionConfig({ workEmail }, { jiraToken, bambooApiKey });

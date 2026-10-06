@@ -36,7 +36,12 @@ For `manager_of_managers`:
 
 - Count unique entities (people, issue keys, goals) — no double counting across branches
 - Recompute rates from underlying numerators/denominators; do not average team averages
-- Capacity: use underlying person/cycle data; do not sum capacity percentages
+- Capacity: branch summaries use **distribution buckets** (`light` / `balanced` / `heavy` / `overloaded` / `insufficient_history`); never average capacity percentages
+- Implementation: `leadershipBranchAggregation.ts` + `buildLeadershipRecommendations.ts` (executive copy references branch leaders)
+
+## Cache invalidation
+
+`resolveOrgHierarchyScopeCached` resets when Bamboo `teamDetection` changes (e.g. connect flow calls `resetOrgHierarchyCache()` before saving prefs).
 
 ## Feedback feature gates
 

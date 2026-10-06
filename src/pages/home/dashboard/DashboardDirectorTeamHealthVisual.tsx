@@ -17,14 +17,15 @@ export function DashboardDirectorTeamHealthVisual({
       aria-label="Organization team health"
       data-testid="dashboard-director-team-health"
     >
-      <h2 className="executive-panel__title">Teams</h2>
+      <h2 className="executive-panel__title">Leadership branches</h2>
       <ul className="executive-director-teams">
         {teams.map((team) => (
           <li key={team.teamId} className="executive-director-teams__row">
             <span className="executive-director-teams__name">{team.teamName}</span>
             <span className="executive-director-teams__meta">
-              {team.peopleCount} people in scope · {team.firstPassPercent}% first pass ·{" "}
-              {team.attentionCount} attention
+              {team.peopleCount} people · {team.activeWork} active · {team.attentionCount}{" "}
+              attention
+              {team.capacitySummaryLabel ? ` · ${team.capacitySummaryLabel}` : ""}
             </span>
           </li>
         ))}

@@ -20,6 +20,9 @@ import type { DashboardPerformancePulseProps } from "./DashboardPerformancePulse
 import type { summarizeGoalsForHome } from "../../../domain/goals/goalReview";
 import { HomeGoalsSummaryCard } from "../HomeGoalsSummaryCard";
 import { Button } from "../../../components/Button/Button";
+import { buildLeadershipRecommendations } from "../../../domain/recommendations/buildLeadershipRecommendations";
+import { DashboardRecommendations } from "./DashboardRecommendations";
+import type { ProductRecommendation } from "../../../domain/recommendations/buildProductRecommendations";
 
 type GoalsHomeSummary = ReturnType<typeof summarizeGoalsForHome>;
 
@@ -42,7 +45,6 @@ export interface DirectorExecutiveDashboardProps {
   onOpenTrendPoint?: DashboardPerformancePulseProps["onPointClick"];
   onOpenDeliveryRisk: () => void;
   onOpenDirectorView: () => void;
-  onOpenFeedback: () => void;
   goalsSummary: GoalsHomeSummary | null;
   goalsFeatureOn: boolean;
   goalsProminent: boolean;
@@ -68,7 +70,6 @@ export function DirectorExecutiveDashboard({
   onOpenTrendPoint,
   onOpenDeliveryRisk,
   onOpenDirectorView,
-  onOpenFeedback,
   goalsSummary,
   goalsFeatureOn,
   goalsProminent,
@@ -83,6 +84,21 @@ export function DirectorExecutiveDashboard({
     organization,
     trends,
   });
+
+  const branchRecommendations = buildLeadershipRecommendations({
+    branches: organization.model.leadershipBranches ?? [],
+    maxItems: 3,
+  });
+
+  const onRecommendationAction = (rec: ProductRecommendation) => {
+    if (rec.actionKind === "open_delivery_risk") {
+      onOpenDeliveryRisk();
+      return;
+    }
+    if (rec.actionKind === "open_performance") {
+      onOpenDirectorView();
+    }
+  };
 
   return (
     <>
@@ -119,6 +135,12 @@ export function DirectorExecutiveDashboard({
         organization={organization}
         onOpenDirectorView={onOpenDirectorView}
       />
+      {branchRecommendations.length > 0 ? (
+        <DashboardRecommendations
+          items={branchRecommendations}
+          onAction={onRecommendationAction}
+        />
+      ) : null}
       <DashboardTeamCapacityVisual workload={model.teamWorkload} />
       <DashboardDeliveryVisual summary={model.deliverySummary} />
       <DashboardActionTabs
@@ -129,16 +151,6 @@ export function DirectorExecutiveDashboard({
       {goalsFeatureOn && goalsSummary && goalsProminent ? (
         <div className="executive-dashboard__span-12">
           <HomeGoalsSummaryCard teamView summary={goalsSummary} prominent />
-        </div>
-      ) : null}
-      {team.feedback && !/failure|pending/i.test(team.feedback.headline) ? (
-        <div className="executive-dashboard__span-12 executive-lower-section">
-          <p className="executive-secondary-line">
-            {team.feedback.headline}
-            <Button type="button" variant="secondary" onClick={onOpenFeedback}>
-              Open Feedback
-            </Button>
-          </p>
         </div>
       ) : null}
       <div

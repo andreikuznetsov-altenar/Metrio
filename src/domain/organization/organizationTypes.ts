@@ -44,6 +44,8 @@ export interface OrganizationTeamRow {
   avgCycleLabel: string;
   upcomingLeave: number;
   attentionSeverity: number;
+  capacitySummaryLabel?: string;
+  deliveryRiskCount?: number;
 }
 
 export interface OrganizationTeamTrend {
@@ -72,6 +74,7 @@ export interface OrganizationOverviewModel {
   teams: OrganizationTeamRow[];
   deliveryRisk: DeliveryRiskItem[];
   teamCapacity: OrganizationTeamCapacityRow[];
+  leadershipBranches?: import("./leadershipBranchTypes").LeadershipBranch[];
   newStarterSummary: { total: number; byTeam: { teamId: string; teamName: string; count: number }[] };
   feedbackSummary: {
     pendingRecipients: number;

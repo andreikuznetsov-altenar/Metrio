@@ -4,8 +4,11 @@ import type { TopLevelManagerBranch } from "./orgRole";
 import type { ResolvedEmployee } from "../../services/bamboo/orgResolver";
 import type { OrganizationTeamRow } from "./organizationTypes";
 import { formatDuration } from "../jira/dates";
-import { getEfficiencyStatus } from "../jira/kpi";
 import type { KpiData } from "../jira/types";
+import {
+  buildBranchCapacitySummary,
+  formatBranchCapacitySummaryLabel,
+} from "./leadershipBranchAggregation";
 
 export interface LeadershipBranchGroup {
   branchId: string;
@@ -97,11 +100,13 @@ export function buildLeadershipBranchRow(
   const branchRisk = deliveryRisk.filter((item) =>
     group.persons.some((person) => person.id === item.personId),
   );
+  const uniqueAttentionCount = countUniqueDeliveryRiskForBranch(group, deliveryRisk);
   const attentionSeverity = branchRisk.some((r) => r.severity === "critical")
     ? 0
     : branchRisk.some((r) => r.severity === "warning")
       ? 1
       : 2;
+  const capacity = buildBranchCapacitySummary(group.persons);
   const upcomingLeave = group.persons.filter(
     (p) =>
       p.availability.state === "vacation_soon" ||
@@ -117,7 +122,9 @@ export function buildLeadershipBranchRow(
     teamName: group.leaderName,
     peopleCount: group.persons.length,
     activeWork,
-    attentionCount: branchRisk.length,
+    attentionCount: uniqueAttentionCount,
+    deliveryRiskCount: uniqueAttentionCount,
+    capacitySummaryLabel: formatBranchCapacitySummaryLabel(capacity),
     completed: kpi.completedCount,
     firstPassPercent,
     avgCycleLabel: kpi.avgProgressToReviewMs
@@ -143,4 +150,3 @@ export function countUniqueDeliveryRiskForBranch(
   return dedupeIssueKeys(keys).length;
 }
 
-export { getEfficiencyStatus };
