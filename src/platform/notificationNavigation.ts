@@ -1,5 +1,7 @@
 import type { SettingsSection } from "../pages/settings/types";
 import type { NotificationTarget } from "./notificationTypes";
+import type { OrgFeatureAccess } from "../domain/organization/orgFeatureAccess";
+import { resolveSafeFeedbackNotificationTab } from "../domain/organization/feedbackNotificationSafety";
 import { buildJiraIssueBrowseUrl } from "./jiraIssueUrl";
 import { openExternalUrl } from "./openExternal";
 import type { AppPreferences } from "./preferences";
@@ -14,6 +16,7 @@ export async function openNotificationTarget(
     onOpenPerson: (personId: string) => void;
     onOpenSettings: (section: SettingsSection) => void;
     loadPreferences: () => Promise<AppPreferences>;
+    orgFeatureAccess?: OrgFeatureAccess;
   },
 ): Promise<void> {
   if (!target) return;
@@ -45,8 +48,19 @@ export async function openNotificationTarget(
   }
 
   if (target.kind === "feedback") {
+    const access = handlers.orgFeatureAccess;
+    const safeTab =
+      access != null
+        ? resolveSafeFeedbackNotificationTab(target.tab, access)
+        : target.tab;
+    if (safeTab == null) {
+      window.dispatchEvent(
+        new CustomEvent("metrio-navigate-route", { detail: "home" }),
+      );
+      return;
+    }
     window.dispatchEvent(
-      new CustomEvent("metrio-open-feedback-tab", { detail: target.tab }),
+      new CustomEvent("metrio-open-feedback-tab", { detail: safeTab }),
     );
     window.dispatchEvent(
       new CustomEvent("metrio-navigate-route", { detail: "feedback" }),

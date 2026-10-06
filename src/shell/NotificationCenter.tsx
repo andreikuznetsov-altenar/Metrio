@@ -47,6 +47,7 @@ import {
   markAllActionInboxItemsRead,
 } from "../platform/inboxReadSync";
 import type { SettingsSection } from "../pages/settings/types";
+import type { OrgFeatureAccess } from "../domain/organization/orgFeatureAccess";
 import "./notification-center.css";
 
 const SOURCE_FILTER_OPTIONS: { value: InboxSourceFilterId; label: string }[] = [
@@ -99,6 +100,7 @@ export interface NotificationCenterProps {
   onOpenPerson: (personId: string) => void;
   onOpenSettings: (section: SettingsSection) => void;
   onUnreadChange?: (count: number) => void;
+  orgFeatureAccess?: OrgFeatureAccess;
 }
 
 export function NotificationCenter({
@@ -107,6 +109,7 @@ export function NotificationCenter({
   onOpenPerson,
   onOpenSettings,
   onUnreadChange,
+  orgFeatureAccess,
 }: NotificationCenterProps) {
   const bodyRef = useRef<HTMLDivElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -185,6 +188,7 @@ export function NotificationCenter({
       onOpenPerson,
       onOpenSettings,
       loadPreferences,
+      orgFeatureAccess,
     });
     if (event.target?.kind !== "jira") {
       onClose();

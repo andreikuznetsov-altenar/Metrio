@@ -59,4 +59,15 @@ describe("goalAccess", () => {
     ];
     expect(listVisibleGoals(goals, manager)).toHaveLength(1);
   });
+
+  it("manager of managers does not inherit descendant goals from org tree scope", () => {
+    const head: CurrentUser = {
+      person: { id: "head", name: "Head", role: "director" },
+      orgRole: "manager_of_managers",
+      team: { leadId: "head", directReportIds: ["lead-a", "lead-b"] },
+    };
+    const nestedIcGoal = baseGoal({ ownerPersonId: "emp-deep" });
+    expect(canViewGoal(head, nestedIcGoal)).toBe(false);
+    expect(listVisibleGoals([nestedIcGoal], head)).toHaveLength(0);
+  });
 });

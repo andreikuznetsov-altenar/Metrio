@@ -83,12 +83,20 @@ export const PALETTE_COMMANDS: PaletteCommandDef[] = [
 
 export function searchPaletteCommands(
   query: string,
-  options?: { feedbackEnabled?: boolean },
+  options?: { feedbackEnabled?: boolean; surveyManagementEnabled?: boolean },
 ): CommandResult[] {
-  const commands =
-    options?.feedbackEnabled === false
-      ? PALETTE_COMMANDS.filter((c) => c.commandId !== "navigate-feedback")
-      : PALETTE_COMMANDS;
+  const commands = PALETTE_COMMANDS.filter((command) => {
+    if (options?.feedbackEnabled === false && command.commandId === "navigate-feedback") {
+      return false;
+    }
+    if (
+      options?.surveyManagementEnabled === false &&
+      command.keywords.some((keyword) => keyword.includes("survey"))
+    ) {
+      return false;
+    }
+    return true;
+  });
   const q = query.trim().toLowerCase();
   if (!q) {
     return commands.slice(0, 4).map((command, index) =>

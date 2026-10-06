@@ -103,6 +103,16 @@ export function FeedbackPage() {
 
   const isTeamMode =
     teamDetection?.mode === 'team' && orgAccess.canViewSurveyManagement;
+  const feedbackTabs = useMemo(
+    () =>
+      FEEDBACK_TABS.filter((item) => {
+        if (item.id === 'results') {
+          return orgAccess.canViewOwnFeedbackResults;
+        }
+        return orgAccess.canViewSurveyManagement;
+      }),
+    [orgAccess.canViewOwnFeedbackResults, orgAccess.canViewSurveyManagement],
+  );
   const [dateFrom, setDateFrom] = useState(prefs.reportFilters.dateFrom);
   const [dateTo, setDateTo] = useState(prefs.reportFilters.dateTo || getTodayIsoDate());
   const [scope, setScope] = useState<'full' | 'direct'>(prefs.reportFilters.teamScope);
@@ -305,7 +315,7 @@ export function FeedbackPage() {
   if (!isTeamMode) {
     if (orgAccess.canViewOwnFeedbackResults) {
       return (
-        <div className="ds-feedback-page-shell">
+        <div className="ds-feedback-page-shell" data-testid="feedback-ic-results-only">
           <MetrioScrollArea className="ds-feedback-scroll">
             <div className="metrio-canvas ds-feedback-canvas">
               <FeedbackResultsView
@@ -432,7 +442,7 @@ export function FeedbackPage() {
 
               <>
                 <PageSubnav
-                  items={FEEDBACK_TABS}
+                  items={feedbackTabs}
                   activeId={tab}
                   onChange={(id) => setTab(id)}
                   ariaLabel="Feedback sections"

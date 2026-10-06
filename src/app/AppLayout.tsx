@@ -498,6 +498,7 @@ function AppLayoutShell({
         open={notificationsOpen}
         onClose={() => setNotificationsOpen(false)}
         onUnreadChange={setNotificationUnread}
+        orgFeatureAccess={orgFeatureAccess}
         onOpenPerson={(personId) => {
           window.dispatchEvent(
             new CustomEvent("metrio-open-person", { detail: personId }),

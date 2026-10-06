@@ -238,7 +238,10 @@ export function searchLocalCommandPalette(
   }
 
   results.push(
-    ...searchPaletteCommands(query, { feedbackEnabled: input.feedbackEnabled }),
+    ...searchPaletteCommands(query, {
+      feedbackEnabled: input.feedbackEnabled,
+      surveyManagementEnabled: input.surveyManagementEnabled,
+    }),
   );
   results.push(...curatedResourceResults(query, input.jiraBaseUrl));
 
