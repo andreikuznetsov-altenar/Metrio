@@ -11,6 +11,8 @@ export interface SegmentedControlProps<T extends string> {
   value: T;
   onChange: (value: T) => void;
   ariaLabel: string;
+  /** Stretch segments evenly across the container width. */
+  fullWidth?: boolean;
 }
 
 export function SegmentedControl<T extends string>({
@@ -18,6 +20,7 @@ export function SegmentedControl<T extends string>({
   value,
   onChange,
   ariaLabel,
+  fullWidth = false,
 }: SegmentedControlProps<T>) {
   const listRef = useRef<HTMLDivElement>(null);
   const [indicator, setIndicator] = useState({ left: 0, width: 0 });
@@ -45,7 +48,9 @@ export function SegmentedControl<T extends string>({
   return (
     <div
       ref={listRef}
-      className="segmented-control"
+      className={
+        fullWidth ? "segmented-control segmented-control--full-width" : "segmented-control"
+      }
       role="group"
       aria-label={ariaLabel}
     >

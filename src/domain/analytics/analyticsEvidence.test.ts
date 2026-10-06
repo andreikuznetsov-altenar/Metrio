@@ -87,6 +87,25 @@ describe("buildAnalyticsEvidence", () => {
     expect(reconcileEvidenceCount(evidence)).toBe(true);
   });
 
+  it("maps Jira report keys to Metrio person ids on evidence issues", () => {
+    const issues = [issueWithCompletion("UX-1", "2024-01-10T09:00:00.000Z")];
+    const kpi = buildKpiFromIssues(issues, {}, params);
+    const evidence = buildAnalyticsEvidence({
+      metric: "completed",
+      issues,
+      params,
+      kpi,
+      attributionIndex: {
+        "UX-1": { personCanonical: "alex@co.com", personName: "Alex" },
+      },
+      rangeLabel: "Jan 2024",
+      targetLabel: "Team target",
+      reportKeyToPersonId: { "alex@co.com": "metrio-alex" },
+    });
+
+    expect(evidence.issues[0]?.personId).toBe("metrio-alex");
+  });
+
   it("explains first pass numerator and denominator", () => {
     const issues = [
       issueWithCompletion("UX-1", "2024-01-10T09:00:00.000Z"),

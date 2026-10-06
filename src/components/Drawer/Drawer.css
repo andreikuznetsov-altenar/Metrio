@@ -73,6 +73,7 @@
   overflow-y: auto;
   overflow-x: hidden;
   padding: var(--drawer-body-padding);
+  scrollbar-gutter: stable;
 }
 
 .drawer-stack-panel--exit {

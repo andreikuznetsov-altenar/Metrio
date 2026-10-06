@@ -44,6 +44,7 @@ export interface BuildAnalyticsEvidenceInput {
   personId?: string;
   personKpi?: KpiData;
   issuesAvailable?: boolean;
+  reportKeyToPersonId?: Record<string, string>;
 }
 
 function projectKeyFromIssue(issueKey: string): string | undefined {
@@ -59,9 +60,18 @@ function formatShortDate(iso: string): string {
   }
 }
 
+function resolveIssuePersonId(
+  reportKey: string | undefined,
+  reportKeyToPersonId?: Record<string, string>,
+): string | undefined {
+  if (!reportKey) return undefined;
+  return reportKeyToPersonId?.[reportKey] ?? reportKey;
+}
+
 function mapCycleRecord(
   record: ReportingCycleRecord,
   attributionIndex: Record<string, IssueAttribution>,
+  reportKeyToPersonId?: Record<string, string>,
 ): AnalyticsEvidenceIssue {
   const { issue, cycle, cycleIndex, completedAt } = record;
   const attribution = attributionIndex[issue.issueKey];
@@ -72,7 +82,10 @@ function mapCycleRecord(
   return {
     issueKey: issue.issueKey,
     title: issue.issueSummary,
-    personId: attribution?.personCanonical,
+    personId: resolveIssuePersonId(
+      attribution?.personCanonical,
+      reportKeyToPersonId,
+    ),
     personName: attribution?.personName || issue.assigneeName,
     projectKey: projectKeyFromIssue(issue.issueKey),
     status: issue.currentStatus,
@@ -156,6 +169,7 @@ export function buildAnalyticsEvidence(input: BuildAnalyticsEvidenceInput): Anal
     personKpi,
     personDisplayName,
     personId,
+    reportKeyToPersonId,
   } = input;
 
   const cycleIssues =
@@ -218,7 +232,7 @@ export function buildAnalyticsEvidence(input: BuildAnalyticsEvidenceInput): Anal
 
     const supporting = sortIssues(
       "completed",
-      scopedRecords.map((record) => mapCycleRecord(record, attributionIndex)),
+      scopedRecords.map((record) => mapCycleRecord(record, attributionIndex, reportKeyToPersonId)),
     ).slice(0, 25);
 
     return downgradeToAggregateIfNeeded(
@@ -298,7 +312,10 @@ export function buildAnalyticsEvidence(input: BuildAnalyticsEvidenceInput): Anal
       return {
         issueKey: row.issue.issueKey,
         title: row.issue.issueSummary,
-        personId: attribution?.personCanonical,
+        personId: resolveIssuePersonId(
+          attribution?.personCanonical,
+          reportKeyToPersonId,
+        ),
         personName: attribution?.personName || row.issue.assigneeName,
         projectKey: projectKeyFromIssue(row.issue.issueKey),
         status: row.issue.currentStatus,
@@ -335,7 +352,7 @@ export function buildAnalyticsEvidence(input: BuildAnalyticsEvidenceInput): Anal
 
   if (metric === "backflows") {
     const backflowRecords = scopedRecords.filter((record) => record.cycle.hasBackflow);
-    const mapped = backflowRecords.map((record) => mapCycleRecord(record, attributionIndex));
+    const mapped = backflowRecords.map((record) => mapCycleRecord(record, attributionIndex, reportKeyToPersonId));
     const totalEvents = mapped.reduce((sum, row) => sum + (row.backflowCount ?? 0), 0);
 
     return {
@@ -361,7 +378,7 @@ export function buildAnalyticsEvidence(input: BuildAnalyticsEvidenceInput): Anal
   }
 
   if (metric === "first_pass") {
-    const mapped = scopedRecords.map((record) => mapCycleRecord(record, attributionIndex));
+    const mapped = scopedRecords.map((record) => mapCycleRecord(record, attributionIndex, reportKeyToPersonId));
     const firstPass = mapped.filter((row) => row.outcome === "first_pass").length;
     const rework = mapped.filter(
       (row) => row.outcome === "rework" || row.outcome === "backflow",
@@ -397,7 +414,7 @@ export function buildAnalyticsEvidence(input: BuildAnalyticsEvidenceInput): Anal
 
   if (metric === "avg_cycle") {
     const mapped = scopedRecords
-      .map((record) => mapCycleRecord(record, attributionIndex))
+      .map((record) => mapCycleRecord(record, attributionIndex, reportKeyToPersonId))
       .filter((row) => row.cycleDurationMs != null);
     const avgMs =
       mapped.length > 0
@@ -434,7 +451,7 @@ export function buildAnalyticsEvidence(input: BuildAnalyticsEvidenceInput): Anal
   }
 
   // completed
-  const mapped = scopedRecords.map((record) => mapCycleRecord(record, attributionIndex));
+  const mapped = scopedRecords.map((record) => mapCycleRecord(record, attributionIndex, reportKeyToPersonId));
 
   return downgradeToAggregateIfNeeded(
     {

@@ -1,3 +1,13 @@
+.segmented-control--full-width {
+  display: flex;
+  width: 100%;
+}
+
+.segmented-control--full-width .segmented-control__option {
+  flex: 1;
+  justify-content: center;
+}
+
 .segmented-control {
   position: relative;
   display: inline-flex;

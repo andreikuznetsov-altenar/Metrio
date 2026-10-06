@@ -18,7 +18,10 @@ import {
   flattenTeamKpiIssues,
   targetScopeLabel,
 } from "../../domain/analytics/analyticsReportScope";
-import { personRouteKey } from "../../domain/people/personDisplay";
+import {
+  buildPersonReportKeyIndex,
+  personRouteKey,
+} from "../../domain/people/personDisplay";
 import type { PerformanceFetchResult } from "../../services/performance/performanceTypes";
 import type { MetricCardData, TrendCardData } from "../../domain/performance";
 
@@ -85,6 +88,7 @@ export function useAnalyticsEvidence(
       ? personScope.scopedIssues
       : flattenTeamKpiIssues(report.grouped);
     const attributionIndex = buildIssueAttributionIndex(report.grouped);
+    const reportKeyToPersonId = buildPersonReportKeyIndex(data.teamSnapshot.persons);
     const params = report.params;
     const rangeLabel = formatPerformanceDateRangeDisplay(params.dateFrom, params.dateTo);
     const personReportKey = personScope?.personReportKey;
@@ -111,6 +115,7 @@ export function useAnalyticsEvidence(
       personKpi: personScope ? personKpi : undefined,
       personDisplayName: personScope?.personDisplayName,
       personId: personScope?.personId,
+      reportKeyToPersonId,
     });
 
     if (import.meta.env.DEV && evidence && !reconcileEvidenceCount(evidence)) {

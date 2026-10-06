@@ -389,6 +389,7 @@
 
 .performance-empty--timeoff {
   align-items: center;
+  gap: 8px;
 }
 
 .performance-empty__icon {

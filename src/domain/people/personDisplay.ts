@@ -17,6 +17,15 @@ export function personRouteKey(person: Person): string {
   return person.jira?.canonicalKey || person.bamboo.workEmail || person.id;
 }
 
+/** Maps Jira report grouped keys to Metrio person ids for avatars and navigation. */
+export function buildPersonReportKeyIndex(persons: Person[]): Record<string, string> {
+  const index: Record<string, string> = {};
+  for (const person of persons) {
+    index[personRouteKey(person)] = person.id;
+  }
+  return index;
+}
+
 export function firstPassPercent(person: Person): number {
   const perf = person.performance;
   if (!perf || !perf.completedCount) return 0;

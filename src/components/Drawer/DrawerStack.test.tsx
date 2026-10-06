@@ -92,4 +92,38 @@ describe("DrawerStack", () => {
     expect(screen.queryByTestId("drawer-stack-test")).toBeNull();
     expect(document.querySelectorAll(".drawer-root__backdrop")).toHaveLength(0);
   });
+
+  it("keeps dialog mounted until exit motion completes", async () => {
+    const onClose = vi.fn();
+    const { rerender } = render(
+      <DrawerStack
+        open
+        activePanel="primary"
+        onClose={onClose}
+        ariaLabel="Person"
+        header={<span>Person</span>}
+      >
+        Primary
+      </DrawerStack>,
+    );
+    expect(screen.getByRole("dialog")).toBeInTheDocument();
+
+    rerender(
+      <DrawerStack
+        open={false}
+        activePanel="primary"
+        onClose={onClose}
+        ariaLabel="Person"
+        header={<span>Person</span>}
+      >
+        Primary
+      </DrawerStack>,
+    );
+    expect(screen.getByRole("dialog")).toBeInTheDocument();
+
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 5));
+    });
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
 });

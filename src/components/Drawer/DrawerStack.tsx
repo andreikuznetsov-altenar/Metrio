@@ -62,7 +62,13 @@ export function DrawerStack({
   const titleId = useId();
   const [mounted, setMounted] = useState(open);
   const [visible, setVisible] = useState(open);
+  const [panelMotionKey, setPanelMotionKey] = useState(0);
   const frameRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    setPanelMotionKey((value) => value + 1);
+  }, [activePanel, open]);
 
   useEffect(() => {
     if (open) {
@@ -140,6 +146,7 @@ export function DrawerStack({
         }}
       />
       <aside
+        key={panelMotionKey}
         className={[
           "drawer",
           DRAWER_SIZE_CLASS[size],

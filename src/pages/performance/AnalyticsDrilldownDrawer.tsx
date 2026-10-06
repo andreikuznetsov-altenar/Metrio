@@ -15,7 +15,6 @@ import {
   summaryLineValue,
 } from "./analyticsDrawerPresentation";
 import { AnalyticsIssueRow } from "./AnalyticsIssueRow";
-import { EfficiencyComponentRow } from "./EfficiencyComponentRow";
 import "./analytics-drilldown-drawer.css";
 
 const PAGE_SIZE = 25;
@@ -79,19 +78,27 @@ function OutcomeSummary({
   if (!allLines.length) return null;
 
   return (
-    <div className="analytics-drawer__outcome">
+    <section className="analytics-drawer__card analytics-drawer__outcome">
       <SectionHeading>
         {evidence.metric === "first_pass" ? "Outcome" : "Summary"}
       </SectionHeading>
-      <dl className="analytics-drawer__outcome-grid">
-        {allLines.map((line) => (
-          <div key={line.label} className="analytics-drawer__outcome-row">
-            <dt>{line.label}</dt>
-            <dd>{line.value}</dd>
-          </div>
-        ))}
-      </dl>
-    </div>
+      <table className="performance-table analytics-drawer__outcome-table">
+        <thead>
+          <tr>
+            <th scope="col">Metric</th>
+            <th scope="col" className="performance-table__num">Value</th>
+          </tr>
+        </thead>
+        <tbody>
+          {allLines.map((line) => (
+            <tr key={line.label}>
+              <td>{line.label}</td>
+              <td className="performance-table__num">{line.value}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </section>
   );
 }
 
@@ -193,45 +200,53 @@ export function AnalyticsDrilldownDrawer({
       size="analytics"
     >
       {evidence ? (
-        <div className="analytics-drawer__body">
+        <div
+          className={
+            evidence.detailLevel === "aggregate"
+              ? "analytics-drawer__body analytics-drawer__body--aggregate"
+              : "analytics-drawer__body"
+          }
+        >
           <AnalyticsDrawerIntro evidence={evidence} />
 
           {evidence.detailLevel === "aggregate" ? (
-            <div className="analytics-drawer__aggregate-state" role="status">
-              <Info size={18} strokeWidth={1.75} aria-hidden />
-              <div>
-                <p className="analytics-drawer__aggregate-title">
-                  Task-level detail unavailable
-                </p>
-                <p className="analytics-drawer__aggregate-copy">
-                  {evidence.aggregateNote}
-                </p>
-                <p className="analytics-drawer__aggregate-value">
-                  {evidence.title}: {evidence.valueLabel}
-                  {evidence.bucketDate ? ` · ${evidence.rangeLabel}` : null}
-                </p>
-              </div>
+            <div className="analytics-drawer__aggregate-placeholder" role="status">
+              <Info size={20} strokeWidth={1.75} aria-hidden className="analytics-drawer__aggregate-icon" />
+              <p className="analytics-drawer__aggregate-title">
+                Task-level detail unavailable
+              </p>
+              <p className="analytics-drawer__aggregate-copy">
+                {evidence.aggregateNote}
+              </p>
             </div>
           ) : null}
 
           {evidence.metric === "efficiency" && evidence.detailLevel === "task" && efficiencyPresentation ? (
-            <section className="analytics-drawer__section">
+            <section className="analytics-drawer__card analytics-drawer__section">
               <SectionHeading>How efficiency is calculated</SectionHeading>
-              <div className="analytics-drawer__efficiency-breakdown">
-                {efficiencyPresentation.rows.map((row) => (
-                  <EfficiencyComponentRow
-                    key={row.id}
-                    label={row.label}
-                    points={row.points}
-                    detail={row.detail}
-                    isPenalty={row.isPenalty}
-                  />
-                ))}
-                <div className="analytics-drawer__efficiency-total">
-                  <span>Total score</span>
-                  <span>{efficiencyPresentation.total}</span>
-                </div>
-              </div>
+              <table className="performance-table analytics-drawer__efficiency-table">
+                <thead>
+                  <tr>
+                    <th scope="col">Component</th>
+                    <th scope="col" className="performance-table__num">Value</th>
+                    <th scope="col">Meaning</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {efficiencyPresentation.rows.map((row) => (
+                    <tr key={row.id}>
+                      <td>{row.label}</td>
+                      <td className="performance-table__num">{row.points}</td>
+                      <td>{row.detail ?? "—"}</td>
+                    </tr>
+                  ))}
+                  <tr className="analytics-drawer__efficiency-total-row">
+                    <td>Total score</td>
+                    <td className="performance-table__num">{efficiencyPresentation.total}</td>
+                    <td />
+                  </tr>
+                </tbody>
+              </table>
             </section>
           ) : null}
 
@@ -269,6 +284,7 @@ export function AnalyticsDrilldownDrawer({
             <div className="analytics-drawer__filter">
               <SegmentedControl
                 ariaLabel="First pass filter"
+                fullWidth
                 value={firstPassFilter}
                 options={[
                   { value: "all", label: "All" },
@@ -381,7 +397,7 @@ function EvidenceList({
 }) {
   return (
     <>
-      <div className="analytics-drawer__list">
+      <div className="analytics-drawer__card analytics-drawer__list">
         {issues.map((issue) => {
           const rowKey = `${issue.issueKey}-${issue.cycleIndex ?? 0}-${issue.completedAt ?? ""}`;
           return (
