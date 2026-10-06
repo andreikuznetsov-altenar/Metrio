@@ -23,15 +23,24 @@ import { getPerson } from "./people";
 import type { PerformanceFetchResult } from "../services/performance/performanceTypes";
 import { emptyDependencyIndex } from "../domain/dependencies/buildDeliveryDependencyGraph";
 import { readDashboardVisualQueryFlag } from "./dashboardVisualOverrides";
+import {
+  ORG_ROLE_SCENARIO_STORAGE_KEY,
+  type OrgRoleScenarioId,
+} from "./orgRoleProductionPathFixture";
 
 const VISUAL_TEAM_IDS = [
   "person-sam",
   "person-alex",
+  "person-jordan",
   "person-01",
   "person-02",
   "person-03",
   "person-04",
   "person-05",
+  "person-06",
+  "person-07",
+  "person-08",
+  "person-09",
 ] as const;
 
 const params: AuditReportData["params"] = {
@@ -130,7 +139,146 @@ function visualPerson(
   };
 }
 
+function readOrgRoleScenario(): OrgRoleScenarioId | null {
+  if (typeof window === "undefined") return null;
+  const raw = localStorage.getItem(ORG_ROLE_SCENARIO_STORAGE_KEY);
+  if (
+    raw === "ic" ||
+    raw === "leaf" ||
+    raw === "mom" ||
+    raw === "deep" ||
+    raw === "mixed" ||
+    raw === "branch-capacity" ||
+    raw === "branch-recommendations"
+  ) {
+    return raw;
+  }
+  return null;
+}
+
+function directorRosterPersons(): Person[] {
+  const scenario = readOrgRoleScenario();
+  const base = [
+    visualPerson("person-jordan", {
+      jobTitle: "Head of Design",
+      department: "Design",
+    }),
+    visualPerson("person-06", { jobTitle: "Lead A" }),
+    visualPerson("person-07", { jobTitle: "Employee 1" }),
+    visualPerson("person-08", { jobTitle: "Lead B" }),
+    visualPerson("person-09", { jobTitle: "Employee 3" }),
+  ];
+  if (scenario === "branch-capacity") {
+    return [
+      ...base.slice(0, 2),
+      visualPerson("person-07", {
+        jobTitle: "Employee 1",
+        workload: testWorkload({
+          level: "high",
+          capacityDataState: "measured",
+          activeCount: 5,
+        }),
+      }),
+      visualPerson("person-08", { jobTitle: "Lead B" }),
+      visualPerson("person-01", {
+        jobTitle: "Employee 2",
+        workload: testWorkload({
+          level: "normal",
+          capacityDataState: "measured",
+          activeCount: 4,
+        }),
+      }),
+      visualPerson("person-02", {
+        jobTitle: "Balanced",
+        workload: testWorkload({
+          level: "normal",
+          capacityDataState: "measured",
+          activeCount: 3,
+        }),
+      }),
+      visualPerson("person-03", {
+        workload: testWorkload({
+          level: "normal",
+          capacityDataState: "insufficient_history",
+          activeCount: 2,
+        }),
+      }),
+      visualPerson("person-04", {
+        workload: testWorkload({
+          level: "normal",
+          capacityDataState: "insufficient_history",
+          activeCount: 1,
+        }),
+      }),
+      visualPerson("person-05", {
+        workload: testWorkload({
+          level: "normal",
+          capacityDataState: "insufficient_history",
+          activeCount: 1,
+        }),
+      }),
+      visualPerson("person-09", {
+        jobTitle: "Employee 3",
+        workload: testWorkload({
+          level: "low",
+          capacityDataState: "measured",
+          activeCount: 2,
+        }),
+      }),
+    ];
+  }
+  if (scenario === "branch-recommendations") {
+    return base.map((person) => {
+      if (person.id === "person-07" || person.id === "person-01") {
+        const issues = ["UX-9001", "UX-9002", "UX-9003", "UX-9004"].map((key) =>
+          activeIssue(key, "Long review item", "In Review", `jira-${person.id}`),
+        );
+        return {
+          ...person,
+          issues,
+          ownedIssues: filterOwnedIssues(issues, `jira-${person.id}`),
+        };
+      }
+      if (person.id === "person-09") {
+        return {
+          ...person,
+          availability: {
+            state: "vacation_soon",
+            label: "Away soon",
+            isHoliday: false,
+          },
+        };
+      }
+      return person;
+    });
+  }
+  return base;
+}
+
 function buildTeamPersons(): Person[] {
+  const scenario = readOrgRoleScenario();
+  if (scenario === "ic") {
+    return [
+      visualPerson("person-sam", { jobTitle: "Lead A", department: "Design" }),
+      visualPerson("person-alex", {
+        jobTitle: "Employee A",
+        department: "Design",
+      }),
+    ];
+  }
+  if (
+    scenario === "mom" ||
+    scenario === "deep" ||
+    scenario === "mixed" ||
+    scenario === "branch-capacity" ||
+    scenario === "branch-recommendations"
+  ) {
+    const roster = directorRosterPersons();
+    if (scenario === "mixed") {
+      return roster;
+    }
+    return roster;
+  }
   return [
     visualPerson("person-sam", {
       jobTitle: "Design Lead",

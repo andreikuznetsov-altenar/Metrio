@@ -5,6 +5,7 @@ const KEY = "metrio.performance.directorView.v1";
 const VIEWS: DirectorPerformanceView[] = [
   "overview",
   "teams",
+  "people",
   "signals",
   "delivery",
 ];

@@ -180,6 +180,20 @@ export function DirectorPerformanceOverview({
         />
       ) : null}
 
+      {activeView === "people" ? (
+        leadershipBranchRows.length > 0 ? (
+          <LeadershipBranchesPerformanceView
+            rows={leadershipBranchRows}
+            selectedLeaderId={selectedTeamId}
+            onSelectLeader={setSelectedTeamId}
+            onBack={() => setSelectedTeamId(undefined)}
+            surfaceTestId="leadership-branches-people"
+          />
+        ) : (
+          <p className="performance-inline-empty">No leadership branches in scope.</p>
+        )
+      ) : null}
+
       {activeView === "teams" ? (
         leadershipBranchRows.length > 0 ? (
           <LeadershipBranchesPerformanceView

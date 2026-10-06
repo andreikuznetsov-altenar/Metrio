@@ -20,6 +20,7 @@ export interface LeadershipBranchesPerformanceViewProps {
   selectedLeaderId?: string;
   onSelectLeader: (leaderId: string) => void;
   onBack: () => void;
+  surfaceTestId?: string;
 }
 
 export function LeadershipBranchesPerformanceView({
@@ -27,6 +28,7 @@ export function LeadershipBranchesPerformanceView({
   selectedLeaderId,
   onSelectLeader,
   onBack,
+  surfaceTestId = "leadership-branches-performance",
 }: LeadershipBranchesPerformanceViewProps) {
   const getValue = useMemo(
     () => (row: LeadershipBranchPerformanceRow, columnId: string) => {
@@ -99,7 +101,7 @@ export function LeadershipBranchesPerformanceView({
   }
 
   return (
-    <div data-testid="leadership-branches-performance">
+    <div data-testid={surfaceTestId}>
       <h3 className="performance-section__title">Leadership branches</h3>
       <MetrioTableWrap>
         <table className={METRIO_TABLE_CLASS}>

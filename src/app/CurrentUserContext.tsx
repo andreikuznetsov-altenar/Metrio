@@ -7,13 +7,16 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { buildCurrentUserFromTeamDetection } from "../domain/currentUser/fromTeamDetection";
 import type { CurrentUser, DevFixtureId } from "../domain/types";
 import {
+  loadPreferences,
   loadPreferencesOutcome,
   PREFERENCES_SAVED_EVENT,
   type AppPreferences,
 } from "../platform/preferences";
+import { buildCurrentUserFromTeamDetection } from "../domain/currentUser/fromTeamDetection";
+import { ORG_ROLE_PRODUCTION_PATH_KEY } from "../fixtures/orgRoleProductionPathFixture";
+import { resetOrgHierarchyCache } from "../domain/organization/orgHierarchyCache";
 import {
   invalidateAuthenticatedSession,
 } from "./sessionInvalidation";
@@ -87,12 +90,27 @@ export function CurrentUserProvider({ children }: { children: ReactNode }) {
       return;
     }
     let cancelled = false;
-    void import("../fixtures/currentUsers").then((module) => {
+    const loadDevUser = async () => {
+      const useProductionPath =
+        localStorage.getItem(ORG_ROLE_PRODUCTION_PATH_KEY) === "1";
+      if (useProductionPath) {
+        const prefs = await loadPreferences();
+        if (prefs.teamDetection?.ok) {
+          const user = buildCurrentUserFromTeamDetection(prefs.teamDetection);
+          if (user && !cancelled) {
+            setDevFixtureUser(user);
+            setWorkspaceStatus("ready");
+          }
+          return;
+        }
+      }
+      const module = await import("../fixtures/currentUsers");
       if (!cancelled) {
         setDevFixtureUser(module.getFixtureUser(devFixtureId));
         setWorkspaceStatus("ready");
       }
-    });
+    };
+    void loadDevUser();
     return () => {
       cancelled = true;
     };
@@ -156,12 +174,19 @@ export function CurrentUserProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    if (import.meta.env.DEV) return;
     const onPrefsSaved = (event: Event) => {
       const prefs = (event as CustomEvent<AppPreferences>).detail;
       if (!prefs?.teamDetection) return;
+      resetOrgHierarchyCache();
       const user = buildCurrentUserFromTeamDetection(prefs.teamDetection);
-      setProductionUser(user);
+      if (import.meta.env.DEV) {
+        if (localStorage.getItem(ORG_ROLE_PRODUCTION_PATH_KEY) !== "1") {
+          return;
+        }
+        setDevFixtureUser(user);
+      } else {
+        setProductionUser(user);
+      }
       setBootstrapGeneration((value) => value + 1);
     };
     window.addEventListener(PREFERENCES_SAVED_EVENT, onPrefsSaved);
