@@ -15,8 +15,12 @@ import {
   type DashboardKpiCard,
 } from "./buildDashboardKpis";
 import type { PersonAvailability } from "../people/types";
-import type { ActionItem } from "../actions/actionTypes";
+import type { ActionItem, ActionTarget } from "../actions/actionTypes";
 import type { TrendCardData } from "../performance";
+import {
+  resolveAttentionViewTarget,
+  scrollTargetIdForAction,
+} from "./attentionNavigation";
 import type { HomeOrganizationWorkspace } from "./homeTypes";
 import type { HomePerformanceSnapshot } from "./homeTypes";
 
@@ -33,6 +37,9 @@ export interface ExecutiveAttentionItem {
   title: string;
   detail?: string;
   severity: "critical" | "warning" | "neutral";
+  issueKeys?: string[];
+  viewTarget?: ActionTarget;
+  scrollTargetId?: string | null;
 }
 
 export interface ExecutiveActionTab {
@@ -199,6 +206,27 @@ export function buildScopeHealthSummary(
   };
 }
 
+function attentionItemFromAction(
+  id: string,
+  action: ActionItem,
+  detailOverride?: string,
+): ExecutiveAttentionItem {
+  return {
+    id,
+    title: action.title,
+    detail: detailOverride ?? action.description,
+    severity:
+      action.severity === "critical"
+        ? "critical"
+        : action.severity === "warning"
+          ? "warning"
+          : "neutral",
+    issueKeys: action.issueKeys,
+    viewTarget: resolveAttentionViewTarget(action),
+    scrollTargetId: scrollTargetIdForAction(action),
+  };
+}
+
 function buildAttentionItems(input: {
   focus: ActionItem[];
   teamActions: ActionItem[];
@@ -209,26 +237,13 @@ function buildAttentionItems(input: {
 }): ExecutiveAttentionItem[] {
   const items: ExecutiveAttentionItem[] = [];
   for (const action of input.focus.slice(0, 3)) {
-    items.push({
-      id: `focus-${action.id}`,
-      title: action.title,
-      detail: action.description,
-      severity:
-        action.severity === "critical"
-          ? "critical"
-          : action.severity === "warning"
-            ? "warning"
-            : "neutral",
-    });
+    items.push(attentionItemFromAction(`focus-${action.id}`, action));
   }
   if (input.role !== "employee") {
     for (const action of input.teamActions.slice(0, 2)) {
-      items.push({
-        id: `team-${action.id}`,
-        title: action.title,
-        detail: "Team action",
-        severity: "warning",
-      });
+      items.push(
+        attentionItemFromAction(`team-${action.id}`, action, "Team action"),
+      );
     }
     if (input.deliveryRiskCount > 0) {
       items.push({
@@ -238,6 +253,8 @@ function buildAttentionItems(input: {
           ? `${input.deliverySummary.problematic} problematic · ${input.deliverySummary.longReview} long review`
           : undefined,
         severity: input.deliveryRiskCount >= 3 ? "critical" : "warning",
+        viewTarget: { kind: "performance", view: "delivery-risk" },
+        scrollTargetId: "delivery-risk-view",
       });
     }
   }
@@ -246,6 +263,8 @@ function buildAttentionItems(input: {
       id: "org-teams",
       title: `${input.teamsNeedingAttention} teams need attention`,
       severity: "critical",
+      viewTarget: { kind: "performance", view: "overview" },
+      scrollTargetId: "performance-section-team-attention",
     });
   }
   return items.slice(0, 5);

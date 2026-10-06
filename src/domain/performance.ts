@@ -35,11 +35,17 @@ export interface AttentionPerson {
   workload?: WorkloadRow["workload"];
 }
 
+export interface TrendChartPoint {
+  date: string;
+  value: number;
+  issueKeys?: string[];
+}
+
 export interface TrendCardData {
   label: string;
   value: string;
   sparkline?: number[];
-  chartSeries?: { date: string; value: number }[];
+  chartSeries?: TrendChartPoint[];
   insufficientHistory?: boolean;
   insufficientHistoryMessage?: string;
   historyRecordedDays?: number;

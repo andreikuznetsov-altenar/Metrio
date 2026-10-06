@@ -49,6 +49,8 @@ export interface DirectorExecutiveDashboardProps {
   goalsFeatureOn: boolean;
   goalsProminent: boolean;
   directIndividualContributorCount?: number;
+  onAttentionView: (item: import("../../../domain/home/executiveDashboardModel").ExecutiveAttentionItem) => void;
+  jiraBaseUrl?: string;
 }
 
 export function DirectorExecutiveDashboard({
@@ -74,6 +76,8 @@ export function DirectorExecutiveDashboard({
   goalsFeatureOn,
   goalsProminent,
   directIndividualContributorCount = 0,
+  onAttentionView,
+  jiraBaseUrl,
 }: DirectorExecutiveDashboardProps) {
   const model = buildDirectorExecutiveModel({
     focus: personal.focus,
@@ -121,7 +125,11 @@ export function DirectorExecutiveDashboard({
         spanClass={model.trendSpanClass}
         onPointClick={onOpenTrendPoint}
       />
-      <DashboardAttentionNow items={model.attentionItems} />
+      <DashboardAttentionNow
+        items={model.attentionItems}
+        onView={onAttentionView}
+        jiraBaseUrl={jiraBaseUrl}
+      />
       {directIndividualContributorCount > 0 ? (
         <p
           className="executive-secondary-line executive-dashboard__span-12"

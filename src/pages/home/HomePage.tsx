@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useCurrentUser } from "../../app/CurrentUserContext";
 import { usePerformanceData } from "../../app/PerformanceDataContext";
 import { digestCardContent } from "../../domain/home/digestCardContent";
@@ -50,7 +50,6 @@ import {
   readHomeVisualState,
 } from "../../fixtures/homeVisualFixture";
 import { shouldHideTeamBriefForVisual } from "../../fixtures/dashboardVisualOverrides";
-import { useEffect, useState } from "react";
 import { useOnboardingResources } from "../../hooks/useOnboardingResources";
 import { useResourceLibrary } from "../../hooks/useResourceLibrary";
 import { GettingStartedResources } from "../onboarding/GettingStartedResources";
@@ -78,6 +77,12 @@ import { EmployeeExecutiveDashboard } from "./dashboard/EmployeeExecutiveDashboa
 import { ManagerExecutiveDashboard } from "./dashboard/ManagerExecutiveDashboard";
 import { DashboardRoleRouter } from "./dashboard/DashboardRoleRouter";
 import { DashboardFirstRunState } from "./dashboard/DashboardFirstRunState";
+import { TaskListModal } from "../../components/TaskListModal/TaskListModal";
+import { buildTaskListModalRowsFromIssueKeys } from "../../domain/actions/buildTaskListModalRows";
+import { formatTrendTaskListModalTitle } from "../../domain/actions/taskListModalPresentation";
+import { formatTrendPointModalContext } from "../../domain/analytics/trendChartIssueKeys";
+import { navigateAttentionItem } from "../../domain/home/attentionNavigation";
+import type { ExecutiveAttentionItem } from "../../domain/home/executiveDashboardModel";
 import { DashboardBlockingErrorState } from "./dashboard/DashboardBlockingErrorState";
 import { DashboardSyncBanner } from "./dashboard/DashboardSyncBanner";
 import "./dashboard/executive-dashboard.css";
@@ -146,6 +151,10 @@ export function HomePage() {
     () => readVisualPreferencesSync()?.google.calendarConnected ?? false,
   );
   const [homeJiraBaseUrl, setHomeJiraBaseUrl] = useState("");
+  const [trendTaskModal, setTrendTaskModal] = useState<{
+    title: string;
+    issueKeys: string[];
+  } | null>(null);
 
   useEffect(() => {
     void loadPreferences().then((prefs) => {
@@ -408,6 +417,48 @@ export function HomePage() {
     navigateActionTarget(item.target, { openPerson });
   };
 
+  const trendTaskRows = useMemo(
+    () =>
+      trendTaskModal
+        ? buildTaskListModalRowsFromIssueKeys(
+            trendTaskModal.issueKeys,
+            data?.teamSnapshot?.persons ?? [],
+            homeJiraBaseUrl || resolveJiraBaseUrl(),
+          )
+        : [],
+    [trendTaskModal, data?.teamSnapshot?.persons, homeJiraBaseUrl],
+  );
+
+  const openTrendPoint = useCallback(
+    (
+      trend: import("../../domain/performance").TrendCardData,
+      point: { date: string; value: number; issueKeys?: string[] },
+      source: HTMLElement | null,
+    ) => {
+      const keys = [...new Set(point.issueKeys ?? [])];
+      if (keys.length) {
+        setTrendTaskModal({
+          title: formatTrendTaskListModalTitle(
+            formatTrendPointModalContext(trend.label, point.date),
+            keys.length,
+          ),
+          issueKeys: keys,
+        });
+        return;
+      }
+      analytics?.openTeamTrendDrilldown(trend, point, source);
+    },
+    [analytics],
+  );
+
+  const handleAttentionView = useCallback(
+    (item: ExecutiveAttentionItem) => {
+      if (!item.viewTarget) return;
+      navigateAttentionItem(item.viewTarget, { openPerson }, item.scrollTargetId);
+    },
+    [openPerson],
+  );
+
   const openJiraAssignment = async (issueKey: string) => {
     const prefs = await loadPreferences();
     const url = buildJiraIssueBrowseUrl(resolveJiraBaseUrl(prefs), issueKey);
@@ -541,15 +592,6 @@ export function HomePage() {
   const performanceTrends = effectiveTeamSnapshot?.trends ?? [];
   const employeeTrends = employeeSnapshot?.trends ?? performanceTrends;
   const selfWorkload = selfPerson?.workload ?? null;
-  const openTrendPoint = analytics
-    ? (
-        trend: import("../../domain/performance").TrendCardData,
-        point: { date: string; value: number },
-        source: HTMLElement | null,
-      ) => {
-        analytics.openTeamTrendDrilldown(trend, point, source);
-      }
-    : undefined;
 
   const sharedHeader = {
     greeting: displayWorkspace.greeting,
@@ -620,6 +662,8 @@ export function HomePage() {
               goalsSummary={showGoalsSummary ? goalsHomeSummary : null}
               goalsFeatureOn={goalsFeatureOn}
               goalsProminent={goalsProminent}
+              onAttentionView={handleAttentionView}
+              jiraBaseUrl={homeJiraBaseUrl}
             />
           ) : null
         }
@@ -657,6 +701,8 @@ export function HomePage() {
               goalsProminent={goalsProminent}
               canOpenPersonBrief={(id) => canOpenPersonBrief(currentUser, id)}
               teamBrief={managerTeamBrief}
+              onAttentionView={handleAttentionView}
+              jiraBaseUrl={homeJiraBaseUrl}
             />
           ) : null
         }
@@ -680,6 +726,9 @@ export function HomePage() {
             showManagerCard={currentUser.orgRole === "individual_contributor"}
             managerContact={managerContact}
             selfDepartment={selfPerson?.bamboo.department}
+            onAttentionView={handleAttentionView}
+            jiraBaseUrl={homeJiraBaseUrl}
+            onOpenTrendPoint={openTrendPoint}
           />
         }
       />
@@ -769,6 +818,17 @@ export function HomePage() {
           onManualToggle={(id, complete) => void setManualComplete(id, complete)}
         />
       ) : null}
+
+      <TaskListModal
+        open={trendTaskModal != null}
+        onClose={() => setTrendTaskModal(null)}
+        title={trendTaskModal?.title ?? ""}
+        rows={trendTaskRows}
+        onOpenIssue={(issueKey, url) => {
+          void openJiraAssignment(issueKey);
+          if (url) void openExternalUrl(url);
+        }}
+      />
     </div>
   );
 }

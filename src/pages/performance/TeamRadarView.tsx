@@ -85,7 +85,11 @@ export function TeamRadarView({ rows, onOpenPerson }: TeamRadarViewProps) {
   }
 
   return (
-    <section aria-label="Radar" data-testid="team-radar-view">
+    <section
+      id="radar-view"
+      aria-label="Radar"
+      data-testid="team-radar-view"
+    >
       <p className="performance-section-desc">{performanceHelp.radar}</p>
       <div className="performance-table-wrap performance-table-wrap--radar">
         <table className="performance-table performance-table--interactive performance-table--radar">

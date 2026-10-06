@@ -43,6 +43,31 @@
   font-weight: 600;
 }
 
+.executive-attention-now__action-col {
+  width: 5.5rem;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.executive-attention-now__view-btn {
+  min-width: 0;
+}
+
+.executive-attention-now__issue-link {
+  border: none;
+  padding: 0;
+  background: none;
+  color: var(--color-link);
+  font: inherit;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.executive-attention-now__subject-line {
+  display: inline;
+}
+
 .executive-attention-now__context {
   color: var(--color-text-secondary);
   line-height: 1.35;
@@ -131,7 +156,7 @@
   padding: 0;
   display: grid;
   gap: var(--space-3);
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(var(--recommendation-count, 1), minmax(0, 1fr));
 }
 
 @media (max-width: 1023px) {

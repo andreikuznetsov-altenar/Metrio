@@ -66,6 +66,8 @@ export interface ManagerExecutiveDashboardProps {
   goalsProminent: boolean;
   canOpenPersonBrief: (personId: string) => boolean;
   teamBrief?: { headline: string; detail: string; onOpen: () => void } | null;
+  onAttentionView: (item: import("../../../domain/home/executiveDashboardModel").ExecutiveAttentionItem) => void;
+  jiraBaseUrl?: string;
 }
 
 export function ManagerExecutiveDashboard({
@@ -96,6 +98,8 @@ export function ManagerExecutiveDashboard({
   goalsProminent,
   canOpenPersonBrief,
   teamBrief = null,
+  onAttentionView,
+  jiraBaseUrl,
 }: ManagerExecutiveDashboardProps) {
   const model: ManagerExecutiveModel = buildManagerExecutiveModel({
     performanceSnapshot: personal.performanceSnapshot,
@@ -177,7 +181,11 @@ export function ManagerExecutiveDashboard({
         spanClass={executiveModel.trendSpanClass}
         onPointClick={onOpenTrendPoint}
       />
-      <DashboardAttentionNow items={executiveModel.attentionItems} />
+      <DashboardAttentionNow
+        items={executiveModel.attentionItems}
+        onView={onAttentionView}
+        jiraBaseUrl={jiraBaseUrl}
+      />
       <DashboardActionTabs
         tabs={executiveModel.actionTabs}
         onOpenAction={onOpenAction}

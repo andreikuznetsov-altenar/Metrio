@@ -410,7 +410,11 @@ export function TeamOverviewView({
         </div>
       </section>
 
-      <section aria-label="Team attention" className="performance-section">
+      <section
+        id="performance-section-team-attention"
+        aria-label="Team attention"
+        className="performance-section"
+      >
         <SectionTitle
           inline
           title="Team attention"
@@ -581,7 +585,11 @@ export function TeamOverviewView({
         </div>
       </section>
 
-      <section aria-label="Team workload" className="performance-section">
+      <section
+        id="performance-section-team-workload"
+        aria-label="Team workload"
+        className="performance-section"
+      >
         <SectionTitle title="Team workload" help={performanceHelp.teamWorkload} />
         <div className="performance-table-wrap">
           <table className="performance-table performance-table--interactive performance-table--team-workload">

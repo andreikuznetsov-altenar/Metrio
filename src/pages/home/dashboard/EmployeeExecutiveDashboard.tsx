@@ -45,6 +45,9 @@ export interface EmployeeExecutiveDashboardProps {
   showManagerCard?: boolean;
   managerContact?: ResolvedEmployee | null;
   selfDepartment?: string;
+  onAttentionView: (item: import("../../../domain/home/executiveDashboardModel").ExecutiveAttentionItem) => void;
+  jiraBaseUrl?: string;
+  onOpenTrendPoint?: import("./DashboardPerformancePulse").DashboardPerformancePulseProps["onPointClick"];
 }
 
 export function EmployeeExecutiveDashboard({
@@ -69,6 +72,9 @@ export function EmployeeExecutiveDashboard({
   showManagerCard = false,
   managerContact,
   selfDepartment,
+  onAttentionView,
+  jiraBaseUrl,
+  onOpenTrendPoint,
 }: EmployeeExecutiveDashboardProps) {
   const model: EmployeeExecutiveModel = buildEmployeeExecutiveModel({
     performanceSnapshot: personal.performanceSnapshot,
@@ -102,8 +108,16 @@ export function EmployeeExecutiveDashboard({
         </div>
       ) : null}
       <DashboardKpiStrip cards={model.kpis} />
-      <DashboardPrimaryTrend trends={model.trends} spanClass={model.trendSpanClass} />
-      <DashboardAttentionNow items={model.attentionItems} />
+      <DashboardPrimaryTrend
+        trends={model.trends}
+        spanClass={model.trendSpanClass}
+        onPointClick={onOpenTrendPoint}
+      />
+      <DashboardAttentionNow
+        items={model.attentionItems}
+        onView={onAttentionView}
+        jiraBaseUrl={jiraBaseUrl}
+      />
       <DashboardActionTabs
         tabs={model.actionTabs}
         onOpenAction={onOpenAction}

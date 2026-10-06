@@ -2,6 +2,7 @@ import type {
   DateRangeKey,
   MetricContextSemantic,
   TrendCardData,
+  TrendChartPoint,
 } from "../../domain/performance";
 import type {
   TrendComparison,
@@ -47,7 +48,7 @@ export function buildTrendCardData(
   comparison: TrendComparison,
   options?: {
     sparkline?: number[];
-    chartSeries?: { date: string; value: number }[];
+    chartSeries?: TrendChartPoint[];
     trendMetricKind?: TrendCardData["trendMetricKind"];
     sufficiency?: TrendSufficiency;
   },

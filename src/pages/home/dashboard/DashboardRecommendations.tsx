@@ -1,3 +1,4 @@
+import type { CSSProperties } from "react";
 import { Badge } from "../../../components/Badge/Badge";
 import { Button } from "../../../components/Button/Button";
 import type { ProductRecommendation } from "../../../domain/recommendations/buildProductRecommendations";
@@ -33,7 +34,10 @@ export function DashboardRecommendations({
         <h2 className="executive-panel__title">Recommendations</h2>
         <span className="executive-recommendations__count">{items.length}</span>
       </div>
-      <ul className="executive-recommendations__list">
+      <ul
+        className="executive-recommendations__list"
+        style={{ "--recommendation-count": items.length } as CSSProperties}
+      >
         {items.map((item) => (
           <li key={item.id} className="executive-recommendations__item">
             <div className="executive-recommendations__head">

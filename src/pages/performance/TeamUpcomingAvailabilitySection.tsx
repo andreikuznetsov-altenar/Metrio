@@ -29,7 +29,11 @@ export function TeamUpcomingAvailabilitySection({
   }
 
   return (
-    <section aria-label="Upcoming availability" className="performance-section">
+    <section
+      id="performance-section-upcoming-availability"
+      aria-label="Upcoming availability"
+      className="performance-section"
+    >
       <SectionTitle title="Upcoming availability" />
       <p className="performance-capacity-context" data-testid="team-capacity-context">
         {capacity.peopleAvailable} available · {capacity.peopleAwaySoon} away soon ·{" "}

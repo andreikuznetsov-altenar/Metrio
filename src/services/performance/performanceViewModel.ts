@@ -2,7 +2,7 @@ import { format, parseISO } from "date-fns";
 import type { BadgeVariant } from "../../components/Badge/Badge";
 import { getEfficiencyStatus } from "../../domain/jira/kpi";
 import { formatDuration } from "../../domain/jira/dates";
-import type { AuditReportData } from "../../domain/jira/types";
+import type { AuditReportData, ReportParams } from "../../domain/jira/types";
 import type { Person } from "../../domain/people/types";
 import { buildPlannedTimeOffRows } from "../../domain/people/plannedTimeOff";
 import {
@@ -64,6 +64,8 @@ import {
   teamAvgCycleDaysSparklinePoints,
   teamFirstPassRateSparklinePoints,
 } from "../../domain/snapshots/sparklineSeries";
+import { enrichTrendChartSeries } from "../../domain/analytics/trendChartIssueKeys";
+import { flattenTeamKpiIssues } from "../../domain/analytics/analyticsReportScope";
 import {
   buildTrendCardData,
   formatAttentionHealthLabel,
@@ -151,6 +153,17 @@ function chartSeriesInRange(
 ): { date: string; value: number }[] {
   if (!range) return points;
   return points.filter((point) => point.date >= range.from && point.date <= range.to);
+}
+
+function chartSeriesForTrend(
+  label: string,
+  rawPoints: { date: string; value: number }[],
+  range: PerformanceDateRange | undefined,
+  issues: ReturnType<typeof flattenTeamKpiIssues>,
+  params: ReportParams,
+) {
+  const inRange = chartSeriesInRange(rawPoints, range);
+  return enrichTrendChartSeries(label, issues, params, inRange);
 }
 
 function findPerson(snapshot: PerformanceFetchResult["teamSnapshot"], id: string): Person | undefined {
@@ -292,28 +305,54 @@ export function buildPerformanceViewModels(
     trendDays,
   );
 
+  const teamTrendIssues = flattenTeamKpiIssues(reportData.grouped);
+
   const trends: TrendCardData[] = [
     buildTrendCardData("Completed", completedTrend, {
       sparkline: sparkCompleted,
-      chartSeries: chartSeriesInRange(completedChartPoints, displayRange),
+      chartSeries: chartSeriesForTrend(
+        "Completed",
+        completedChartPoints,
+        displayRange,
+        teamTrendIssues,
+        params,
+      ),
       trendMetricKind: "count",
       sufficiency: completedSufficiency,
     }),
     buildTrendCardData("First pass", firstPassTrend, {
       sparkline: sparkFirstPass,
-      chartSeries: chartSeriesInRange(firstPassChartPoints, displayRange),
+      chartSeries: chartSeriesForTrend(
+        "First pass",
+        firstPassChartPoints,
+        displayRange,
+        teamTrendIssues,
+        params,
+      ),
       trendMetricKind: "percent",
       sufficiency: completedSufficiency,
     }),
     buildTrendCardData("Avg cycle", avgCycleTrend, {
       sparkline: sparkAvgCycle,
-      chartSeries: chartSeriesInRange(avgCycleChartPoints, displayRange),
+      chartSeries: chartSeriesForTrend(
+        "Avg cycle",
+        avgCycleChartPoints,
+        displayRange,
+        teamTrendIssues,
+        params,
+      ),
       trendMetricKind: "duration",
       sufficiency: completedSufficiency,
     }),
     buildTrendCardData("Backflows", backflowTrend, {
       sparkline: sparkBackflows,
-      chartSeries: chartSeriesInRange(backflowChartPoints, displayRange),
+      chartSeries: chartSeriesForTrend(
+        "Backflows",
+        backflowChartPoints,
+        displayRange,
+        teamTrendIssues,
+        params,
+      ),
       trendMetricKind: "count",
       sufficiency: completedSufficiency,
     }),
