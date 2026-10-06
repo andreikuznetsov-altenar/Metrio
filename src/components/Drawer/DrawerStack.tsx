@@ -1,6 +1,7 @@
 import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { IconButton } from "../IconButton/IconButton";
 import { readMotionDrawerMs } from "../../styles/motion";
+import type { DrawerSize } from "./Drawer";
 import "./Drawer.css";
 
 function CloseIcon() {
@@ -16,7 +17,25 @@ function CloseIcon() {
   );
 }
 
-export type DrawerSize = "default" | "notification" | "person" | "analytics";
+export type DrawerStackPanel = "primary" | "secondary";
+
+export interface DrawerStackProps {
+  open: boolean;
+  activePanel: DrawerStackPanel;
+  onClose: () => void;
+  onClosed?: () => void;
+  /** Close secondary panel and return to primary (back). */
+  onBack?: () => void;
+  ariaLabel: string;
+  header?: ReactNode;
+  headerActions?: ReactNode;
+  children: ReactNode;
+  size?: DrawerSize;
+  className?: string;
+  testId?: string;
+  /** When true, panel plays exit slide before unmounting stack. */
+  animatingOut?: boolean;
+}
 
 const DRAWER_SIZE_CLASS: Record<DrawerSize, string | undefined> = {
   default: undefined,
@@ -25,25 +44,12 @@ const DRAWER_SIZE_CLASS: Record<DrawerSize, string | undefined> = {
   analytics: "drawer--analytics",
 };
 
-export interface DrawerProps {
-  open: boolean;
-  onClose: () => void;
-  onClosed?: () => void;
-  ariaLabel: string;
-  header?: ReactNode;
-  /** Actions rendered beside the close control (overflow menus, etc.). */
-  headerActions?: ReactNode;
-  children: ReactNode;
-  /** Shared width variant; use instead of ad-hoc width classes. */
-  size?: DrawerSize;
-  className?: string;
-  testId?: string;
-}
-
-export function Drawer({
+export function DrawerStack({
   open,
+  activePanel,
   onClose,
   onClosed,
+  onBack,
   ariaLabel,
   header,
   headerActions,
@@ -51,7 +57,8 @@ export function Drawer({
   size = "default",
   className,
   testId,
-}: DrawerProps) {
+  animatingOut = false,
+}: DrawerStackProps) {
   const titleId = useId();
   const [mounted, setMounted] = useState(open);
   const [visible, setVisible] = useState(open);
@@ -69,7 +76,6 @@ export function Drawer({
         }
       };
     }
-
     setVisible(false);
     return undefined;
   }, [open]);
@@ -78,58 +84,90 @@ export function Drawer({
     if (!mounted || open) {
       return;
     }
-
     const timer = window.setTimeout(() => {
       setMounted(false);
       onClosed?.();
     }, readMotionDrawerMs());
     return () => window.clearTimeout(timer);
-  }, [mounted, onClosed, open, visible]);
+  }, [mounted, onClosed, open]);
 
   useEffect(() => {
     if (!open) {
       return;
     }
-
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
+        if (activePanel === "secondary" && onBack) {
+          onBack();
+          return;
+        }
         onClose();
       }
     };
-
     document.addEventListener("keydown", onKeyDown);
     return () => document.removeEventListener("keydown", onKeyDown);
-  }, [open, onClose]);
+  }, [activePanel, onBack, onClose, open]);
 
   if (!mounted) {
     return null;
   }
 
+  const panelClass =
+    activePanel === "secondary"
+      ? "drawer-stack-panel drawer-stack-panel--secondary"
+      : "drawer-stack-panel drawer-stack-panel--primary";
+
   return (
     <div
-      className={visible ? "drawer-root is-visible is-open" : "drawer-root is-visible"}
+      className={
+        visible && !animatingOut
+          ? "drawer-root drawer-root--stack is-visible is-open"
+          : "drawer-root drawer-root--stack is-visible"
+      }
+      data-drawer-panel={activePanel}
+      data-testid={testId}
     >
       <button
         type="button"
         className="drawer-root__backdrop"
         aria-label="Close drawer"
-        onClick={onClose}
+        onClick={() => {
+          if (activePanel === "secondary" && onBack) {
+            onBack();
+            return;
+          }
+          onClose();
+        }}
       />
       <aside
-        className={[ "drawer", DRAWER_SIZE_CLASS[size], className]
+        className={[
+          "drawer",
+          DRAWER_SIZE_CLASS[size],
+          panelClass,
+          animatingOut ? "drawer-stack-panel--exit" : "",
+          className,
+        ]
           .filter(Boolean)
           .join(" ")}
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
         aria-label={ariaLabel}
-        data-testid={testId}
       >
         <div className="drawer__header" id={titleId}>
           <div className="drawer__header-main">{header}</div>
           <div className="drawer__header-toolbar">
             {headerActions}
-            <IconButton label="Close drawer" onClick={onClose}>
+            <IconButton
+              label={activePanel === "secondary" ? "Close brief" : "Close drawer"}
+              onClick={() => {
+                if (activePanel === "secondary" && onBack) {
+                  onBack();
+                  return;
+                }
+                onClose();
+              }}
+            >
               <CloseIcon />
             </IconButton>
           </div>

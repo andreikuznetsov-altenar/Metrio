@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Button } from "../../components/Button/Button";
-import { Drawer } from "../../components/Drawer/Drawer";
+import { DrawerStack } from "../../components/Drawer/DrawerStack";
 import { Select } from "../../components/Select/Select";
 import { SegmentedControl } from "../../components/SegmentedControl/SegmentedControl";
 import { Tabs } from "../../components/Tabs/Tabs";
@@ -10,10 +10,10 @@ import { canOpenPersonBrief } from "../../domain/personAccess";
 import { useOnboardingResources } from "../../hooks/useOnboardingResources";
 import { ManagerNewStarterContext } from "../onboarding/ManagerNewStarterContext";
 import {
-  dispatchOpenPersonBrief,
   useOptionalPerformanceAnalytics,
   type PersonDrawerTab,
 } from "../../app/performanceAnalyticsContext";
+import { PersonBriefDrawerPanel } from "./PersonBriefDrawer";
 import type { AnalyticsEvidenceIssue } from "../../domain/analytics/analyticsEvidenceTypes";
 import type { WorkHistoryRow } from "../../domain/performance";
 import {
@@ -104,10 +104,13 @@ export function PersonDetailDrawer({
   const [historyFilter, setHistoryFilter] = useState<HistoryFilter>("all");
   const [historyVisibleCount, setHistoryVisibleCount] = useState(HISTORY_PAGE_SIZE);
   const [jiraBaseUrl, setJiraBaseUrl] = useState("");
+  const [briefOpen, setBriefOpen] = useState(false);
 
   useEffect(() => {
     if (open) {
       setHistoryVisibleCount(HISTORY_PAGE_SIZE);
+    } else {
+      setBriefOpen(false);
     }
   }, [open, personId, historyPeriod, historyFilter]);
 
@@ -411,40 +414,62 @@ export function PersonDetailDrawer({
   const jobTitle = workspace.role || person?.bamboo.jobTitle || "—";
 
   return (
-    <Drawer
+    <DrawerStack
       open={open}
+      activePanel={briefOpen ? "secondary" : "primary"}
       onClose={onClose}
       onClosed={onClosed}
-      ariaLabel={`Person detail for ${displayName}`}
+      onBack={() => setBriefOpen(false)}
+      ariaLabel={
+        briefOpen
+          ? `1:1 brief for ${displayName}`
+          : `Person detail for ${displayName}`
+      }
       size="person"
       className="drawer--person-detail"
+      testId={briefOpen ? "person-brief-drawer" : "person-detail-drawer"}
       header={
-        <PersonIdentityHeader
-          personId={personId}
-          displayName={displayName}
-          jobTitle={jobTitle}
-          person={person}
-          availabilityLabel={workspace.availability}
-          workloadLabel={workspace.workload}
-        />
+        briefOpen ? (
+          <PersonIdentityHeader
+            personId={personId}
+            displayName={displayName}
+            jobTitle={jobTitle}
+            person={person}
+            availabilityLabel={workspace.availability}
+            workloadLabel={workspace.workload}
+          />
+        ) : (
+          <PersonIdentityHeader
+            personId={personId}
+            displayName={displayName}
+            jobTitle={jobTitle}
+            person={person}
+            availabilityLabel={workspace.availability}
+            workloadLabel={workspace.workload}
+          />
+        )
       }
       headerActions={
-        showBriefAction ? (
+        !briefOpen && showBriefAction ? (
           <Button
             type="button"
             variant="secondary"
-            onClick={() => dispatchOpenPersonBrief({ personId })}
+            onClick={() => setBriefOpen(true)}
           >
             Brief
           </Button>
         ) : null
       }
     >
-      <Tabs
-        items={tabs}
-        value={activeTab}
-        onValueChange={(value) => onTabChange?.(value as PersonDrawerTab)}
-      />
-    </Drawer>
+      {briefOpen ? (
+        <PersonBriefDrawerPanel personId={personId} />
+      ) : (
+        <Tabs
+          items={tabs}
+          value={activeTab}
+          onValueChange={(value) => onTabChange?.(value as PersonDrawerTab)}
+        />
+      )}
+    </DrawerStack>
   );
 }

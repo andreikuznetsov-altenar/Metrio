@@ -93,6 +93,21 @@
   scrollbar-color: var(--scrollbar-thumb) transparent;
 }
 
+/** Overlay-style scrollbar: no gutter, thumb floats over content (drawers/modals). */
+.metrio-scroll--overlay {
+  scrollbar-gutter: auto;
+  padding-inline-end: var(--space-1);
+}
+
+.metrio-scroll--overlay::-webkit-scrollbar {
+  width: 4px;
+}
+
+.metrio-scroll--overlay::-webkit-scrollbar-thumb {
+  border-radius: var(--radius-round);
+  min-height: 32px;
+}
+
 .metrio-scroll::-webkit-scrollbar {
   width: 4px;
   height: 4px;

@@ -24,6 +24,10 @@ vi.mock("../platform/preferences", () => ({
   loadPreferences: vi.fn(async () => ({})),
 }));
 
+vi.mock("../pages/performance/PersonBriefDrawer", () => ({
+  PersonBriefDrawerPanel: () => null,
+}));
+
 import { usePerformanceData } from "../app/PerformanceDataContext";
 import { useCurrentUser } from "../app/CurrentUserContext";
 

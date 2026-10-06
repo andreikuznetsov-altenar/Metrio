@@ -47,7 +47,7 @@
 .drawer__header {
   flex-shrink: 0;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
   gap: var(--space-3);
   padding: var(--drawer-header-padding-y) var(--drawer-header-padding-x);
@@ -73,6 +73,27 @@
   overflow-y: auto;
   overflow-x: hidden;
   padding: var(--drawer-body-padding);
+}
+
+.drawer-stack-panel--exit {
+  transform: translateX(100%);
+}
+
+.drawer-root--stack .drawer-stack-panel--secondary {
+  animation: drawer-stack-enter var(--motion-drawer) var(--ease-drawer) both;
+}
+
+.drawer-root--stack .drawer-stack-panel--primary {
+  animation: drawer-stack-enter var(--motion-drawer) var(--ease-drawer) both;
+}
+
+@keyframes drawer-stack-enter {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
