@@ -1,5 +1,4 @@
 import { format, parseISO } from "date-fns";
-import { formatRelativeSync } from "../../platform/observability/connectionDiagnostics";
 import type { DashboardDataHealthState } from "./dashboardDataHealth";
 
 export interface DashboardSyncStatusInput {
@@ -35,7 +34,6 @@ export function buildDashboardSyncStatus(
     stale,
     errorMessage,
     healthState,
-    showSlowRefreshHint,
   } = input;
 
   if (healthState === "refresh_stuck") {
@@ -54,12 +52,7 @@ export function buildDashboardSyncStatus(
   }
 
   if (refreshing) {
-    const relative = formatRelativeSync(lastUpdatedAt);
-    const slowSuffix = showSlowRefreshHint ? " · Still working…" : " · Refreshing…";
-    return {
-      line: `Updated ${relative}${slowSuffix}`,
-      showRetry: false,
-    };
+    return null;
   }
 
   if (

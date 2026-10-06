@@ -19,16 +19,17 @@ export function HomeGoalsSummaryCard({
   moduleSurface?: "default" | "secondary";
 }) {
   const openGoals = () => {
-    dispatchAppRoute("performance");
     if (teamView) {
-      window.dispatchEvent(
-        new CustomEvent("metrio-open-performance-tab", {
-          detail: "goals",
-        }),
-      );
-    } else {
-      dispatchEmployeeView("goals");
+      dispatchAppRoute("performance");
+      window.setTimeout(() => {
+        window.dispatchEvent(
+          new CustomEvent("metrio-open-performance-tab", { detail: "goals" }),
+        );
+      }, 0);
+      return;
     }
+    dispatchAppRoute("performance");
+    dispatchEmployeeView("goals");
   };
 
   const attentionLine =

@@ -77,16 +77,13 @@ export function DashboardExecutiveHeader({
         <Button
           type="button"
           variant="secondary"
+          className="executive-header__refresh-btn"
           disabled={refreshing}
+          loading={refreshing}
           onClick={() => onRefresh()}
         >
-          {refreshing ? "Refreshing…" : "Refresh"}
+          {refreshing ? "Refreshing..." : "Refresh"}
         </Button>
-        {refreshing ? (
-          <span className="executive-header__refresh-hint" aria-live="polite">
-            Refreshing
-          </span>
-        ) : null}
       </div>
     </header>
   );
