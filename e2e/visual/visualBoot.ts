@@ -16,6 +16,12 @@ import {
   VISUAL_PERFORMANCE_FAIL_KEY,
 } from "../../src/fixtures/dashboardCacheVisualFixture";
 import { OPEN_RESOURCES_EVENT } from "../../src/platform/openOnboardingResource";
+import {
+  ORG_ROLE_PRODUCTION_PATH_KEY,
+  ORG_ROLE_SCENARIO_STORAGE_KEY,
+  serializeOrgRoleScenarioPrefsForPlaywright,
+  type OrgRoleScenarioId,
+} from "../../src/fixtures/orgRoleProductionPathFixture";
 
 /** Cleared on each boot unless a test explicitly seeds dashboard-cache visuals. */
 export const VISUAL_EPHEMERAL_STORAGE_KEYS = [
@@ -44,6 +50,66 @@ export async function openPerformanceFromHome(page: Page) {
   await expect(page.getByTestId("performance-dashboard-ready")).toBeVisible({
     timeout: 30_000,
   });
+}
+
+export async function bootOrgRoleScenario(
+  page: Page,
+  scenario: OrgRoleScenarioId,
+  options?: { theme?: "light" | "dark"; width?: number },
+) {
+  const theme = options?.theme ?? "light";
+  if (options?.width) {
+    await setViewport(page, options.width, 900);
+  }
+  const prefsJson = serializeOrgRoleScenarioPrefsForPlaywright(scenario);
+  const devFixture =
+    scenario === "ic"
+      ? "employee"
+      : scenario === "leaf"
+        ? "lead"
+        : "director";
+  await page.addInitScript(
+    ({
+      scenarioId,
+      prefs,
+      fixtureId,
+      themeId,
+      ephemeralKeys,
+    }: {
+      scenarioId: string;
+      prefs: string;
+      fixtureId: string;
+      themeId: string;
+      ephemeralKeys: string[];
+    }) => {
+      for (const key of ephemeralKeys) {
+        localStorage.removeItem(key);
+      }
+      localStorage.setItem("metrio-connection-connected", "true");
+      localStorage.setItem("metrio-dev-fixture", fixtureId);
+      localStorage.setItem("metrio-theme", themeId);
+      localStorage.setItem("metrio-org-role-production-path", "1");
+      localStorage.setItem("metrio-org-role-scenario", scenarioId);
+      localStorage.setItem("metrio-visual-preferences", prefs);
+    },
+    {
+      scenarioId: scenario,
+      prefs: prefsJson,
+      fixtureId: devFixture,
+      themeId: theme,
+      ephemeralKeys: [...VISUAL_EPHEMERAL_STORAGE_KEYS],
+    },
+  );
+  await page.goto("/");
+  await expect(page.getByTestId("app-shell")).toBeVisible({ timeout: 30_000 });
+}
+
+export async function openFeedbackTab(
+  page: Page,
+  tab: "survey" | "results" | "delivery" | "history",
+) {
+  await page.locator(".app-header__nav-link").filter({ hasText: "Feedback" }).click();
+  await page.getByTestId(`feedback-tab-panel-${tab}`).waitFor({ state: "visible", timeout: 30_000 }).catch(() => undefined);
 }
 
 export async function bootConnected(

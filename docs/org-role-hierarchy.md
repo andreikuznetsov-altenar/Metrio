@@ -42,7 +42,7 @@ For `manager_of_managers`:
 
 ## Cache invalidation
 
-`resolveOrgHierarchyScopeCached` resets when Bamboo `teamDetection` changes (e.g. connect flow calls `resetOrgHierarchyCache()` before saving prefs).
+`resolveOrgHierarchyScopeCached` resets when Bamboo `teamDetection` changes (`resetOrgHierarchyCache()` on connect, `savePreferences` when the reporting signature changes, logout, and `PREFERENCES_SAVED_EVENT` handlers).
 
 ## Feedback feature gates
 
@@ -64,6 +64,22 @@ If hierarchy cannot be resolved (`unresolved`), the app uses the **narrowest** a
 ## Goals (Pass 12)
 
 Branch-level goal aggregation for `manager_of_managers` is **not** enabled in Pass 12. Existing per-person goal authorization and privacy rules are unchanged. Do not roll up private individual goals across the org tree until a safe authorization model exists.
+
+## People (manager_of_managers)
+
+Performance → **People** shows leadership-branch rows (same aggregates as Dashboard / Teams). There is no default flat descendant employee wall.
+
+## Route safety
+
+- IC: Feedback shows personal results only (`feedback-ic-results-only`); survey tabs and Cmd+K survey shortcuts are hidden.
+- Leaf manager: survey management allowed.
+- Manager of managers: Feedback tab hidden; deep links cannot open survey operational UI.
+- Notification Center maps operational feedback targets to role-safe tabs (IC → results; MoM → home).
+- After Bamboo refresh changes `OrgRole`, forbidden Feedback routes invalidate (e.g. leaf → MoM leaves survey UI).
+
+## Playwright production-path fixtures
+
+Visual tests seed `teamDetection` via `orgRoleProductionPathFixture.ts` (`metrio-org-role-production-path=1`) so role resolution follows the same graph path as production.
 
 ## Title-based logic audit
 
