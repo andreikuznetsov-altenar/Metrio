@@ -185,7 +185,8 @@ export function runWorkflowCapacityAudit(reportData: AuditReportData): WorkflowC
       estimatedMonthlyHours: workload.estimatedMonthlyHours ?? 0,
       capacityLoadPercent: workload.capacityLoadPercent ?? 0,
       capacityLevel: workload.level,
-      capacityDataState: capacityDataStateFromWorkload(workload),
+      capacityDataState:
+        workload.capacityDataState ?? capacityDataStateFromWorkload(workload),
     });
   });
 

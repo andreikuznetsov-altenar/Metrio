@@ -118,7 +118,10 @@ export function buildWorkloadRowFields(
   monthlyCapacityHours?: number;
 } {
   const capacityDataState = capacityDataStateForPerson(person);
-  const workload = workloadLabelForPerson(person);
+  const workload =
+    capacityDataState === 'insufficient_history'
+      ? CAPACITY_INSUFFICIENT_LABEL
+      : workloadLabelForPerson(person);
   const base = {
     activeWork: counts.activeWork,
     atRisk: counts.atRisk,
