@@ -253,10 +253,12 @@
   list-style: none;
 }
 
-.settings-card--google .ds-section {
+.settings-card--google .ds-section,
+.settings-card--google [class*="ds-feedback-google"] {
   border: none;
   padding: 0;
   background: transparent;
+  box-shadow: none;
 }
 
 .settings-panel {

@@ -12,19 +12,15 @@ export function DashboardTeamBriefCard({
   onOpen,
 }: DashboardTeamBriefCardProps) {
   return (
-    <section
-      className="executive-panel executive-dashboard__secondary-module"
-      aria-label="Team brief"
-      data-testid="dashboard-team-brief"
-    >
-      <h2 className="executive-panel__title">Team brief</h2>
-      <p className="dashboard-digest-card__headline">{headline}</p>
-      <p className="dashboard-digest-card__detail">{detail}</p>
-      <div className="home-card__actions">
+    <article className="executive-lower-card" aria-label="Team brief" data-testid="dashboard-team-brief">
+      <h3 className="executive-lower-card__title">Team brief</h3>
+      <p className="executive-lower-card__headline">{headline}</p>
+      <p className="executive-lower-card__description">{detail}</p>
+      <div className="executive-lower-card__cta">
         <Button type="button" variant="secondary" onClick={onOpen}>
           Open team brief
         </Button>
       </div>
-    </section>
+    </article>
   );
 }

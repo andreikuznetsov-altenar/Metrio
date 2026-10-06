@@ -64,7 +64,6 @@ export function ManagerGoalsView() {
 
   const intro = (
     <header className="goals-view__intro" data-testid="goals-intro">
-      <h2 className="goals-view__title">Goals</h2>
       <p className="goals-view__description">
         Track agreed priorities and connect them with the Jira work that supports them.
       </p>

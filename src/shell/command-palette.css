@@ -44,14 +44,18 @@
   pointer-events: auto;
 }
 
+.command-palette-shell.is-interactive .command-palette {
+  border: 1px solid var(--color-border);
+}
+
 .command-palette-shell.is-open .command-palette {
   opacity: 1;
   transform: translateY(0);
 }
 
 .command-palette:focus-within {
-  border-color: var(--color-focus-border);
-  border-width: 2px;
+  border-color: var(--color-border);
+  border-width: 1px;
 }
 
 .command-palette__input-wrap {

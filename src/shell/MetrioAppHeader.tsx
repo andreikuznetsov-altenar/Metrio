@@ -1,6 +1,7 @@
 import { Bell, Search, Settings2 } from "lucide-react";
 import { IconButton } from "../components/IconButton/IconButton";
 import type { AppRoute } from "../domain/types";
+import type { Person } from "../domain/people/types";
 import { ConnectionHealthBadge } from "./ConnectionHealthBadge";
 import { ProfileMenu } from "./ProfileMenu";
 import "./AppHeader.css";
@@ -21,6 +22,7 @@ export interface MetrioAppHeaderProps {
   notificationUnreadCount?: number;
   onOpenConnections?: () => void;
   onLogout?: () => void;
+  headerPerson?: Person | null;
 }
 
 export function MetrioAppHeader({
@@ -33,6 +35,7 @@ export function MetrioAppHeader({
   notificationUnreadCount = 0,
   onOpenConnections,
   onLogout,
+  headerPerson,
 }: MetrioAppHeaderProps) {
   const navItems = NAV_ITEMS.filter(
     (item) => item.route !== "feedback" || feedbackEnabled,
@@ -70,7 +73,7 @@ export function MetrioAppHeader({
         </div>
         <div className="app-header__utility-group" aria-label="Utilities">
           <IconButton
-            label="Search · ⌘K"
+            label="Search · ⌘K · ⌘F"
             onClick={onOpenCommandPalette}
           >
             <Search size={16} strokeWidth={1.7} />
@@ -103,7 +106,11 @@ export function MetrioAppHeader({
           <IconButton label="Settings" onClick={onOpenSettings}>
             <Settings2 size={16} strokeWidth={1.7} />
           </IconButton>
-          <ProfileMenu onOpenSettings={onOpenSettings} onLogout={onLogout} />
+          <ProfileMenu
+            onOpenSettings={onOpenSettings}
+            onLogout={onLogout}
+            person={headerPerson}
+          />
         </div>
       </div>
     </div>

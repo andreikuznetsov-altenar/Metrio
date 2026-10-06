@@ -1,0 +1,56 @@
+.metrio-modal-root {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-4);
+  pointer-events: auto;
+}
+
+.metrio-modal-root__backdrop {
+  position: absolute;
+  inset: 0;
+  border: none;
+  padding: 0;
+  margin: 0;
+  background: rgba(15, 17, 21, 0.45);
+  cursor: pointer;
+}
+
+.metrio-modal {
+  position: relative;
+  z-index: 1;
+  width: min(640px, 100%);
+  max-height: min(72vh, 560px);
+  display: flex;
+  flex-direction: column;
+  border-radius: var(--radius-card);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-elevated, 0 16px 48px rgba(0, 0, 0, 0.18));
+  outline: none;
+}
+
+.metrio-modal__header {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-3) var(--space-2);
+  border-bottom: 1px solid var(--color-border-subtle);
+}
+
+.metrio-modal__title {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.metrio-modal__body {
+  flex: 1;
+  min-height: 0;
+  padding: var(--space-2) var(--space-3) var(--space-3);
+}

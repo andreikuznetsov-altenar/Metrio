@@ -7,6 +7,12 @@ const TONE_VARIANT = {
   neutral: "neutral",
 } as const;
 
+const SEVERITY_LABEL = {
+  critical: "Critical",
+  warning: "Watch",
+  neutral: "Info",
+} as const;
+
 export function DashboardAttentionNow({ items }: { items: ExecutiveAttentionItem[] }) {
   if (!items.length) return null;
 
@@ -30,19 +36,32 @@ export function DashboardAttentionNow({ items }: { items: ExecutiveAttentionItem
           ) : null}
         </span>
       </div>
-      <ul className="executive-attention-now__list">
-        {items.map((item) => (
-          <li key={item.id} className="executive-attention-now__item">
-            <Badge variant={TONE_VARIANT[item.severity]}>{item.severity}</Badge>
-            <div>
-              <p className="executive-attention-now__title">{item.title}</p>
-              {item.detail ? (
-                <p className="executive-attention-now__detail">{item.detail}</p>
-              ) : null}
-            </div>
-          </li>
-        ))}
-      </ul>
+      <div className="executive-attention-now__table-wrap metrio-scroll">
+        <table className="executive-attention-now__table">
+          <thead>
+            <tr>
+              <th scope="col">Severity</th>
+              <th scope="col">Subject</th>
+              <th scope="col">Context</th>
+            </tr>
+          </thead>
+          <tbody>
+            {items.map((item) => (
+              <tr key={item.id}>
+                <td className="executive-attention-now__severity">
+                  <Badge variant={TONE_VARIANT[item.severity]}>
+                    {SEVERITY_LABEL[item.severity]}
+                  </Badge>
+                </td>
+                <td className="executive-attention-now__subject">{item.title}</td>
+                <td className="executive-attention-now__context">
+                  {item.detail ?? "—"}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </section>
   );
 }

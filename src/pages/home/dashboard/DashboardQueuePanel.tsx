@@ -1,13 +1,17 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import type { ActionItem } from "../../../domain/actions/actionTypes";
 import {
   buildDashboardQueueRows,
   reasonTagSortRank,
   type DashboardQueueRow,
 } from "../../../domain/actions/buildDashboardQueueRows";
+import { buildTaskListModalRows } from "../../../domain/actions/buildTaskListModalRows";
+import type { Person } from "../../../domain/people/types";
 import { DashboardActionQueueRows } from "../../performance/DashboardActionQueueRows";
 import { Button } from "../../../components/Button/Button";
+import { TaskListModal } from "../../../components/TaskListModal/TaskListModal";
 import { useTableSort } from "../../../components/Table/useTableSort";
+import { resolveJiraBaseUrl } from "../../../config/product";
 import "../../performance/action-queue.css";
 
 const QUEUE_COLUMNS = [
@@ -16,6 +20,8 @@ const QUEUE_COLUMNS = [
   { id: "context", type: "text" as const },
   { id: "action", type: "text" as const },
 ];
+
+const PREVIEW_COUNT = 5;
 
 function sortMark(active: boolean, direction: "asc" | "desc" | null): string {
   if (!active || !direction) return "↕";
@@ -30,6 +36,8 @@ export interface DashboardQueuePanelProps {
   onOpen: (item: ActionItem) => void;
   openLabel: (item: ActionItem) => string;
   footerAction?: { label: string; onClick: () => void };
+  teamPersons?: Person[];
+  onOpenJiraIssue?: (issueKey: string, url?: string) => void;
   testId?: string;
 }
 
@@ -41,9 +49,16 @@ export function DashboardQueuePanel({
   onOpen,
   openLabel,
   footerAction,
+  teamPersons = [],
+  onOpenJiraIssue,
   testId,
 }: DashboardQueuePanelProps) {
+  const [tasksOpen, setTasksOpen] = useState(false);
   const mergedRows = useMemo(() => buildDashboardQueueRows(items), [items]);
+  const previewRows = useMemo(
+    () => mergedRows.slice(0, PREVIEW_COUNT),
+    [mergedRows],
+  );
 
   const getValue = useMemo(
     () => (row: DashboardQueueRow, columnId: string) => {
@@ -63,7 +78,11 @@ export function DashboardQueuePanel({
     [openLabel],
   );
 
-  const { sortedRows, sort, toggleSort } = useTableSort(mergedRows, QUEUE_COLUMNS, getValue);
+  const { sortedRows, sort, toggleSort } = useTableSort(previewRows, QUEUE_COLUMNS, getValue);
+  const taskRows = useMemo(
+    () => buildTaskListModalRows(items, teamPersons, resolveJiraBaseUrl()),
+    [items, teamPersons],
+  );
 
   return (
     <section
@@ -104,7 +123,9 @@ export function DashboardQueuePanel({
                 }
               >
                 <span>{col.label}</span>
-                <span aria-hidden>{sortMark(sort?.columnId === col.id, sort?.direction ?? null)}</span>
+                <span className="performance-table__sort-icon" aria-hidden>
+                  {sortMark(sort?.columnId === col.id, sort?.direction ?? null)}
+                </span>
               </button>
             ))}
           </div>
@@ -115,13 +136,33 @@ export function DashboardQueuePanel({
           />
         </>
       )}
-      {footerAction ? (
+      {items.length > PREVIEW_COUNT ? (
+        <div className="home-card__actions">
+          <Button type="button" variant="secondary" onClick={() => setTasksOpen(true)}>
+            Show {items.length} tasks
+          </Button>
+        </div>
+      ) : null}
+      {footerAction && items.length <= PREVIEW_COUNT ? (
         <div className="home-card__actions">
           <Button type="button" variant="secondary" onClick={footerAction.onClick}>
             {footerAction.label}
           </Button>
         </div>
       ) : null}
+      <TaskListModal
+        open={tasksOpen}
+        onClose={() => setTasksOpen(false)}
+        title={title}
+        rows={taskRows}
+        onOpenIssue={
+          onOpenJiraIssue
+            ? (issueKey, url) => {
+                onOpenJiraIssue(issueKey, url);
+              }
+            : undefined
+        }
+      />
     </section>
   );
 }

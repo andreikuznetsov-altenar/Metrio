@@ -85,8 +85,8 @@
 }
 
 .metrio-scroll::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 4px;
+  height: 4px;
 }
 
 .metrio-scroll::-webkit-scrollbar-track {
@@ -95,7 +95,7 @@
 
 .metrio-scroll::-webkit-scrollbar-thumb {
   background: var(--scrollbar-thumb);
-  border: 2px solid transparent;
+  border: none;
   background-clip: padding-box;
   border-radius: var(--radius-round);
   transition: background var(--motion-hover) var(--transition-easing);
@@ -168,11 +168,11 @@
 }
 
 .performance-table--interactive tbody tr.performance-table__row--selected {
-  background: color-mix(in srgb, var(--color-accent) 10%, var(--color-surface));
+  background: var(--color-surface-secondary);
 }
 
 .performance-table--interactive tbody tr.performance-table__row--selected td:first-child {
-  box-shadow: inset 3px 0 0 var(--color-accent);
+  box-shadow: none;
 }
 
 .performance-table__action {
@@ -301,4 +301,73 @@
   .metrio-popover-surface {
     animation: none;
   }
+}
+
+/* —— Shared horizontal bar rows (capacity/delivery/etc.) —— */
+.metrio-bar-chart {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  flex: 1;
+}
+
+.metrio-bar-row {
+  display: grid;
+  grid-template-columns: 9.5rem minmax(0, 1fr) 2.5rem;
+  gap: var(--space-2);
+  align-items: center;
+  font-size: 13px;
+}
+
+.metrio-bar-row__label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.metrio-bar-row__track {
+  height: 8px;
+  border-radius: var(--radius-micro);
+  background: var(--color-surface-tertiary);
+  overflow: hidden;
+}
+
+.metrio-bar-row__fill {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--color-accent);
+}
+
+.metrio-bar-row__fill--warning {
+  background: var(--color-warning);
+}
+
+.metrio-bar-row__fill--danger {
+  background: var(--color-danger);
+}
+
+.metrio-bar-row__value {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text-primary);
+}
+
+.performance-table__link-button {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.performance-table__link-button:hover .performance-table__issue-key {
+  color: var(--color-accent);
 }

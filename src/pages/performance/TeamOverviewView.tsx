@@ -35,6 +35,8 @@ import { CalendarDays } from "lucide-react";
 import { TeamUpcomingAvailabilitySection } from "./TeamUpcomingAvailabilitySection";
 import { SortableTableHeader } from "../../components/Table/SortableTableHeader";
 import { useTableSort } from "../../components/Table/useTableSort";
+import { PerformanceRecommendations } from "./PerformanceRecommendations";
+import type { ProductRecommendation } from "../../domain/recommendations/buildProductRecommendations";
 
 const ATTENTION_OVERVIEW_COLUMNS = [
   { id: "person", type: "person" as const },
@@ -231,6 +233,43 @@ export function TeamOverviewView({
     );
   }, [snapshot.summary]);
 
+  const deliverySummary = useMemo(
+    () => ({
+      problematic: secondary.deliveryRisk.filter((row) =>
+        /problematic/i.test(row.status),
+      ).length,
+      longReview: secondary.deliveryRisk.filter((row) =>
+        /long review/i.test(row.riskReason),
+      ).length,
+      backflowSignals: Number(
+        snapshot.summary.find((m) => m.label === "Backflows")?.value ?? 0,
+      ),
+    }),
+    [secondary.deliveryRisk, snapshot.summary],
+  );
+
+  const onPerformanceRecommendation = (rec: ProductRecommendation) => {
+    if (rec.actionKind === "open_delivery_risk") {
+      window.dispatchEvent(
+        new CustomEvent("metrio-open-performance-tab", { detail: "delivery-risk" }),
+      );
+      return;
+    }
+    if (rec.actionKind === "view_person" && rec.personId) {
+      onOpenPerson(rec.personId);
+      return;
+    }
+    if (rec.actionKind === "open_jira" && rec.issueKey) {
+      void navigateActionTarget({ kind: "jira", issueKey: rec.issueKey });
+      return;
+    }
+    if (rec.actionKind === "open_team_workload" || rec.actionKind === "open_performance") {
+      window.dispatchEvent(
+        new CustomEvent("metrio-open-performance-tab", { detail: "overview" }),
+      );
+    }
+  };
+
   return (
     <>
       <ActionQueueSection
@@ -240,6 +279,13 @@ export function TeamOverviewView({
         emptyMessage="No high-priority team actions right now."
         onOpen={handleAction}
         openLabel={actionOpenLabel}
+      />
+      <PerformanceRecommendations
+        deliverySummary={deliverySummary}
+        deliveryRiskCount={secondary.deliveryRisk.length}
+        teamWorkload={snapshot.workload}
+        teamActions={teamActions}
+        onAction={onPerformanceRecommendation}
       />
       <section aria-label="Summary metrics">
         <div className="performance-metrics">
@@ -518,7 +564,14 @@ export function TeamOverviewView({
       <section aria-label="Team workload" className="performance-section">
         <SectionTitle title="Team workload" help={performanceHelp.teamWorkload} />
         <div className="performance-table-wrap">
-          <table className="performance-table performance-table--interactive">
+          <table className="performance-table performance-table--interactive performance-table--team-workload">
+            <colgroup>
+              <col className="col-person" />
+              <col className="col-num" />
+              <col className="col-num" />
+              <col className="col-badge" />
+              <col className="col-badge" />
+            </colgroup>
             <thead>
               <tr>
                 <SortableTableHeader

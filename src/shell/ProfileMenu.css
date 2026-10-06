@@ -40,6 +40,22 @@
   cursor: not-allowed;
 }
 
+.profile-menu__avatar--photo {
+  overflow: hidden;
+  padding: 0;
+  background: var(--color-surface);
+}
+
+.profile-menu__person-avatar {
+  width: var(--control-height-compact);
+  height: var(--control-height-compact);
+  flex-shrink: 0;
+}
+
+.profile-menu__initials {
+  line-height: 1;
+}
+
 .profile-menu__actions {
   display: flex;
   flex-direction: column;

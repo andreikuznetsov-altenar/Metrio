@@ -23,22 +23,22 @@ export function DashboardDeliveryVisual({
 
   return (
     <section
-      className="executive-panel executive-dashboard__span-6"
+      className="executive-panel executive-dashboard__span-6 executive-panel--metric"
       aria-label="Delivery signals"
       data-testid="dashboard-delivery-visual"
     >
       <h2 className="executive-panel__title">Delivery</h2>
-      <div className="executive-delivery-bars">
+      <div className="executive-delivery-bars metrio-bar-chart">
         {rows.map((row) => (
-          <div key={row.label} className="executive-delivery-bar-row">
-            <span>{row.label}</span>
-            <div className="executive-delivery-bar-row__track" aria-hidden>
+          <div key={row.label} className="metrio-bar-row">
+            <span className="metrio-bar-row__label">{row.label}</span>
+            <div className="metrio-bar-row__track" aria-hidden>
               <span
-                className={`executive-delivery-bar-row__fill executive-delivery-bar-row__fill--${row.tone}`}
+                className={`metrio-bar-row__fill metrio-bar-row__fill--${row.tone}`}
                 style={{ width: barWidth(row.value, total) }}
               />
             </div>
-            <span>{row.value}</span>
+            <span className="metrio-bar-row__value">{row.value}</span>
           </div>
         ))}
       </div>

@@ -14,24 +14,26 @@ export function DashboardTeamCapacityVisual({
 
   return (
     <section
-      className="executive-panel executive-dashboard__span-6"
+      className="executive-panel executive-dashboard__span-6 executive-panel--metric"
       aria-label="Team capacity distribution"
       data-testid="dashboard-team-capacity-visual"
     >
       <h2 className="executive-panel__title">Capacity distribution</h2>
-      <div className="executive-capacity-visual">
+      <div className="executive-capacity-visual metrio-bar-chart">
         {buckets.map((bucket) => (
-          <div key={bucket.label} className="executive-capacity-visual__row">
-            <Badge variant={workloadBadgeVariantFromLabel(bucket.label)}>
-              {bucket.label}
-            </Badge>
-            <div className="executive-capacity-visual__track" aria-hidden>
+          <div key={bucket.label} className="metrio-bar-row">
+            <span className="metrio-bar-row__label">
+              <Badge variant={workloadBadgeVariantFromLabel(bucket.label)}>
+                {bucket.label}
+              </Badge>
+            </span>
+            <div className="metrio-bar-row__track" aria-hidden>
               <span
-                className="executive-capacity-visual__fill"
+                className="metrio-bar-row__fill"
                 style={{ width: `${Math.round((bucket.count / max) * 100)}%` }}
               />
             </div>
-            <span className="executive-capacity-visual__count">{bucket.count}</span>
+            <span className="metrio-bar-row__value">{bucket.count}</span>
           </div>
         ))}
       </div>

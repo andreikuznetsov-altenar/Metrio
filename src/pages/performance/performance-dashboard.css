@@ -801,6 +801,11 @@
   font: inherit;
   font-weight: 600;
   cursor: pointer;
+  max-width: 100%;
+}
+
+.performance-table__sort-label {
+  min-width: 0;
 }
 
 .performance-table__sort-btn:focus-visible {
@@ -809,17 +814,20 @@
 }
 
 .performance-table__sort-icon {
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 0.75rem;
   width: 0.75rem;
   font-size: 10px;
   line-height: 1;
-  opacity: 0;
+  opacity: 0.35;
   color: var(--color-text-tertiary);
 }
 
 .performance-table__sort-btn:hover .performance-table__sort-icon,
 .performance-table__sort-btn:focus-visible .performance-table__sort-icon {
-  opacity: 0.4;
+  opacity: 0.55;
 }
 
 .performance-table__sort-icon.is-active {
@@ -830,6 +838,28 @@
 .performance-table__sort-btn.is-active .performance-table__sort-icon {
   opacity: 1;
   color: var(--color-accent);
+}
+
+.performance-table--team-workload {
+  table-layout: fixed;
+  width: 100%;
+}
+
+.performance-table--team-workload col.col-person {
+  width: 36%;
+}
+
+.performance-table--team-workload col.col-num {
+  width: 10%;
+}
+
+.performance-table--team-workload col.col-badge {
+  width: 22%;
+}
+
+.performance-table--task-list {
+  table-layout: fixed;
+  width: 100%;
 }
 
 .attention-issue-links {

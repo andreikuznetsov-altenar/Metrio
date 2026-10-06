@@ -1,5 +1,7 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { useCurrentUser } from "../app/CurrentUserContext";
+import { PersonAvatar } from "../components/PersonAvatar/PersonAvatar";
+import type { Person } from "../domain/people/types";
 import type { DevFixtureId } from "../domain/types";
 import { personInitials } from "../domain/types";
 import { profileSubtitle } from "../domain/types/profileSubtitle";
@@ -22,9 +24,11 @@ const DEV_FIXTURES: { id: DevFixtureId; label: string }[] = [
 export function ProfileMenu({
   onOpenSettings,
   onLogout,
+  person,
 }: {
   onOpenSettings?: () => void;
   onLogout?: () => void;
+  person?: Person | null;
 }) {
   const menuId = useId();
   const rootRef = useRef<HTMLDivElement>(null);
@@ -63,14 +67,24 @@ export function ProfileMenu({
     <div className="profile-menu" ref={rootRef}>
       <button
         type="button"
-        className="profile-menu__avatar"
+        className="profile-menu__avatar profile-menu__avatar--photo"
         aria-expanded={open}
         aria-haspopup="menu"
         aria-controls={open ? menuId : undefined}
         aria-label="Open profile menu"
         onClick={() => setOpen((value) => !value)}
       >
-        {initials}
+        {person ? (
+          <PersonAvatar
+            person={person}
+            personId={person.id}
+            displayName={person.bamboo.displayName}
+            size="sm"
+            className="profile-menu__person-avatar"
+          />
+        ) : (
+          <span className="profile-menu__initials">{initials}</span>
+        )}
       </button>
 
       {open ? (

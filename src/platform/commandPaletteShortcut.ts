@@ -1,3 +1,5 @@
 export function isCommandPaletteShortcut(event: KeyboardEvent): boolean {
-  return (event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k";
+  if (!(event.metaKey || event.ctrlKey)) return false;
+  const key = event.key.toLowerCase();
+  return key === "k" || key === "f";
 }

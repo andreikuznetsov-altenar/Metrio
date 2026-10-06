@@ -8,11 +8,15 @@ export function DashboardActionTabs({
   onOpenAction,
   actionOpenLabel,
   footerByTab,
+  teamPersons,
+  onOpenJiraIssue,
 }: {
   tabs: ExecutiveActionTab[];
   onOpenAction: (item: ActionItem) => void;
   actionOpenLabel: (item: ActionItem) => string;
   footerByTab?: Record<string, { label: string; onClick: () => void } | undefined>;
+  teamPersons?: import("../../../domain/people/types").Person[];
+  onOpenJiraIssue?: (issueKey: string, url?: string) => void;
 }) {
   const [activeId, setActiveId] = useState(tabs[0]?.id ?? "");
   const active = tabs.find((tab) => tab.id === activeId) ?? tabs[0];
@@ -41,12 +45,14 @@ export function DashboardActionTabs({
       <DashboardQueuePanel
         title={active.label}
         workColumnLabel="Work"
-        items={active.items.slice(0, 5)}
+        items={active.items}
         emptyMessage={active.emptyMessage}
         onOpen={onOpenAction}
         openLabel={actionOpenLabel}
         testId={`dashboard-tab-${active.id}`}
         footerAction={footerByTab?.[active.id]}
+        teamPersons={teamPersons}
+        onOpenJiraIssue={onOpenJiraIssue}
       />
     </div>
   );

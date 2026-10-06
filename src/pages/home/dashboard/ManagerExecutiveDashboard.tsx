@@ -24,11 +24,16 @@ import { PersonAvatar } from "../../../components/PersonAvatar/PersonAvatar";
 import { HomeGoalsSummaryCard } from "../HomeGoalsSummaryCard";
 import type { DashboardPerformancePulseProps } from "./DashboardPerformancePulse";
 import type { summarizeGoalsForHome } from "../../../domain/goals/goalReview";
-import { DashboardSecondaryGrid } from "./DashboardSecondaryGrid";
 import { DashboardTeamBriefCard } from "./DashboardTeamBriefCard";
 import {
   readDashboardVisualQueryFlag,
 } from "../../../fixtures/dashboardVisualOverrides";
+import { buildProductRecommendations } from "../../../domain/recommendations/buildProductRecommendations";
+import type { ProductRecommendation } from "../../../domain/recommendations/buildProductRecommendations";
+import { DashboardRecommendations } from "./DashboardRecommendations";
+import { DashboardMetricsPair } from "./DashboardMetricsPair";
+import { DashboardLowerThreeCards } from "./DashboardLowerThreeCards";
+import { DashboardDeliveryRiskCard } from "./DashboardDeliveryRiskCard";
 
 const QUEUE_PREVIEW = 5;
 type GoalsHomeSummary = ReturnType<typeof summarizeGoalsForHome>;
@@ -117,9 +122,39 @@ export function ManagerExecutiveDashboard({
     (/failure|survey in progress|pending/i.test(team.feedback.headline) ||
       Boolean(team.feedback.detail?.match(/failure|pending/i)));
 
-  const goalsSecondary =
-    goalsFeatureOn && goalsSummary && !goalsProminent ? goalsSummary : null;
-  const showSecondaryGrid = Boolean(goalsSecondary || teamBrief);
+  const recommendations = buildProductRecommendations({
+    role: "manager",
+    deliverySummary: team.deliverySummary,
+    deliveryRiskCount,
+    teamWorkload: executiveModel.teamWorkload,
+    teamActions: team.actions,
+    focus: personal.focus,
+    attentionItems: executiveModel.attentionItems,
+    awayNextWeek: team.awayNextWeek,
+    maxItems: 3,
+  });
+
+  const onRecommendationAction = (rec: ProductRecommendation) => {
+    if (rec.actionKind === "open_delivery_risk") {
+      onOpenDeliveryRisk();
+      return;
+    }
+    if (rec.actionKind === "open_team_workload") {
+      onOpenTeamOverview();
+      return;
+    }
+    if (rec.actionKind === "view_person" && rec.personId) {
+      onOpenPerson(rec.personId);
+      return;
+    }
+    if (rec.actionKind === "open_jira" && rec.issueKey) {
+      void onOpenJiraAssignment(rec.issueKey);
+      return;
+    }
+    if (rec.actionKind === "open_performance") {
+      onOpenTeamOverview();
+    }
+  };
 
   return (
     <>
@@ -147,6 +182,8 @@ export function ManagerExecutiveDashboard({
         tabs={executiveModel.actionTabs}
         onOpenAction={onOpenAction}
         actionOpenLabel={actionOpenLabel}
+        teamPersons={teamPersons}
+        onOpenJiraIssue={(key) => void onOpenJiraAssignment(key)}
         footerByTab={{
           focus:
             personal.focus.length > QUEUE_PREVIEW
@@ -161,8 +198,33 @@ export function ManagerExecutiveDashboard({
           },
         }}
       />
-      <DashboardTeamCapacityVisual workload={executiveModel.teamWorkload} />
-      <DashboardDeliveryVisual summary={executiveModel.deliverySummary} />
+      <DashboardRecommendations
+        items={recommendations}
+        onAction={onRecommendationAction}
+      />
+      <DashboardMetricsPair>
+        <DashboardTeamCapacityVisual workload={executiveModel.teamWorkload} />
+        <DashboardDeliveryVisual summary={executiveModel.deliverySummary} />
+      </DashboardMetricsPair>
+      <DashboardLowerThreeCards>
+        {goalsFeatureOn && goalsSummary ? (
+          <div className="executive-lower-card">
+            <HomeGoalsSummaryCard teamView summary={goalsSummary} moduleSurface="secondary" />
+          </div>
+        ) : null}
+        {teamBrief ? (
+          <DashboardTeamBriefCard
+            headline={teamBrief.headline}
+            detail={teamBrief.detail}
+            onOpen={teamBrief.onOpen}
+          />
+        ) : null}
+        <DashboardDeliveryRiskCard
+          deliveryRiskCount={deliveryRiskCount}
+          summary={executiveModel.deliverySummary}
+          onOpen={onOpenDeliveryRisk}
+        />
+      </DashboardLowerThreeCards>
       {team.newStarters.length > 0 ? (
         <section
           className="executive-dashboard__span-12 executive-panel"
@@ -249,49 +311,6 @@ export function ManagerExecutiveDashboard({
           </div>
         </section>
       ) : null}
-      {showSecondaryGrid ? (
-        <div className="executive-dashboard__span-12">
-          <DashboardSecondaryGrid>
-            {goalsSecondary ? (
-              <HomeGoalsSummaryCard
-                teamView
-                summary={goalsSecondary}
-                moduleSurface="secondary"
-              />
-            ) : null}
-            {teamBrief ? (
-              <DashboardTeamBriefCard
-                headline={teamBrief.headline}
-                detail={teamBrief.detail}
-                onOpen={teamBrief.onOpen}
-              />
-            ) : null}
-          </DashboardSecondaryGrid>
-        </div>
-      ) : null}
-      {personal.knowledge.length > 0 ||
-      (!feedbackProminent && team.feedback) ? (
-        <div className="executive-dashboard__span-12 executive-lower-section">
-          {personal.knowledge.length > 0 ? (
-            <p className="executive-secondary-line">
-              Knowledge: {personal.knowledge[0]?.title}
-            </p>
-          ) : null}
-          {!feedbackProminent && team.feedback ? (
-            <p className="executive-secondary-line">
-              {team.feedback.headline}
-              <Button type="button" variant="secondary" onClick={onOpenFeedback}>
-                Open Feedback
-              </Button>
-            </p>
-          ) : null}
-        </div>
-      ) : null}
-      <div className="executive-dashboard__span-12 home-card__actions">
-        <Button type="button" variant="secondary" onClick={onOpenDeliveryRisk}>
-          Open delivery risk
-        </Button>
-      </div>
     </>
   );
 }

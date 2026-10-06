@@ -388,6 +388,8 @@ function AppLayoutShell({
   );
 
   const teamPersons = data?.teamSnapshot?.persons ?? [];
+  const headerPerson =
+    teamPersons.find((person) => person.id === currentUser.person.id) ?? null;
 
   const onLogout = useCallback(() => {
     void clearTrayUserContext();
@@ -474,6 +476,7 @@ function AppLayoutShell({
             notificationUnreadCount={notificationUnread}
             onOpenConnections={() => onOpenSettings("connections")}
             onLogout={onLogout}
+            headerPerson={headerPerson}
           />
         }
         pageToolbar={pageToolbar}

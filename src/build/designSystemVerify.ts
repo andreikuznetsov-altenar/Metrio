@@ -47,6 +47,7 @@ const CANONICAL_PRIMITIVE_PREFIXES = [
   "src/components/Switch/",
   "src/components/Card/",
   "src/components/Drawer/",
+  "src/components/Modal/",
   "src/components/Badge/",
   "src/components/Tooltip/",
   "src/components/Tabs/",

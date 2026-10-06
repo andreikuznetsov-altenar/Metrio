@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { isCommandPaletteShortcut } from "./commandPaletteShortcut";
 
 describe("commandPaletteShortcut", () => {
-  it("detects Cmd+K and Ctrl+K", () => {
+  it("detects Cmd/Ctrl+K and Cmd/Ctrl+F", () => {
     expect(
       isCommandPaletteShortcut({
         metaKey: true,
@@ -15,6 +15,13 @@ describe("commandPaletteShortcut", () => {
         metaKey: false,
         ctrlKey: true,
         key: "K",
+      } as KeyboardEvent),
+    ).toBe(true);
+    expect(
+      isCommandPaletteShortcut({
+        metaKey: true,
+        ctrlKey: false,
+        key: "f",
       } as KeyboardEvent),
     ).toBe(true);
   });

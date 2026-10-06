@@ -77,6 +77,7 @@ import { DashboardFirstRunState } from "./dashboard/DashboardFirstRunState";
 import { DashboardBlockingErrorState } from "./dashboard/DashboardBlockingErrorState";
 import { DashboardSyncBanner } from "./dashboard/DashboardSyncBanner";
 import "./dashboard/executive-dashboard.css";
+import "./dashboard/executive-dashboard-pass10.css";
 
 import type {
   DateRangeKey,
