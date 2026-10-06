@@ -28,7 +28,7 @@ import { AnalyticsIssueRow } from "./AnalyticsIssueRow";
 import { PersonWorkRow } from "./PersonWorkRow";
 import { PersonIdentityHeader } from "./PersonIdentityHeader";
 import { PersonPerformanceMetrics } from "./PersonPerformanceMetrics";
-import { TrendMiniChart } from "./TrendMiniChart";
+import { TrendInsufficientHistory, TrendMiniChart } from "./TrendMiniChart";
 import { TrendValue } from "./TrendValue";
 import {
   buildMetricDrilldownRequest,
@@ -202,9 +202,11 @@ export function PersonDetailDrawer({
                     >
                       <div className="person-detail-drawer__trend-head">
                         <span>{trend.label}</span>
-                        <TrendValue trend={trend} />
                       </div>
-                      <p className="person-detail-drawer__trend-empty">Not enough history</p>
+                      <TrendInsufficientHistory
+                        recorded={trend.historyRecordedDays}
+                        recommended={trend.historyRecommendedDays}
+                      />
                     </div>
                   );
                 }

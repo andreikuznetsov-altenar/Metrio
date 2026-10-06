@@ -1,6 +1,7 @@
 import type { OnboardingChecklistModel, OnboardingItem } from "../../domain/onboardingChecklist/onboardingChecklistTypes";
 import { openOnboardingResourceTarget } from "../../platform/openOnboardingResource";
 import { Button } from "../../components/Button/Button";
+import { Drawer } from "../../components/Drawer/Drawer";
 import "./onboarding-checklist.css";
 
 const CATEGORY_LABELS: Record<string, string> = {
@@ -89,38 +90,41 @@ export function OnboardingChecklistDrawer({
   onClose,
   onManualToggle,
 }: OnboardingChecklistDrawerProps) {
-  if (!open) return null;
-
   return (
-    <div className="person-detail-drawer" role="dialog" aria-modal="true" data-testid="onboarding-checklist-drawer">
-      <div className="person-detail-drawer__backdrop" onClick={onClose} />
-      <div className="person-detail-drawer__panel">
-        <header className="person-detail-drawer__header">
-          <h2>Onboarding checklist</h2>
-          <p>{model.progress.headline}</p>
-          <Button variant="ghost" onClick={onClose}>Close</Button>
-        </header>
-        <div className="person-detail-drawer__body">
-          {Object.entries(model.byCategory).map(([cat, items]) =>
-            items?.length ? (
-              <section key={cat} className="onboarding-checklist-drawer__group">
-                <h3 className="onboarding-checklist-drawer__group-title">
-                  {CATEGORY_LABELS[cat] ?? cat}
-                </h3>
-                <ul style={{ listStyle: "none", margin: 0, padding: 0 }}>
-                  {items.map((item) => (
-                    <ChecklistItemRow
-                      key={`${cat}-${item.id}`}
-                      item={item}
-                      onManualToggle={onManualToggle}
-                    />
-                  ))}
-                </ul>
-              </section>
-            ) : null,
-          )}
+    <Drawer
+      open={open}
+      onClose={onClose}
+      ariaLabel="Onboarding checklist"
+      size="person"
+      className="drawer--onboarding-checklist"
+      testId="onboarding-checklist-drawer"
+      header={
+        <div>
+          <h2 style={{ margin: 0, fontSize: 15, fontWeight: 600 }}>Onboarding checklist</h2>
+          <p style={{ margin: "4px 0 0", fontSize: 12, color: "var(--color-text-secondary)" }}>
+            {model.progress.headline}
+          </p>
         </div>
-      </div>
-    </div>
+      }
+    >
+      {Object.entries(model.byCategory).map(([cat, items]) =>
+        items?.length ? (
+          <section key={cat} className="onboarding-checklist-drawer__group">
+            <h3 className="onboarding-checklist-drawer__group-title">
+              {CATEGORY_LABELS[cat] ?? cat}
+            </h3>
+            <ul style={{ listStyle: "none", margin: 0, padding: 0 }}>
+              {items.map((item) => (
+                <ChecklistItemRow
+                  key={`${cat}-${item.id}`}
+                  item={item}
+                  onManualToggle={onManualToggle}
+                />
+              ))}
+            </ul>
+          </section>
+        ) : null,
+      )}
+    </Drawer>
   );
 }

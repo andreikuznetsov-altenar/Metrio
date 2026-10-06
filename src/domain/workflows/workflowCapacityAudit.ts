@@ -7,7 +7,12 @@ import {
   type WorkloadThresholds,
 } from '../workload/workloadEngine';
 import type { CapacityDataState } from './capacityWorkload';
-import { capacityDataStateFromWorkload } from '../workload/capacityPresentation';
+import {
+  CAPACITY_INSUFFICIENT_LABEL,
+  capacityDataStateFromWorkload,
+} from '../workload/capacityPresentation';
+import { capacityDistribution } from '../home/executiveDashboardModel';
+import type { WorkloadRow } from '../performance';
 import { diagnoseWorkflowIssues } from './workflowDiagnostics';
 import { resolveWorkflowProfile } from './resolveWorkflowProfile';
 import { resolveWorkflowStage } from './resolveWorkflowStage';
@@ -349,4 +354,83 @@ export async function runWorkflowCapacityAuditFromPerformanceFetch(
   };
   const data = await fetchPerformanceData(range, 'team', 'team');
   return runWorkflowCapacityAudit(data.reportData);
+}
+
+/** Read-only: compare audit rows to rendered Team Workload / distribution UI models. */
+export function buildCapacityUiConsistencyReport(input: {
+  audit: WorkflowCapacityAuditResult;
+  uiWorkload: WorkloadRow[];
+}): { lines: string[]; allMatch: boolean } {
+  const lines: string[] = [];
+  lines.push('=== Capacity UI consistency (audit vs view model) ===');
+  let allMatch = true;
+
+  for (const auditRow of input.audit.personRows) {
+    const uiRow =
+      input.uiWorkload.find(
+        (row) =>
+          row.personName === auditRow.personLabel ||
+          row.personId === auditRow.personLabel,
+      ) ??
+      input.uiWorkload.find((row) =>
+        auditRow.personLabel
+          .toLowerCase()
+          .includes((row.personName || row.personId).toLowerCase()),
+      );
+
+    const uiLabel = uiRow?.workload ?? '—';
+    const uiState = uiRow?.capacityDataState ?? 'missing';
+    const match =
+      uiRow != null &&
+      uiState === auditRow.capacityDataState &&
+      (auditRow.capacityDataState === 'insufficient_history'
+        ? uiLabel === CAPACITY_INSUFFICIENT_LABEL
+        : uiLabel !== CAPACITY_INSUFFICIENT_LABEL);
+
+    if (!match) allMatch = false;
+    lines.push(
+      [
+        auditRow.personLabel,
+        `audit=${auditRow.capacityDataState}`,
+        `uiState=${uiState}`,
+        `uiLabel=${uiLabel}`,
+        match ? 'MATCH' : 'MISMATCH',
+      ].join(' | '),
+    );
+  }
+
+  const bucketLabels = ['Light', 'Balanced', 'Heavy', 'Overloaded', CAPACITY_INSUFFICIENT_LABEL] as const;
+  const auditBuckets: Record<string, number> = Object.fromEntries(
+    bucketLabels.map((label) => [label, 0]),
+  );
+  for (const row of input.audit.personRows) {
+    if (row.capacityDataState === 'insufficient_history') {
+      auditBuckets[CAPACITY_INSUFFICIENT_LABEL] += 1;
+      continue;
+    }
+    const mapped =
+      row.capacityLevel === 'low'
+        ? 'Light'
+        : row.capacityLevel === 'normal'
+          ? 'Balanced'
+          : row.capacityLevel === 'high'
+            ? 'Heavy'
+            : row.capacityLevel === 'overloaded'
+              ? 'Overloaded'
+              : 'Balanced';
+    auditBuckets[mapped] += 1;
+  }
+
+  const uiDistribution = capacityDistribution(input.uiWorkload);
+  lines.push('');
+  lines.push('=== Capacity distribution buckets ===');
+  for (const label of bucketLabels) {
+    const auditCount = auditBuckets[label] ?? 0;
+    const uiCount = uiDistribution.find((b) => b.label === label)?.count ?? 0;
+    const match = auditCount === uiCount;
+    if (!match) allMatch = false;
+    lines.push(`${label}: audit=${auditCount} ui=${uiCount} ${match ? 'MATCH' : 'MISMATCH'}`);
+  }
+
+  return { lines, allMatch };
 }

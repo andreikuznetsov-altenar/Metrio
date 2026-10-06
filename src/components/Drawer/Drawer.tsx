@@ -37,6 +37,7 @@ export interface DrawerProps {
   /** Shared width variant; use instead of ad-hoc width classes. */
   size?: DrawerSize;
   className?: string;
+  testId?: string;
 }
 
 export function Drawer({
@@ -49,6 +50,7 @@ export function Drawer({
   children,
   size = "default",
   className,
+  testId,
 }: DrawerProps) {
   const titleId = useId();
   const [mounted, setMounted] = useState(open);
@@ -121,6 +123,7 @@ export function Drawer({
         aria-modal="true"
         aria-labelledby={titleId}
         aria-label={ariaLabel}
+        data-testid={testId}
       >
         <div className="drawer__header" id={titleId}>
           <div className="drawer__header-main">{header}</div>

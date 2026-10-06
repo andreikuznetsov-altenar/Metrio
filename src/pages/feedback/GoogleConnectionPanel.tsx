@@ -12,7 +12,6 @@ import {
   Drawer,
   Input,
   InputPassword,
-  Section,
   SelectDropdown,
   StatusBanner,
 } from './design-system';

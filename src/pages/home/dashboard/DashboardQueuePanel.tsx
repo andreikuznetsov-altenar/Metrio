@@ -12,6 +12,9 @@ import { Button } from "../../../components/Button/Button";
 import { TaskListModal } from "../../../components/TaskListModal/TaskListModal";
 import { useTableSort } from "../../../components/Table/useTableSort";
 import { resolveJiraBaseUrl } from "../../../config/product";
+import {
+  readDashboardVisualQueryFlag,
+} from "../../../fixtures/dashboardVisualOverrides";
 import "../../performance/action-queue.css";
 
 const QUEUE_COLUMNS = [
@@ -54,7 +57,20 @@ export function DashboardQueuePanel({
   testId,
 }: DashboardQueuePanelProps) {
   const [tasksOpen, setTasksOpen] = useState(false);
-  const mergedRows = useMemo(() => buildDashboardQueueRows(items), [items]);
+  const sourceItems = useMemo(() => {
+    if (
+      readDashboardVisualQueryFlag("visualDashboardTaskModal") &&
+      items.length > 0 &&
+      items.length <= PREVIEW_COUNT
+    ) {
+      return Array.from({ length: PREVIEW_COUNT + 3 }, (_, index) => {
+        const base = items[index % items.length];
+        return { ...base, id: `${base.id}-visual-${index}` };
+      });
+    }
+    return items;
+  }, [items]);
+  const mergedRows = useMemo(() => buildDashboardQueueRows(sourceItems), [sourceItems]);
   const previewRows = useMemo(
     () => mergedRows.slice(0, PREVIEW_COUNT),
     [mergedRows],
@@ -80,8 +96,8 @@ export function DashboardQueuePanel({
 
   const { sortedRows, sort, toggleSort } = useTableSort(previewRows, QUEUE_COLUMNS, getValue);
   const taskRows = useMemo(
-    () => buildTaskListModalRows(items, teamPersons, resolveJiraBaseUrl()),
-    [items, teamPersons],
+    () => buildTaskListModalRows(sourceItems, teamPersons, resolveJiraBaseUrl()),
+    [sourceItems, teamPersons],
   );
 
   return (
@@ -91,7 +107,7 @@ export function DashboardQueuePanel({
       data-testid={testId}
     >
       <h2 className="executive-panel__title">{title}</h2>
-      {items.length === 0 ? (
+      {sourceItems.length === 0 ? (
         <p className="executive-secondary-line" role="status">{emptyMessage}</p>
       ) : (
         <>
@@ -136,14 +152,14 @@ export function DashboardQueuePanel({
           />
         </>
       )}
-      {items.length > PREVIEW_COUNT ? (
+      {sourceItems.length > PREVIEW_COUNT ? (
         <div className="home-card__actions">
           <Button type="button" variant="secondary" onClick={() => setTasksOpen(true)}>
-            Show {items.length} tasks
+            Show {sourceItems.length} tasks
           </Button>
         </div>
       ) : null}
-      {footerAction && items.length <= PREVIEW_COUNT ? (
+      {footerAction && sourceItems.length <= PREVIEW_COUNT ? (
         <div className="home-card__actions">
           <Button type="button" variant="secondary" onClick={footerAction.onClick}>
             {footerAction.label}
