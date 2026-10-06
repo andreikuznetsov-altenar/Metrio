@@ -15,6 +15,7 @@
     "reconcile:kpi": "METRIO_REAL_RECONCILE=1 vitest run src/domain/analytics/kpiReconciliation.real.test.ts",
     "audit:workflow-capacity": "node scripts/audit-live-workflow-capacity.mjs",
     "probe:bamboo-photo": "METRIO_REAL_BAMBOO_PHOTO=1 vitest run src/services/bamboo/bambooPhoto.real.test.ts",
+    "probe:org-role": "node scripts/org-role-qa.mjs",
     "tauri": "tauri",
     "version:sync": "node scripts/sync-app-version.mjs",
     "release:macos": "bash scripts/release-macos.sh"
