@@ -1,3 +1,5 @@
+import type { OrgHierarchyScope, OrgRole } from "./organization/orgRole";
+
 export type UserRole = "employee" | "lead" | "director";
 
 export interface Person {
@@ -19,6 +21,9 @@ export interface CurrentUser {
   jobTitle?: string;
   /** Present when the user manages direct reports (lead or director). */
   team?: Team;
+  /** Canonical org role from Bamboo reporting graph (never from job title). */
+  orgRole?: OrgRole | "unresolved";
+  orgHierarchy?: OrgHierarchyScope | null;
 }
 
 export type DevFixtureId = "employee" | "lead" | "director";

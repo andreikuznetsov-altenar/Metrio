@@ -22,6 +22,8 @@ import {
 import { collectHomeKnowledgeLinks } from "../../domain/home/knowledgeFromGraph";
 import { resolveAuthorizedPeopleScope } from "../../domain/organization/authorizedPeopleScope";
 import { buildOrganizationModel } from "../../domain/organization/buildOrganizationModel";
+import { rosterFromOrgResolution } from "../../domain/organization/orgGraph";
+import { resolveSupervisorEmployee } from "../../domain/organization/orgRole";
 import { summarizeFeedbackActions } from "../../domain/feedback/feedbackActionSummary";
 import { syncFeedbackInboxFromSummary } from "../../platform/feedbackInboxSync";
 import type { OrgResolutionResult } from "../../services/bamboo/orgResolver";
@@ -176,20 +178,34 @@ export function HomePage() {
     const scope = resolveAuthorizedPeopleScope(
       orgForScope,
       currentUser.person.role,
+      undefined,
+      currentUser.orgHierarchy ?? null,
     );
     if (scope.mode !== "organization") return null;
+    const bambooRoster = rosterFromOrgResolution(orgForScope);
     return buildOrganizationModel({
       snapshot: data.teamSnapshot,
       params: data.reportParams,
       scope,
       feedback: summarizeFeedbackActions(surveyData),
+      orgHierarchy: currentUser.orgHierarchy ?? null,
+      bambooRoster,
     });
-  }, [data, org, currentUser.person.role, surveyData]);
+  }, [data, org, currentUser.person.role, currentUser.orgHierarchy, surveyData]);
 
   const homeRole = resolveHomeRoleVariant(
     currentUser.person.role,
     organizationModel,
+    currentUser.orgRole,
   );
+
+  const managerContact = useMemo(() => {
+    if (currentUser.orgRole !== "individual_contributor" || !org?.ok) {
+      return null;
+    }
+    const roster = rosterFromOrgResolution(org);
+    return resolveSupervisorEmployee(org, roster);
+  }, [currentUser.orgRole, org]);
 
   const workspace = viewModels?.getPersonAnalytics(currentUser.person.id);
   const employeeSnapshot = viewModels?.employee;
@@ -651,6 +667,9 @@ export function HomePage() {
           goalsSummary={showGoalsSummary ? goalsHomeSummary : null}
           goalsFeatureOn={goalsFeatureOn}
           goalsProminent={goalsProminent}
+          showManagerCard={currentUser.orgRole === "individual_contributor"}
+          managerContact={managerContact}
+          selfDepartment={selfPerson?.bamboo.department}
         />
       )}
       </div>

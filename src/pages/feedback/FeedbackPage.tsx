@@ -48,6 +48,8 @@ import {
 } from './FeedbackDisconnectedPanels';
 import { FeedbackGoogleSetupInstructions } from './FeedbackGoogleSetupInstructions';
 import { openSettingsSection } from '../../platform/settingsNavigation';
+import { useCurrentUser } from '../../app/CurrentUserContext';
+import { resolveOrgFeatureAccess } from '../../domain/organization/orgFeatureAccess';
 
 function FeedbackPageSkeleton() {
   return (
@@ -62,6 +64,8 @@ function FeedbackPageSkeleton() {
 
 export function FeedbackPage() {
   const toast = useToast();
+  const { currentUser } = useCurrentUser();
+  const orgAccess = resolveOrgFeatureAccess(currentUser.orgRole ?? 'unresolved');
   const { prefs, teamDetection, teamSnapshot, updatePrefs } = useFeedbackAppStore();
   const surveyStore = useFeedbackSurveyStore();
   const {
@@ -97,7 +101,8 @@ export function FeedbackPage() {
     updateActiveSurvey,
   } = surveyStore;
 
-  const isTeamMode = teamDetection?.mode === 'team';
+  const isTeamMode =
+    teamDetection?.mode === 'team' && orgAccess.canViewSurveyManagement;
   const [dateFrom, setDateFrom] = useState(prefs.reportFilters.dateFrom);
   const [dateTo, setDateTo] = useState(prefs.reportFilters.dateTo || getTodayIsoDate());
   const [scope, setScope] = useState<'full' | 'direct'>(prefs.reportFilters.teamScope);
@@ -287,6 +292,28 @@ export function FeedbackPage() {
   };
 
   if (!isTeamMode) {
+    if (orgAccess.canViewOwnFeedbackResults) {
+      return (
+        <div className="ds-feedback-page-shell">
+          <MetrioScrollArea className="ds-feedback-scroll">
+            <div className="metrio-canvas ds-feedback-canvas">
+              <FeedbackResultsView
+                metrics={
+                  metrics ?? {
+                    respondentCount: 0,
+                    overallStatus: "Critical",
+                    scaleQuestions: [],
+                    multipleQuestions: [],
+                    overallEffectivenessIndex: 0,
+                  }
+                }
+                sentCount={alreadySentCount}
+              />
+            </div>
+          </MetrioScrollArea>
+        </div>
+      );
+    }
     return (
       <div className="ds-feedback-page-shell">
         <MetrioScrollArea className="ds-feedback-scroll">

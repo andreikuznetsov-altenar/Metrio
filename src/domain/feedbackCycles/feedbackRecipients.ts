@@ -1,8 +1,6 @@
 import type { Person } from '../people/types';
 import type { AudienceRule } from './feedbackCycleTypes';
 import type { CurrentUser } from '../types';
-import { isManagerRole } from '../performance';
-
 export interface RecipientGenerationInput {
   rule: AudienceRule;
   currentUser: CurrentUser;
@@ -58,5 +56,8 @@ export function generateAudiencePersonIds(input: RecipientGenerationInput): stri
 }
 
 export function canManageFeedbackCycles(currentUser: CurrentUser): boolean {
-  return isManagerRole(currentUser.person.role) && Boolean(currentUser.team);
+  return (
+    currentUser.orgRole === "leaf_manager" &&
+    Boolean(currentUser.team?.directReportIds.length)
+  );
 }

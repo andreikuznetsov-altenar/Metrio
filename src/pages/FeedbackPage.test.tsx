@@ -25,6 +25,16 @@ vi.mock("../app/FeedbackTeamProvider", () => ({
   }),
 }));
 
+vi.mock("../app/CurrentUserContext", () => ({
+  useCurrentUser: () => ({
+    currentUser: {
+      person: { id: "lead-1", name: "Lead", role: "lead" },
+      orgRole: "leaf_manager",
+      team: { leadId: "lead-1", directReportIds: ["rep-1"] },
+    },
+  }),
+}));
+
 vi.mock("../app/feedbackSurveyStore", () => ({
   useFeedbackSurveyStore: () => ({
     data: { defaults: { questions: [] }, surveys: [], activeSurveyId: null },

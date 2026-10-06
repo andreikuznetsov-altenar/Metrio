@@ -17,6 +17,8 @@ import { DashboardScopeHealthSummary } from "./DashboardScopeHealthSummary";
 import { DashboardCompactRow } from "../../../components/DashboardCompactRow/DashboardCompactRow";
 import { HomeGoalsSummaryCard } from "../HomeGoalsSummaryCard";
 import type { summarizeGoalsForHome } from "../../../domain/goals/goalReview";
+import { DashboardYourManagerCard } from "./DashboardYourManagerCard";
+import type { ResolvedEmployee } from "../../../services/bamboo/orgResolver";
 
 const QUEUE_PREVIEW = 5;
 type GoalsHomeSummary = ReturnType<typeof summarizeGoalsForHome>;
@@ -40,6 +42,9 @@ export interface EmployeeExecutiveDashboardProps {
   goalsSummary: GoalsHomeSummary | null;
   goalsFeatureOn: boolean;
   goalsProminent: boolean;
+  showManagerCard?: boolean;
+  managerContact?: ResolvedEmployee | null;
+  selfDepartment?: string;
 }
 
 export function EmployeeExecutiveDashboard({
@@ -61,6 +66,9 @@ export function EmployeeExecutiveDashboard({
   goalsSummary,
   goalsFeatureOn,
   goalsProminent,
+  showManagerCard = false,
+  managerContact,
+  selfDepartment,
 }: EmployeeExecutiveDashboardProps) {
   const model: EmployeeExecutiveModel = buildEmployeeExecutiveModel({
     performanceSnapshot: personal.performanceSnapshot,
@@ -85,6 +93,14 @@ export function EmployeeExecutiveDashboard({
         />
       </div>
       <DashboardScopeHealthSummary scopeLabel={model.scopeLabel} summary={model.scopeHealth} />
+      {showManagerCard ? (
+        <div className="executive-dashboard__span-12">
+          <DashboardYourManagerCard
+            manager={managerContact}
+            selfDepartment={selfDepartment}
+          />
+        </div>
+      ) : null}
       <DashboardKpiStrip cards={model.kpis} />
       <DashboardPrimaryTrend trends={model.trends} spanClass={model.trendSpanClass} />
       <DashboardAttentionNow items={model.attentionItems} />

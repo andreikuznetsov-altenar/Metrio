@@ -32,7 +32,13 @@ describe('buildCurrentUserFromTeamDetection', () => {
   });
 
   it('returns lead with direct reports only', () => {
-    const report = { ...employee, id: '11', displayName: 'Report One', jobTitle: 'IC' };
+    const report = {
+      ...employee,
+      id: '11',
+      displayName: 'Report One',
+      jobTitle: 'IC',
+      supervisorId: '10',
+    };
     const team: OrgResolutionResult = {
       ok: true,
       mode: 'team',
@@ -50,14 +56,21 @@ describe('buildCurrentUserFromTeamDetection', () => {
     expect(user?.team?.directReportIds).toEqual(['11']);
   });
 
-  it('returns director when job title matches', () => {
-    const report = { ...employee, id: '12', displayName: 'Report Two' };
+  it('returns director presentation role only for manager_of_managers graph', () => {
+    const lead = {
+      ...employee,
+      id: '12',
+      displayName: 'Lead Two',
+      jobTitle: 'Team Lead',
+      supervisorId: '10',
+    };
+    const ic = { ...employee, id: '13', displayName: 'IC', supervisorId: '12' };
     const team: OrgResolutionResult = {
       ok: true,
       mode: 'team',
-      employee: { ...employee, jobTitle: 'Engineering Director' },
-      directReports: [report],
-      fullTeam: [employee, report],
+      employee: { ...employee, id: '10', jobTitle: 'Engineering Director' },
+      directReports: [lead],
+      fullTeam: [lead, ic],
       missingFields: [],
       restrictedFields: [],
       diagnostics: [],
@@ -66,5 +79,25 @@ describe('buildCurrentUserFromTeamDetection', () => {
     };
     const user = buildCurrentUserFromTeamDetection(team);
     expect(user?.person.role).toBe('director');
+    expect(user?.orgRole).toBe('manager_of_managers');
+  });
+
+  it('does not return director from job title alone', () => {
+    const report = { ...employee, id: '12', displayName: 'Report Two', supervisorId: '10' };
+    const team: OrgResolutionResult = {
+      ok: true,
+      mode: 'team',
+      employee: { ...employee, jobTitle: 'Engineering Director' },
+      directReports: [report],
+      fullTeam: [report],
+      missingFields: [],
+      restrictedFields: [],
+      diagnostics: [],
+      reportingSource: 'id',
+      ambiguousSupervisorNames: 0,
+    };
+    const user = buildCurrentUserFromTeamDetection(team);
+    expect(user?.person.role).toBe('lead');
+    expect(user?.orgRole).toBe('leaf_manager');
   });
 });

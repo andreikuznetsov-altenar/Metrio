@@ -10,6 +10,7 @@ import { navigateOrganizationSignalTarget } from "../../../app/organizationSigna
 import type { DirectorPerformanceView } from "../../../domain/performance";
 import { summarizeFeedbackActions } from "../../../domain/feedback/feedbackActionSummary";
 import { resolveAuthorizedPeopleScope } from "../../../domain/organization/authorizedPeopleScope";
+import { rosterFromOrgResolution } from "../../../domain/organization/orgGraph";
 import {
   buildOrganizationModel,
   filterDeliveryRiskForTeam,
@@ -76,14 +77,18 @@ export function DirectorPerformanceOverview({
     const scope = resolveAuthorizedPeopleScope(
       orgForScope,
       currentUser.person.role,
+      undefined,
+      currentUser.orgHierarchy ?? null,
     );
     return buildOrganizationModel({
       snapshot: data.teamSnapshot,
       params: data.reportParams,
       scope,
       feedback: summarizeFeedbackActions(surveyData),
+      orgHierarchy: currentUser.orgHierarchy ?? null,
+      bambooRoster: rosterFromOrgResolution(orgForScope),
     });
-  }, [data, org, currentUser.person.role, surveyData]);
+  }, [data, org, currentUser.person.role, currentUser.orgHierarchy, surveyData]);
 
   const deliveryRows = useMemo(() => {
     if (!model) return [];

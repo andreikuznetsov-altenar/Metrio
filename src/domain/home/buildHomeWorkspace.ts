@@ -78,11 +78,15 @@ export interface BuildHomeWorkspaceInput {
 export function resolveHomeRoleVariant(
   role: UserRole,
   organizationModel: OrganizationOverviewModel | null,
+  orgRole?: import("../organization/orgRole").OrgRole | "unresolved",
 ): HomeRoleVariant {
-  if (role === "director" && organizationModel?.scope.mode === "organization") {
+  if (
+    orgRole === "manager_of_managers" ||
+    (role === "director" && organizationModel?.scope.mode === "organization")
+  ) {
     return "director";
   }
-  if (role === "lead" || role === "director") {
+  if (orgRole === "leaf_manager" || role === "lead" || role === "director") {
     return "manager";
   }
   return "employee";

@@ -28,6 +28,8 @@ import { buildDiagnosticsSummaryText } from "../../platform/observability/diagno
 import type { AppPreferences } from "../../platform/preferences";
 import { openLogsFolder } from "../../platform/logger";
 import { runWorkflowCapacityAuditFromPerformanceFetch } from "../../domain/workflows/workflowCapacityAudit";
+import { resolveOrgHierarchyScope } from "../../domain/organization/orgRole";
+import { formatOrgHierarchyDiagnostics } from "../../domain/organization/orgDiagnostics";
 
 export function DiagnosticsSettingsPanel({
   prefs,
@@ -65,6 +67,15 @@ export function DiagnosticsSettingsPanel({
   useEffect(() => {
     void runChecks();
   }, [runChecks]);
+
+  const orgHierarchyDiagnostics = useMemo(() => {
+    if (!prefs.teamDetection?.ok) {
+      return "Current org role: unresolved\n";
+    }
+    return formatOrgHierarchyDiagnostics(
+      resolveOrgHierarchyScope(prefs.teamDetection),
+    );
+  }, [prefs.teamDetection]);
 
   const summaryText = useMemo(
     () =>
@@ -195,6 +206,23 @@ export function DiagnosticsSettingsPanel({
             />
           </div>
         </div>
+      </section>
+
+      <section className="diagnostics-section" aria-labelledby="diagnostics-org-role-title">
+        <h4 id="diagnostics-org-role-title" className="diagnostics-section__title">
+          Organization role
+        </h4>
+        <p className="settings-field__hint">
+          Read-only reporting-graph classification (not derived from job title).
+        </p>
+        <textarea
+          className="diagnostics-audit-output"
+          readOnly
+          rows={10}
+          value={orgHierarchyDiagnostics}
+          data-testid="diagnostics-org-role-output"
+          aria-label="Organization role diagnostics"
+        />
       </section>
 
       <section className="diagnostics-section" aria-labelledby="diagnostics-workflow-audit-title">

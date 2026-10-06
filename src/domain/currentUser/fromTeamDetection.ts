@@ -1,12 +1,25 @@
 import type { CurrentUser, UserRole } from '../types';
 import type { TeamDetectionResult } from '../../services/bamboo/teamDetection';
 import { resolveTeamScope } from '../../services/bamboo/teamScope';
+import {
+  resolveOrgHierarchyScope,
+  resolveOrgRole,
+} from '../organization/orgRole';
 
-function inferManagerRole(jobTitle: string): UserRole {
-  if (/\bdirector\b/i.test(jobTitle)) {
-    return 'director';
+export function mapOrgRoleToPresentationRole(
+  orgRole: ReturnType<typeof resolveOrgRole>,
+): UserRole {
+  if (!orgRole.ok) {
+    return 'employee';
   }
-  return 'lead';
+  switch (orgRole.role) {
+    case 'manager_of_managers':
+      return 'director';
+    case 'leaf_manager':
+      return 'lead';
+    default:
+      return 'employee';
+  }
 }
 
 /** Builds the signed-in user from Bamboo org resolution stored in preferences. */
@@ -22,10 +35,9 @@ export function buildCurrentUserFromTeamDetection(
     return null;
   }
 
-  const role: UserRole =
-    scope.mode === 'manager'
-      ? inferManagerRole(scope.self.jobTitle)
-      : 'employee';
+  const orgRoleState = resolveOrgRole(team);
+  const orgHierarchy = resolveOrgHierarchyScope(team);
+  const role = mapOrgRoleToPresentationRole(orgRoleState);
 
   const person = {
     id: scope.self.id,
@@ -33,10 +45,14 @@ export function buildCurrentUserFromTeamDetection(
     role,
   };
 
+  const orgRole = orgRoleState.ok ? orgRoleState.role : 'unresolved';
+
   if (scope.mode !== 'manager') {
     return {
       person,
       jobTitle: scope.self.jobTitle?.trim() || undefined,
+      orgRole,
+      orgHierarchy,
     };
   }
 
@@ -51,5 +67,7 @@ export function buildCurrentUserFromTeamDetection(
       leadId: scope.self.id,
       directReportIds,
     },
+    orgRole,
+    orgHierarchy,
   };
 }

@@ -11,6 +11,7 @@ import {
 import { isManagerRole } from "../domain/performance";
 import type { AppRoute } from "../domain/types";
 import { isFeedbackEnabled } from "./featureGates";
+import { resolveOrgFeatureAccess } from "../domain/organization/orgFeatureAccess";
 import { FeedbackPage } from "../pages/FeedbackPage";
 import { PerformancePage } from "../pages/PerformancePage";
 import { HomePage } from "../pages/home/HomePage";
@@ -179,13 +180,17 @@ function AppLayoutShell({
   showEmployeePerformance,
 }: AppLayoutShellProps) {
   const companyConfig = useOptionalCompanyConfig();
-  const feedbackEnabled = isFeedbackEnabled(companyConfig?.effective.features);
+  const { currentUser } = useCurrentUser();
+  const feedbackFeatureOn = isFeedbackEnabled(companyConfig?.effective.features);
+  const orgFeatureAccess = resolveOrgFeatureAccess(
+    currentUser.orgRole ?? "unresolved",
+  );
+  const feedbackEnabled = feedbackFeatureOn && orgFeatureAccess.showFeedbackTab;
   const { resetConnection, invalidateSession } = useConnectionGate();
   const { refresh, performanceControlsDisabled, data } = usePerformanceData();
   const performanceExport = usePerformanceExport();
   const workGraph = useWorkGraph();
   const { preference, setPreference } = useTheme();
-  const { currentUser } = useCurrentUser();
   const openAboutSettings = useCallback(() => {
     setSettingsOpen(true);
     setSettingsSection("company-app");

@@ -14,6 +14,12 @@ import {
   newStarterAggregate,
 } from "./buildOrganizationSignals";
 import { groupPersonsByTeam, type TeamGroup } from "./teamGrouping";
+import {
+  buildLeadershipBranchRow,
+  groupPersonsByLeadershipBranch,
+} from "./leadershipBranches";
+import type { OrgHierarchyScope } from "./orgRole";
+import type { ResolvedEmployee } from "../../services/bamboo/orgResolver";
 import { buildDirectorTeamCapacity } from "../availability/teamAvailabilityContext";
 import type {
   OrganizationOverviewModel,
@@ -176,6 +182,8 @@ export function buildOrganizationModel(input: {
   params: ReportParams;
   scope: AuthorizedPeopleScope;
   feedback: FeedbackActionSummary;
+  orgHierarchy?: OrgHierarchyScope | null;
+  bambooRoster?: ResolvedEmployee[];
 }): OrganizationOverviewModel {
   const persons = input.snapshot.persons.filter((person) =>
     input.scope.personIds.includes(person.id),
@@ -184,8 +192,31 @@ export function buildOrganizationModel(input: {
     { ...input.snapshot, persons },
     input.params,
   );
-  const teams = groupPersonsByTeam(persons);
-  const teamRows = teams.map((team) => buildTeamRow(team, deliveryRisk));
+  const useLeadershipBranches =
+    input.orgHierarchy?.role === "manager_of_managers" &&
+    input.orgHierarchy.topLevelManagerBranches.length > 0;
+
+  const teams: TeamGroup[] = useLeadershipBranches
+    ? groupPersonsByLeadershipBranch({
+        branches: input.orgHierarchy!.topLevelManagerBranches,
+        roster: input.bambooRoster ?? [],
+        snapshotPersons: persons,
+      }).map((branch) => ({
+        teamId: branch.branchId,
+        teamName: branch.leaderName,
+        persons: branch.persons,
+      }))
+    : groupPersonsByTeam(persons);
+
+  const teamRows = useLeadershipBranches
+    ? groupPersonsByLeadershipBranch({
+        branches: input.orgHierarchy!.topLevelManagerBranches,
+        roster: input.bambooRoster ?? [],
+        snapshotPersons: persons,
+      }).map((branch) =>
+        buildLeadershipBranchRow(branch, deliveryRisk),
+      )
+    : teams.map((team) => buildTeamRow(team, deliveryRisk));
   const teamsNeedingAttention = [...teamRows]
     .filter((row) => row.attentionCount > 0)
     .sort((a, b) => a.attentionSeverity - b.attentionSeverity || b.attentionCount - a.attentionCount);

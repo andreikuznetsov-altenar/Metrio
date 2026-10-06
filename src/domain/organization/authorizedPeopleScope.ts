@@ -2,6 +2,10 @@ import type { OrgResolutionResult, ResolvedEmployee } from "../../services/bambo
 import { resolveTeamScope } from "../../services/bamboo/teamScope";
 import type { UserRole } from "../types";
 import { readExplicitOrganizationPersonIds } from "../../config/organizationAccess";
+import {
+  resolveOrgHierarchyScope,
+  type OrgHierarchyScope,
+} from "./orgRole";
 
 export type AuthorizedScopeMode = "self" | "direct_reports" | "organization";
 
@@ -51,6 +55,7 @@ export function resolveAuthorizedPeopleScope(
   org: OrgResolutionResult,
   presentationRole: UserRole,
   explicitPersonIds: string[] = readExplicitOrganizationPersonIds(),
+  hierarchy: OrgHierarchyScope | null = resolveOrgHierarchyScope(org),
 ): AuthorizedPeopleScope {
   const teamScope = resolveTeamScope(org);
   if (!teamScope) {
@@ -66,6 +71,29 @@ export function resolveAuthorizedPeopleScope(
   }
 
   const directIds = teamScope.memberIds;
+
+  if (hierarchy?.role === "manager_of_managers") {
+    const graphIds = hierarchy.descendantIds.length
+      ? hierarchy.descendantIds
+      : directIds;
+    if (explicitPersonIds.length > 0) {
+      const expanded = resolveExplicitOrgPersonIds(org, explicitPersonIds);
+      const personIds =
+        expanded.length > 0
+          ? [...new Set([...graphIds, ...expanded])]
+          : graphIds;
+      return {
+        mode: "organization",
+        personIds,
+        source: expanded.length > 0 ? "explicit_config" : "authorized_org",
+      };
+    }
+    return {
+      mode: "organization",
+      personIds: [...new Set(graphIds)],
+      source: "authorized_org",
+    };
+  }
 
   if (
     presentationRole === "director" &&
@@ -111,12 +139,15 @@ export function canAccessOrganizationScope(
 
 /** UI routing only — never grants extra people beyond `resolveAuthorizedPeopleScope`. */
 export function presentationRoleFromOrg(org: OrgResolutionResult): UserRole {
-  const scope = resolveTeamScope(org);
-  if (!scope || scope.mode !== "manager") {
+  const hierarchy = resolveOrgHierarchyScope(org);
+  if (!hierarchy) {
     return "employee";
   }
-  if (/\bdirector\b/i.test(scope.self.jobTitle || "")) {
+  if (hierarchy.role === "manager_of_managers") {
     return "director";
   }
-  return "lead";
+  if (hierarchy.role === "leaf_manager") {
+    return "lead";
+  }
+  return "employee";
 }

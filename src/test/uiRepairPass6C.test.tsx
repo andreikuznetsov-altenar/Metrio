@@ -22,8 +22,9 @@ vi.mock("../app/FeedbackTeamProvider", () => ({
 vi.mock("../app/CurrentUserContext", () => ({
   useCurrentUser: () => ({
     currentUser: {
-      person: { role: "lead" },
-      team: { mode: "team" as const },
+      person: { id: "lead-1", name: "Lead", role: "lead" },
+      orgRole: "leaf_manager",
+      team: { leadId: "lead-1", directReportIds: ["rep-1"] },
     },
   }),
 }));

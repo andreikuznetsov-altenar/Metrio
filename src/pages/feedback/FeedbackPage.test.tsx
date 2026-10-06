@@ -61,7 +61,22 @@ vi.mock('../../app/FeedbackTeamProvider', () => ({
 
 vi.mock('../../app/feedbackSurveyStore', () => ({
   useFeedbackSurveyStore: () => surveyStoreState,
-  getSurveyMetrics: () => null,
+  getSurveyMetrics: () => ({
+    respondentCount: 0,
+    overallStatus: 'neutral',
+    scaleQuestions: [],
+    multipleQuestions: [],
+  }),
+}));
+
+const currentUserState = {
+  person: { id: 'lead-1', name: 'Lead', role: 'lead' as const },
+  orgRole: 'leaf_manager' as const,
+  team: { leadId: 'lead-1', directReportIds: ['rep-1'] },
+};
+
+vi.mock('../../app/CurrentUserContext', () => ({
+  useCurrentUser: () => ({ currentUser: currentUserState }),
 }));
 
 
@@ -83,6 +98,8 @@ describe('FeedbackPage', () => {
 
   beforeEach(() => {
     document.documentElement.setAttribute('data-theme', 'light');
+    currentUserState.orgRole = 'leaf_manager';
+    currentUserState.person.role = 'lead';
     appStoreState.prefs = { ...DEFAULT_PREFERENCES };
     appStoreState.teamDetection = { mode: 'team', ok: true, employee: null, fullTeam: [], directReports: [] };
     surveyStoreState.loading = false;
@@ -110,15 +127,17 @@ describe('FeedbackPage', () => {
     expect(container.textContent).toContain('Setup instructions');
   });
 
-  it('shows team-only message outside team mode', async () => {
+  it('shows personal results outside team survey mode', async () => {
     appStoreState.teamDetection = { mode: 'personal', ok: true, employee: null, fullTeam: [], directReports: [] };
+    currentUserState.orgRole = 'individual_contributor';
+    currentUserState.person.role = 'employee';
     act(() => {
       root.render(createElement(ToastProvider, null, createElement(FeedbackPage)));
     });
     await act(async () => {
       await Promise.resolve();
     });
-    expect(container.textContent).toContain('Feedback is available to team leads');
+    expect(container.textContent).toContain('Results');
   });
 
   it('shows survey tabs when Google forms are connected', async () => {
