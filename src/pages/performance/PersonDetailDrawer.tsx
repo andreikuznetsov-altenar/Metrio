@@ -14,7 +14,6 @@ import {
   type PersonDrawerTab,
 } from "../../app/performanceAnalyticsContext";
 import { PersonBriefDrawerPanel } from "./PersonBriefDrawer";
-import type { AnalyticsEvidenceIssue } from "../../domain/analytics/analyticsEvidenceTypes";
 import type { WorkHistoryRow } from "../../domain/performance";
 import {
   formatWorkHistoryGroupLabel,
@@ -24,7 +23,6 @@ import { groupAttentionSignals } from "./groupAttentionSignals";
 import { AttentionSignalsTable } from "./AttentionSignalsTable";
 import { resolveJiraBaseUrl } from "../../config/product";
 import { loadPreferences } from "../../platform/preferences";
-import { AnalyticsIssueRow } from "./AnalyticsIssueRow";
 import { PersonWorkRow } from "./PersonWorkRow";
 import { PersonIdentityHeader } from "./PersonIdentityHeader";
 import { PersonPerformanceMetrics } from "./PersonPerformanceMetrics";
@@ -59,20 +57,15 @@ function rowMatchesFilter(row: WorkHistoryRow, filter: HistoryFilter): boolean {
   return /rework/i.test(row.outcome);
 }
 
-function historyRowToIssue(
-  row: WorkHistoryRow,
-  personId: string,
-  personName: string,
-): AnalyticsEvidenceIssue {
+function historyRowToWorkItem(row: WorkHistoryRow): import("../../domain/analytics/personAnalyticsWorkspace").PersonWorkRowData {
+  const firstPass = /first pass/i.test(row.outcome);
   return {
-    issueKey: row.key,
+    key: row.key,
     title: row.title,
-    personId,
-    personName,
-    projectKey: row.project,
-    outcome: /first pass/i.test(row.outcome) ? "first_pass" : "rework",
-    status: row.completedOn,
-    cycleLabel: row.cycle,
+    status: row.outcome,
+    stageAge: row.completedOn,
+    healthVariant: firstPass ? "success" : "warning",
+    footMeta: `${row.completedOn} · ${row.cycle}`,
   };
 }
 
@@ -84,7 +77,8 @@ export function PersonDetailDrawer({
   onClose,
   onClosed,
 }: PersonDetailDrawerProps) {
-  const { viewModels } = usePerformanceData();
+  const { viewModels, data: performanceData } = usePerformanceData();
+  const teamPersons = performanceData?.teamSnapshot.persons ?? [];
   const { currentUser } = useCurrentUser();
   const analytics = useOptionalPerformanceAnalytics();
   const person = viewModels?.getPerson(personId);
@@ -271,6 +265,7 @@ export function PersonDetailDrawer({
               <AttentionSignalsTable
                 groups={groupedAttention}
                 jiraBaseUrl={jiraBaseUrl}
+                persons={teamPersons}
               />
             )}
           </div>
@@ -355,19 +350,12 @@ export function PersonDetailDrawer({
                     <p className="performance-subsection__summary">
                       {formatWorkHistoryGroupSummary(group)}
                     </p>
-                    <div className="person-detail-drawer__history-list">
+                    <div className="person-detail-drawer__work-list">
                       {groupRows.map(({ row }) => (
-                        <AnalyticsIssueRow
+                        <PersonWorkRow
                           key={`${group.label}-${row.key}`}
-                          issue={historyRowToIssue(
-                            row,
-                            workspace.personId,
-                            workspace.personName,
-                          )}
-                          showOutcome
-                          hidePerson
-                          variant="card"
-                          jiraAction="secondary-button"
+                          item={historyRowToWorkItem(row)}
+                          jiraBaseUrl={jiraBaseUrl}
                         />
                       ))}
                     </div>

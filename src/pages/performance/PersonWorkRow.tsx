@@ -63,6 +63,7 @@ export function PersonWorkRow({
   const attentionBadge = item.attentionLabel ? (
     <Badge variant={item.healthVariant}>{item.attentionLabel}</Badge>
   ) : null;
+  const footPrimary = item.footMeta ?? stageAgeLabel(item);
 
   const openJira = () => {
     if (jiraBaseUrl) {
@@ -92,7 +93,7 @@ export function PersonWorkRow({
             {item.title}
           </div>
           <div className="performance-work-row__meta person-work-row__foot">
-            <span>{stageAgeLabel(item)}</span>
+            <span>{footPrimary}</span>
             {knowledgeLinks?.length ? (
               <KnowledgePopover issueKey={item.key} links={knowledgeLinks} />
             ) : null}
@@ -118,7 +119,7 @@ export function PersonWorkRow({
       <h4 className="person-work-card__title" title={item.title}>{item.title}</h4>
       <div className="person-work-card__foot">
         <div className="person-work-card__meta">
-          <span>{stageAgeLabel(item)}</span>
+          <span>{footPrimary}</span>
           {attentionBadge}
           {knowledgeLinks?.length ? (
             <KnowledgePopover issueKey={item.key} links={knowledgeLinks} />

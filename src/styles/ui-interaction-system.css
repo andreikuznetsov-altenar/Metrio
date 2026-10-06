@@ -12,9 +12,6 @@
 .metrio-field:focus-visible,
 .input:focus-visible,
 .textarea:focus-visible,
-.select-trigger:focus-visible,
-.metrio-date-picker__trigger:focus-visible,
-.metrio-date-picker__input:focus-visible,
 .settings-panel textarea:focus-visible,
 .settings-panel .input:focus-visible {
   outline: none;
@@ -24,13 +21,21 @@
   padding-inline: calc(var(--space-3) - 1px);
 }
 
+.select-trigger:focus-visible,
+.metrio-date-picker__trigger:focus-visible,
+.metrio-date-picker__input:focus-visible {
+  outline: none;
+  box-shadow: none;
+  border-color: var(--color-focus-border);
+  border-width: 1px;
+}
+
 .select-trigger[data-state="open"],
 .metrio-date-picker__trigger[data-state="open"] {
   outline: none;
   box-shadow: none;
   border-color: var(--color-focus-border);
-  border-width: 2px;
-  padding-inline: calc(var(--space-3) - 1px);
+  border-width: 1px;
 }
 
 .input--error:focus-visible,

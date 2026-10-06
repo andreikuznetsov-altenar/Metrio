@@ -22,6 +22,7 @@ import { filterOwnedIssues } from "../domain/people/ownedIssues";
 import { getPerson } from "./people";
 import type { PerformanceFetchResult } from "../services/performance/performanceTypes";
 import { emptyDependencyIndex } from "../domain/dependencies/buildDeliveryDependencyGraph";
+import { readDashboardVisualQueryFlag } from "./dashboardVisualOverrides";
 
 const VISUAL_TEAM_IDS = [
   "person-sam",
@@ -249,6 +250,37 @@ function buildKpiHistory(
   return file;
 }
 
+function withVisualCapacityInsufficientAll(
+  result: PerformanceFetchResult,
+): PerformanceFetchResult {
+  if (!readDashboardVisualQueryFlag("visualCapacityInsufficientAll")) {
+    return result;
+  }
+  const patchPersons = (persons: Person[]) =>
+    persons.map((person) => ({
+      ...person,
+      workload: testWorkload({
+        level: "normal",
+        capacityDataState: "insufficient_history",
+        score: 0,
+        capacityLoadPercent: 0,
+        activeCount: person.workload?.activeCount ?? 0,
+      }),
+    }));
+
+  return {
+    ...result,
+    teamSnapshot: {
+      ...result.teamSnapshot,
+      persons: patchPersons(result.teamSnapshot.persons),
+    },
+    historyTeamSnapshot: {
+      ...result.historyTeamSnapshot,
+      persons: patchPersons(result.historyTeamSnapshot.persons),
+    },
+  };
+}
+
 export function buildVisualPerformanceFetchResult(
   dateRangeKey: DateRangeKey,
   reviewTarget: PerformanceReviewTarget,
@@ -300,7 +332,7 @@ export function buildVisualPerformanceFetchResult(
     },
   ];
 
-  return {
+  return withVisualCapacityInsufficientAll({
     teamSnapshot,
     historyTeamSnapshot: teamSnapshot,
     reportData,
@@ -332,5 +364,5 @@ export function buildVisualPerformanceFetchResult(
     lastUpdatedAt: new Date().toISOString(),
     historicalBootstrapRan: false,
     dependencyIndex: emptyDependencyIndex(),
-  };
+  });
 }

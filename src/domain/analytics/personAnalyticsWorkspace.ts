@@ -69,6 +69,8 @@ export interface PersonWorkRowData {
   healthVariant: BadgeVariant;
   /** First health reason when task needs attention (display only). */
   attentionLabel?: string;
+  /** Overrides default stage-age foot line (e.g. completed work history). */
+  footMeta?: string;
 }
 
 export interface PersonAnalyticsWorkspace {

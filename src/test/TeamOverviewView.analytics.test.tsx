@@ -17,6 +17,12 @@ vi.mock("../app/CurrentUserContext", () => ({
   }),
 }));
 
+vi.mock("../app/PerformanceDataContext", () => ({
+  usePerformanceData: () => ({
+    data: { teamSnapshot: { persons: [] } },
+  }),
+}));
+
 function renderOverview(ui: React.ReactElement) {
   return render(<TooltipProvider>{ui}</TooltipProvider>);
 }
