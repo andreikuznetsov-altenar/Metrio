@@ -15,7 +15,8 @@ describe("UI Repair Pass 13.8B surfaces, drawers, modals", () => {
 
     const drawerCss = read("src/components/Drawer/Drawer.css");
     expect(drawerCss).toMatch(/\.drawer-root__backdrop[\s\S]*--drawer-scrim-color/);
-    expect(drawerCss).toContain("--app-drawer-viewport-top");
+    const shellCss = read("src/components/AppShell/AppShell.css");
+    expect(shellCss).toContain("--app-drawer-viewport-top");
     expect(drawerCss).toMatch(/\.drawer-root__backdrop[\s\S]*opacity:\s*0/);
     expect(drawerCss).toMatch(/\.drawer-root\.is-open \.drawer-root__backdrop[\s\S]*opacity:\s*1/);
   });

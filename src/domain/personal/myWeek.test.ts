@@ -88,6 +88,7 @@ describe('buildMyWeek', () => {
             events: [],
             rangeEvents: [],
             currentStatus: 'In Progress',
+            currentAssigneeCanonical: '1',
           },
         ],
       },

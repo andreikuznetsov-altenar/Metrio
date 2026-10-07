@@ -9,9 +9,9 @@ describe("UI Repair Pass 13.7B side panels and motion", () => {
   it("drawers use soft left shadow token and viewport top inset", () => {
     const drawerCss = read("src/components/Drawer/Drawer.css");
     expect(drawerCss).toContain("box-shadow: var(--drawer-panel-shadow)");
-    expect(drawerCss).toContain("--app-drawer-viewport-top");
 
     const shellCss = read("src/components/AppShell/AppShell.css");
+    expect(shellCss).toContain("--app-drawer-viewport-top");
     expect(shellCss).toContain("--app-side-surface-top");
     expect(shellCss).toMatch(/\.app-shell__header[\s\S]*--z-app-chrome/);
   });

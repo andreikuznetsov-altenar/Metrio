@@ -29,6 +29,7 @@ function issue(key: string, status: string): AuditIssue {
     events: [],
     rangeEvents: [],
     currentStatus: status,
+    currentAssigneeCanonical: "1",
   };
 }
 
