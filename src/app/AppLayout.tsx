@@ -24,6 +24,7 @@ import type { SettingsSection } from "../pages/settings/types";
 import { MetrioAppHeader } from "../shell/MetrioAppHeader";
 import { CommandPalette } from "../shell/CommandPalette";
 import { PersonBriefDrawer } from "../pages/performance/PersonBriefDrawer";
+import { GlobalPersonDetailDrawer } from "./GlobalPersonDetailDrawer";
 import { ProjectCockpitDrawer } from "../pages/project/ProjectCockpitDrawer";
 import { DigestDrawer } from "../pages/digest/DigestDrawer";
 import { DIGEST_OPEN_EVENT } from "../platform/digestNavigation";
@@ -308,19 +309,13 @@ function AppLayoutShell({
     const onRoute = (event: Event) => {
       const route = (event as CustomEvent<AppRoute>).detail;
       if (route === "home" || route === "performance" || route === "feedback") {
-        if (
-          !performanceNavEnabled &&
-          (route === "performance" || route === "feedback")
-        ) {
-          return;
-        }
         setSettingsOpen(false);
         setActiveRoute(route);
       }
     };
     window.addEventListener("metrio-navigate-route", onRoute);
     return () => window.removeEventListener("metrio-navigate-route", onRoute);
-  }, [performanceNavEnabled, setActiveRoute, setSettingsOpen]);
+  }, [setActiveRoute, setSettingsOpen]);
 
   useEffect(() => {
     const onSettings = (event: Event) => {
@@ -563,6 +558,7 @@ function AppLayoutShell({
           surveyManagementEnabled: orgFeatureAccess.canViewSurveyManagement,
         }}
       />
+      <GlobalPersonDetailDrawer activeRoute={activeRoute} />
       <PersonBriefDrawer
         personId={personBriefPersonId}
         open={personBriefPersonId != null}

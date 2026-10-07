@@ -29,6 +29,23 @@ export function readVisualProductRecommendationsOverride(): ProductRecommendatio
   }
 }
 
+export const VISUAL_VIEW_PERSON_RECOMMENDATION: ProductRecommendation[] = [
+  {
+    id: "visual-view-person",
+    severity: "watch",
+    title: "Hand over review work before leave",
+    explanation: "Visual fixture: deterministic View person recommendation for E2E.",
+    actionLabel: "View person",
+    actionKind: "view_person",
+    personId: "person-01",
+    priority: 1,
+  },
+];
+
 export function serializeOpenPerformanceRecommendationForPlaywright(): string {
   return JSON.stringify(VISUAL_OPEN_PERFORMANCE_RECOMMENDATION);
+}
+
+export function serializeViewPersonRecommendationForPlaywright(): string {
+  return JSON.stringify(VISUAL_VIEW_PERSON_RECOMMENDATION);
 }

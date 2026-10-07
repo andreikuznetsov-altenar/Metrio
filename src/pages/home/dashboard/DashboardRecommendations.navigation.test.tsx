@@ -21,4 +21,21 @@ describe("DashboardRecommendations navigation", () => {
     await userEvent.click(screen.getByRole("button", { name: "Open Performance" }));
     expect(onAction).toHaveBeenCalledWith(item);
   });
+
+  it("invokes onAction when View person is clicked", async () => {
+    const onAction = vi.fn();
+    const item: ProductRecommendation = {
+      id: "leave-handover",
+      severity: "watch",
+      title: "Hand over review work",
+      explanation: "Reassign before leave.",
+      actionLabel: "View person",
+      actionKind: "view_person",
+      personId: "person-01",
+      priority: 3,
+    };
+    render(<DashboardRecommendations items={[item]} onAction={onAction} />);
+    await userEvent.click(screen.getByRole("button", { name: "View person" }));
+    expect(onAction).toHaveBeenCalledWith(item);
+  });
 });

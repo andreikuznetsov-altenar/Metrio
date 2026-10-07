@@ -24,6 +24,9 @@ test.describe("Open Performance recommendation", () => {
       .getByTestId("dashboard-recommendations")
       .getByRole("button", { name: /^open performance$/i });
     await expect(cta).toBeVisible({ timeout: 15_000 });
+    await cta.scrollIntoViewIfNeeded();
+    await expect(cta).toBeEnabled();
+    await cta.click({ trial: true });
     await cta.click();
     await expect(page.getByTestId("performance-dashboard-ready")).toBeVisible({
       timeout: 30_000,
