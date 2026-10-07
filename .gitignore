@@ -34,6 +34,7 @@ CertificateSigningRequest.*
 *.key
 metrio-updater
 release-artifacts/
+artifacts/pass13-role-review/
 backend/node_modules/
 backend/.data/
 
