@@ -2,6 +2,7 @@ import type { ActionItem, ActionTarget } from "../domain/actions/actionTypes";
 import { openExternalUrl } from "../platform/openExternal";
 
 import type { TeamPerformanceView } from "../domain/performance";
+import { writePersistedTeamPerformanceView } from "./performanceViewPersistence";
 
 export function dispatchPerformanceTab(
   view: TeamPerformanceView,
@@ -13,6 +14,7 @@ export function dispatchPerformanceTab(
 
 /** Navigate to Performance and activate a team subnav tab after the route mounts. */
 export function navigatePerformanceView(view: TeamPerformanceView): void {
+  writePersistedTeamPerformanceView(view);
   dispatchAppRoute("performance");
   window.setTimeout(() => {
     dispatchPerformanceTab(view);

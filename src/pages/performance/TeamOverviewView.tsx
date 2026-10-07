@@ -6,7 +6,11 @@ import { GroupedIssuePreview } from "../../components/GroupedIssuePreview/Groupe
 import { usePerformanceData } from "../../app/PerformanceDataContext";
 import { useCurrentUser } from "../../app/CurrentUserContext";
 import { useFeedbackSurveyStore } from "../../app/feedbackSurveyStore";
-import { actionOpenLabel, navigateActionTarget } from "../../app/actionNavigation";
+import {
+  actionOpenLabel,
+  navigateActionTarget,
+  navigatePerformanceView,
+} from "../../app/actionNavigation";
 import { navigateOpenTeamWorkloadSection } from "../../domain/home/attentionNavigation";
 import { buildDirectorTeamActions } from "../../domain/actions/buildOrganizationActions";
 import { buildTeamActions } from "../../domain/actions/buildTeamActions";
@@ -281,9 +285,7 @@ export function TeamOverviewView({
       return;
     }
     if (rec.actionKind === "open_performance") {
-      window.dispatchEvent(
-        new CustomEvent("metrio-open-performance-tab", { detail: "overview" }),
-      );
+      navigatePerformanceView("overview");
     }
   };
 

@@ -28,6 +28,7 @@ import { DashboardTeamBriefCard } from "./DashboardTeamBriefCard";
 import {
   readDashboardVisualQueryFlag,
 } from "../../../fixtures/dashboardVisualOverrides";
+import { navigateOpenTeamOverview } from "../../../app/ctaRouting";
 import { buildProductRecommendations } from "../../../domain/recommendations/buildProductRecommendations";
 import type { ProductRecommendation } from "../../../domain/recommendations/buildProductRecommendations";
 import { DashboardRecommendations } from "./DashboardRecommendations";
@@ -156,7 +157,7 @@ export function ManagerExecutiveDashboard({
       return;
     }
     if (rec.actionKind === "open_performance") {
-      onOpenTeamOverview();
+      navigateOpenTeamOverview();
     }
   };
 
