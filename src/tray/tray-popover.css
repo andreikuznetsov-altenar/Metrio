@@ -1,6 +1,11 @@
 :root {
   color-scheme: light;
-  --tray-window-shadow-inset: 14px;
+  --tray-popover-shadow-offset-y: 12px;
+  --tray-popover-shadow-blur: 36px;
+  /* Transparent host padding = drop-shadow(0 offset-y blur) extent */
+  --tray-host-shadow-top: calc(var(--tray-popover-shadow-blur) - var(--tray-popover-shadow-offset-y));
+  --tray-host-shadow-bottom: calc(var(--tray-popover-shadow-offset-y) + var(--tray-popover-shadow-blur));
+  --tray-host-shadow-inline: 28px;
   --tray-popover-radius: 24px;
   --tray-popover-width: 256px;
   --tray-popover-padding-x: var(--space-3, 12px);

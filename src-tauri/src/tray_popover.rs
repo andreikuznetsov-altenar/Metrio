@@ -5,11 +5,22 @@ use tauri::{
     Size, WebviewUrl, WebviewWindowBuilder,
 };
 
-const POPOVER_FALLBACK_WIDTH: f64 = 284.0;
-const POPOVER_FALLBACK_HEIGHT: f64 = 300.0;
-const ARROW_GAP: f64 = 6.0;
+// Keep in sync with src/tray/trayPopoverGeometry.ts and tray-popover.css
+const POPOVER_FALLBACK_WIDTH: f64 = 312.0;
+const POPOVER_FALLBACK_HEIGHT: f64 = 360.0;
+const TRAY_ARROW_TIP_GAP: f64 = 4.0;
+const SHADOW_INSET_TOP: f64 = 24.0;
+#[allow(dead_code)]
+const SHADOW_INSET_BOTTOM: f64 = 48.0;
+#[allow(dead_code)]
+const SHADOW_INSET_INLINE: f64 = 28.0;
 
-static TRAY_ANCHOR_CENTER_X: Mutex<Option<f64>> = Mutex::new(None);
+struct TrayAnchor {
+    center_x: f64,
+    tray_bottom_y: f64,
+}
+
+static TRAY_ANCHOR: Mutex<Option<TrayAnchor>> = Mutex::new(None);
 static POPOVER_LOGICAL_WIDTH: Mutex<f64> = Mutex::new(POPOVER_FALLBACK_WIDTH);
 
 pub fn ensure_tray_popover(app: &AppHandle) -> Result<tauri::WebviewWindow, String> {
@@ -42,19 +53,50 @@ fn popover_width() -> f64 {
         .unwrap_or(POPOVER_FALLBACK_WIDTH)
 }
 
-fn clamp_popover_x(center_x: f64, monitor_x: f64, monitor_width: f64, width: f64) -> f64 {
-    let half = width / 2.0;
+fn clamp_host_x(center_x: f64, monitor_x: f64, monitor_width: f64, host_width: f64) -> f64 {
+    let half = host_width / 2.0;
     let min_x = monitor_x + 8.0;
-    let max_x = monitor_x + monitor_width - width - 8.0;
+    let max_x = monitor_x + monitor_width - host_width - 8.0;
     let x = center_x - half;
     x.clamp(min_x, max_x.max(min_x))
 }
 
+fn clamp_host_y(
+    desired_y: f64,
+    host_height: f64,
+    monitor_y: f64,
+    monitor_height: f64,
+) -> f64 {
+    let min_y = monitor_y;
+    let max_y = monitor_y + monitor_height - host_height;
+    desired_y.clamp(min_y, max_y.max(min_y))
+}
+
+fn host_position_for_anchor(
+    anchor: &TrayAnchor,
+    host_width: f64,
+    host_height: f64,
+    monitor_x: f64,
+    monitor_y: f64,
+    monitor_width: f64,
+    monitor_height: f64,
+) -> LogicalPosition<f64> {
+    let arrow_tip_y = anchor.tray_bottom_y + TRAY_ARROW_TIP_GAP;
+    let y = clamp_host_y(
+        arrow_tip_y - SHADOW_INSET_TOP,
+        host_height,
+        monitor_y,
+        monitor_height,
+    );
+    let x = clamp_host_x(anchor.center_x, monitor_x, monitor_width, host_width);
+    LogicalPosition { x, y }
+}
+
 fn reposition_under_tray(app: &AppHandle, window: &tauri::WebviewWindow) -> Result<(), String> {
-    let anchor = TRAY_ANCHOR_CENTER_X
+    let anchor = TRAY_ANCHOR
         .lock()
         .map_err(|_| "tray anchor lock poisoned".to_string())?;
-    let Some(center_x) = *anchor else {
+    let Some(anchor) = anchor.as_ref() else {
         return Ok(());
     };
 
@@ -72,22 +114,28 @@ fn reposition_under_tray(app: &AppHandle, window: &tauri::WebviewWindow) -> Resu
     let pos = monitor.position();
     let monitor_pos = pos.to_logical::<f64>(scale);
     let monitor_size = size.to_logical::<f64>(scale);
-    let width = popover_width();
-    let x = clamp_popover_x(center_x, monitor_pos.x, monitor_size.width, width);
-    let current_y = window
-        .outer_position()
+    let host_size = window
+        .outer_size()
         .map_err(|e| e.to_string())?
-        .to_logical::<f64>(scale)
-        .y;
+        .to_logical::<f64>(scale);
+    let position = host_position_for_anchor(
+        anchor,
+        host_size.width,
+        host_size.height,
+        monitor_pos.x,
+        monitor_pos.y,
+        monitor_size.width,
+        monitor_size.height,
+    );
     window
-        .set_position(Position::Logical(LogicalPosition { x, y: current_y }))
+        .set_position(Position::Logical(position))
         .map_err(|e| e.to_string())?;
     Ok(())
 }
 
 pub fn tray_popover_resize(app: &AppHandle, width: f64, height: f64) -> Result<(), String> {
-    let width = width.max(220.0).min(360.0);
-    let height = height.max(180.0).min(480.0);
+    let width = width.max(220.0).min(420.0);
+    let height = height.max(180.0).min(560.0);
     if let Ok(mut stored) = POPOVER_LOGICAL_WIDTH.lock() {
         *stored = width;
     }
@@ -120,21 +168,37 @@ pub fn toggle_tray_popover(app: &AppHandle, tray_rect: Option<Rect>) -> Result<(
             let tray_pos = rect.position.to_logical::<f64>(scale);
             let tray_size = rect.size.to_logical::<f64>(scale);
             let tray_center_x = tray_pos.x + tray_size.width / 2.0;
-            let tray_bottom_y = tray_pos.y + tray_size.height + ARROW_GAP;
-            if let Ok(mut anchor) = TRAY_ANCHOR_CENTER_X.lock() {
-                *anchor = Some(tray_center_x);
+            let tray_bottom_y = tray_pos.y + tray_size.height;
+            if let Ok(mut anchor) = TRAY_ANCHOR.lock() {
+                *anchor = Some(TrayAnchor {
+                    center_x: tray_center_x,
+                    tray_bottom_y,
+                });
             }
             let monitor_pos = pos.to_logical::<f64>(scale);
             let monitor_size = size.to_logical::<f64>(scale);
-            let width = popover_width();
-            let x = clamp_popover_x(tray_center_x, monitor_pos.x, monitor_size.width, width);
-            let y = tray_bottom_y;
+            let host_size = window
+                .outer_size()
+                .map_err(|e| e.to_string())?
+                .to_logical::<f64>(scale);
+            let position = host_position_for_anchor(
+                &TrayAnchor {
+                    center_x: tray_center_x,
+                    tray_bottom_y,
+                },
+                host_size.width.max(popover_width()),
+                host_size.height.max(POPOVER_FALLBACK_HEIGHT),
+                monitor_pos.x,
+                monitor_pos.y,
+                monitor_size.width,
+                monitor_size.height,
+            );
             window
-                .set_position(Position::Logical(LogicalPosition { x, y }))
+                .set_position(Position::Logical(position))
                 .map_err(|e| e.to_string())?;
         }
         (Some(monitor), None) => {
-            if let Ok(mut anchor) = TRAY_ANCHOR_CENTER_X.lock() {
+            if let Ok(mut anchor) = TRAY_ANCHOR.lock() {
                 *anchor = None;
             }
             let scale = monitor.scale_factor();
@@ -147,7 +211,7 @@ pub fn toggle_tray_popover(app: &AppHandle, tray_rect: Option<Rect>) -> Result<(
                 .map_err(|e| e.to_string())?;
         }
         (None, _) => {
-            if let Ok(mut anchor) = TRAY_ANCHOR_CENTER_X.lock() {
+            if let Ok(mut anchor) = TRAY_ANCHOR.lock() {
                 *anchor = None;
             }
             window
@@ -165,5 +229,39 @@ pub fn toggle_tray_popover(app: &AppHandle, tray_rect: Option<Rect>) -> Result<(
 pub fn hide_tray_popover(app: &AppHandle) {
     if let Some(window) = app.get_webview_window("tray-popover") {
         let _ = window.hide();
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn arrow_tip_is_four_px_below_tray_bottom() {
+        let anchor = TrayAnchor {
+            center_x: 100.0,
+            tray_bottom_y: 30.0,
+        };
+        let pos = host_position_for_anchor(&anchor, 300.0, 320.0, 0.0, 0.0, 1920.0, 1080.0);
+        let arrow_tip_y = pos.y + SHADOW_INSET_TOP;
+        assert_eq!(arrow_tip_y - anchor.tray_bottom_y, TRAY_ARROW_TIP_GAP);
+    }
+
+    #[test]
+    fn host_center_tracks_tray_icon() {
+        let anchor = TrayAnchor {
+            center_x: 500.0,
+            tray_bottom_y: 22.0,
+        };
+        let width = 312.0;
+        let pos = host_position_for_anchor(&anchor, width, 320.0, 0.0, 0.0, 1920.0, 1080.0);
+        assert_eq!(pos.x + width / 2.0, anchor.center_x);
+    }
+
+    #[test]
+    fn shadow_insets_match_css_contract() {
+        assert_eq!(SHADOW_INSET_TOP, 24.0);
+        assert_eq!(SHADOW_INSET_BOTTOM, 48.0);
+        assert_eq!(SHADOW_INSET_INLINE, 28.0);
     }
 }

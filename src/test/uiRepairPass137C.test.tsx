@@ -32,8 +32,8 @@ describe("UI Repair Pass 13.7C tray popover polish", () => {
 
   it("preserves tray popover window sizing hook for anchoring", () => {
     const rust = read("src-tauri/src/tray_popover.rs");
-    expect(rust).toContain("ARROW_GAP");
-    expect(rust).toContain("clamp_popover_x");
-    expect(rust).toContain("tray_center_x");
+    expect(rust).toContain("TRAY_ARROW_TIP_GAP");
+    expect(rust).toContain("clamp_host_x");
+    expect(rust).toContain("host_position_for_anchor");
   });
 });

@@ -18,8 +18,12 @@ body,
   overflow: visible;
 }
 
+#root {
+  overflow: visible;
+}
+
 body {
-  padding: var(--tray-window-shadow-inset, 14px);
+  padding: var(--tray-host-shadow-top) var(--tray-host-shadow-inline) var(--tray-host-shadow-bottom);
   font-family: var(
     --font-sans,
     system-ui,

@@ -40,8 +40,8 @@ describe("UI Repair Pass 13.8C tray popover rewrite", () => {
     expect(rust).toContain(".transparent(true)");
     expect(rust).toContain(".shadow(false)");
     expect(rust).toContain("tray_popover_resize");
-    expect(rust).toContain("clamp_popover_x");
-    expect(rust).toContain("tray_center_x");
+    expect(rust).toContain("clamp_host_x");
+    expect(rust).toContain("host_position_for_anchor");
   });
 
   it("reports measured popover size to native layer", () => {
