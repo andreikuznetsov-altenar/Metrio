@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   buildTeamWorkloadDonutSegments,
   teamWorkloadDonutMetricLabel,
+  workloadDonutSupportingMetric,
   workloadDonutWeight,
 } from "./buildTeamWorkloadDonutSegments";
 import type { WorkloadRow } from "../performance";
@@ -25,6 +26,11 @@ describe("buildTeamWorkloadDonutSegments", () => {
     expect(workloadDonutWeight(row)).toBe(72.5);
     const segments = buildTeamWorkloadDonutSegments([row]);
     expect(segments[0].detailLabel).toBe("72.5% capacity");
+  });
+
+  it("labels insufficient history in supporting metric copy", () => {
+    const row = base({ capacityDataState: "insufficient_history" });
+    expect(workloadDonutSupportingMetric(row)).toBe("Not enough history");
   });
 
   it("falls back to active work when capacity is insufficient", () => {

@@ -35,6 +35,13 @@ export function buildTeamWorkloadDonutSegments(
   }));
 }
 
+export function workloadDonutSupportingMetric(row: WorkloadRow): string {
+  if (row.capacityDataState === "insufficient_history") {
+    return "Not enough history";
+  }
+  return `${row.activeWork} active · ${row.atRisk} at risk`;
+}
+
 export function teamWorkloadDonutMetricLabel(workload: WorkloadRow[]): string {
   const measured = workload.some(
     (row) => row.capacityDataState === "measured" && row.capacityLoadPercent != null,
