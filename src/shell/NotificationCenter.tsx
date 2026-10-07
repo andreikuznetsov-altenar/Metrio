@@ -277,7 +277,7 @@ export function NotificationCenter({
             onChange={setSourceFilter}
           />
         </div>
-        <div className="notification-center__main">
+        <div className="notification-center__main metrio-scroll metrio-scroll--side-panel">
         {confirmClear ? (
           <div className="notification-center__confirm" role="alertdialog" aria-label="Clear notifications">
             <p className="notification-center__confirm-text">
@@ -308,7 +308,10 @@ export function NotificationCenter({
         ) : null}
 
         {loadError ? (
-          <div className="metrio-placeholder notification-center__error" role="alert">
+          <div
+            className="metrio-placeholder metrio-placeholder--drawer-panel notification-center__error"
+            role="alert"
+          >
             <CircleAlert className="metrio-placeholder__icon" size={24} strokeWidth={1.75} aria-hidden />
             <div className="metrio-placeholder__text">
               <p className="metrio-placeholder__title">Couldn&apos;t load notification history.</p>
@@ -320,7 +323,10 @@ export function NotificationCenter({
             </div>
           </div>
         ) : filtered.length === 0 ? (
-          <div className="metrio-placeholder notification-center__empty" role="status">
+          <div
+            className="metrio-placeholder metrio-placeholder--drawer-panel notification-center__empty"
+            role="status"
+          >
             <CircleAlert className="metrio-placeholder__icon" size={24} strokeWidth={1.75} aria-hidden />
             <div className="metrio-placeholder__text">
               <p className="metrio-placeholder__title">

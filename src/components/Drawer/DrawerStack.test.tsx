@@ -3,7 +3,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { DrawerStack } from "./DrawerStack";
 
 vi.mock("../../styles/motion", () => ({
-  readMotionDrawerMs: () => 0,
+  readMotionDrawerCloseMs: () => 0,
 }));
 
 describe("DrawerStack", () => {

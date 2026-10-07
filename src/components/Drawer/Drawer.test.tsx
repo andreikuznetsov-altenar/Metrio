@@ -4,7 +4,19 @@ import { Drawer } from "./Drawer";
 
 describe("Drawer", () => {
   afterEach(() => {
+    vi.useRealTimers();
     cleanup();
+  });
+
+  it("does not dim the app behind the panel", () => {
+    render(
+      <Drawer open onClose={vi.fn()} ariaLabel="Test drawer">
+        Body
+      </Drawer>,
+    );
+    const backdrop = document.querySelector(".drawer-root__backdrop");
+    expect(backdrop).toBeTruthy();
+    expect(getComputedStyle(backdrop!).backgroundColor).toBe("rgba(0, 0, 0, 0)");
   });
 
   it("applies size variant class for analytics width token", () => {
@@ -34,7 +46,7 @@ describe("Drawer", () => {
     expect(screen.getByRole("dialog")).toBeInTheDocument();
 
     act(() => {
-      vi.advanceTimersByTime(319);
+      vi.advanceTimersByTime(329);
     });
     expect(screen.getByRole("dialog")).toBeInTheDocument();
 

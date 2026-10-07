@@ -20,7 +20,15 @@ export function AppShell({
   const toolbar = pageToolbar ?? pageHeader;
 
   return (
-    <div className="app-shell" data-testid="app-shell">
+    <div
+      className={[
+        "app-shell",
+        toolbar ? "app-shell--page-toolbar" : "",
+      ]
+        .filter(Boolean)
+        .join(" ")}
+      data-testid="app-shell"
+    >
       <header className="app-shell__header">{header}</header>
       {toolbar ? (
         <div className="app-shell__page-toolbar">{toolbar}</div>

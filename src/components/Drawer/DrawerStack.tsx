@@ -1,6 +1,6 @@
 import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { IconButton } from "../IconButton/IconButton";
-import { readMotionDrawerMs } from "../../styles/motion";
+import { readMotionDrawerCloseMs } from "../../styles/motion";
 import type { DrawerSize } from "./Drawer";
 import "./Drawer.css";
 
@@ -73,9 +73,13 @@ export function DrawerStack({
   useEffect(() => {
     if (open) {
       setMounted(true);
-      frameRef.current = window.requestAnimationFrame(() => {
-        setVisible(true);
+      setVisible(false);
+      const frame = window.requestAnimationFrame(() => {
+        frameRef.current = window.requestAnimationFrame(() => {
+          setVisible(true);
+        });
       });
+      frameRef.current = frame;
       return () => {
         if (frameRef.current != null) {
           window.cancelAnimationFrame(frameRef.current);
@@ -93,7 +97,7 @@ export function DrawerStack({
     const timer = window.setTimeout(() => {
       setMounted(false);
       onClosed?.();
-    }, readMotionDrawerMs());
+    }, readMotionDrawerCloseMs());
     return () => window.clearTimeout(timer);
   }, [mounted, onClosed, open]);
 
@@ -179,7 +183,7 @@ export function DrawerStack({
             </IconButton>
           </div>
         </div>
-        <div className="drawer__body metrio-scroll metrio-scroll--overlay">{children}</div>
+        <div className="drawer__body metrio-scroll metrio-scroll--side-panel">{children}</div>
       </aside>
     </div>
   );

@@ -11,8 +11,9 @@ describe("motion tokens", () => {
     expect(css).toContain("--motion-control: 140ms");
     expect(css).toContain("--motion-popover: 160ms");
     expect(css).toContain("--motion-modal: 180ms");
-    expect(css).toContain("--motion-drawer-open: 300ms");
-    expect(css).toContain("--motion-drawer-close: 320ms");
+    expect(css).toContain("--motion-drawer-open: 310ms");
+    expect(css).toContain("--motion-drawer-close: 330ms");
+    expect(css).toContain("--drawer-panel-shadow:");
     expect(css).toContain("--ease-drawer:");
 
     const system = fs.readFileSync(
@@ -36,6 +37,8 @@ describe("layout shell", () => {
     );
     const scrollCss = fs.readFileSync(scrollPath, "utf8");
     expect(scrollCss).toContain(".metrio-scroll");
+    expect(scrollCss).toContain(".metrio-scroll--side-panel");
+    expect(scrollCss).toContain("scrollbar-gutter: stable");
     expect(scrollCss).toContain("overflow-y: auto");
     expect(scrollCss).toContain("overflow-x: hidden");
   });
