@@ -1,5 +1,6 @@
-import { useEffect, useId, useRef, type ReactNode } from "react";
+import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { IconButton } from "../IconButton/IconButton";
+import { readMotionModalMs } from "../../styles/motion";
 import "./Modal.css";
 
 function CloseIcon() {
@@ -35,6 +36,35 @@ export function Modal({
 }: ModalProps) {
   const titleId = useId();
   const panelRef = useRef<HTMLDivElement>(null);
+  const [mounted, setMounted] = useState(open);
+  const [visible, setVisible] = useState(open);
+  const frameRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    if (open) {
+      setMounted(true);
+      frameRef.current = window.requestAnimationFrame(() => {
+        setVisible(true);
+      });
+      return () => {
+        if (frameRef.current != null) {
+          window.cancelAnimationFrame(frameRef.current);
+        }
+      };
+    }
+    setVisible(false);
+    return undefined;
+  }, [open]);
+
+  useEffect(() => {
+    if (!mounted || open) {
+      return;
+    }
+    const timer = window.setTimeout(() => {
+      setMounted(false);
+    }, readMotionModalMs());
+    return () => window.clearTimeout(timer);
+  }, [mounted, open]);
 
   useEffect(() => {
     if (!open) return;
@@ -51,13 +81,15 @@ export function Modal({
   useEffect(() => {
     if (!open) return;
     panelRef.current?.focus();
-  }, [open]);
+  }, [open, visible]);
 
-  if (!open) return null;
+  if (!mounted) return null;
 
   return (
     <div
-      className="metrio-modal-root"
+      className={
+        visible ? "metrio-modal-root metrio-modal-root--open" : "metrio-modal-root"
+      }
       role="presentation"
       onClick={(event) => event.stopPropagation()}
       onPointerDown={(event) => event.stopPropagation()}

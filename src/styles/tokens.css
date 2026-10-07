@@ -59,6 +59,7 @@
   --motion-hover: 120ms;
   --motion-control: 140ms;
   --motion-popover: 160ms;
+  --motion-modal: 180ms;
   --motion-drawer: 300ms;
   --motion-drawer-open: 300ms;
   --motion-drawer-close: 320ms;
