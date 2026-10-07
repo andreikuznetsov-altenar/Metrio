@@ -1,85 +1,80 @@
-import { invoke } from "@tauri-apps/api/core";
-import { buildMyWeek } from "../domain/personal/myWeek";
 import { buildTrayActionSnapshot } from "../domain/tray/buildTrayActionSnapshot";
+import { buildTraySummaryModel } from "../domain/tray/buildTraySummaryModel";
+import type { TraySummaryModel } from "../domain/tray/buildTraySummaryModel";
 import {
-  trayMenuItemsFromSnapshot,
+  trayMenuItemsFromSummary,
   type TrayActionSnapshot,
 } from "../domain/tray/trayActionSnapshot";
-import { vacationTrayLabelForPerson } from "../domain/vacation/vacationTrayLabel";
-import type { Person } from "../domain/people/types";
-import type { ReportParams } from "../domain/jira/types";
+import { countUnreadNotificationEvents } from "./notificationEvents";
+import { pushTraySummaryToNative } from "./traySummaryBridge";
+import { registerTrayContextForUpdate } from "./trayUpdateBridge";
 import {
   markJiraAssignmentRead,
   unreadJiraAssignments,
   type JiraAssignmentState,
 } from "../domain/jira/jiraAssignmentTracking";
-import { bambooEmployeePortalUrl } from "../config/bambooPortal";
-import { JIRA_ASSIGNMENT_CHANGED } from "./jiraAssignmentEvents";
-import {
-  markInboxJiraEventsReadForIssueKey,
-  syncTrayBambooInboxActions,
-} from "./notificationEvents";
 import { loadPreferences, savePreferences } from "./preferences";
-import { registerTrayContextForUpdate } from "./trayUpdateBridge";
+import { markInboxJiraEventsReadForIssueKey } from "./notificationEvents";
+import { JIRA_ASSIGNMENT_CHANGED } from "./jiraAssignmentEvents";
 
 export interface TrayBuildContext {
-  assignmentState: JiraAssignmentState;
-  activeTaskCount: number;
-  bambooActions: TrayActionSnapshot["bambooActions"];
-  upcomingVacation?: TrayActionSnapshot["upcomingVacation"];
-  nextOneOnOne?: TrayActionSnapshot["nextOneOnOne"];
+  summary: TraySummaryModel;
   softwareUpdateAvailable?: boolean;
 }
 
 let lastTrayContext: TrayBuildContext | null = null;
 
-export function trayContextFromSelfPerson(
-  person: Person,
-  params: ReportParams,
-  assignmentState: JiraAssignmentState,
-): TrayBuildContext {
-  const week = buildMyWeek(person, params);
-  const vacationLabel = vacationTrayLabelForPerson(person);
-  return {
-    assignmentState,
-    activeTaskCount: week.summary.currentlyActive,
-    bambooActions: [],
-    upcomingVacation: vacationLabel
-      ? {
-          id: person.id,
-          label: vacationLabel,
-          url: bambooEmployeePortalUrl(),
-        }
-      : undefined,
-  };
+export function getLastTrayBuildContext(): TrayBuildContext | null {
+  return lastTrayContext;
 }
 
-export async function updateTrayActionCenter(
-  snapshot: TrayActionSnapshot,
-): Promise<void> {
-  const menuItems = trayMenuItemsFromSnapshot(snapshot);
-  await invoke("update_tray_snapshot", {
-    snapshot: {
-      tray_title: snapshot.trayTitle ?? null,
-      menu_items: menuItems,
-    },
+export function emptyTraySummary(): TraySummaryModel {
+  return buildTraySummaryModel({
+    role: "employee",
+    openTaskCount: 0,
+    problemTaskCount: 0,
+    indexLabel: "Personal index",
+    indexValue: "—",
+    indexAvailable: true,
+    unreadNotificationCount: countUnreadNotificationEvents(),
   });
-  await invoke("refresh_tray_menu");
 }
 
 export async function pushTrayFromContext(context: TrayBuildContext): Promise<void> {
   lastTrayContext = context;
   registerTrayContextForUpdate(context);
-  syncTrayBambooInboxActions(context.bambooActions);
-  const snapshot = {
-    ...buildTrayActionSnapshot(context),
-    softwareUpdateAvailable: context.softwareUpdateAvailable,
-  };
+  const snapshot: TrayActionSnapshot = buildTrayActionSnapshot(context.summary);
+  const menuItems = trayMenuItemsFromSummary(snapshot.summary);
+  if (context.softwareUpdateAvailable) {
+    const quitIndex = menuItems.findIndex((item) => item.id === "quit");
+    menuItems.splice(quitIndex, 0, {
+      id: "update-available",
+      label: "Update available",
+    });
+  }
   try {
-    await updateTrayActionCenter(snapshot);
+    await pushTraySummaryToNative(snapshot.summary, menuItems);
   } catch {
     // Web / non-Tauri host.
   }
+}
+
+export async function refreshTrayFromLastContext(): Promise<void> {
+  if (!lastTrayContext) return;
+  const unread = countUnreadNotificationEvents();
+  await pushTrayFromContext({
+    ...lastTrayContext,
+    summary: {
+      ...lastTrayContext.summary,
+      unreadNotificationCount: unread,
+      trayTitle: unread > 0 ? String(unread) : undefined,
+    },
+  });
+}
+
+export async function clearTrayUserContext(): Promise<void> {
+  lastTrayContext = null;
+  await pushTrayFromContext({ summary: emptyTraySummary() });
 }
 
 export async function acknowledgeTrayJiraIssue(issueKey: string): Promise<void> {
@@ -96,12 +91,7 @@ export async function acknowledgeTrayJiraIssue(issueKey: string): Promise<void> 
     },
   });
   markInboxJiraEventsReadForIssueKey(issueKey);
-  if (lastTrayContext) {
-    await pushTrayFromContext({
-      ...lastTrayContext,
-      assignmentState: nextState,
-    });
-  }
+  await refreshTrayFromLastContext();
   window.dispatchEvent(new CustomEvent(JIRA_ASSIGNMENT_CHANGED));
 }
 
@@ -124,29 +114,6 @@ export async function markAllTrayJiraAssignmentsRead(): Promise<void> {
       jiraAssignment: nextState,
     },
   });
-  if (lastTrayContext) {
-    await pushTrayFromContext({
-      ...lastTrayContext,
-      assignmentState: nextState,
-    });
-  }
+  await refreshTrayFromLastContext();
   window.dispatchEvent(new CustomEvent(JIRA_ASSIGNMENT_CHANGED));
-}
-
-export async function clearTrayUserContext(): Promise<void> {
-  lastTrayContext = null;
-  const empty = buildTrayActionSnapshot({
-    assignmentState: {
-      baselineComplete: false,
-      knownAssignedIssueKeys: [],
-      records: {},
-    },
-    activeTaskCount: 0,
-    bambooActions: [],
-  });
-  try {
-    await updateTrayActionCenter(empty);
-  } catch {
-    // ignore
-  }
 }

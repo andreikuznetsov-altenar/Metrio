@@ -3,6 +3,7 @@ mod diagnostics_bundle;
 mod logs;
 mod persistence;
 mod tray_action;
+mod tray_popover;
 
 use api::credentials::{
     cache_remove, cache_set, is_local_account, verify_secret_storage, SecureStoreVerify,
@@ -255,6 +256,7 @@ struct TraySnapshotPayload {
     open_label: Option<String>,
     tray_title: Option<String>,
     menu_items: Option<Vec<tray_action::TrayMenuItemDto>>,
+    summary: Option<tray_action::TraySummaryDto>,
 }
 
 #[tauri::command]
@@ -269,6 +271,7 @@ fn update_tray_snapshot(
             tray_action::TrayActionSnapshotDto {
                 tray_title: snapshot.tray_title,
                 menu_items: items,
+                summary: snapshot.summary,
             },
         );
     } else {
@@ -279,6 +282,7 @@ fn update_tray_snapshot(
                 .filter(|s| !s.is_empty())
                 .unwrap_or_else(|| "Open Metrio".to_string()),
             enabled: Some(true),
+            kind: None,
         }];
         if let Some(lines) = snapshot.lines {
             for line in lines {
@@ -287,6 +291,7 @@ fn update_tray_snapshot(
                         id: format!("info:{}", line),
                         label: line,
                         enabled: Some(false),
+                        kind: None,
                     });
                 }
             }
@@ -295,12 +300,14 @@ fn update_tray_snapshot(
             id: "quit".to_string(),
             label: "Quit".to_string(),
             enabled: Some(true),
+            kind: None,
         });
         tray_action::apply_tray_action_snapshot(
             &mut *tray,
             tray_action::TrayActionSnapshotDto {
                 tray_title: None,
                 menu_items,
+                summary: snapshot.summary,
             },
         );
     }
@@ -313,10 +320,17 @@ fn apply_tray_menu(app: &AppHandle, state: &AppState) -> Result<(), String> {
         .lock()
         .map_err(|_| "tray lock poisoned".to_string())?;
     tray_action::apply_tray_title(app, &tray_state.tray_title)?;
-    let menu = tray_action::build_tray_menu(app, &tray_state.menu_items)
-        .map_err(|e| e.to_string())?;
-    if let Some(tray) = app.tray_by_id("main") {
-        tray.set_menu(Some(menu)).map_err(|e| e.to_string())?;
+    #[cfg(not(target_os = "macos"))]
+    {
+        let menu = tray_action::build_tray_menu(app, &tray_state.menu_items)
+            .map_err(|e| e.to_string())?;
+        if let Some(tray) = app.tray_by_id("main") {
+            tray.set_menu(Some(menu)).map_err(|e| e.to_string())?;
+        }
+    }
+    #[cfg(target_os = "macos")]
+    {
+        let _ = app.emit("tray-summary-updated", tray_state.summary.clone());
     }
     Ok(())
 }
@@ -375,7 +389,6 @@ fn install_tray(app: &AppHandle) -> Result<(), Box<dyn std::error::Error>> {
 
     let mut tray_builder = TrayIconBuilder::with_id("main")
         .icon(tray_icon(app))
-        .menu(&menu)
         .tooltip("Metrio");
 
     #[cfg(target_os = "macos")]
@@ -386,6 +399,12 @@ fn install_tray(app: &AppHandle) -> Result<(), Box<dyn std::error::Error>> {
     #[cfg(target_os = "windows")]
     {
         tray_builder = tray_builder.icon_as_template(false);
+        tray_builder = tray_builder.menu(&menu);
+    }
+
+    #[cfg(not(target_os = "windows"))]
+    {
+        let _ = &menu;
     }
 
     let _tray = tray_builder
@@ -399,7 +418,14 @@ fn install_tray(app: &AppHandle) -> Result<(), Box<dyn std::error::Error>> {
                 ..
             } = event
             {
-                show_main_window(tray.app_handle());
+                #[cfg(target_os = "macos")]
+                {
+                    let _ = tray_popover::toggle_tray_popover(tray.app_handle());
+                }
+                #[cfg(not(target_os = "macos"))]
+                {
+                    show_main_window(tray.app_handle());
+                }
             }
         })
         .build(app)?;
@@ -478,6 +504,19 @@ async fn refresh_tray_menu(app: AppHandle) -> Result<(), String> {
     apply_tray_menu(&app, &state)
 }
 
+#[tauri::command]
+fn get_tray_summary(state: State<AppState>) -> Result<Option<tray_action::TraySummaryDto>, String> {
+    let tray = state.tray.lock().map_err(|_| "tray lock poisoned".to_string())?;
+    Ok(tray.summary.clone())
+}
+
+#[tauri::command]
+fn tray_popover_action(app: AppHandle, action_id: String) -> Result<(), String> {
+    tray_action::handle_tray_menu_event(&app, &action_id);
+    tray_popover::hide_tray_popover(&app);
+    Ok(())
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -517,6 +556,8 @@ pub fn run() {
             logs_open_folder,
             update_tray_snapshot,
             refresh_tray_menu,
+            get_tray_summary,
+            tray_popover_action,
             set_keep_running_in_tray,
             jira_test_connection,
             jira_search_issues,
@@ -682,13 +723,16 @@ mod tray_lock_tests {
                             id: "open".to_string(),
                             label: "Open Metrio".to_string(),
                             enabled: Some(true),
+                            kind: None,
                         },
                         tray_action::TrayMenuItemDto {
                             id: "jira:UX-1".to_string(),
                             label: "UX-1 · Example".to_string(),
                             enabled: Some(true),
+                            kind: None,
                         },
                     ],
+                    summary: None,
                 },
             );
         }

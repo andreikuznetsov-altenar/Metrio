@@ -1,47 +1,33 @@
 import { describe, expect, it } from "vitest";
 import { buildTrayActionSnapshot } from "./buildTrayActionSnapshot";
+import { buildTraySummaryModel } from "./buildTraySummaryModel";
 
 describe("buildTrayActionSnapshot", () => {
-  it("omits tray title when zero unread", () => {
-    const snapshot = buildTrayActionSnapshot({
-      assignmentState: {
-        baselineComplete: true,
-        knownAssignedIssueKeys: ["UX-1"],
-        records: {
-          "UX-1": {
-            issueKey: "UX-1",
-            title: "Read",
-            type: "jira_assignment",
-            assignedAt: "2026-01-01",
-            readAt: "2026-01-02",
-          },
-        },
-      },
-      activeTaskCount: 3,
-      bambooActions: [],
+  it("omits tray title when zero unread notifications", () => {
+    const summary = buildTraySummaryModel({
+      role: "employee",
+      openTaskCount: 3,
+      problemTaskCount: 1,
+      indexLabel: "Personal index",
+      indexValue: "Healthy",
+      indexAvailable: true,
+      unreadNotificationCount: 0,
     });
+    const snapshot = buildTrayActionSnapshot(summary);
     expect(snapshot.trayTitle).toBeUndefined();
-    expect(snapshot.unreadAssignmentCount).toBe(0);
   });
 
-  it("shows numeric tray title for unread assignments", () => {
-    const snapshot = buildTrayActionSnapshot({
-      assignmentState: {
-        baselineComplete: true,
-        knownAssignedIssueKeys: ["UX-2"],
-        records: {
-          "UX-2": {
-            issueKey: "UX-2",
-            title: "New",
-            type: "jira_assignment",
-            assignedAt: "2026-01-01",
-          },
-        },
-      },
-      activeTaskCount: 14,
-      bambooActions: [],
+  it("shows numeric tray title for unread notifications", () => {
+    const summary = buildTraySummaryModel({
+      role: "manager",
+      openTaskCount: 14,
+      problemTaskCount: 2,
+      indexLabel: "Team index",
+      indexValue: "Watch",
+      indexAvailable: true,
+      unreadNotificationCount: 4,
     });
-    expect(snapshot.trayTitle).toBe("1");
-    expect(snapshot.unreadAssignmentCount).toBe(1);
+    const snapshot = buildTrayActionSnapshot(summary);
+    expect(snapshot.trayTitle).toBe("4");
   });
 });

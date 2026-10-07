@@ -8,14 +8,19 @@ import { resolvePerformanceReportRanges } from "../../domain/performance/reportP
 
 vi.mock("../../platform/trayActionCenter", () => ({
   pushTrayFromContext: vi.fn(async () => undefined),
-  trayContextFromSelfPerson: vi.fn(() => ({
-    assignmentState: {
-      baselineComplete: true,
-      knownAssignedIssueKeys: [],
-      records: {},
+}));
+
+vi.mock("../../platform/trayBuildContext", () => ({
+  buildTrayContextFromPerformance: vi.fn(() => ({
+    summary: {
+      role: "employee",
+      openTaskCount: 0,
+      problemTaskCount: 0,
+      indexLabel: "Personal index",
+      indexValue: "—",
+      indexAvailable: true,
+      unreadNotificationCount: 0,
     },
-    activeTaskCount: 0,
-    bambooActions: [],
   })),
 }));
 

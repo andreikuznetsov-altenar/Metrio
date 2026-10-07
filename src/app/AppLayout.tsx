@@ -45,6 +45,7 @@ import {
 } from "../platform/notificationEvents";
 import { RuntimeShellEffects } from "./RuntimeShellEffects";
 import { TrayMenuEffects } from "./TrayMenuEffects";
+import { TraySummarySyncEffects } from "./TraySummarySyncEffects";
 import { UpdateProvider } from "./UpdateContext";
 import { UpdateTrayEffects } from "./UpdateTrayEffects";
 import { useCurrentUser } from "./CurrentUserContext";
@@ -311,8 +312,13 @@ function AppLayoutShell({
       }
       setSettingsOpen(true);
     };
+    const onNotifications = () => setNotificationsOpen(true);
     window.addEventListener("metrio-open-settings", onSettings);
-    return () => window.removeEventListener("metrio-open-settings", onSettings);
+    window.addEventListener("metrio-open-notifications", onNotifications);
+    return () => {
+      window.removeEventListener("metrio-open-settings", onSettings);
+      window.removeEventListener("metrio-open-notifications", onNotifications);
+    };
   }, [setSettingsOpen, setSettingsSection]);
 
   useEffect(() => {
@@ -474,6 +480,7 @@ function AppLayoutShell({
   return (
     <>
       <TrayMenuEffects onRefresh={() => void refresh()} />
+      <TraySummarySyncEffects />
       <UpdateTrayEffects onOpenAbout={openAboutSettings} />
       <AppShell
         header={

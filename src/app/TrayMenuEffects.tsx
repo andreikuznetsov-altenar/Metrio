@@ -1,6 +1,5 @@
 import { useEffect } from "react";
 import { listen } from "@tauri-apps/api/event";
-import { dispatchAppRoute, dispatchEmployeeView } from "./actionNavigation";
 import { logoutSession } from "./logoutSession";
 import { openExternalUrl } from "../platform/openExternal";
 import { clearNotificationHistory } from "../platform/notificationEvents";
@@ -43,9 +42,16 @@ export function TrayMenuEffects({
       .then((fn) => unsubs.push(fn))
       .catch(() => undefined);
 
-    void listen("tray-view-all-work", () => {
-      dispatchAppRoute("performance");
-      dispatchEmployeeView("my-week");
+    void listen("tray-settings", () => {
+      window.dispatchEvent(
+        new CustomEvent("metrio-open-settings", { detail: "preferences" }),
+      );
+    })
+      .then((fn) => unsubs.push(fn))
+      .catch(() => undefined);
+
+    void listen("tray-notifications", () => {
+      window.dispatchEvent(new CustomEvent("metrio-open-notifications"));
     })
       .then((fn) => unsubs.push(fn))
       .catch(() => undefined);

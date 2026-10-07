@@ -1,97 +1,64 @@
-export interface TrayJiraTaskItem {
-  issueKey: string;
-  title: string;
-}
-
-export interface TrayBambooActionItem {
-  id: string;
-  label: string;
-  url: string;
-}
-
-export interface TrayVacationItem {
-  id: string;
-  label: string;
-  url: string;
-}
-
-export interface TrayOneOnOnePrepItem {
-  personId: string;
-  label: string;
-}
-
-export interface TrayActionSnapshot {
-  /** macOS menu bar title: digits only when >0 unread Jira assignments */
-  trayTitle?: string;
-  /** Informational only — does not affect numeric tray badge */
-  softwareUpdateAvailable?: boolean;
-  unreadAssignmentCount: number;
-  newTasks: TrayJiraTaskItem[];
-  activeTaskCount: number;
-  bambooActions: TrayBambooActionItem[];
-  upcomingVacation?: TrayVacationItem;
-  /** Optional 1:1 prep row — does not affect numeric tray badge */
-  nextOneOnOne?: TrayOneOnOnePrepItem;
-}
+import type { TraySummaryModel } from "./buildTraySummaryModel";
 
 export interface TrayMenuItemPayload {
   id: string;
   label: string;
   enabled?: boolean;
+  kind?: "item" | "separator";
 }
 
-export function trayMenuItemsFromSnapshot(snapshot: TrayActionSnapshot): TrayMenuItemPayload[] {
-  const items: TrayMenuItemPayload[] = [{ id: "open", label: "Open Metrio" }];
+export interface TrayActionSnapshot {
+  trayTitle?: string;
+  summary: TraySummaryModel;
+}
 
-  for (const task of snapshot.newTasks.slice(0, 5)) {
+export function trayMenuItemsFromSummary(summary: TraySummaryModel): TrayMenuItemPayload[] {
+  const items: TrayMenuItemPayload[] = [
+    {
+      id: "summary:open-tasks",
+      label: formatSummaryRow("Open tasks", summary.openTaskCount),
+      enabled: false,
+    },
+    {
+      id: "summary:problem-tasks",
+      label: formatSummaryRow("Problem tasks", summary.problemTaskCount),
+      enabled: false,
+    },
+  ];
+
+  if (summary.indexAvailable) {
     items.push({
-      id: `jira:${task.issueKey}`,
-      label: truncateTrayLabel(`${task.issueKey} · ${task.title}`),
+      id: "summary:index",
+      label: formatSummaryRow(summary.indexLabel, summary.indexValue, false),
+      enabled: false,
     });
   }
 
-  if (snapshot.unreadAssignmentCount > snapshot.newTasks.length) {
-    items.push({ id: "view-all-work", label: "View all work" });
-  } else if (snapshot.newTasks.length > 0) {
-    items.push({ id: "view-all-work", label: "View all work" });
-  }
+  items.push({ id: "sep:1", label: "", kind: "separator" });
 
-  if (snapshot.activeTaskCount > 0) {
+  if (summary.unreadNotificationCount > 0) {
     items.push({
-      id: "active-work",
-      label: `Active tasks · ${snapshot.activeTaskCount}`,
+      id: "notifications",
+      label: formatSummaryRow("Notifications", summary.unreadNotificationCount),
     });
+  } else {
+    items.push({ id: "notifications", label: "Notifications" });
   }
 
-  for (const action of snapshot.bambooActions) {
-    items.push({ id: `bamboo-action:${action.id}`, label: action.label });
-  }
-
-  if (snapshot.upcomingVacation) {
-    items.push({
-      id: `vacation:${snapshot.upcomingVacation.id}`,
-      label: snapshot.upcomingVacation.label,
-    });
-  }
-
-  if (snapshot.nextOneOnOne) {
-    items.push({
-      id: `one-on-one-prep:${snapshot.nextOneOnOne.personId}`,
-      label: snapshot.nextOneOnOne.label,
-    });
-  }
-
-  if (snapshot.softwareUpdateAvailable) {
-    items.push({ id: "update-available", label: "Update available" });
-  }
-
+  items.push({ id: "sep:2", label: "", kind: "separator" });
+  items.push({ id: "open", label: "Open Metrio" });
   items.push({ id: "refresh", label: "Refresh" });
-  items.push({ id: "logout", label: "Log out" });
+  items.push({ id: "sep:3", label: "", kind: "separator" });
+  items.push({ id: "settings", label: "Settings" });
   items.push({ id: "quit", label: "Quit" });
   return items;
 }
 
-function truncateTrayLabel(text: string, max = 52): string {
-  if (text.length <= max) return text;
-  return `${text.slice(0, max - 1)}…`;
+function formatSummaryRow(
+  label: string,
+  value: string | number,
+  numeric = true,
+): string {
+  const text = numeric ? String(value) : value;
+  return `${label}\t${text}`;
 }

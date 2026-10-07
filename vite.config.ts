@@ -15,6 +15,14 @@ const appVersion = JSON.parse(
 
 export default defineConfig(() => ({
   plugins: [react()],
+  build: {
+    rollupOptions: {
+      input: {
+        main: join(rootDir, "index.html"),
+        trayPopover: join(rootDir, "tray-popover.html"),
+      },
+    },
+  },
   define: {
     "import.meta.env.VITE_APP_VERSION": JSON.stringify(
       process.env.VITE_APP_VERSION || appVersion,

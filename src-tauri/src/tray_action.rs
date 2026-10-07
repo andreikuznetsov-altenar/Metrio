@@ -1,23 +1,37 @@
-use serde::Deserialize;
-use tauri::menu::{Menu, MenuItem};
+use serde::{Deserialize, Serialize};
+use tauri::menu::{Menu, MenuItem, PredefinedMenuItem};
 use tauri::{AppHandle, Emitter, Manager};
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct TrayMenuItemDto {
     pub id: String,
     pub label: String,
     pub enabled: Option<bool>,
+    pub kind: Option<String>,
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize, Default)]
+pub struct TraySummaryDto {
+    pub role: String,
+    pub open_task_count: u32,
+    pub problem_task_count: u32,
+    pub index_label: String,
+    pub index_value: String,
+    pub index_available: bool,
+    pub unread_notification_count: u32,
 }
 
 #[derive(Debug, Clone, Deserialize)]
 pub struct TrayActionSnapshotDto {
     pub tray_title: Option<String>,
     pub menu_items: Vec<TrayMenuItemDto>,
+    pub summary: Option<TraySummaryDto>,
 }
 
 pub struct TrayActionState {
     pub tray_title: Option<String>,
     pub menu_items: Vec<TrayMenuItemDto>,
+    pub summary: Option<TraySummaryDto>,
 }
 
 impl Default for TrayActionState {
@@ -29,13 +43,16 @@ impl Default for TrayActionState {
                     id: "open".to_string(),
                     label: "Open Metrio".to_string(),
                     enabled: Some(true),
+                    kind: None,
                 },
                 TrayMenuItemDto {
                     id: "quit".to_string(),
                     label: "Quit".to_string(),
                     enabled: Some(true),
+                    kind: None,
                 },
             ],
+            summary: None,
         }
     }
 }
@@ -50,22 +67,37 @@ pub fn apply_tray_action_snapshot(state: &mut TrayActionState, snapshot: TrayAct
         return;
     }
     state.menu_items = snapshot.menu_items;
+    if snapshot.summary.is_some() {
+        state.summary = snapshot.summary;
+    }
+}
+
+enum TrayMenuEntry {
+    Item(MenuItem<tauri::Wry>),
+    Sep(PredefinedMenuItem<tauri::Wry>),
 }
 
 pub fn build_tray_menu(
     app: &AppHandle,
     items: &[TrayMenuItemDto],
 ) -> Result<Menu<tauri::Wry>, Box<dyn std::error::Error>> {
-    let mut menu_items: Vec<MenuItem<tauri::Wry>> = Vec::new();
+    let mut entries: Vec<TrayMenuEntry> = Vec::new();
     for item in items {
+        if item.kind.as_deref() == Some("separator") || item.id.starts_with("sep:") {
+            entries.push(TrayMenuEntry::Sep(PredefinedMenuItem::separator(app)?));
+            continue;
+        }
         let enabled = item.enabled.unwrap_or(true);
-        let menu_item =
-            MenuItem::with_id(app, &item.id, &item.label, enabled, None::<&str>)?;
-        menu_items.push(menu_item);
+        entries.push(TrayMenuEntry::Item(
+            MenuItem::with_id(app, &item.id, &item.label, enabled, None::<&str>)?,
+        ));
     }
-    let refs: Vec<&dyn tauri::menu::IsMenuItem<tauri::Wry>> = menu_items
+    let refs: Vec<&dyn tauri::menu::IsMenuItem<tauri::Wry>> = entries
         .iter()
-        .map(|i| i as &dyn tauri::menu::IsMenuItem<tauri::Wry>)
+        .map(|entry| match entry {
+            TrayMenuEntry::Item(item) => item as &dyn tauri::menu::IsMenuItem<tauri::Wry>,
+            TrayMenuEntry::Sep(sep) => sep as &dyn tauri::menu::IsMenuItem<tauri::Wry>,
+        })
         .collect();
     Ok(Menu::with_items(app, &refs)?)
 }
@@ -102,6 +134,14 @@ pub fn handle_tray_menu_event(app: &AppHandle, menu_id: &str) {
         "refresh" => {
             let _ = app.emit("tray-refresh", ());
         }
+        "settings" => {
+            crate::show_main_window(app);
+            let _ = app.emit("tray-settings", ());
+        }
+        "notifications" => {
+            crate::show_main_window(app);
+            let _ = app.emit("tray-notifications", ());
+        }
         "logout" => {
             let _ = app.emit("tray-logout", ());
         }
@@ -133,6 +173,7 @@ pub fn handle_tray_menu_event(app: &AppHandle, menu_id: &str) {
                 serde_json::json!({ "personId": person_id }),
             );
         }
+        id if id.starts_with("summary:") || id.starts_with("info:") => {}
         _ => {}
     }
 }
