@@ -4,7 +4,7 @@ import { TrayPopoverPanel } from "./TrayPopoverPanel";
 import { buildTraySummaryModel } from "../domain/tray/buildTraySummaryModel";
 
 vi.mock("@tauri-apps/api/core", () => ({
-  invoke: vi.fn(),
+  invoke: vi.fn(() => Promise.resolve()),
 }));
 
 describe("TrayPopoverPanel", () => {

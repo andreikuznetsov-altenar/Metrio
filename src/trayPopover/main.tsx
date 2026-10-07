@@ -8,8 +8,7 @@ import {
   type TraySummaryDto,
 } from "../platform/traySummaryBridge";
 import { emptyTraySummary } from "../platform/trayActionCenter";
-import "../styles/globals.css";
-import "../tray/tray-popover.css";
+import "../tray/tray-popover-document.css";
 
 function TrayPopoverApp() {
   const [summary, setSummary] = useState(emptyTraySummary);

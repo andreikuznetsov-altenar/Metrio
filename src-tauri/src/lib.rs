@@ -518,6 +518,11 @@ fn tray_popover_action(app: AppHandle, action_id: String) -> Result<(), String> 
     Ok(())
 }
 
+#[tauri::command]
+fn tray_popover_resize(app: AppHandle, width: f64, height: f64) -> Result<(), String> {
+    tray_popover::tray_popover_resize(&app, width, height)
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -559,6 +564,7 @@ pub fn run() {
             refresh_tray_menu,
             get_tray_summary,
             tray_popover_action,
+            tray_popover_resize,
             set_keep_running_in_tray,
             jira_test_connection,
             jira_search_issues,

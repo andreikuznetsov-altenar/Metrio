@@ -1,58 +1,62 @@
 :root {
   color-scheme: light;
+  --tray-window-shadow-inset: 14px;
   --tray-popover-radius: 24px;
+  --tray-popover-width: 256px;
   --tray-popover-padding-x: var(--space-3, 12px);
-  --tray-popover-padding-y: 10px;
-  --tray-popover-row-gap: 2px;
-  --tray-popover-section-gap: 6px;
-  --tray-popover-action-min-height: 36px;
+  --tray-popover-padding-y: 8px;
+  --tray-popover-row-gap: 1px;
+  --tray-popover-section-gap: 4px;
+  --tray-popover-action-min-height: 32px;
+  --tray-popover-row-hover-radius: 8px;
+  --tray-popover-arrow-width: 14px;
+  --tray-popover-arrow-height: 7px;
+  --tray-popover-surface: var(--color-surface, #fff);
+  --tray-popover-drop-shadow: 0 12px 36px rgba(15, 17, 21, 0.14);
 }
 
-body {
-  margin: 0;
-  background: transparent;
-  font-family: var(--font-sans, system-ui, -apple-system, sans-serif);
-}
-
-.tray-popover-shell {
+/**
+ * Single visible surface: arrow + 24px rounded popover. Host/webview stays transparent.
+ */
+.tray-popover {
   position: relative;
-  padding-top: 7px;
+  width: var(--tray-popover-width);
+  margin: 0 auto;
+  padding-top: var(--tray-popover-arrow-height);
+  filter: drop-shadow(var(--tray-popover-drop-shadow));
 }
 
-.tray-popover-shell::before {
+.tray-popover::before {
   content: "";
   position: absolute;
-  top: 1px;
+  top: 0;
   left: 50%;
-  z-index: 2;
+  z-index: 1;
+  width: var(--tray-popover-arrow-width);
+  height: var(--tray-popover-arrow-height);
   transform: translateX(-50%);
-  width: 14px;
-  height: 7px;
-  background: var(--color-surface, #fff);
+  background: var(--tray-popover-surface);
   clip-path: polygon(50% 0%, 0% 100%, 100% 100%);
-  filter: drop-shadow(0 -1px 1px rgba(15, 17, 21, 0.05));
 }
 
-.tray-popover {
-  margin: 0;
-  padding: var(--tray-popover-padding-y) var(--tray-popover-padding-x);
+.tray-popover__surface {
+  position: relative;
+  z-index: 0;
   border: none;
   border-radius: var(--tray-popover-radius);
-  background: var(--color-surface, #fff);
-  box-shadow:
-    0 14px 40px rgba(15, 17, 21, 0.12),
-    0 4px 12px rgba(15, 17, 21, 0.06);
+  background: var(--tray-popover-surface);
+  padding: var(--tray-popover-padding-y) var(--tray-popover-padding-x);
   display: flex;
   flex-direction: column;
   gap: var(--tray-popover-section-gap);
-  min-width: 260px;
 }
 
 .tray-popover__summary {
   display: flex;
   flex-direction: column;
   gap: var(--tray-popover-row-gap);
-  padding: 2px 0 4px;
+  padding: 0;
+  margin: 0;
 }
 
 .tray-popover__row {
@@ -60,7 +64,7 @@ body {
   align-items: baseline;
   justify-content: space-between;
   gap: var(--space-2, 8px);
-  min-height: 20px;
+  min-height: 18px;
   font-size: 13px;
   line-height: 1.3;
   color: var(--color-text-secondary, #4b5563);
@@ -87,7 +91,8 @@ body {
 .tray-popover__divider {
   flex-shrink: 0;
   height: 1px;
-  margin: 0;
+  margin: 2px 0;
+  border: none;
   background: var(--color-border-subtle, #e8ebf0);
 }
 
@@ -106,9 +111,10 @@ body {
   gap: var(--space-2, 8px);
   width: 100%;
   min-height: var(--tray-popover-action-min-height);
+  margin: 0;
   border: none;
-  border-radius: 10px;
-  padding: 6px 0;
+  border-radius: var(--tray-popover-row-hover-radius);
+  padding: 4px 8px;
   background: transparent;
   color: var(--color-text-primary, #111827);
   font-size: 13px;
@@ -119,6 +125,11 @@ body {
 
 .tray-popover__action:hover {
   background: var(--color-surface-secondary, #f4f6f8);
+}
+
+.tray-popover__action:focus-visible {
+  outline: 2px solid var(--color-focus-ring, #2563eb);
+  outline-offset: 0;
 }
 
 .tray-popover__action-label {

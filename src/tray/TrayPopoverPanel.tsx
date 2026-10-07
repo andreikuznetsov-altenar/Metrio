@@ -1,15 +1,47 @@
+import { useLayoutEffect, useRef } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import type { TraySummaryModel } from "../domain/tray/buildTraySummaryModel";
 import "./tray-popover.css";
 
+function reportTrayPopoverWindowSize(root: HTMLElement | null) {
+  if (!root || typeof document === "undefined") return;
+  const rect = root.getBoundingClientRect();
+  const body = document.body;
+  const style = getComputedStyle(body);
+  const padX = parseFloat(style.paddingLeft) + parseFloat(style.paddingRight);
+  const padY = parseFloat(style.paddingTop) + parseFloat(style.paddingBottom);
+  void invoke("tray_popover_resize", {
+    width: Math.ceil(rect.width + padX),
+    height: Math.ceil(rect.height + padY),
+  }).catch(() => undefined);
+}
+
 export function TrayPopoverPanel({ summary }: { summary: TraySummaryModel }) {
+  const rootRef = useRef<HTMLElement>(null);
+
+  useLayoutEffect(() => {
+    reportTrayPopoverWindowSize(rootRef.current);
+    const node = rootRef.current;
+    if (!node || typeof ResizeObserver === "undefined") return;
+    const observer = new ResizeObserver(() => {
+      reportTrayPopoverWindowSize(node);
+    });
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [summary]);
+
   const run = (actionId: string) => {
     void invoke("tray_popover_action", { actionId });
   };
 
   return (
-    <div className="tray-popover-shell">
-      <div className="tray-popover" data-testid="tray-popover">
+    <article
+      ref={rootRef}
+      className="tray-popover"
+      data-testid="tray-popover"
+      aria-label="Metrio tray menu"
+    >
+      <div className="tray-popover__surface">
         <section className="tray-popover__summary" aria-label="Tray summary">
           <div className="tray-popover__row">
             <span>Open tasks</span>
@@ -29,7 +61,7 @@ export function TrayPopoverPanel({ summary }: { summary: TraySummaryModel }) {
           ) : null}
         </section>
 
-        <div className="tray-popover__divider" role="separator" />
+        <hr className="tray-popover__divider" />
 
         <button
           type="button"
@@ -42,7 +74,7 @@ export function TrayPopoverPanel({ summary }: { summary: TraySummaryModel }) {
           ) : null}
         </button>
 
-        <div className="tray-popover__divider" role="separator" />
+        <hr className="tray-popover__divider" />
 
         <nav className="tray-popover__actions" aria-label="Tray commands">
           <button type="button" className="tray-popover__action" onClick={() => run("open")}>
@@ -59,6 +91,6 @@ export function TrayPopoverPanel({ summary }: { summary: TraySummaryModel }) {
           </button>
         </nav>
       </div>
-    </div>
+    </article>
   );
 }
