@@ -1,5 +1,6 @@
 import { subDays, format, parseISO } from 'date-fns';
 import { getTodayIsoDate } from '../jira/dates';
+import { inclusiveRangeDayCount } from '../performance/performanceDateRange';
 import {
   DEFAULT_REPORT_WINDOW_DAYS,
   HISTORICAL_BOOTSTRAP_DAYS,
@@ -20,14 +21,22 @@ export function resolveEffectiveReportRange(filters: {
   return { dateFrom, dateTo };
 }
 
-export function getHistoryFetchDateFrom(dateTo: string): string {
+/** Inclusive history span: current reporting window + prior comparison window. */
+export function requiredHistoryDaySpan(reportDateFrom: string, dateTo: string): number {
+  const current = inclusiveRangeDayCount(reportDateFrom, dateTo);
+  return Math.max(current * 2, WORK_HISTORY_WINDOW_DAYS, HISTORICAL_BOOTSTRAP_DAYS);
+}
+
+export function getHistoryFetchDateFrom(dateTo: string, reportDateFrom?: string): string {
   const end = parseISO(dateTo);
-  const historyDays = Math.max(WORK_HISTORY_WINDOW_DAYS, HISTORICAL_BOOTSTRAP_DAYS);
-  return format(subDays(end, historyDays - 1), 'yyyy-MM-dd');
+  const spanDays = reportDateFrom
+    ? requiredHistoryDaySpan(reportDateFrom, dateTo)
+    : Math.max(DEFAULT_REPORT_WINDOW_DAYS * 2, WORK_HISTORY_WINDOW_DAYS, HISTORICAL_BOOTSTRAP_DAYS);
+  return format(subDays(end, spanDays - 1), 'yyyy-MM-dd');
 }
 
 export function getEarliestFetchDate(reportDateFrom: string, dateTo: string): string {
-  const historyFrom = getHistoryFetchDateFrom(dateTo);
+  const historyFrom = getHistoryFetchDateFrom(dateTo, reportDateFrom);
   if (!reportDateFrom) return historyFrom;
   return reportDateFrom < historyFrom ? reportDateFrom : historyFrom;
 }

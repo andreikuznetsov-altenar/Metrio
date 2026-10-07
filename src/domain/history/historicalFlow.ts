@@ -10,7 +10,8 @@ import {
   withFullIssueHistory,
 } from '../periods/issueCompletion';
 import type { DailyPersonSnapshot, DailyTeamSnapshot } from '../snapshots/types';
-import { HISTORICAL_BOOTSTRAP_DAYS, SNAPSHOT_RETENTION_DAYS } from './constants';
+import { getEarliestFetchDate } from './historyRanges';
+import { SNAPSHOT_RETENTION_DAYS } from './constants';
 
 export interface DailyFlowFields {
   completedOnDate: number;
@@ -46,14 +47,11 @@ export function getBootstrapDateRange(
   now = new Date(),
 ): { startKey: string; endKey: string } {
   const endKey = reportParams.dateTo || getLocalDateKey(now);
-  const startKey = reportParams.dateFrom;
-  if (startKey && endKey && startKey <= endKey) {
-    return { startKey, endKey };
-  }
-  const fallbackEnd = getLocalDateKey(now);
-  const start = new Date(now);
-  start.setDate(start.getDate() - (HISTORICAL_BOOTSTRAP_DAYS - 1));
-  return { startKey: getLocalDateKey(start), endKey: fallbackEnd };
+  const displayFrom = reportParams.dateFrom;
+  const startKey = displayFrom
+    ? getEarliestFetchDate(displayFrom, endKey)
+    : getEarliestFetchDate('', endKey);
+  return { startKey, endKey };
 }
 
 /**

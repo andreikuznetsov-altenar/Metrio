@@ -190,16 +190,16 @@ export function readSessionPerformanceDateRange(
   now = new Date(),
 ): PerformanceDateRange {
   if (typeof sessionStorage === 'undefined') {
-    return createPerformanceDateRange('30d', now);
+    return createPerformanceDateRange('3m', now);
   }
   try {
     const raw = sessionStorage.getItem(PERFORMANCE_DATE_RANGE_SESSION_KEY);
-    if (!raw) return createPerformanceDateRange('30d', now);
+    if (!raw) return createPerformanceDateRange('3m', now);
     const parsed = JSON.parse(raw) as PerformanceDateRange;
-    if (!parsed.from || !parsed.to) return createPerformanceDateRange('30d', now);
+    if (!parsed.from || !parsed.to) return createPerformanceDateRange('3m', now);
     return parsed;
   } catch {
-    return createPerformanceDateRange('30d', now);
+    return createPerformanceDateRange('3m', now);
   }
 }
 

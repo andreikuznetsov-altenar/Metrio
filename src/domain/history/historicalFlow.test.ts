@@ -50,7 +50,7 @@ describe('historicalFlow', () => {
     };
     const { startKey, endKey } = getBootstrapDateRange(reportParams, now);
     const keys = enumerateLocalDateKeys(startKey, endKey);
-    expect(startKey).toBe('2025-09-01');
+    expect(startKey < reportParams.dateFrom).toBe(true);
     expect(endKey).toBe('2026-03-04');
     expect(keys.length).toBeGreaterThan(HISTORICAL_BOOTSTRAP_DAYS);
   });
