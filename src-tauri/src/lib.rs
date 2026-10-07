@@ -494,12 +494,23 @@ fn show_main_window(app: &AppHandle) {
 }
 
 #[tauri::command]
-fn set_keep_running_in_tray(state: State<AppState>, enabled: bool) -> Result<(), String> {
+fn set_keep_running_in_tray(
+    app: AppHandle,
+    state: State<AppState>,
+    enabled: bool,
+) -> Result<(), String> {
     let mut guard = state
         .keep_running_in_tray
         .lock()
         .map_err(|_| "keep_running_in_tray lock poisoned".to_string())?;
     *guard = enabled;
+    if let Some(tray) = app.tray_by_id("main") {
+        tray.set_visible(enabled)
+            .map_err(|error| format!("tray visibility: {error}"))?;
+    }
+    if !enabled {
+        tray_popover::hide_tray_popover(&app);
+    }
     Ok(())
 }
 

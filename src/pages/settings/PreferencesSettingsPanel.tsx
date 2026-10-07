@@ -1,6 +1,11 @@
 import { Switch } from "../../components/Switch/Switch";
+import { useToast } from "../../components/Toast/ToastContext";
 import type { AppPreferences } from "../../platform/preferences";
 import { DigestSettingsCard } from "./DigestSettingsPanel";
+import {
+  setKeepRunningInTrayPreference,
+  setLaunchAtLoginPreference,
+} from "./generalDesktopPreferences";
 
 const NOTIFICATION_ROWS: {
   key: keyof AppPreferences["notifications"];
@@ -69,6 +74,8 @@ export function PreferencesSettingsPanel({
   prefs,
   onPersist,
 }: PreferencesSettingsPanelProps) {
+  const { error: toastError } = useToast();
+
   return (
     <div className="settings-panel" data-testid="preferences-settings">
       <p className="settings-intro">
@@ -88,10 +95,12 @@ export function PreferencesSettingsPanel({
               aria-label="Launch Metrio at login"
               checked={prefs.general.launchAtLogin}
               onCheckedChange={(checked) => {
-                void onPersist({
-                  ...prefs,
-                  general: { ...prefs.general, launchAtLogin: checked },
-                });
+                void setLaunchAtLoginPreference(
+                  prefs,
+                  checked,
+                  onPersist,
+                  toastError,
+                );
               }}
             />
           </div>
@@ -105,10 +114,12 @@ export function PreferencesSettingsPanel({
               aria-label="Keep running in the menu bar when the window is closed"
               checked={prefs.general.keepRunningInTray}
               onCheckedChange={(checked) => {
-                void onPersist({
-                  ...prefs,
-                  general: { ...prefs.general, keepRunningInTray: checked },
-                });
+                void setKeepRunningInTrayPreference(
+                  prefs,
+                  checked,
+                  onPersist,
+                  toastError,
+                );
               }}
             />
           </div>

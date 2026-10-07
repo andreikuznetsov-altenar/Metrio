@@ -28,9 +28,6 @@ export function AboutSettingsPanel({ embedded = false }: { embedded?: boolean })
   const installUpdate = update?.installUpdate ?? (async () => undefined);
 
   const statusLabel = (() => {
-    if (!updaterAvailable) {
-      return "Updates are unavailable in this review build.";
-    }
     switch (checkResult.status) {
       case "checking":
         return "Checking…";
@@ -82,52 +79,52 @@ export function AboutSettingsPanel({ embedded = false }: { embedded?: boolean })
         </div>
       </div>
 
-      <div className="about-update about-update--compact" aria-live="polite">
-        <div className="about-update__head">
-          <p
-            className={`about-update__status${showUpdaterError ? " about-update__status--error" : ""}`}
-            data-testid="about-update-status"
-          >
-            {statusLabel}
-          </p>
-          {checkResult.status === "available" && checkResult.availableVersion ? (
-            <p className="about-update__version">
-              Version {checkResult.availableVersion}
+      {updaterAvailable ? (
+        <div className="about-update about-update--compact" aria-live="polite">
+          <div className="about-update__head">
+            <p
+              className={`about-update__status${showUpdaterError ? " about-update__status--error" : ""}`}
+              data-testid="about-update-status"
+            >
+              {statusLabel}
+            </p>
+            {checkResult.status === "available" && checkResult.availableVersion ? (
+              <p className="about-update__version">
+                Version {checkResult.availableVersion}
+              </p>
+            ) : null}
+          </div>
+          {showUpdaterError ? (
+            <p className="about-update__error" role="alert">
+              {checkResult.message}
             </p>
           ) : null}
-        </div>
-        {showUpdaterError ? (
-          <p className="about-update__error" role="alert">
-            {checkResult.message}
-          </p>
-        ) : null}
-        {notes.length > 0 ? (
-          <div className="about-update__notes">
-            <h3>What&apos;s new</h3>
-            <ul>
-              {notes.map((line) => (
-                <li key={line}>{line}</li>
-              ))}
-            </ul>
-          </div>
-        ) : null}
+          {notes.length > 0 ? (
+            <div className="about-update__notes">
+              <h3>What&apos;s new</h3>
+              <ul>
+                {notes.map((line) => (
+                  <li key={line}>{line}</li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
 
-        {installProgress.phase === "downloading" ? (
-          <p className="about-update__progress">
-            Downloading update
-            {installProgress.percent != null ? ` · ${installProgress.percent}%` : "…"}
-          </p>
-        ) : null}
-        {installProgress.phase === "installing" ? (
-          <p className="about-update__progress">Installing update…</p>
-        ) : null}
-        {installProgress.phase === "error" && installProgress.message ? (
-          <p className="about-update__error" role="alert">
-            {installProgress.message}
-          </p>
-        ) : null}
+          {installProgress.phase === "downloading" ? (
+            <p className="about-update__progress">
+              Downloading update
+              {installProgress.percent != null ? ` · ${installProgress.percent}%` : "…"}
+            </p>
+          ) : null}
+          {installProgress.phase === "installing" ? (
+            <p className="about-update__progress">Installing update…</p>
+          ) : null}
+          {installProgress.phase === "error" && installProgress.message ? (
+            <p className="about-update__error" role="alert">
+              {installProgress.message}
+            </p>
+          ) : null}
 
-        {updaterAvailable ? (
           <div className="about-update__actions">
             <Button
               type="button"
@@ -156,13 +153,13 @@ export function AboutSettingsPanel({ embedded = false }: { embedded?: boolean })
               </Button>
             ) : null}
           </div>
-        ) : null}
-        {checkResult.status === "available" ? (
-          <p className="about-update__hint">
-            Metrio will restart after the update is installed.
-          </p>
-        ) : null}
-      </div>
+          {checkResult.status === "available" ? (
+            <p className="about-update__hint">
+              Metrio will restart after the update is installed.
+            </p>
+          ) : null}
+        </div>
+      ) : null}
     </div>
   );
 }

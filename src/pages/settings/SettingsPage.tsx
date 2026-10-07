@@ -85,13 +85,16 @@ export function SettingsPage({
   }, []);
 
   const persistPrefs = useCallback(
-    async (next: AppPreferences, toastMessage = "Settings saved") => {
+    async (next: AppPreferences, toastMessage?: string) => {
       setPrefs(next);
       setFeedbackPrefsSnapshot(next);
       try {
         await savePreferences(next);
         await syncGeneralPreferencesToNative(next.general);
-        toast.success(toastMessage);
+        const message = toastMessage ?? "Settings saved";
+        if (message) {
+          toast.success(message);
+        }
       } catch {
         toast.error("Could not save settings to disk.");
       }
