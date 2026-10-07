@@ -23,6 +23,10 @@ use api::jira::{
 };
 use api::kpi_snapshot_store::{kpi_snapshot_load, kpi_snapshot_save};
 use api::pdf_export::write_user_selected_pdf;
+use api::report_history_store::{
+    report_history_archive, report_history_copy_to_path, report_history_list,
+    report_history_remove,
+};
 use api::apps_script::{
     apps_script_connect, apps_script_disconnect, apps_script_get_status, apps_script_invoke,
     apps_script_is_configured,
@@ -613,7 +617,11 @@ pub fn run() {
             kpi_snapshot_load,
             kpi_snapshot_save,
             credential_import_legacy,
-            write_user_selected_pdf
+            write_user_selected_pdf,
+            report_history_list,
+            report_history_archive,
+            report_history_copy_to_path,
+            report_history_remove
         ])
         .setup(|app| {
             write_setup_log(app.handle(), "NATIVE 01 setup begin");

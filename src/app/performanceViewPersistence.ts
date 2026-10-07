@@ -12,6 +12,7 @@ const TEAM_VIEWS: TeamPerformanceView[] = [
   "radar",
   "delivery-risk",
   "goals",
+  "history-reports",
 ];
 
 const EMPLOYEE_VIEWS: EmployeePerformanceView[] = [

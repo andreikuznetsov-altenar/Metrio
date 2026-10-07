@@ -87,6 +87,23 @@
   color: var(--color-accent-foreground);
 }
 
+.performance-toolbar__export-spinner {
+  color: var(--color-text-tertiary);
+  animation: performance-spin 0.9s linear infinite;
+}
+
+.performance-toolbar__export-btn--busy:disabled {
+  background: var(--color-surface-secondary);
+  border-color: var(--color-border-subtle);
+  color: var(--color-text-tertiary);
+  opacity: 1;
+  cursor: not-allowed;
+}
+
+.performance-toolbar__export-btn--busy:disabled .performance-toolbar__export-spinner {
+  color: var(--color-text-tertiary);
+}
+
 @keyframes performance-spin {
   to {
     transform: rotate(360deg);

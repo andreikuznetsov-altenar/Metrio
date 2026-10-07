@@ -1,4 +1,4 @@
-import { Download, RefreshCw } from "lucide-react";
+import { Download, Loader2, RefreshCw } from "lucide-react";
 import { MetrioDatePicker } from "../components/DatePicker/MetrioDatePicker";
 import { Button } from "../components/Button/Button";
 import { IconButton } from "../components/IconButton/IconButton";
@@ -147,18 +147,30 @@ export function PerformanceToolbar({
           <div className="performance-toolbar__export">
             <Button
               type="button"
-              variant="primary"
+              variant={exportBusy ? "secondary" : "primary"}
+              className={
+                exportBusy ? "performance-toolbar__export-btn performance-toolbar__export-btn--busy" : "performance-toolbar__export-btn"
+              }
               disabled={exportDisabled || exportBusy || actionsDisabled}
-              loading={exportBusy}
+              aria-busy={exportBusy || undefined}
               onClick={onExportPdf}
             >
-              <Download
-                size={16}
-                strokeWidth={1.75}
-                aria-hidden
-                className="performance-toolbar__export-icon"
-              />
-              {exportBusy ? "Exporting…" : "Export PDF"}
+              {exportBusy ? (
+                <Loader2
+                  size={16}
+                  strokeWidth={1.75}
+                  aria-hidden
+                  className="performance-toolbar__export-spinner"
+                />
+              ) : (
+                <Download
+                  size={16}
+                  strokeWidth={1.75}
+                  aria-hidden
+                  className="performance-toolbar__export-icon"
+                />
+              )}
+              Export PDF
             </Button>
           </div>
         ) : null}

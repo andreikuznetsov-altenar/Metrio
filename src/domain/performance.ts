@@ -223,7 +223,8 @@ export type TeamPerformanceView =
   | "people"
   | "radar"
   | "delivery-risk"
-  | "goals";
+  | "goals"
+  | "history-reports";
 
 export interface TeamPeopleRow {
   personId: string;

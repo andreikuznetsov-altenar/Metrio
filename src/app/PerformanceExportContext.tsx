@@ -6,6 +6,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import { flushSync } from "react-dom";
 import type {
   EmployeePerformanceView,
   TeamPerformanceView,
@@ -24,6 +25,7 @@ import {
 } from "../services/export/pdfFilename";
 import type { PerformanceExportView } from "../services/export/types";
 import { PDF_EXPORT_CANCELLED_MESSAGE } from "../services/export/pdfExportMessages";
+import { isPdfExportInProgress } from "../services/export/pdfExportMutex";
 
 export interface PerformanceExportContextValue {
   registerTeamView: (view: TeamPerformanceView) => void;
@@ -68,10 +70,12 @@ export function PerformanceExportProvider({
   });
 
   const exportCurrentView = useCallback(async () => {
-    if (!data || !exportView) {
+    if (!data || !exportView || exporting || isPdfExportInProgress()) {
       return null;
     }
-    setExporting(true);
+    flushSync(() => {
+      setExporting(true);
+    });
     try {
       const payload = await buildPerformanceExportPayloadFromFetch({
         data,
@@ -82,6 +86,9 @@ export function PerformanceExportProvider({
           exportView === "personal-work-history" ? workHistoryPeriod : undefined,
       });
       const result = await exportPerformancePdf(payload);
+      if (result.status === "busy") {
+        return null;
+      }
       if (result.status === "saved") {
         toast.success("PDF exported");
         const openResult = await openExportedPdf(result.path);
@@ -100,7 +107,7 @@ export function PerformanceExportProvider({
     } finally {
       setExporting(false);
     }
-  }, [audience, data, exportView, selfPersonId, toast, workHistoryPeriod]);
+  }, [audience, data, exportView, exporting, selfPersonId, toast, workHistoryPeriod]);
 
   const value = useMemo(
     (): PerformanceExportContextValue => ({

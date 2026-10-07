@@ -17,6 +17,7 @@ import { TeamPeopleView } from "./TeamPeopleView";
 import { TeamPerformanceSubnav } from "./TeamPerformanceSubnav";
 import { TeamRadarView } from "./TeamRadarView";
 import { ManagerGoalsView } from "./ManagerGoalsView";
+import { HistoryReportsView } from "./HistoryReportsView";
 import "./goal-detail-drawer.css";
 import { PerformanceStatusBanner } from "./PerformanceStatusBanner";
 import { WorkspaceContentLoadingState } from "../../components/WorkspaceContentLoading/WorkspaceContentLoadingState";
@@ -172,6 +173,8 @@ export function TeamPerformanceOverview({
       ) : null}
 
       {activeView === "goals" ? <ManagerGoalsView /> : null}
+
+      {activeView === "history-reports" ? <HistoryReportsView /> : null}
     </div>
   );
 }

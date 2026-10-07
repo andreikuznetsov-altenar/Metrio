@@ -150,10 +150,45 @@ describe('exportPerformancePdf', () => {
     const { save } = await import('@tauri-apps/plugin-dialog');
     const { invoke } = await import('@tauri-apps/api/core');
     vi.mocked(save).mockResolvedValue('/Users/test/Desktop/out.pdf');
-    vi.mocked(invoke).mockResolvedValue({ path: '/Users/test/Desktop/out.pdf' });
+    vi.mocked(invoke).mockImplementation(async (command: string) => {
+      if (command === 'write_user_selected_pdf') {
+        return { path: '/Users/test/Desktop/out.pdf' };
+      }
+      if (command === 'report_history_archive') {
+        return {
+          id: 'report-1',
+          createdAt: '2026-10-07T15:02:00.000Z',
+          filename: 'Metrio_Report_2026-10-07_15-02.pdf',
+          storageName: 'Metrio_Report_2026-10-07_15-02.pdf',
+        };
+      }
+      throw new Error(`unexpected invoke ${command}`);
+    });
     const { exportPerformancePdf } = await import('./pdfExport');
     const result = await exportPerformancePdf(payloadFor('team-overview'));
     expect(result).toEqual({ status: 'saved', path: '/Users/test/Desktop/out.pdf' });
+    expect(invoke).toHaveBeenCalledWith(
+      'report_history_archive',
+      expect.objectContaining({ filename: expect.stringContaining('Metrio_Report_') }),
+    );
+  });
+
+  it('rejects concurrent export invocations', async () => {
+    const { save } = await import('@tauri-apps/plugin-dialog');
+    vi.mocked(save).mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          setTimeout(() => resolve('/Users/test/Desktop/out.pdf'), 50);
+        }),
+    );
+    const { invoke } = await import('@tauri-apps/api/core');
+    vi.mocked(invoke).mockResolvedValue({ path: '/Users/test/Desktop/out.pdf' });
+    const { exportPerformancePdf } = await import('./pdfExport');
+    const payload = payloadFor('team-overview');
+    const first = exportPerformancePdf(payload);
+    const second = await exportPerformancePdf(payload);
+    expect(second).toEqual({ status: 'busy' });
+    await first;
   });
 
   it('opens saved pdf via opener plugin', async () => {

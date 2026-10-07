@@ -13,3 +13,4 @@ pub mod company_config_store;
 pub mod dashboard_cache_store;
 pub mod kpi_snapshot_store;
 pub mod pdf_export;
+pub mod report_history_store;

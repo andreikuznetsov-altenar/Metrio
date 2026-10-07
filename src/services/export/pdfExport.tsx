@@ -13,6 +13,12 @@ import {
   userMessageForPdfExportError,
 } from './pdfExportMessages';
 import { logPdfExportEvent } from './pdfExportLogging';
+import { withPdfExportMutex } from './pdfExportMutex';
+import { buildArchivedReportFilename } from '../../domain/reports/reportHistoryFilename';
+import {
+  archiveExportedReport,
+} from '../reports/reportHistoryStore';
+import { notifyReportHistoryChanged } from '../reports/reportHistoryEvents';
 
 export type PdfExportResult =
   | { status: 'saved'; path: string }
@@ -98,7 +104,9 @@ async function writePdfToUserPath(path: string, bytes: Uint8Array): Promise<stri
   return result.path;
 }
 
-export async function exportPerformancePdf(payload: PerformanceExportPayload): Promise<PdfExportResult> {
+async function exportPerformancePdfOnce(
+  payload: PerformanceExportPayload,
+): Promise<PdfExportResult> {
   let bytes: Uint8Array;
   try {
     bytes = await renderPerformancePdfBytes(payload);
@@ -154,6 +162,24 @@ export async function exportPerformancePdf(payload: PerformanceExportPayload): P
       sectionCount: payload.sections.length,
       targetExtension: 'pdf',
     });
+    const createdAt = new Date().toISOString();
+    const archiveFilename = buildArchivedReportFilename(new Date(createdAt));
+    try {
+      await archiveExportedReport(bytes, createdAt, archiveFilename);
+      notifyReportHistoryChanged();
+    } catch (archiveError) {
+      await logPdfExportEvent({
+        stage: 'write',
+        outcome: 'error',
+        view: payload.view,
+        sectionCount: payload.sections.length,
+        targetExtension: 'pdf',
+        errorCode: 'pdf_write_failed',
+        errorClass: errorClass(archiveError),
+        errorMessage:
+          archiveError instanceof Error ? archiveError.message : String(archiveError),
+      });
+    }
     return { status: 'saved', path: savedPath };
   } catch (error) {
     await logPdfExportEvent({
@@ -168,6 +194,16 @@ export async function exportPerformancePdf(payload: PerformanceExportPayload): P
     });
     return toExportError('pdf_write_failed', error);
   }
+}
+
+export async function exportPerformancePdf(
+  payload: PerformanceExportPayload,
+): Promise<PdfExportResult | { status: 'busy' }> {
+  const result = await withPdfExportMutex(() => exportPerformancePdfOnce(payload));
+  if (result.status === 'busy') {
+    return { status: 'busy' };
+  }
+  return result.value;
 }
 
 export async function openExportedPdf(path: string): Promise<PdfExportResult | { status: 'opened' }> {

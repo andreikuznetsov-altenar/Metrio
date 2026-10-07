@@ -866,6 +866,28 @@
   width: 15%;
 }
 
+.performance-table--report-history {
+  table-layout: fixed;
+  width: 100%;
+  min-width: 480px;
+}
+
+.performance-table--report-history col.col-date {
+  width: 40%;
+}
+
+.performance-table--report-history col.col-time {
+  width: 30%;
+}
+
+.performance-table--report-history col.col-action {
+  width: 0.01%;
+}
+
+.performance-table-wrap--report-history {
+  overflow-x: auto;
+}
+
 .performance-table--radar {
   table-layout: fixed;
   width: 100%;

@@ -7,6 +7,7 @@ const ITEMS: { id: TeamPerformanceView; label: string }[] = [
   { id: "radar", label: "Radar" },
   { id: "delivery-risk", label: "Delivery Risk" },
   { id: "goals", label: "Goals" },
+  { id: "history-reports", label: "History reports" },
 ];
 
 export interface TeamPerformanceSubnavProps {
