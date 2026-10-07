@@ -40,6 +40,8 @@ export interface DashboardQueuePanelProps {
   teamPersons?: Person[];
   onOpenJiraIssue?: (issueKey: string, url?: string) => void;
   testId?: string;
+  sortable?: boolean;
+  jiraBaseUrl?: string;
 }
 
 export function DashboardQueuePanel({
@@ -53,10 +55,12 @@ export function DashboardQueuePanel({
   teamPersons = [],
   onOpenJiraIssue,
   testId,
+  sortable = true,
+  jiraBaseUrl: jiraBaseUrlProp,
 }: DashboardQueuePanelProps) {
   const issueCatalog = useOptionalPerformanceIssueCatalog();
   const [tasksOpen, setTasksOpen] = useState(false);
-  const [jiraBaseUrl, setJiraBaseUrl] = useState("");
+  const [jiraBaseUrl, setJiraBaseUrl] = useState(jiraBaseUrlProp ?? "");
 
   useEffect(() => {
     void loadPreferences().then((prefs) => {
@@ -64,6 +68,40 @@ export function DashboardQueuePanel({
     });
   }, []);
   const sourceItems = useMemo(() => {
+    if (readDashboardVisualQueryFlag("visualDashboardUnsortedFocus")) {
+      return [
+        {
+          id: "visual-focus-c",
+          kind: "task_attention",
+          severity: "warning",
+          title: "UX-300",
+          description: "No activity",
+          issueKeys: ["UX-300"],
+          target: { kind: "jira", issueKey: "UX-300" },
+          source: "jira",
+        },
+        {
+          id: "visual-focus-a",
+          kind: "task_attention",
+          severity: "warning",
+          title: "UX-100",
+          description: "Blocked",
+          issueKeys: ["UX-100"],
+          target: { kind: "jira", issueKey: "UX-100" },
+          source: "jira",
+        },
+        {
+          id: "visual-focus-b",
+          kind: "task_attention",
+          severity: "warning",
+          title: "UX-200",
+          description: "Long Review",
+          issueKeys: ["UX-200"],
+          target: { kind: "jira", issueKey: "UX-200" },
+          source: "jira",
+        },
+      ] satisfies ActionItem[];
+    }
     if (
       readDashboardVisualQueryFlag("visualDashboardIssueLink") &&
       items.length === 0
@@ -117,10 +155,14 @@ export function DashboardQueuePanel({
     [openLabel],
   );
 
-  const { sortedRows, sort, toggleSort } = useTableSort(previewRows, QUEUE_COLUMNS, getValue);
+  const { sortedRows, sort, toggleSort } = useTableSort(
+    previewRows,
+    QUEUE_COLUMNS,
+    getValue,
+  );
   const displayRows = useMemo(
-    () => stabilizeDashboardQueueRowOrder(sortedRows),
-    [sortedRows],
+    () => (sort ? sortedRows : stabilizeDashboardQueueRowOrder(sortedRows)),
+    [sort, sortedRows],
   );
   const taskRows = useMemo(
     () =>
@@ -149,10 +191,11 @@ export function DashboardQueuePanel({
             rows={displayRows}
             onOpen={onOpen}
             openLabel={openLabel}
-            sortColumnId={sort?.columnId ?? null}
-            sortDirection={sort?.direction ?? null}
-            onToggleSort={toggleSort}
+            sortColumnId={sortable ? sort?.columnId ?? null : null}
+            sortDirection={sortable ? sort?.direction ?? null : null}
+            onToggleSort={sortable ? toggleSort : () => undefined}
             jiraBaseUrl={jiraBaseUrl}
+            sortable={sortable}
           />
         </>
       )}

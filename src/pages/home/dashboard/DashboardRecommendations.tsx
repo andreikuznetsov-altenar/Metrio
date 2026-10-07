@@ -56,6 +56,8 @@ export function DashboardRecommendations({
               type="button"
               variant="secondary"
               className="executive-recommendations__cta"
+              data-recommendation-action={item.actionKind}
+              data-testid={`recommendation-cta-${item.id}`}
               onClick={() => onAction(item)}
             >
               {item.actionLabel}

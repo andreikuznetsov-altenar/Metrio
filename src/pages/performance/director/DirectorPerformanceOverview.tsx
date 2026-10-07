@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { markPerformanceTabSwitch, useKeepMountedView } from "../useKeepMountedView";
 import { usePerformanceData } from "../../../app/PerformanceDataContext";
 import { useCurrentUser } from "../../../app/CurrentUserContext";
 import { useFeedbackSurveyStore } from "../../../app/feedbackSurveyStore";
@@ -39,6 +40,7 @@ export function DirectorPerformanceOverview({
   const [activeView, setActiveView] = useState<DirectorPerformanceView>(
     () => readPersistedDirectorPerformanceView(),
   );
+  const mountedViews = useKeepMountedView(activeView);
   const [selectedTeamId, setSelectedTeamId] = useState<string | undefined>();
   const [deliveryTeamId, setDeliveryTeamId] = useState<string | undefined>();
   const [deliveryFilter, setDeliveryFilter] = useState<"review" | "all">("all");
@@ -164,64 +166,76 @@ export function DirectorPerformanceOverview({
       <DirectorPerformanceSubnav
         activeView={activeView}
         onChange={(view) => {
+          markPerformanceTabSwitch(view);
           writePersistedDirectorPerformanceView(view);
           setActiveView(view);
         }}
       />
 
-      {activeView === "overview" ? (
-        <DirectorOverviewView
-          model={model}
-          onOpenSignal={openSignal}
-          onOpenTeams={() => {
-            writePersistedDirectorPerformanceView("teams");
-            setActiveView("teams");
-          }}
-        />
-      ) : null}
-
-      {activeView === "people" ? (
-        leadershipBranchRows.length > 0 ? (
-          <LeadershipBranchesPerformanceView
-            rows={leadershipBranchRows}
-            selectedLeaderId={selectedTeamId}
-            onSelectLeader={setSelectedTeamId}
-            onBack={() => setSelectedTeamId(undefined)}
-            surfaceTestId="leadership-branches-people"
+      {mountedViews.includes("overview") ? (
+        <div hidden={activeView !== "overview"} data-testid="performance-view-overview">
+          <DirectorOverviewView
+            model={model}
+            onOpenSignal={openSignal}
+            onOpenTeams={() => {
+              markPerformanceTabSwitch("teams");
+              writePersistedDirectorPerformanceView("teams");
+              setActiveView("teams");
+            }}
           />
-        ) : (
-          <p className="performance-inline-empty">No leadership branches in scope.</p>
-        )
+        </div>
       ) : null}
 
-      {activeView === "teams" ? (
-        leadershipBranchRows.length > 0 ? (
-          <LeadershipBranchesPerformanceView
-            rows={leadershipBranchRows}
-            selectedLeaderId={selectedTeamId}
-            onSelectLeader={setSelectedTeamId}
-            onBack={() => setSelectedTeamId(undefined)}
+      {mountedViews.includes("people") ? (
+        <div hidden={activeView !== "people"} data-testid="performance-view-people">
+          {leadershipBranchRows.length > 0 ? (
+            <LeadershipBranchesPerformanceView
+              rows={leadershipBranchRows}
+              selectedLeaderId={selectedTeamId}
+              onSelectLeader={setSelectedTeamId}
+              onBack={() => setSelectedTeamId(undefined)}
+              surfaceTestId="leadership-branches-people"
+            />
+          ) : (
+            <p className="performance-inline-empty">No leadership branches in scope.</p>
+          )}
+        </div>
+      ) : null}
+
+      {mountedViews.includes("teams") ? (
+        <div hidden={activeView !== "teams"} data-testid="performance-view-teams">
+          {leadershipBranchRows.length > 0 ? (
+            <LeadershipBranchesPerformanceView
+              rows={leadershipBranchRows}
+              selectedLeaderId={selectedTeamId}
+              onSelectLeader={setSelectedTeamId}
+              onBack={() => setSelectedTeamId(undefined)}
+            />
+          ) : (
+            <DirectorTeamsView
+              teams={model.teams}
+              selectedTeamId={selectedTeamId}
+              onSelectTeam={setSelectedTeamId}
+              onBack={() => setSelectedTeamId(undefined)}
+            />
+          )}
+        </div>
+      ) : null}
+
+      {mountedViews.includes("signals") ? (
+        <div hidden={activeView !== "signals"} data-testid="performance-view-signals">
+          <DirectorSignalsView signals={model.signals} onOpen={openSignal} />
+        </div>
+      ) : null}
+
+      {mountedViews.includes("delivery") ? (
+        <div hidden={activeView !== "delivery"} data-testid="performance-view-delivery">
+          <DirectorDeliveryView
+            deliveryRisk={deliveryRows}
+            teamFilterLabel={deliveryFilterLabel}
+            onOpenPerson={onOpenPerson}
           />
-        ) : (
-          <DirectorTeamsView
-            teams={model.teams}
-            selectedTeamId={selectedTeamId}
-            onSelectTeam={setSelectedTeamId}
-            onBack={() => setSelectedTeamId(undefined)}
-          />
-        )
-      ) : null}
-
-      {activeView === "signals" ? (
-        <DirectorSignalsView signals={model.signals} onOpen={openSignal} />
-      ) : null}
-
-      {activeView === "delivery" ? (
-        <DirectorDeliveryView
-          deliveryRisk={deliveryRows}
-          teamFilterLabel={deliveryFilterLabel}
-          onOpenPerson={onOpenPerson}
-        />
+        </div>
       ) : null}
     </div>
   );

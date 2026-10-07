@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { APP_DRAWER_LAYER_ID } from "../Drawer/drawerPortal";
 import { APP_MODAL_LAYER_ID } from "../Modal/modalPortal";
+import { APP_TOOLTIP_LAYER_ID } from "../Tooltip/tooltipPortal";
 import "./AppShell.css";
 
 export interface AppShellProps {
@@ -48,6 +49,11 @@ export function AppShell({
         id={APP_MODAL_LAYER_ID}
         className="app-modal-layer"
         data-testid="app-modal-layer"
+      />
+      <div
+        id={APP_TOOLTIP_LAYER_ID}
+        className="app-tooltip-layer"
+        data-testid="app-tooltip-layer"
       />
     </div>
   );

@@ -6,6 +6,10 @@
   max-width: 100%;
 }
 
+.performance-dashboard [data-testid^="performance-view-"][hidden] {
+  display: none !important;
+}
+
 .performance-subnav {
   display: flex;
   align-items: center;

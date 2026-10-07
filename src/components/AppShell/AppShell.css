@@ -51,7 +51,8 @@
 }
 
 .app-drawer-layer,
-.app-modal-layer {
+.app-modal-layer,
+.app-tooltip-layer {
   position: absolute;
   top: var(--app-overlay-top-inset);
   right: 0;
@@ -66,6 +67,14 @@
 
 .app-modal-layer {
   z-index: var(--z-modal-scrim, 120);
+}
+
+.app-tooltip-layer {
+  z-index: var(--z-tooltip, 130);
+}
+
+.app-tooltip-layer .tooltip__content {
+  pointer-events: auto;
 }
 
 .app-drawer-layer:has(.drawer-root.is-visible) {

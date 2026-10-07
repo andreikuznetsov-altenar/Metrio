@@ -53,6 +53,7 @@ export function DashboardActionTabs({
         footerAction={footerByTab?.[active.id]}
         teamPersons={teamPersons}
         onOpenJiraIssue={onOpenJiraIssue}
+        sortable={active.id === "focus"}
       />
     </div>
   );

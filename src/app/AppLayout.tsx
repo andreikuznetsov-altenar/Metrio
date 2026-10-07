@@ -215,7 +215,8 @@ function AppLayoutShell({
     performanceStatus === "ready" ||
     performanceStatus === "partial" ||
     performanceStatus === "refreshing" ||
-    (performanceStatus === "error" && Boolean(data));
+    (performanceStatus === "error" && Boolean(data)) ||
+    Boolean(viewModels);
   const performanceNavEnabled = reportingNavReady;
   const performanceExport = usePerformanceExport();
   const workGraph = useWorkGraph();

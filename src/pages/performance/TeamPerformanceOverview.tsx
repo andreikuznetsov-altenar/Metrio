@@ -1,11 +1,13 @@
-import { useEffect, useState } from "react";
+import { useEffect, useLayoutEffect, useState } from "react";
 import type { TeamPerformanceView } from "../../domain/performance";
 import type { PerformanceReviewTarget } from "../../domain/performance";
 import { usePerformanceData } from "../../app/PerformanceDataContext";
 import {
-  readPersistedTeamPerformanceView,
+  consumePendingTeamPerformanceView,
+  readIntendedTeamPerformanceView,
   writePersistedTeamPerformanceView,
 } from "../../app/performanceViewPersistence";
+import { markPerformanceTabSwitch, useKeepMountedView } from "./useKeepMountedView";
 import { usePerformanceExport } from "../../app/PerformanceExportContext";
 import {
   usePerformanceAnalytics,
@@ -38,8 +40,9 @@ export function TeamPerformanceOverview({
   reviewTarget,
 }: TeamPerformanceOverviewProps) {
   const [activeView, setActiveView] = useState<TeamPerformanceView>(
-    () => readPersistedTeamPerformanceView(),
+    () => readIntendedTeamPerformanceView(),
   );
+  const mountedViews = useKeepMountedView(activeView);
   const { viewModels, uiState } = usePerformanceData();
   const { registerTeamView } = usePerformanceExport();
   const { openTeamMetricDrilldown, openTeamTrendDrilldown } =
@@ -58,10 +61,18 @@ export function TeamPerformanceOverview({
     registerTeamView(activeView);
   }, [activeView, registerTeamView]);
 
+  useLayoutEffect(() => {
+    const pending = consumePendingTeamPerformanceView();
+    if (pending) {
+      setActiveView(pending);
+    }
+  }, []);
+
   useEffect(() => {
     const handler = (event: Event) => {
       const tab = (event as CustomEvent<TeamPerformanceView>).detail;
       if (tab) {
+        writePersistedTeamPerformanceView(tab);
         setActiveView(tab);
       }
     };
@@ -143,37 +154,58 @@ export function TeamPerformanceOverview({
       <TeamPerformanceSubnav
         activeView={activeView}
         onChange={(view) => {
+          markPerformanceTabSwitch(view);
           writePersistedTeamPerformanceView(view);
           setActiveView(view);
         }}
       />
 
-      {activeView === "overview" ? (
-        <TeamOverviewView
-          snapshot={snapshot}
-          secondary={secondary}
-          onOpenPerson={handleOpenPerson}
-          onViewAllRadar={() => setActiveView("radar")}
-          onOpenMetricDrilldown={openMetricDrilldown}
-          onOpenTrendDrilldown={openTrendDrilldown}
-        />
+      {mountedViews.includes("overview") ? (
+        <div hidden={activeView !== "overview"} data-testid="performance-view-overview">
+          <TeamOverviewView
+            snapshot={snapshot}
+            secondary={secondary}
+            onOpenPerson={handleOpenPerson}
+            onViewAllRadar={() => {
+              markPerformanceTabSwitch("radar");
+              writePersistedTeamPerformanceView("radar");
+              setActiveView("radar");
+            }}
+            onOpenMetricDrilldown={openMetricDrilldown}
+            onOpenTrendDrilldown={openTrendDrilldown}
+          />
+        </div>
       ) : null}
 
-      {activeView === "people" ? (
-        <TeamPeopleView rows={secondary.people} onOpenPerson={handleOpenPerson} />
+      {mountedViews.includes("people") ? (
+        <div hidden={activeView !== "people"} data-testid="performance-view-people">
+          <TeamPeopleView rows={secondary.people} onOpenPerson={handleOpenPerson} />
+        </div>
       ) : null}
 
-      {activeView === "radar" ? (
-        <TeamRadarView rows={secondary.radar} onOpenPerson={handleOpenPerson} />
+      {mountedViews.includes("radar") ? (
+        <div hidden={activeView !== "radar"} data-testid="performance-view-radar">
+          <TeamRadarView rows={secondary.radar} onOpenPerson={handleOpenPerson} />
+        </div>
       ) : null}
 
-      {activeView === "delivery-risk" ? (
-        <TeamDeliveryRiskView rows={secondary.deliveryRisk} onOpenPerson={handleOpenPerson} />
+      {mountedViews.includes("delivery-risk") ? (
+        <div hidden={activeView !== "delivery-risk"} data-testid="performance-view-delivery-risk">
+          <TeamDeliveryRiskView rows={secondary.deliveryRisk} onOpenPerson={handleOpenPerson} />
+        </div>
       ) : null}
 
-      {activeView === "goals" ? <ManagerGoalsView /> : null}
+      {mountedViews.includes("goals") ? (
+        <div hidden={activeView !== "goals"} data-testid="performance-view-goals">
+          <ManagerGoalsView />
+        </div>
+      ) : null}
 
-      {activeView === "history-reports" ? <HistoryReportsView /> : null}
+      {mountedViews.includes("history-reports") ? (
+        <div hidden={activeView !== "history-reports"} data-testid="performance-view-history-reports">
+          <HistoryReportsView />
+        </div>
+      ) : null}
     </div>
   );
 }

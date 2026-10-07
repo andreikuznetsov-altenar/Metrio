@@ -153,30 +153,21 @@ test.describe("PASS 14 product repair", () => {
   });
 
   for (const width of [1280, 1440, 1728]) {
-    test(`Team actions sort icon remains label-adjacent at ${width}px`, async ({
+    test(`Team Actions headers have no sort controls at ${width}px`, async ({
       page,
     }) => {
       await page.addInitScript(() => {
         localStorage.setItem("metrio-visual-visualDashboardIssueLink", "1");
       });
       await bootDashboardManager(page, { width });
-      const table = page.getByTestId("dashboard-action-queue").first();
-      const header = table.locator("thead th").first();
-      const label = header.locator(".performance-table__sort-label");
-      const icon = header.locator(".performance-table__sort-icon");
-      await expect(label).toBeVisible();
-      await expect(icon).toBeVisible();
-      const [headerBox, labelBox, iconBox] = await Promise.all([
-        header.boundingBox(),
-        label.boundingBox(),
-        icon.boundingBox(),
-      ]);
-      expect(headerBox && labelBox && iconBox).toBeTruthy();
-      expect(iconBox!.x - (labelBox!.x + labelBox!.width)).toBeGreaterThanOrEqual(6);
-      expect(iconBox!.x - (labelBox!.x + labelBox!.width)).toBeLessThanOrEqual(10);
-      expect(iconBox!.x + iconBox!.width).toBeLessThanOrEqual(
-        headerBox!.x + headerBox!.width + 1,
-      );
+      await page.getByRole("tab", { name: /team actions/i }).click();
+      const table = page.getByTestId("dashboard-tab-team").getByTestId("dashboard-action-queue");
+      await expect(table).toBeVisible();
+      await expect(table.locator(".performance-table__sort-btn")).toHaveCount(0);
+      await expect(table.locator(".performance-table__sort-icon")).toHaveCount(0);
+      await expect(table.locator("[aria-sort]")).toHaveCount(0);
+      const headers = table.locator("thead th");
+      await expect(headers).toHaveCount(4);
     });
   }
 

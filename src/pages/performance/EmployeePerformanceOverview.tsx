@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { markPerformanceTabSwitch, useKeepMountedView } from "./useKeepMountedView";
 import { usePerformanceData } from "../../app/PerformanceDataContext";
 import { useOptionalPerformanceAnalytics } from "../../app/performanceAnalyticsContext";
 import { usePersonNavigation } from "../../app/PersonNavigationContext";
@@ -59,6 +60,7 @@ export function EmployeePerformanceOverview({ personId }: EmployeePerformanceOve
   const [activeView, setActiveView] = useState<EmployeePerformanceView>(
     () => readPersistedEmployeePerformanceView(),
   );
+  const mountedViews = useKeepMountedView(activeView);
   const { viewModels, status, data } = usePerformanceData();
   const analytics = useOptionalPerformanceAnalytics();
   const { openPerson } = usePersonNavigation();
@@ -187,13 +189,18 @@ export function EmployeePerformanceOverview({ personId }: EmployeePerformanceOve
       <EmployeePerformanceSubnav
         activeView={activeView}
         onChange={(view) => {
+          markPerformanceTabSwitch(view);
           writePersistedEmployeePerformanceView(view);
           setActiveView(view);
         }}
       />
 
-      {activeView === "overview" ? (
-        <section aria-label="Performance overview">
+      {mountedViews.includes("overview") ? (
+        <section
+          aria-label="Performance overview"
+          hidden={activeView !== "overview"}
+          data-testid="performance-view-overview"
+        >
           <p className="performance-employee-context">{workspace.contextLine}</p>
 
           {selfBamboo && selfBamboo.hireDate && isNewStarter(selfBamboo.hireDate) ? (
@@ -264,30 +271,38 @@ export function EmployeePerformanceOverview({ personId }: EmployeePerformanceOve
         </section>
       ) : null}
 
-      {activeView === "my-week" ? (
-        <EmployeeMyWeekView myWeek={snapshot.myWeek} />
+      {mountedViews.includes("my-week") ? (
+        <div hidden={activeView !== "my-week"} data-testid="performance-view-my-week">
+          <EmployeeMyWeekView myWeek={snapshot.myWeek} />
+        </div>
       ) : null}
 
-      {activeView === "goals" ? (
-        <EmployeeGoalsView personId={personId} />
+      {mountedViews.includes("goals") ? (
+        <div hidden={activeView !== "goals"} data-testid="performance-view-goals">
+          <EmployeeGoalsView personId={personId} />
+        </div>
       ) : null}
 
-      {activeView === "trends" ? (
-        <EmployeeTrendsView
-          trends={snapshot.trends}
-          personId={workspace.personId}
-          personDisplayName={workspace.personName}
-        />
+      {mountedViews.includes("trends") ? (
+        <div hidden={activeView !== "trends"} data-testid="performance-view-trends">
+          <EmployeeTrendsView
+            trends={snapshot.trends}
+            personId={workspace.personId}
+            personDisplayName={workspace.personName}
+          />
+        </div>
       ) : null}
 
-      {activeView === "work-history" ? (
-        <EmployeeWorkHistoryView
-          personId={workspace.personId}
-          personName={workspace.personName}
-          historyWeek={snapshot.historyWeek}
-          historyMonth={snapshot.historyMonth}
-          historyQuarter={snapshot.historyQuarter}
-        />
+      {mountedViews.includes("work-history") ? (
+        <div hidden={activeView !== "work-history"} data-testid="performance-view-work-history">
+          <EmployeeWorkHistoryView
+            personId={workspace.personId}
+            personName={workspace.personName}
+            historyWeek={snapshot.historyWeek}
+            historyMonth={snapshot.historyMonth}
+            historyQuarter={snapshot.historyQuarter}
+          />
+        </div>
       ) : null}
       <ResourceLibrary
         open={resourceLibrary.open}

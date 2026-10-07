@@ -33,6 +33,7 @@ describe("UI13 drawer full-app overlay geometry", () => {
     expect(surfaces).toContain("--z-drawer-panel:");
     expect(surfaces).toContain("--z-modal-scrim:");
     expect(surfaces).toContain("--z-modal-panel:");
+    expect(surfaces).toContain("--z-tooltip:");
     expect(surfaces).toContain("--z-toast:");
   });
 

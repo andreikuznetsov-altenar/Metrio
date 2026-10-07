@@ -44,6 +44,7 @@ export function ActionQueueSection({
             sortDirection={null}
             onToggleSort={() => undefined}
             jiraBaseUrl={resolveJiraBaseUrl()}
+            sortable={false}
           />
         )}
         {footerAction ? (

@@ -25,6 +25,8 @@ export interface DashboardActionQueueTableProps {
   sortDirection: "asc" | "desc" | null;
   onToggleSort: (columnId: string) => void;
   jiraBaseUrl?: string;
+  /** When false, headers are plain text with no sort affordance. */
+  sortable?: boolean;
 }
 
 export function DashboardActionQueueTable({
@@ -36,6 +38,7 @@ export function DashboardActionQueueTable({
   sortDirection,
   onToggleSort,
   jiraBaseUrl = "",
+  sortable = true,
 }: DashboardActionQueueTableProps) {
   const renderWorkLabel = (row: DashboardQueueRow) => (
     <JiraIssueText text={row.subject} jiraBaseUrl={jiraBaseUrl} />
@@ -61,8 +64,12 @@ export function DashboardActionQueueTable({
         <thead>
           <tr>
             {headerColumns.map((col) =>
-              col.id === "action" ? (
-                <th key={col.id} scope="col" className="performance-table__action">
+              !sortable || col.id === "action" ? (
+                <th
+                  key={col.id}
+                  scope="col"
+                  className={col.id === "action" ? "performance-table__action" : undefined}
+                >
                   <span className="performance-table__sort-label">{col.label}</span>
                 </th>
               ) : (

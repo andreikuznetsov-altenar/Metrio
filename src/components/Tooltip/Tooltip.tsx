@@ -1,5 +1,6 @@
 import * as TooltipPrimitive from "@radix-ui/react-tooltip";
-import type { ReactElement, ReactNode } from "react";
+import { useLayoutEffect, useState, type ReactElement, type ReactNode } from "react";
+import { getAppTooltipPortalRoot } from "./tooltipPortal";
 import "./Tooltip.css";
 
 export interface TooltipProps {
@@ -23,12 +24,18 @@ export function Tooltip({
   side = "top",
   align = "center",
 }: TooltipProps) {
+  const [container, setContainer] = useState<HTMLElement | undefined>();
+  useLayoutEffect(() => {
+    setContainer(getAppTooltipPortalRoot());
+  }, []);
+
   return (
     <TooltipPrimitive.Root>
       <TooltipPrimitive.Trigger asChild>{children}</TooltipPrimitive.Trigger>
-      <TooltipPrimitive.Portal>
+      <TooltipPrimitive.Portal container={container}>
         <TooltipPrimitive.Content
           className="tooltip__content tooltip__content--radix"
+          data-testid="metrio-tooltip"
           side={side}
           align={align}
           sideOffset={6}

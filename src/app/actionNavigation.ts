@@ -2,7 +2,7 @@ import type { ActionItem, ActionTarget } from "../domain/actions/actionTypes";
 import { openExternalUrl } from "../platform/openExternal";
 
 import type { TeamPerformanceView } from "../domain/performance";
-import { writePersistedTeamPerformanceView } from "./performanceViewPersistence";
+import { setPendingTeamPerformanceView } from "./performanceViewPersistence";
 
 export function dispatchPerformanceTab(
   view: TeamPerformanceView,
@@ -14,11 +14,9 @@ export function dispatchPerformanceTab(
 
 /** Navigate to Performance and activate a team subnav tab after the route mounts. */
 export function navigatePerformanceView(view: TeamPerformanceView): void {
-  writePersistedTeamPerformanceView(view);
+  setPendingTeamPerformanceView(view);
   dispatchAppRoute("performance");
-  window.setTimeout(() => {
-    dispatchPerformanceTab(view);
-  }, 0);
+  dispatchPerformanceTab(view);
 }
 
 export function dispatchFeedbackTab(tab: "survey" | "delivery" | "results" | "history") {
@@ -57,12 +55,10 @@ export function navigateActionTarget(
       void openExternalUrl(buildJiraIssueUrl(target.issueKey));
       return;
     case "delivery-risk":
-      dispatchAppRoute("performance");
-      dispatchPerformanceTab("delivery-risk");
+      navigatePerformanceView("delivery-risk");
       return;
     case "performance":
-      dispatchAppRoute("performance");
-      dispatchPerformanceTab(target.view);
+      navigatePerformanceView(target.view);
       return;
     case "feedback":
       dispatchAppRoute("feedback");
