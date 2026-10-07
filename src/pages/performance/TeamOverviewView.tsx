@@ -464,8 +464,6 @@ export function TeamOverviewView({
                     label="Issues"
                     sort={attentionSort.sort}
                     onToggle={attentionSort.toggleSort}
-                    className="performance-table__num"
-                    align="right"
                   />
                   <SortableTableHeader
                     columnId="severity"

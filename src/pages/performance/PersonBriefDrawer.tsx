@@ -163,7 +163,7 @@ export function PersonBriefDrawerPanel({
         </section>
       ) : null}
       {brief.attention.length ? (
-        <section className="person-brief__section-card">
+        <section className="person-brief__section person-brief__section--attention">
           <h3 className="person-brief__section-title">Attention</h3>
           <AttentionSignalsTable
             groups={brief.attention}

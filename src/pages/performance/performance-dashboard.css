@@ -970,7 +970,6 @@
 .performance-table--attention {
   table-layout: fixed;
   width: 100%;
-  min-width: 960px;
 }
 
 .performance-table--task-list {
@@ -978,20 +977,20 @@
   width: 100%;
 }
 
-.performance-table--task-list col.col-issues {
-  width: 11%;
+.performance-table--task-list col.col-issue-key {
+  width: 9%;
 }
 
-.performance-table--task-list col.col-reason {
-  width: 36%;
+.performance-table--task-list col.col-title {
+  width: 34%;
 }
 
-.performance-table--task-list col.col-num {
-  width: 16%;
+.performance-table--task-list col.col-date {
+  width: 15%;
 }
 
-.performance-table--task-list col.col-badge {
-  width: 14%;
+.performance-table--task-list col.col-status {
+  width: 12%;
 }
 
 .performance-table__date-cell {
@@ -1031,19 +1030,19 @@
 }
 
 .performance-table--attention col.col-person {
-  width: 22%;
+  width: 24%;
 }
 
 .performance-table--attention col.col-reason {
-  width: 28%;
+  width: 26%;
 }
 
 .performance-table--attention col.col-issues {
-  width: 22%;
+  width: 16%;
 }
 
 .performance-table--attention col.col-badge {
-  width: 14%;
+  width: 17%;
 }
 
 .performance-table--attention-signals {

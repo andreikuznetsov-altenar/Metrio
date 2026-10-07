@@ -29,7 +29,7 @@ export function TaskListModal({
           <MetrioTableWrap>
             <table className={`${METRIO_TABLE_CLASS} performance-table--task-list`}>
               <PerformanceTableColgroup
-                columns={["issues", "reason", "num", "num", "badge"]}
+                columns={["issueKey", "title", "date", "date", "status"]}
               />
               <thead>
                 <tr>

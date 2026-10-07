@@ -30,11 +30,23 @@ export function ActionQueueSection({
         {items.length === 0 ? (
           <p className="home-card__empty" role="status">{emptyMessage}</p>
         ) : (
-          <DashboardActionQueueRows
-            rows={buildDashboardQueueRows(items)}
-            onOpen={onOpen}
-            openLabel={openLabel}
-          />
+          <>
+            <div className="action-queue__dashboard-header" role="row" aria-hidden>
+              <span className="action-queue__dashboard-header-cell">Person</span>
+              <span className="action-queue__dashboard-header-cell">Tag</span>
+              <span className="action-queue__dashboard-header-cell">Info</span>
+              <span
+                className="action-queue__dashboard-header-cell action-queue__dashboard-header-cell--end"
+              >
+                Action
+              </span>
+            </div>
+            <DashboardActionQueueRows
+              rows={buildDashboardQueueRows(items)}
+              onOpen={onOpen}
+              openLabel={openLabel}
+            />
+          </>
         )}
         {footerAction ? (
           <div className="home-card__actions">

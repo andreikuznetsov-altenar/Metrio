@@ -44,10 +44,15 @@ export function DashboardRecommendations({
               <Badge variant={SEVERITY_VARIANT[item.severity]}>
                 {SEVERITY_LABEL[item.severity]}
               </Badge>
-              <p className="executive-recommendations__title">{item.title}</p>
             </div>
+            <p className="executive-recommendations__title">{item.title}</p>
             <p className="executive-recommendations__copy">{item.explanation}</p>
-            <Button type="button" variant="secondary" onClick={() => onAction(item)}>
+            <Button
+              type="button"
+              variant="secondary"
+              className="executive-recommendations__cta"
+              onClick={() => onAction(item)}
+            >
               {item.actionLabel}
             </Button>
           </li>

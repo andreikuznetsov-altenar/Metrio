@@ -228,8 +228,14 @@
   display: flex;
   align-items: center;
   justify-content: flex-start;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   gap: var(--space-2);
+  width: 100%;
+}
+
+.person-detail-drawer__history-controls .segmented-control {
+  flex: 1;
+  min-width: 0;
 }
 
 .person-detail-drawer__history-controls .select-trigger {

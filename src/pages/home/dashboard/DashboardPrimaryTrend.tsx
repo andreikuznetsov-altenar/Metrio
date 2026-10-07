@@ -41,9 +41,12 @@ export function DashboardPrimaryTrend({
       <div className="executive-panel__title-row">
         <h2 className="executive-panel__title">Trend</h2>
         {options.length > 1 ? (
-          <div className="executive-primary-trend__selector">
+          <div className="executive-primary-trend__metric-row">
+            <span className="executive-primary-trend__metric-label" id="dashboard-trend-metric-label">
+              Metric
+            </span>
             <Select
-              label="Metric"
+              aria-label="Metric"
               value={selected.label}
               onChange={(event) => setSelectedLabel(event.target.value)}
               options={options.map((opt) => ({

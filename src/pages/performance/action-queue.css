@@ -204,11 +204,11 @@
 .action-queue__dashboard-row {
   display: grid;
   grid-template-columns:
-    minmax(0, 1.2fr)
-    auto
-    minmax(0, 1fr)
+    minmax(0, 1.1fr)
+    minmax(0, 0.75fr)
+    minmax(0, 1.25fr)
     minmax(min-content, max-content);
-  gap: 12px;
+  gap: var(--space-2);
   align-items: center;
   padding: var(--space-2) 0;
   border-top: 1px solid var(--color-border);

@@ -44,6 +44,7 @@
   /* Spacing (4px scale) */
   --space-1: 4px;
   --space-2: 8px;
+  --icon-text-gap: var(--space-2);
   --space-3: 12px;
   --space-4: 16px;
   --space-5: 20px;
@@ -58,8 +59,10 @@
   --motion-hover: 120ms;
   --motion-control: 140ms;
   --motion-popover: 160ms;
-  --motion-drawer: 240ms;
-  --motion-backdrop: 200ms;
+  --motion-drawer: 300ms;
+  --motion-drawer-open: 300ms;
+  --motion-drawer-close: 320ms;
+  --motion-backdrop: 220ms;
   --motion-tab: 200ms;
   --transition-easing: cubic-bezier(0.4, 0, 0.2, 1);
   --ease-standard: cubic-bezier(0.4, 0, 0.2, 1);

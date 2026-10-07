@@ -17,6 +17,7 @@ const SEVERITY_LABEL = {
 } as const;
 
 const ISSUE_KEY_PATTERN = /\b[A-Z][A-Z0-9]+-\d+\b/g;
+const ATTENTION_NOW_MAX_ROWS = 5;
 
 function issueKeysForItem(item: ExecutiveAttentionItem): string[] {
   const fromField = item.issueKeys ?? [];
@@ -36,6 +37,7 @@ export function DashboardAttentionNow({
 }) {
   if (!items.length) return null;
 
+  const visibleItems = items.slice(0, ATTENTION_NOW_MAX_ROWS);
   const critical = items.filter((i) => i.severity === "critical").length;
   const warning = items.filter((i) => i.severity === "warning").length;
 
@@ -61,7 +63,7 @@ export function DashboardAttentionNow({
           ) : null}
         </span>
       </div>
-      <div className="executive-attention-now__table-wrap metrio-scroll">
+      <div className="executive-attention-now__table-wrap">
         <table className="executive-attention-now__table">
           <thead>
             <tr>
@@ -74,7 +76,7 @@ export function DashboardAttentionNow({
             </tr>
           </thead>
           <tbody>
-            {items.map((item) => {
+            {visibleItems.map((item) => {
               const keys = issueKeysForItem(item);
               return (
                 <tr key={item.id}>

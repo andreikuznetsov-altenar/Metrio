@@ -323,6 +323,7 @@ export function PersonDetailDrawer({
                 />
                 <SegmentedControl
                   ariaLabel="History outcome filter"
+                  fullWidth
                   value={historyFilter}
                   onChange={setHistoryFilter}
                   options={[
