@@ -1,6 +1,8 @@
 import { Button } from "../../components/Button/Button";
+import { TeamWorkloadDonut } from "../../components/charts/TeamWorkloadDonut";
 import { Drawer } from "../../components/Drawer/Drawer";
 import type { OperationalDigest } from "../../domain/digests/digestTypes";
+import type { WorkloadRow } from "../../domain/performance";
 import {
   digestSectionCards,
   formatDigestDrawerSubtitle,
@@ -12,9 +14,10 @@ export interface DigestDrawerProps {
   digest: OperationalDigest | null;
   open: boolean;
   onClose: () => void;
+  teamWorkload?: WorkloadRow[];
 }
 
-export function DigestDrawer({ digest, open, onClose }: DigestDrawerProps) {
+export function DigestDrawer({ digest, open, onClose, teamWorkload = [] }: DigestDrawerProps) {
   const copy = () => {
     if (!digest?.plainText) return;
     void navigator.clipboard.writeText(digest.plainText);
@@ -50,6 +53,9 @@ export function DigestDrawer({ digest, open, onClose }: DigestDrawerProps) {
     >
       {digest ? (
         <div className="digest-drawer__body" data-testid="digest-drawer">
+          {digest.kind === "daily" && teamWorkload.length > 0 ? (
+            <TeamWorkloadDonut workload={teamWorkload} />
+          ) : null}
           {cards.map((card) => (
             <section key={card.id} className="digest-drawer__card">
               <h3 className="digest-drawer__card-title">{card.title}</h3>

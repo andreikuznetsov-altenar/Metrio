@@ -194,7 +194,7 @@ function AppLayoutShell({
   );
   const feedbackEnabled = feedbackFeatureOn && orgFeatureAccess.showFeedbackTab;
   const { resetConnection, invalidateSession } = useConnectionGate();
-  const { refresh, performanceControlsDisabled, data } = usePerformanceData();
+  const { refresh, performanceControlsDisabled, data, viewModels } = usePerformanceData();
   const performanceExport = usePerformanceExport();
   const workGraph = useWorkGraph();
   const { preference, setPreference } = useTheme();
@@ -550,6 +550,7 @@ function AppLayoutShell({
         }
         open={digestOpen}
         onClose={() => setDigestOpen(false)}
+        teamWorkload={viewModels?.teamOverview?.workload ?? []}
       />
     </>
   );
