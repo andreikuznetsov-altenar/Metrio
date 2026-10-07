@@ -60,7 +60,7 @@ describe('calculateWorkload', () => {
       { status: 'Closed', active: false },
       { status: 'Cancelled', active: false },
       { status: 'In Progress', active: true },
-      { status: 'Review', active: true },
+      { status: 'Review', active: false },
       { status: 'On Hold', active: true },
     ];
     statuses.forEach(({ status, active }) => {

@@ -37,13 +37,13 @@ export function presetForCanonicalStage(
       return {
         canonicalStage,
         statusName,
-        countsAsActiveWork: true,
+        countsAsActiveWork: false,
         countsAsReview: true,
         countsAsQa: false,
         countsAsWaiting: false,
         countsAsHold: false,
         countsAsAttentionEligible: true,
-        countsAsCapacityContributor: true,
+        countsAsCapacityContributor: false,
         isTerminal: false,
         isCompletion: false,
       };

@@ -13,6 +13,7 @@ import type { WorkflowProfileMapping } from '../workflows/types';
 import { resolveWorkflowProfile } from '../workflows/resolveWorkflowProfile';
 import { resolveWorkflowStage } from '../workflows/resolveWorkflowStage';
 import { isWorkflowCapacityEligible } from '../workflows/eligibility';
+import { isActiveWorkloadStatus } from '../workflows/workloadStatusClassification';
 
 export type WorkloadLevel = 'low' | 'normal' | 'high' | 'overloaded';
 
@@ -52,19 +53,14 @@ export function normalizeWorkloadThresholds(
 }
 
 export function isIssueActive(issue: AuditIssue, params: ReportParams): boolean {
-  const profile = resolveWorkflowProfile(issue);
-  const stage = resolveWorkflowStage(profile, issue.currentStatus || '');
-  if (stage.isTerminal || stage.isCompletion) return false;
   if (!isWorkflowCapacityEligible(issue)) {
     return !classifyTaskHealth({ issue, params }).isCompleted;
   }
-  return (
-    stage.countsAsActiveWork ||
-    stage.countsAsReview ||
-    stage.countsAsQa ||
-    stage.countsAsHold ||
-    stage.countsAsWaiting
-  );
+  const profile = resolveWorkflowProfile(issue);
+  const stage = resolveWorkflowStage(profile, issue.currentStatus || '');
+  if (stage.isTerminal || stage.isCompletion) return false;
+  if (isActiveWorkloadStatus(issue)) return true;
+  return stage.countsAsQa || stage.countsAsHold || stage.countsAsWaiting;
 }
 
 export function countActiveIssues(issues: AuditIssue[], params: ReportParams): number {
