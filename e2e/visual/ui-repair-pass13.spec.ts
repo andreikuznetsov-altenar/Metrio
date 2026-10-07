@@ -287,7 +287,7 @@ test.describe("UI Repair Pass 13 acceptance", () => {
     await openFirstAttentionPerson(page);
     const dialog = page.locator(".drawer--person-detail");
     await expect(dialog).toBeVisible();
-    await dialog.getByRole("button", { name: /close drawer/i }).click();
+    await page.keyboard.press("Escape");
     await expect(page.locator(".drawer-root.is-open")).toHaveCount(0);
     await expect(dialog).toBeVisible();
     await page.waitForTimeout(DRAWER_MOTION_MS + 40);
@@ -299,7 +299,7 @@ test.describe("UI Repair Pass 13 acceptance", () => {
     await page.getByRole("button", { name: /View Efficiency details/i }).click();
     const drawer = page.locator(".drawer--analytics");
     await expect(drawer).toBeVisible({ timeout: 15_000 });
-    await drawer.getByRole("button", { name: /close drawer/i }).click();
+    await page.keyboard.press("Escape");
     await expect(page.locator(".drawer-root.is-open")).toHaveCount(0);
     await expect(drawer).toBeVisible();
     await page.waitForTimeout(DRAWER_MOTION_MS + 40);

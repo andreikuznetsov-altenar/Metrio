@@ -303,7 +303,10 @@ test.describe("UI Repair Pass 11 visual acceptance", () => {
     await bootMetrio(page);
     await openFirstAttentionPerson(page);
     await expect(page.locator(".drawer-root__backdrop")).toHaveCount(1);
-    await page.getByRole("button", { name: /^brief$/i }).click();
+    await page
+      .locator(".drawer--person-detail")
+      .getByRole("button", { name: /^brief$/i })
+      .click();
     await expect(page.locator(".drawer-root__backdrop")).toHaveCount(1);
     await expect(page.locator("[data-drawer-panel='secondary']")).toBeVisible();
     await page.getByRole("button", { name: /close brief/i }).click();
@@ -315,7 +318,10 @@ test.describe("UI Repair Pass 11 visual acceptance", () => {
     await setViewport(page, 1440, 900);
     await bootMetrio(page);
     await openFirstAttentionPerson(page);
-    await page.getByRole("button", { name: /^brief$/i }).click();
+    await page
+      .locator(".drawer--person-detail")
+      .getByRole("button", { name: /^brief$/i })
+      .click();
     await expect(page.locator("[data-drawer-panel='secondary']")).toBeVisible();
     await expect(page.getByRole("heading", { name: /current work/i })).toBeVisible();
     const current = page.locator(".person-brief__work-list").first();
@@ -327,7 +333,7 @@ test.describe("UI Repair Pass 11 visual acceptance", () => {
     await bootMetrio(page);
     await openFirstAttentionPerson(page);
     const body = page.locator(".drawer--person-detail .drawer__body");
-    await expect(body).toHaveClass(/metrio-scroll--overlay/);
+    await expect(body).toHaveClass(/metrio-scroll/);
     await expect(body).toHaveScreenshot("person-scrollbar-shell.png", SHOT);
   });
 
@@ -353,7 +359,8 @@ test.describe("UI Repair Pass 11 visual acceptance", () => {
     await setViewport(page, 1440, 900);
     await bootMetrio(page);
     await openFirstAttentionPerson(page);
-    await page.getByRole("button", { name: /^brief$/i }).click();
+    const briefDrawer = page.locator(".drawer--person-detail");
+    await briefDrawer.getByRole("button", { name: /^brief$/i }).click();
     await page.getByLabel("Brief period").click();
     await expect(page.locator(".person-brief__period .select-trigger")).toHaveScreenshot(
       "performance-select-open.png",

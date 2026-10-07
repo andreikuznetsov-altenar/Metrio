@@ -28,6 +28,7 @@ import { DashboardTeamBriefCard } from "./DashboardTeamBriefCard";
 import {
   readDashboardVisualQueryFlag,
 } from "../../../fixtures/dashboardVisualOverrides";
+import { readVisualProductRecommendationsOverride } from "../../../fixtures/productRecommendationsVisualFixture";
 import { navigateOpenTeamOverview } from "../../../app/ctaRouting";
 import { buildProductRecommendations } from "../../../domain/recommendations/buildProductRecommendations";
 import type { ProductRecommendation } from "../../../domain/recommendations/buildProductRecommendations";
@@ -127,17 +128,19 @@ export function ManagerExecutiveDashboard({
     (/failure|survey in progress|pending/i.test(team.feedback.headline) ||
       Boolean(team.feedback.detail?.match(/failure|pending/i)));
 
-  const recommendations = buildProductRecommendations({
-    role: "manager",
-    deliverySummary: team.deliverySummary,
-    deliveryRiskCount,
-    teamWorkload: executiveModel.teamWorkload,
-    teamActions: team.actions,
-    focus: personal.focus,
-    attentionItems: executiveModel.attentionItems,
-    awayNextWeek: team.awayNextWeek,
-    maxItems: 3,
-  });
+  const recommendations =
+    readVisualProductRecommendationsOverride() ??
+    buildProductRecommendations({
+      role: "manager",
+      deliverySummary: team.deliverySummary,
+      deliveryRiskCount,
+      teamWorkload: executiveModel.teamWorkload,
+      teamActions: team.actions,
+      focus: personal.focus,
+      attentionItems: executiveModel.attentionItems,
+      awayNextWeek: team.awayNextWeek,
+      maxItems: 3,
+    });
 
   const onRecommendationAction = (rec: ProductRecommendation) => {
     if (rec.actionKind === "open_delivery_risk") {
