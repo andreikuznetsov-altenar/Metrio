@@ -1,5 +1,7 @@
-/** Keep in sync with tray_popover.rs (TRAY_ARROW_TIP_GAP). */
-export const TRAY_ARROW_TIP_GAP_PX = 4;
+/** Keep in sync with tray_popover.rs (TRAY_POPOVER_GAP). */
+export const TRAY_POPOVER_GAP_PX = 4;
+/** @deprecated Use TRAY_POPOVER_GAP_PX. */
+export const TRAY_ARROW_TIP_GAP_PX = TRAY_POPOVER_GAP_PX;
 
 export type TrayAnchorRect = {
   left: number;
@@ -16,12 +18,12 @@ export function trayCenterX(anchor: TrayAnchorRect): number {
   return anchor.left + anchor.width / 2;
 }
 
-/** Screen Y of the visible arrow tip (top of `.tray-popover`). */
+/** Screen Y of the visible popover surface. */
 export function trayArrowTipYFromAnchor(anchor: TrayAnchorRect): number {
-  return trayBottomY(anchor) + TRAY_ARROW_TIP_GAP_PX;
+  return trayBottomY(anchor) + TRAY_POPOVER_GAP_PX;
 }
 
-/** Native host window origin Y; arrow tip aligns with the top of the popover content. */
+/** Native host window origin Y; it is the visible surface top (there is no notch). */
 export function trayHostWindowYFromArrowTip(arrowTipY: number): number {
   return arrowTipY;
 }

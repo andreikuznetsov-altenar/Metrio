@@ -6,12 +6,12 @@ const read = (rel: string) =>
   fs.readFileSync(path.resolve(process.cwd(), rel), "utf8");
 
 describe("UI Repair Pass 13.7C tray popover polish", () => {
-  it("uses 8px borderless surface without shadow and arrow", () => {
+  it("uses 8px borderless surface without shadow or notch", () => {
     const css = read("src/tray/tray-popover.css");
     expect(css).toContain("--tray-popover-radius: 8px");
     expect(css).toMatch(/\.tray-popover__surface[\s\S]*border:\s*none/);
     expect(css).not.toContain("drop-shadow");
-    expect(css).toContain(".tray-popover::before");
+    expect(css).not.toContain(".tray-popover::before");
   });
 
   it("uses 16px inset padding and 12px summary gap", () => {
@@ -32,7 +32,7 @@ describe("UI Repair Pass 13.7C tray popover polish", () => {
 
   it("preserves tray popover window sizing hook for anchoring", () => {
     const rust = read("src-tauri/src/tray_popover.rs");
-    expect(rust).toContain("TRAY_ARROW_TIP_GAP");
+    expect(rust).toContain("TRAY_POPOVER_GAP");
     expect(rust).toContain("clamp_host_x");
     expect(rust).toContain("host_position_for_anchor");
   });

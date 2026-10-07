@@ -11,7 +11,10 @@ describe("UI13 drawer full-app overlay geometry", () => {
     const shellCss = read("src/components/AppShell/AppShell.css");
     expect(shellCss).toMatch(/\.app-shell[\s\S]*position:\s*relative/);
     expect(shellCss).toMatch(/\.app-drawer-layer[\s\S]*position:\s*absolute/);
-    expect(shellCss).toMatch(/\.app-drawer-layer[\s\S]*top:\s*0/);
+    expect(shellCss).toContain("--app-overlay-top-inset: 0px");
+    expect(shellCss).toMatch(
+      /\.app-drawer-layer[\s\S]*top:\s*var\(--app-overlay-top-inset\)/,
+    );
     expect(drawerCss).toMatch(/\.drawer-root[\s\S]*inset:\s*0/);
     expect(drawerCss).toMatch(/\.drawer-root__backdrop[\s\S]*inset:\s*0/);
     expect(drawerCss).toMatch(/\.drawer[\s\S]*top:\s*0/);

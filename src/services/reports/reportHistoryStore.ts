@@ -1,7 +1,23 @@
 import { invoke } from "@tauri-apps/api/core";
 import type { ArchivedReportRecord } from "../../domain/reports/reportHistoryTypes";
 
+export const VISUAL_REPORT_HISTORY_STORAGE_KEY = "metrio-visual-report-history";
+
 export async function loadArchivedReports(): Promise<ArchivedReportRecord[]> {
+  if (
+    import.meta.env.VITE_VISUAL_FIXTURE === "1" &&
+    typeof window !== "undefined"
+  ) {
+    const visual = window.localStorage.getItem(VISUAL_REPORT_HISTORY_STORAGE_KEY);
+    if (visual) {
+      try {
+        const parsed = JSON.parse(visual) as ArchivedReportRecord[];
+        if (Array.isArray(parsed)) return parsed;
+      } catch {
+        // Fall through to the native store.
+      }
+    }
+  }
   try {
     return await invoke<ArchivedReportRecord[]>("report_history_list");
   } catch {

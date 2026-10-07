@@ -56,6 +56,7 @@ import {
 } from "../platform/dashboard/dashboardCache";
 import { buildIssueCatalog, type IssueCatalog } from "../domain/jira/issueCatalog";
 import { PerformanceIssueCatalogProvider } from "./PerformanceIssueCatalogContext";
+import { flattenTeamKpiIssues } from "../domain/analytics/analyticsReportScope";
 
 export type PerformanceLoadStatus =
   | "idle"
@@ -466,8 +467,23 @@ export function PerformanceDataProvider({
   const refreshing = status === "refreshing";
 
   const issueCatalog = useMemo(
-    () => buildIssueCatalog({ persons: data?.teamSnapshot?.persons ?? [] }),
-    [data?.teamSnapshot?.persons],
+    () =>
+      buildIssueCatalog({
+        persons: [
+          ...(data?.teamSnapshot?.persons ?? []),
+          ...(data?.historyTeamSnapshot?.persons ?? []),
+        ],
+        issues: [
+          ...flattenTeamKpiIssues(data?.reportData.grouped ?? {}),
+          ...flattenTeamKpiIssues(data?.historyReportData.grouped ?? {}),
+        ],
+      }),
+    [
+      data?.teamSnapshot?.persons,
+      data?.historyTeamSnapshot?.persons,
+      data?.reportData.grouped,
+      data?.historyReportData.grouped,
+    ],
   );
 
   const value = useMemo(

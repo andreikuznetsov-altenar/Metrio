@@ -24,13 +24,15 @@ describe("UI13 tray popover final geometry", () => {
     expect(docCss).not.toMatch(/body\s*\{[\s\S]*padding:/);
   });
 
-  it("anchors native window from 4px arrow gap without shadow inset", () => {
+  it("anchors visible surface 4px from icon without notch or shadow inset", () => {
     const rust = read("src-tauri/src/tray_popover.rs");
-    expect(rust).toContain("TRAY_ARROW_TIP_GAP");
-    expect(rust).toContain("tray_bottom_y + TRAY_ARROW_TIP_GAP");
+    const popoverCss = read("src/tray/tray-popover.css");
+    expect(rust).toContain("TRAY_POPOVER_GAP");
+    expect(rust).toContain("tray_bottom_y + TRAY_POPOVER_GAP");
     expect(rust).toContain(".shadow(false)");
     expect(rust).not.toContain("SHADOW_INSET");
-    expect(rust).toMatch(/clamp_host_y\(arrow_tip_y/);
+    expect(rust).toMatch(/clamp_host_y\(popover_top_y/);
+    expect(popoverCss).not.toContain(".tray-popover::before");
   });
 
   it("resize reports popover bounds without body padding", () => {

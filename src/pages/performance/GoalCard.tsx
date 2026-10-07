@@ -3,6 +3,7 @@ import { buildLinkedWorkContext } from "../../domain/goals/goalLinkedWork";
 import { formatReviewDateLabel } from "../../domain/goals/goalReview";
 import type { Goal } from "../../domain/goals/goalTypes";
 import type { Person } from "../../domain/people/types";
+import { JiraIssueLink } from "../../components/JiraIssueLink/JiraIssueLink";
 
 export interface GoalCardProps {
   goal: Goal;
@@ -22,9 +23,12 @@ export function GoalCard({ goal, person, onOpen }: GoalCardProps) {
       {reviewLabel ? <p className="goal-card__meta">{reviewLabel}</p> : null}
       <p className="goal-card__linked">
         Linked work
-        {work.issueKeysSample.length
-          ? ` · ${work.issueKeysSample.slice(0, 2).join(", ")}`
-          : ""}
+        {work.issueKeysSample.slice(0, 2).map((issueKey, index) => (
+          <span key={issueKey}>
+            {index === 0 ? " · " : ", "}
+            <JiraIssueLink issueKey={issueKey} />
+          </span>
+        ))}
       </p>
       <p className="goal-card__facts">
         {work.linkedIssueCount} linked

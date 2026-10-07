@@ -41,6 +41,7 @@ import {
   listNotificationEventsOrThrow,
   NOTIFICATION_EVENTS_CHANGED,
 } from "../platform/notificationEvents";
+import { JiraIssueText } from "../components/JiraIssueLink/JiraIssueText";
 import {
   clearActionInboxHistory,
   markActionInboxItemRead,
@@ -364,9 +365,11 @@ export function NotificationCenter({
                               <span className="notification-center__item-source">
                                 {inboxSourceLabel(item.source)}
                               </span>
-                              <span className="notification-center__item-title">{event.title}</span>
+                              <span className="notification-center__item-title">
+                                <JiraIssueText text={event.title} />
+                              </span>
                               <span className="notification-center__item-message">
-                                {event.message}
+                                <JiraIssueText text={event.message} />
                               </span>
                               <time
                                 className="notification-center__item-time"

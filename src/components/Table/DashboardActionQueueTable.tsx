@@ -10,18 +10,11 @@ import { badgeVariantForAttentionLabel } from "../../platform/attentionSemanticB
 import { PerformanceTableColgroup } from "./PerformanceTableColgroup";
 import { METRIO_TABLE_CLASS, MetrioTableWrap } from "./MetrioTable";
 import { TableWorkLead } from "./TableWorkLead";
-import { JiraIssueLink } from "../JiraIssueLink/JiraIssueLink";
-import {
-  looksLikeIssueKey,
-  normalizeIssueKeyQuery,
-} from "../../domain/commandPalette/issueKeyPattern";
+import { JiraIssueText } from "../JiraIssueLink/JiraIssueText";
+import { SortableTableHeader } from "./SortableTableHeader";
+import type { TableSortState } from "./tableSort";
 
 const QUEUE_COLGROUP = ["person", "reason", "issues", "action"] as const;
-
-function sortMark(active: boolean, direction: "asc" | "desc" | null): string {
-  if (!active || !direction) return "↕";
-  return direction === "asc" ? "↑" : "↓";
-}
 
 export interface DashboardActionQueueTableProps {
   workColumnLabel: string;
@@ -44,22 +37,19 @@ export function DashboardActionQueueTable({
   onToggleSort,
   jiraBaseUrl = "",
 }: DashboardActionQueueTableProps) {
-  const renderWorkLabel = (row: DashboardQueueRow) => {
-    const subject = row.subject;
-    if (jiraBaseUrl && looksLikeIssueKey(subject)) {
-      const key = normalizeIssueKeyQuery(subject);
-      return (
-        <JiraIssueLink issueKey={key} jiraBaseUrl={jiraBaseUrl} />
-      );
-    }
-    return subject;
-  };
+  const renderWorkLabel = (row: DashboardQueueRow) => (
+    <JiraIssueText text={row.subject} jiraBaseUrl={jiraBaseUrl} />
+  );
   const headerColumns = [
     { id: "work", label: workColumnLabel },
     { id: "reason", label: "Reason" },
     { id: "context", label: "Context" },
     { id: "action", label: "Action" },
   ] as const;
+  const sort: TableSortState =
+    sortColumnId && sortDirection
+      ? { columnId: sortColumnId, direction: sortDirection }
+      : null;
 
   return (
     <MetrioTableWrap testId="dashboard-action-queue-table">
@@ -70,45 +60,23 @@ export function DashboardActionQueueTable({
         <PerformanceTableColgroup columns={[...QUEUE_COLGROUP]} />
         <thead>
           <tr>
-            {headerColumns.map((col) => (
-              <th
-                key={col.id}
-                scope="col"
-                className={col.id === "action" ? "performance-table__action" : undefined}
-              >
-                {col.id === "action" ? (
+            {headerColumns.map((col) =>
+              col.id === "action" ? (
+                <th key={col.id} scope="col" className="performance-table__action">
                   <span className="performance-table__sort-label">{col.label}</span>
-                ) : (
-                  <button
-                    type="button"
-                    className={
-                      sortColumnId === col.id
-                        ? "performance-table__sort-btn is-active"
-                        : "performance-table__sort-btn"
-                    }
-                    onClick={() => onToggleSort(col.id)}
-                    aria-sort={
-                      sortColumnId === col.id
-                        ? sortDirection === "asc"
-                          ? "ascending"
-                          : "descending"
-                        : "none"
-                    }
-                  >
-                    <span className="performance-table__sort-label">
-                      {col.id === "work" ? (
-                        <TableWorkLead label={col.label} />
-                      ) : (
-                        col.label
-                      )}
-                    </span>
-                    <span className="performance-table__sort-icon" aria-hidden>
-                      {sortMark(sortColumnId === col.id, sortDirection)}
-                    </span>
-                  </button>
-                )}
-              </th>
-            ))}
+                </th>
+              ) : (
+                <SortableTableHeader
+                  key={col.id}
+                  columnId={col.id}
+                  label={
+                    col.id === "work" ? <TableWorkLead label={col.label} /> : col.label
+                  }
+                  sort={sort}
+                  onToggle={onToggleSort}
+                />
+              ),
+            )}
           </tr>
         </thead>
         <tbody>

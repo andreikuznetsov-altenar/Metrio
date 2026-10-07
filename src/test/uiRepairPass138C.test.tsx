@@ -16,7 +16,7 @@ describe("UI Repair Pass 13.8C tray popover rewrite", () => {
     expect(main).not.toContain("globals.css");
   });
 
-  it("exposes one popover surface with arrow on the same element", () => {
+  it("exposes one popover surface without a gap-increasing notch", () => {
     const panel = read("src/tray/TrayPopoverPanel.tsx");
     expect(panel).not.toContain("tray-popover-shell");
     expect(panel).toContain('className="tray-popover"');
@@ -24,7 +24,7 @@ describe("UI Repair Pass 13.8C tray popover rewrite", () => {
 
     const css = read("src/tray/tray-popover.css");
     expect(css).toContain("--tray-popover-radius: 8px");
-    expect(css).toMatch(/\.tray-popover::before/);
+    expect(css).not.toMatch(/\.tray-popover::before/);
     expect(css).not.toContain(".tray-popover-shell");
   });
 
@@ -37,10 +37,10 @@ describe("UI Repair Pass 13.8C tray popover rewrite", () => {
 
   it("anchors tray popover from icon gap without shadow host padding", () => {
     const rust = read("src-tauri/src/tray_popover.rs");
-    expect(rust).toContain("TRAY_ARROW_TIP_GAP");
+    expect(rust).toContain("TRAY_POPOVER_GAP");
     expect(rust).not.toContain("SHADOW_INSET");
     const geometry = read("src/tray/trayPopoverGeometry.ts");
-    expect(geometry).toContain("TRAY_ARROW_TIP_GAP_PX");
+    expect(geometry).toContain("TRAY_POPOVER_GAP_PX");
     expect(geometry).not.toContain("SHADOW");
   });
 });

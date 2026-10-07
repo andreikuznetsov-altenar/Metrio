@@ -115,17 +115,20 @@ export function GroupedIssuePreview({
           data-testid="grouped-issue-preview"
           onClick={(event) => event.stopPropagation()}
         >
-          {onOpenIssue ? (
-            <button
-              type="button"
-              className="grouped-issue-preview__inline-link"
-              onClick={() => onOpenIssue(key, href)}
-            >
-              {key}
-            </button>
-          ) : (
-            <JiraIssueLink issueKey={key} jiraBaseUrl={jiraBaseUrl} browseUrl={href} />
-          )}
+          <JiraIssueLink
+            issueKey={key}
+            jiraBaseUrl={jiraBaseUrl}
+            browseUrl={href}
+            className="grouped-issue-preview__inline-link"
+            onClick={
+              onOpenIssue
+                ? (event) => {
+                    event.preventDefault();
+                    onOpenIssue(key, href);
+                  }
+                : undefined
+            }
+          />
         </div>
         {modal}
       </>

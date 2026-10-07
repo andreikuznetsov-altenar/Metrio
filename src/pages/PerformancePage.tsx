@@ -21,6 +21,7 @@ import { TeamPerformanceOverview } from "./performance/TeamPerformanceOverview";
 import { DirectorPerformanceOverview } from "./performance/director/DirectorPerformanceOverview";
 import { PerformanceContentShell } from "./performance/PerformanceContentShell";
 import { AnalyticsDrilldownDrawer } from "./performance/AnalyticsDrilldownDrawer";
+import { usePersonNavigation } from "../app/PersonNavigationContext";
 
 export interface PerformancePageProps {
   reviewTarget: PerformanceReviewTarget;
@@ -59,6 +60,7 @@ function PerformancePageBody({ reviewTarget }: PerformancePageProps) {
     closeDrilldown,
     returnFocusRef,
   } = usePerformanceAnalytics();
+  const { registerPersonDrawerHandler } = usePersonNavigation();
   const capabilities = resolveOrgCapabilities(currentUser.orgRole);
   const performanceVariant =
     capabilities.performanceVariant === "direct_team" && !currentUser.team
@@ -77,21 +79,10 @@ function PerformancePageBody({ reviewTarget }: PerformancePageProps) {
     [openPersonDrawer, performanceControlsDisabled],
   );
 
-  useEffect(() => {
-    const handler = (event: Event) => {
-      const detail = (event as CustomEvent<string | { personId: string; tab?: PersonDrawerTab }>)
-        .detail;
-      if (typeof detail === "string" && detail) {
-        openPersonDrawer({ personId: detail });
-        return;
-      }
-      if (detail && typeof detail === "object" && detail.personId) {
-        openPersonDrawer({ personId: detail.personId, tab: detail.tab });
-      }
-    };
-    window.addEventListener("metrio-open-person", handler);
-    return () => window.removeEventListener("metrio-open-person", handler);
-  }, [openPersonDrawer]);
+  useEffect(
+    () => registerPersonDrawerHandler(handleOpenPerson),
+    [handleOpenPerson, registerPersonDrawerHandler],
+  );
 
   useEffect(() => {
     const onClosePerson = () => {

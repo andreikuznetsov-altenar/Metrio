@@ -39,7 +39,7 @@ function agtc105(): AuditIssue {
   };
 }
 
-describe("buildTaskListModalRows issue hydration", () => {
+describe("AGTC-like task modal metadata resolution", () => {
   it("resolves AGTC-105 metadata from catalog when persons list is empty", () => {
     const catalog = buildIssueCatalog({ issues: [agtc105()] });
     const rows = buildTaskListModalRowsFromIssueKeys(

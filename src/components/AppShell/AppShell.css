@@ -1,5 +1,9 @@
 .app-shell {
-  --app-side-surface-top: var(--app-header-height);
+  /*
+   * Native macOS chrome lives outside this shell. Zero is therefore the top
+   * edge of the Metrio header and the single inset shared by every app overlay.
+   */
+  --app-overlay-top-inset: 0px;
   position: relative;
   display: flex;
   flex-direction: column;
@@ -7,10 +11,6 @@
   width: 100%;
   overflow: hidden;
   background: var(--color-background);
-}
-
-.app-shell--page-toolbar {
-  --app-side-surface-top: calc(var(--app-header-height) + var(--page-toolbar-height));
 }
 
 .app-shell__header {
@@ -53,7 +53,7 @@
 .app-drawer-layer,
 .app-modal-layer {
   position: absolute;
-  top: 0;
+  top: var(--app-overlay-top-inset);
   right: 0;
   bottom: 0;
   left: 0;

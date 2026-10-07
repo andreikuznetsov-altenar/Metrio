@@ -1,7 +1,10 @@
 // @vitest-environment jsdom
 import { cleanup, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import userEvent from "@testing-library/user-event";
 import { HistoryReportsView } from "./HistoryReportsView";
+import { save } from "@tauri-apps/plugin-dialog";
+import { copyArchivedReportToPath } from "../../services/reports/reportHistoryStore";
 import "./performance-dashboard.css";
 
 vi.mock("@tauri-apps/plugin-dialog", () => ({
@@ -58,5 +61,15 @@ describe("HistoryReportsView", () => {
     const download = screen.getByRole("button", { name: "Download" });
     expect(download.className).toContain("btn");
     expect(download.className).toContain("btn--secondary");
+  });
+
+  it("invokes the archived report export path from Download", async () => {
+    vi.mocked(save).mockResolvedValue("/tmp/team-report.pdf");
+    render(<HistoryReportsView />);
+    await userEvent.click(screen.getByRole("button", { name: "Download" }));
+    expect(copyArchivedReportToPath).toHaveBeenCalledWith(
+      "r1",
+      "/tmp/team-report.pdf",
+    );
   });
 });

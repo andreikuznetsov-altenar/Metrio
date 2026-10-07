@@ -2,6 +2,7 @@ import type { CSSProperties } from "react";
 import { Badge } from "../../../components/Badge/Badge";
 import { Button } from "../../../components/Button/Button";
 import type { ProductRecommendation } from "../../../domain/recommendations/buildProductRecommendations";
+import { JiraIssueText } from "../../../components/JiraIssueLink/JiraIssueText";
 
 const SEVERITY_VARIANT = {
   critical: "danger",
@@ -45,8 +46,12 @@ export function DashboardRecommendations({
                 {SEVERITY_LABEL[item.severity]}
               </Badge>
             </div>
-            <p className="executive-recommendations__title">{item.title}</p>
-            <p className="executive-recommendations__copy">{item.explanation}</p>
+            <p className="executive-recommendations__title">
+              <JiraIssueText text={item.title} />
+            </p>
+            <p className="executive-recommendations__copy">
+              <JiraIssueText text={item.explanation} />
+            </p>
             <Button
               type="button"
               variant="secondary"

@@ -23,6 +23,7 @@ import { Button } from "../../../components/Button/Button";
 import { buildLeadershipRecommendations } from "../../../domain/recommendations/buildLeadershipRecommendations";
 import { DashboardRecommendations } from "./DashboardRecommendations";
 import type { ProductRecommendation } from "../../../domain/recommendations/buildProductRecommendations";
+import { navigateProductRecommendation } from "../../../app/productRecommendationNavigation";
 
 type GoalsHomeSummary = ReturnType<typeof summarizeGoalsForHome>;
 
@@ -95,13 +96,10 @@ export function DirectorExecutiveDashboard({
   });
 
   const onRecommendationAction = (rec: ProductRecommendation) => {
-    if (rec.actionKind === "open_delivery_risk") {
-      onOpenDeliveryRisk();
-      return;
-    }
-    if (rec.actionKind === "open_performance") {
-      onOpenDirectorView();
-    }
+    navigateProductRecommendation(rec, {
+      openPerson: () => undefined,
+      openJira: () => undefined,
+    });
   };
 
   return (

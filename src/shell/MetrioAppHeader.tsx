@@ -15,6 +15,7 @@ const NAV_ITEMS: { route: AppRoute; label: string }[] = [
 export interface MetrioAppHeaderProps {
   activeRoute: AppRoute | null;
   onNavigate: (route: AppRoute) => void;
+  feedbackVisible?: boolean;
   feedbackEnabled?: boolean;
   performanceEnabled?: boolean;
   onOpenSettings?: () => void;
@@ -29,6 +30,7 @@ export interface MetrioAppHeaderProps {
 export function MetrioAppHeader({
   activeRoute,
   onNavigate,
+  feedbackVisible = true,
   feedbackEnabled = true,
   performanceEnabled = true,
   onOpenSettings,
@@ -40,7 +42,7 @@ export function MetrioAppHeader({
   headerPerson,
 }: MetrioAppHeaderProps) {
   const navItems = NAV_ITEMS.filter(
-    (item) => item.route !== "feedback" || feedbackEnabled,
+    (item) => item.route !== "feedback" || feedbackVisible,
   );
 
   return (

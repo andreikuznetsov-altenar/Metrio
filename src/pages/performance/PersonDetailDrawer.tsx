@@ -6,6 +6,7 @@ import { Select } from "../../components/Select/Select";
 import { SegmentedControl } from "../../components/SegmentedControl/SegmentedControl";
 import { Tabs } from "../../components/Tabs/Tabs";
 import { usePerformanceData } from "../../app/PerformanceDataContext";
+import { useOptionalPerformanceIssueCatalog } from "../../app/PerformanceIssueCatalogContext";
 import { useCurrentUser } from "../../app/CurrentUserContext";
 import { canOpenPersonBrief } from "../../domain/personAccess";
 import { useOnboardingResources } from "../../hooks/useOnboardingResources";
@@ -29,6 +30,7 @@ import { PersonIdentityHeader } from "./PersonIdentityHeader";
 import { PersonPerformanceMetrics } from "./PersonPerformanceMetrics";
 import { TrendInsufficientHistory, TrendMiniChart } from "./TrendMiniChart";
 import { TrendValue } from "./TrendValue";
+import { readDashboardVisualQueryFlag } from "../../fixtures/dashboardVisualOverrides";
 import {
   buildMetricDrilldownRequest,
   buildTrendDrilldownRequest,
@@ -79,6 +81,7 @@ export function PersonDetailDrawer({
   onClosed,
 }: PersonDetailDrawerProps) {
   const { viewModels, data: performanceData } = usePerformanceData();
+  const issueCatalog = useOptionalPerformanceIssueCatalog();
   const teamPersons = performanceData?.teamSnapshot.persons ?? [];
   const { currentUser } = useCurrentUser();
   const analytics = useOptionalPerformanceAnalytics();
@@ -115,10 +118,48 @@ export function PersonDetailDrawer({
     });
   }, []);
 
-  const groupedAttention = useMemo(
-    () => (workspace ? groupAttentionSignals(workspace.attention) : []),
-    [workspace],
-  );
+  const groupedAttention = useMemo(() => {
+    if (!workspace) return [];
+    if (readDashboardVisualQueryFlag("visualGroupedTasks")) {
+      const seed = workspace.attention[0] ?? {
+        label: "Needs attention",
+        variant: "warning" as const,
+        reason: "Deterministic grouped-task acceptance fixture.",
+      };
+      const issueKeys = Array.from(
+        new Set(
+          [
+            seed.issueKey,
+            ...(issueCatalog
+              ? [...issueCatalog.values()]
+                  .filter(
+                    (issue) =>
+                      Boolean(issue.issueSummary) &&
+                      Boolean(issue.issueCreated) &&
+                      Boolean(issue.currentStatus) &&
+                      issue.events.some((event) => event.eventType === "Status"),
+                  )
+                  .map((issue) => issue.issueKey)
+              : []),
+            ...workspace.workRows.map((row) => row.key),
+            ...teamPersons.flatMap((teamPerson) =>
+              teamPerson.issues.map((issue) => issue.issueKey),
+            ),
+            ...(issueCatalog ? [...issueCatalog.keys()] : []),
+          ].filter((key): key is string => Boolean(key)),
+        ),
+      ).slice(0, 3);
+      const fixtureAttention = [
+        ...workspace.attention,
+        ...(workspace.attention.length === 0 ? [seed] : []),
+        ...issueKeys
+          .filter((issueKey) => issueKey !== seed.issueKey)
+          .map((issueKey) => ({ ...seed, issueKey })),
+      ];
+      return groupAttentionSignals(fixtureAttention);
+    }
+    return groupAttentionSignals(workspace.attention);
+  }, [issueCatalog, teamPersons, workspace]);
 
   const historyGroups = useMemo(() => {
     if (!workspace) return [];

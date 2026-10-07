@@ -847,6 +847,15 @@
   width: auto;
 }
 
+.performance-table.performance-table--delivery-risk col.col-action {
+  width: 7.5rem;
+}
+
+.performance-table.performance-table--radar col.col-action,
+.performance-table.performance-table--report-history col.col-action {
+  width: 8rem;
+}
+
 .performance-table--radar .performance-table__reason {
   min-width: 0;
   white-space: normal;

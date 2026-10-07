@@ -42,11 +42,10 @@ export function TeamPerformanceOverview({
   );
   const { viewModels, uiState } = usePerformanceData();
   const { registerTeamView } = usePerformanceExport();
-  const { openTeamMetricDrilldown, openTeamTrendDrilldown, openPersonDrawer } =
+  const { openTeamMetricDrilldown, openTeamTrendDrilldown } =
     usePerformanceAnalytics();
 
   const handleOpenPerson = (personId: string, tab?: PersonDrawerTab) => {
-    openPersonDrawer({ personId, tab: tab ?? "overview" });
     onOpenPerson(personId, tab);
   };
 

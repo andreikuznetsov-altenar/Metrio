@@ -12,8 +12,10 @@ describe("UI Repair Pass 13.7B side panels and motion", () => {
 
     const shellCss = read("src/components/AppShell/AppShell.css");
     expect(shellCss).toMatch(/\.app-drawer-layer[\s\S]*position:\s*absolute/);
-    expect(shellCss).toMatch(/\.app-drawer-layer[\s\S]*top:\s*0/);
-    expect(shellCss).toContain("--app-side-surface-top");
+    expect(shellCss).toMatch(
+      /\.app-drawer-layer[\s\S]*top:\s*var\(--app-overlay-top-inset\)/,
+    );
+    expect(shellCss).toContain("--app-overlay-top-inset: 0px");
     expect(shellCss).toMatch(/\.app-shell__header[\s\S]*--z-app-chrome/);
   });
 

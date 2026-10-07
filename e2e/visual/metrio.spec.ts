@@ -1646,7 +1646,7 @@ test.describe("Metrio visual regression", () => {
     });
   });
 
-  test("settings diagnostics healthy", async ({ page }) => {
+  test("settings company app omits user-facing support tools", async ({ page }) => {
     await page.addInitScript((fixtureId: string) => {
       localStorage.setItem("metrio-connection-connected", "true");
       localStorage.setItem("metrio-dev-fixture", fixtureId);
@@ -1659,37 +1659,24 @@ test.describe("Metrio visual regression", () => {
     await expect(page.getByTestId("diagnostics-settings")).toBeVisible();
     await expect(page.getByTestId("desktop-settings")).toBeVisible();
     await expect(page.getByTestId("organization-identity-settings")).toBeVisible();
-    await expect(page.getByTestId("diagnostics-support-settings")).toBeVisible();
+    await expect(page.getByTestId("diagnostics-support-settings")).toHaveCount(0);
+    await expect(page.getByText(/^Support$/)).toHaveCount(0);
+    await expect(page.getByRole("button", { name: /Run connection checks/i })).toHaveCount(0);
+    await expect(page.getByRole("button", { name: /Show advanced details/i })).toHaveCount(0);
     await expect(page.getByTestId("settings-cache-clear")).toBeVisible();
-    await expect(page.getByTestId("diagnostics-settings")).toHaveScreenshot(
-      "diagnostics-summary.png",
-      { maxDiffPixelRatio: 0.02 },
-    );
-    await expect(page).toHaveScreenshot("settings-diagnostics.png", {
-      fullPage: true,
-      maxDiffPixelRatio: 0.02,
-    });
+    const cacheButton = page.getByRole("button", { name: /Clear temporary caches/i });
+    const cacheCard = page.getByTestId("settings-cache-clear");
+    await expect(cacheButton).toBeVisible();
+    const [buttonBox, cardBox] = await Promise.all([
+      cacheButton.boundingBox(),
+      cacheCard.boundingBox(),
+    ]);
+    expect(buttonBox).not.toBeNull();
+    expect(cardBox).not.toBeNull();
+    expect(buttonBox!.width).toBeLessThan(cardBox!.width * 0.75);
   });
 
-  test("diagnostics advanced collapsed", async ({ page }) => {
-    await page.addInitScript((fixtureId: string) => {
-      localStorage.setItem("metrio-connection-connected", "true");
-      localStorage.setItem("metrio-dev-fixture", fixtureId);
-      localStorage.setItem("metrio-theme", "light");
-    }, "lead");
-    await page.goto("/");
-    await expect(page.getByTestId("app-shell")).toBeVisible({ timeout: 30_000 });
-    await page.getByRole("button", { name: /^settings$/i }).click();
-    await clickSettingsSection(page, /company & app/i);
-    await expect(page.getByTestId("diagnostics-support-settings")).toBeVisible();
-    await expect(page.locator(".metrio-collapsible.is-open")).toHaveCount(0);
-    await expect(page.getByTestId("diagnostics-settings")).toHaveScreenshot(
-      "diagnostics-advanced-collapsed.png",
-      { maxDiffPixelRatio: 0.02 },
-    );
-  });
-
-  test("diagnostics dark", async ({ page }) => {
+  test("settings company app support remains absent in dark theme", async ({ page }) => {
     await page.addInitScript((fixtureId: string) => {
       localStorage.setItem("metrio-connection-connected", "true");
       localStorage.setItem("metrio-dev-fixture", fixtureId);
@@ -1699,29 +1686,9 @@ test.describe("Metrio visual regression", () => {
     await expect(page.getByTestId("app-shell")).toBeVisible({ timeout: 30_000 });
     await page.getByRole("button", { name: /^settings$/i }).click();
     await clickSettingsSection(page, /company & app/i);
-    await expect(page.getByTestId("diagnostics-support-settings")).toBeVisible();
-    await expect(page.getByTestId("diagnostics-settings")).toHaveScreenshot(
-      "diagnostics-dark.png",
-      { maxDiffPixelRatio: 0.02 },
-    );
-  });
-
-  test("settings diagnostics advanced dark", async ({ page }) => {
-    await page.addInitScript((fixtureId: string) => {
-      localStorage.setItem("metrio-connection-connected", "true");
-      localStorage.setItem("metrio-dev-fixture", fixtureId);
-      localStorage.setItem("metrio-theme", "dark");
-    }, "lead");
-    await page.goto("/");
-    await expect(page.getByTestId("app-shell")).toBeVisible({ timeout: 30_000 });
-    await page.getByRole("button", { name: /^settings$/i }).click();
-    await clickSettingsSection(page, /company & app/i);
-    await page.getByRole("button", { name: /Show advanced details/i }).click();
-    await expect(page.getByTestId("diagnostics-advanced")).toBeVisible();
-    await expect(page).toHaveScreenshot("settings-diagnostics-advanced-dark.png", {
-      fullPage: true,
-      maxDiffPixelRatio: 0.02,
-    });
+    await expect(page.getByTestId("diagnostics-support-settings")).toHaveCount(0);
+    await expect(page.getByRole("button", { name: /Show advanced details/i })).toHaveCount(0);
+    await expect(page.getByTestId("settings-cache-clear")).toBeVisible();
   });
 
   test("settings saved toast", async ({ page }) => {

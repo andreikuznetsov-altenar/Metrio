@@ -49,30 +49,26 @@ export function TaskListModal({
                 {rows.map((row) => (
                   <tr key={row.issueKey} className="performance-table__task-row">
                     <td className="performance-table__issue-key-cell">
-                      {onOpenIssue ? (
-                        <button
-                          type="button"
-                          className="performance-table__link-button performance-table__issue-key-link"
-                          onClick={() =>
-                            onOpenIssue(
-                              row.issueKey,
-                              row.jiraUrl ??
-                                buildJiraIssueBrowseUrl(
-                                  resolveJiraBaseUrl(),
+                      <JiraIssueLink
+                        issueKey={row.issueKey}
+                        browseUrl={row.jiraUrl}
+                        className="performance-table__issue-key performance-table__issue-key-link"
+                        onClick={
+                          onOpenIssue
+                            ? (event) => {
+                                event.preventDefault();
+                                onOpenIssue(
                                   row.issueKey,
-                                ),
-                            )
-                          }
-                        >
-                          {row.issueKey}
-                        </button>
-                      ) : (
-                        <JiraIssueLink
-                          issueKey={row.issueKey}
-                          browseUrl={row.jiraUrl}
-                          className="performance-table__issue-key"
-                        />
-                      )}
+                                  row.jiraUrl ??
+                                    buildJiraIssueBrowseUrl(
+                                      resolveJiraBaseUrl(),
+                                      row.issueKey,
+                                    ),
+                                );
+                              }
+                            : undefined
+                        }
+                      />
                     </td>
                     <td className="performance-table__issue-title-cell">
                       <span className="performance-table__clamp" title={row.title}>

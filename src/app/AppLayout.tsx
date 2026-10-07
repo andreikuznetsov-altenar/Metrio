@@ -24,7 +24,10 @@ import type { SettingsSection } from "../pages/settings/types";
 import { MetrioAppHeader } from "../shell/MetrioAppHeader";
 import { CommandPalette } from "../shell/CommandPalette";
 import { PersonBriefDrawer } from "../pages/performance/PersonBriefDrawer";
-import { GlobalPersonDetailDrawer } from "./GlobalPersonDetailDrawer";
+import {
+  PersonNavigationProvider,
+  usePersonNavigation,
+} from "./PersonNavigationContext";
 import { ProjectCockpitDrawer } from "../pages/project/ProjectCockpitDrawer";
 import { DigestDrawer } from "../pages/digest/DigestDrawer";
 import { DIGEST_OPEN_EVENT } from "../platform/digestNavigation";
@@ -121,31 +124,35 @@ export function AppLayout() {
           selfPersonId={currentUser.person.id}
         >
           <WorkGraphShell selfPersonId={currentUser.person.id}>
-        <AppLayoutShell
-          activeRoute={activeRoute}
-          setActiveRoute={setActiveRoute}
-          settingsOpen={settingsOpen}
-          setSettingsOpen={setSettingsOpen}
-          settingsSection={settingsSection}
-          setSettingsSection={setSettingsSection}
-          dateRange={dateRange}
-          setDateRange={setDateRange}
-          reviewTarget={reviewTarget}
-          setReviewTarget={setReviewTarget}
-          performanceDataEnabled={activeRoute === "performance" && !settingsOpen}
-          homeActive={activeRoute === "home" && !settingsOpen}
-          showTeamPerformance={
-            activeRoute === "performance" &&
-            !settingsOpen &&
-            showTeamPerformanceToolbar
-          }
-          showEmployeePerformance={
-            activeRoute === "performance" &&
-            !settingsOpen &&
-            currentUser.person.role === "employee"
-          }
-        />
-        </WorkGraphShell>
+            <PersonNavigationProvider>
+              <AppLayoutShell
+                activeRoute={activeRoute}
+                setActiveRoute={setActiveRoute}
+                settingsOpen={settingsOpen}
+                setSettingsOpen={setSettingsOpen}
+                settingsSection={settingsSection}
+                setSettingsSection={setSettingsSection}
+                dateRange={dateRange}
+                setDateRange={setDateRange}
+                reviewTarget={reviewTarget}
+                setReviewTarget={setReviewTarget}
+                performanceDataEnabled={
+                  activeRoute === "performance" && !settingsOpen
+                }
+                homeActive={activeRoute === "home" && !settingsOpen}
+                showTeamPerformance={
+                  activeRoute === "performance" &&
+                  !settingsOpen &&
+                  showTeamPerformanceToolbar
+                }
+                showEmployeePerformance={
+                  activeRoute === "performance" &&
+                  !settingsOpen &&
+                  currentUser.person.role === "employee"
+                }
+              />
+            </PersonNavigationProvider>
+          </WorkGraphShell>
         </PerformanceExportProvider>
       </PerformanceDataWithRules>
       </OperationalRulesProvider>
@@ -196,6 +203,7 @@ function AppLayoutShell({
   );
   const feedbackEnabled = feedbackFeatureOn && orgFeatureAccess.showFeedbackTab;
   const { resetConnection, invalidateSession } = useConnectionGate();
+  const { openPerson } = usePersonNavigation();
   const {
     refresh,
     performanceControlsDisabled,
@@ -309,13 +317,27 @@ function AppLayoutShell({
     const onRoute = (event: Event) => {
       const route = (event as CustomEvent<AppRoute>).detail;
       if (route === "home" || route === "performance" || route === "feedback") {
+        if (
+          (route === "performance" || route === "feedback") &&
+          !performanceNavEnabled
+        ) {
+          return;
+        }
+        if (route === "feedback" && !feedbackEnabled) {
+          return;
+        }
         setSettingsOpen(false);
         setActiveRoute(route);
       }
     };
     window.addEventListener("metrio-navigate-route", onRoute);
     return () => window.removeEventListener("metrio-navigate-route", onRoute);
-  }, [setActiveRoute, setSettingsOpen]);
+  }, [
+    feedbackEnabled,
+    performanceNavEnabled,
+    setActiveRoute,
+    setSettingsOpen,
+  ]);
 
   useEffect(() => {
     const onSettings = (event: Event) => {
@@ -378,9 +400,7 @@ function AppLayoutShell({
       openNotifications: () => setNotificationsOpen(true),
       openSettings: () => onOpenSettings("preferences"),
       openPerson: (personId: string) => {
-        window.dispatchEvent(
-          new CustomEvent("metrio-open-person", { detail: personId }),
-        );
+        openPerson(personId);
       },
       openProjectCockpit: (projectKey: string) => {
         openProjectCockpit(projectKey);
@@ -421,6 +441,7 @@ function AppLayoutShell({
       feedbackEnabled,
       paletteJiraBaseUrl,
       setActiveRoute,
+      openPerson,
     ],
   );
 
@@ -518,6 +539,7 @@ function AppLayoutShell({
         header={
           <MetrioAppHeader
             activeRoute={settingsOpen ? null : activeRoute}
+            feedbackVisible={feedbackEnabled}
             feedbackEnabled={feedbackEnabled && performanceNavEnabled}
             performanceEnabled={performanceNavEnabled}
             onNavigate={onNavigate}
@@ -540,9 +562,7 @@ function AppLayoutShell({
         onUnreadChange={setNotificationUnread}
         orgFeatureAccess={orgFeatureAccess}
         onOpenPerson={(personId) => {
-          window.dispatchEvent(
-            new CustomEvent("metrio-open-person", { detail: personId }),
-          );
+          openPerson(personId);
         }}
         onOpenSettings={onOpenSettings}
       />
@@ -558,7 +578,6 @@ function AppLayoutShell({
           surveyManagementEnabled: orgFeatureAccess.canViewSurveyManagement,
         }}
       />
-      <GlobalPersonDetailDrawer activeRoute={activeRoute} />
       <PersonBriefDrawer
         personId={personBriefPersonId}
         open={personBriefPersonId != null}

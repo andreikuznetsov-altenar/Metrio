@@ -30,13 +30,13 @@ import {
   readDashboardVisualQueryFlag,
 } from "../../../fixtures/dashboardVisualOverrides";
 import { readVisualProductRecommendationsOverride } from "../../../fixtures/productRecommendationsVisualFixture";
-import { navigateOpenTeamOverview } from "../../../app/ctaRouting";
 import { buildProductRecommendations } from "../../../domain/recommendations/buildProductRecommendations";
 import type { ProductRecommendation } from "../../../domain/recommendations/buildProductRecommendations";
 import { DashboardRecommendations } from "./DashboardRecommendations";
 import { DashboardMetricsPair } from "./DashboardMetricsPair";
 import { DashboardLowerThreeCards } from "./DashboardLowerThreeCards";
 import { DashboardDeliveryRiskCard } from "./DashboardDeliveryRiskCard";
+import { navigateProductRecommendation } from "../../../app/productRecommendationNavigation";
 
 const QUEUE_PREVIEW = 5;
 type GoalsHomeSummary = ReturnType<typeof summarizeGoalsForHome>;
@@ -144,25 +144,11 @@ export function ManagerExecutiveDashboard({
     });
 
   const onRecommendationAction = (rec: ProductRecommendation) => {
-    if (rec.actionKind === "open_delivery_risk") {
-      onOpenDeliveryRisk();
-      return;
-    }
-    if (rec.actionKind === "open_team_workload") {
-      onOpenTeamOverview();
-      return;
-    }
-    if (rec.actionKind === "view_person" && rec.personId) {
-      onOpenPerson(rec.personId);
-      return;
-    }
-    if (rec.actionKind === "open_jira" && rec.issueKey) {
-      void onOpenJiraAssignment(rec.issueKey);
-      return;
-    }
-    if (rec.actionKind === "open_performance") {
-      navigateOpenTeamOverview();
-    }
+    navigateProductRecommendation(rec, {
+      openPerson: onOpenPerson,
+      openJira: (issueKey) => void onOpenJiraAssignment(issueKey),
+      openTeamWorkload: onOpenTeamOverview,
+    });
   };
 
   return (

@@ -9,8 +9,8 @@ import { useFeedbackSurveyStore } from "../../app/feedbackSurveyStore";
 import {
   actionOpenLabel,
   navigateActionTarget,
-  navigatePerformanceView,
 } from "../../app/actionNavigation";
+import { navigateProductRecommendation } from "../../app/productRecommendationNavigation";
 import { navigateOpenTeamWorkloadSection } from "../../domain/home/attentionNavigation";
 import { buildDirectorTeamActions } from "../../domain/actions/buildOrganizationActions";
 import { buildTeamActions } from "../../domain/actions/buildTeamActions";
@@ -18,7 +18,7 @@ import { useOperationalRules } from "../../app/OperationalRulesContext";
 import { summarizeFeedbackActions } from "../../domain/feedback/feedbackActionSummary";
 import type { TeamSecondarySnapshot } from "../../domain/performance";
 import { ActionQueueSection } from "./ActionQueueSection";
-import { useOptionalPerformanceAnalytics } from "../../app/performanceAnalyticsContext";
+import type { PersonDrawerTab } from "../../app/performanceAnalyticsContext";
 import { Button } from "../../components/Button/Button";
 import { Badge } from "../../components/Badge/Badge";
 import { Card } from "../../components/Card/Card";
@@ -68,7 +68,7 @@ const WORKLOAD_OVERVIEW_COLUMNS = [
 export interface TeamOverviewViewProps {
   snapshot: TeamPerformanceSnapshot;
   secondary: TeamSecondarySnapshot;
-  onOpenPerson: (personId: string) => void;
+  onOpenPerson: (personId: string, tab?: PersonDrawerTab) => void;
   onViewAllRadar?: () => void;
   onOpenMetricDrilldown?: (metric: MetricCardData, source: HTMLElement) => void;
   onOpenTrendDrilldown?: (
@@ -118,7 +118,6 @@ export function TeamOverviewView({
   onOpenTrendDrilldown,
 }: TeamOverviewViewProps) {
   const { currentUser } = useCurrentUser();
-  const analytics = useOptionalPerformanceAnalytics();
   const surveyData = useFeedbackSurveyStore((state) => state.data);
   const feedbackSummary = useMemo(
     () => summarizeFeedbackActions(surveyData),
@@ -174,13 +173,7 @@ export function TeamOverviewView({
 
   const handleAction = (item: import("../../domain/actions/actionTypes").ActionItem) => {
     navigateActionTarget(item.target, {
-      openPerson: (personId, tab) => {
-        if (analytics) {
-          analytics.openPersonDrawer({ personId, tab });
-          return;
-        }
-        onOpenPerson(personId);
-      },
+      openPerson: onOpenPerson,
     });
   };
 
@@ -266,27 +259,15 @@ export function TeamOverviewView({
   );
 
   const onPerformanceRecommendation = (rec: ProductRecommendation) => {
-    if (rec.actionKind === "open_delivery_risk") {
-      window.dispatchEvent(
-        new CustomEvent("metrio-open-performance-tab", { detail: "delivery-risk" }),
-      );
-      return;
-    }
-    if (rec.actionKind === "view_person" && rec.personId) {
-      onOpenPerson(rec.personId);
-      return;
-    }
-    if (rec.actionKind === "open_jira" && rec.issueKey) {
-      navigateActionTarget({ kind: "jira", issueKey: rec.issueKey }, { openPerson: onOpenPerson });
-      return;
-    }
-    if (rec.actionKind === "open_team_workload") {
-      navigateOpenTeamWorkloadSection();
-      return;
-    }
-    if (rec.actionKind === "open_performance") {
-      navigatePerformanceView("overview");
-    }
+    navigateProductRecommendation(rec, {
+      openPerson: onOpenPerson,
+      openJira: (issueKey) =>
+        navigateActionTarget(
+          { kind: "jira", issueKey },
+          { openPerson: onOpenPerson },
+        ),
+      openTeamWorkload: navigateOpenTeamWorkloadSection,
+    });
   };
 
   return (

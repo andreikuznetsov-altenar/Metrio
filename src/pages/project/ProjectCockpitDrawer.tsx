@@ -6,6 +6,7 @@ import { SegmentedControl } from "../../components/SegmentedControl/SegmentedCon
 import { useCurrentUser } from "../../app/CurrentUserContext";
 import { usePerformanceData } from "../../app/PerformanceDataContext";
 import { useOperationalRules } from "../../app/OperationalRulesContext";
+import { usePersonNavigation } from "../../app/PersonNavigationContext";
 import { useWorkGraph } from "../../app/WorkGraphContext";
 import { filterProjectWorkRows } from "../../domain/projectCockpit/buildProjectCockpit";
 import type { ProjectWorkFilter } from "../../domain/projectCockpit/projectCockpitTypes";
@@ -64,6 +65,7 @@ export function ProjectCockpitDrawer({
   const { data } = usePerformanceData();
   const graph = useWorkGraph();
   const { rules: operationalRules } = useOperationalRules();
+  const { openPerson } = usePersonNavigation();
   const [filter, setFilter] = useState<ProjectWorkFilter>("all");
   const [jiraBaseUrl, setJiraBaseUrl] = useState("");
   const [selectedDependency, setSelectedDependency] = useState<WorkDependency | null>(
@@ -361,13 +363,7 @@ export function ProjectCockpitDrawer({
                           <button
                             type="button"
                             className="project-cockpit__link"
-                            onClick={() => {
-                              window.dispatchEvent(
-                                new CustomEvent("metrio-open-person", {
-                                  detail: row.personId,
-                                }),
-                              );
-                            }}
+                            onClick={() => openPerson(row.personId!)}
                           >
                             {row.ownerName}
                           </button>
@@ -403,13 +399,7 @@ export function ProjectCockpitDrawer({
                     <button
                       type="button"
                       className="project-cockpit__link"
-                      onClick={() => {
-                        window.dispatchEvent(
-                          new CustomEvent("metrio-open-person", {
-                            detail: person.personId,
-                          }),
-                        );
-                      }}
+                      onClick={() => openPerson(person.personId!)}
                     >
                       {person.displayName}
                     </button>

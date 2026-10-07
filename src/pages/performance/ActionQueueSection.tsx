@@ -2,6 +2,8 @@ import { Button } from "../../components/Button/Button";
 import type { ActionItem } from "../../domain/actions/actionTypes";
 import { buildDashboardQueueRows } from "../../domain/actions/buildDashboardQueueRows";
 import { DashboardActionQueueTable } from "../../components/Table/DashboardActionQueueTable";
+import { JiraIssueText } from "../../components/JiraIssueLink/JiraIssueText";
+import { resolveJiraBaseUrl } from "../../config/product";
 import "./action-queue.css";
 
 export interface ActionQueueSectionProps {
@@ -41,6 +43,7 @@ export function ActionQueueSection({
             sortColumnId={null}
             sortDirection={null}
             onToggleSort={() => undefined}
+            jiraBaseUrl={resolveJiraBaseUrl()}
           />
         )}
         {footerAction ? (
@@ -65,10 +68,14 @@ export function ActionQueueSection({
             <li key={item.id} className={`action-queue__row action-queue__row--${item.severity}`}>
               <div className="action-queue__body">
                 <div className="action-queue__head">
-                  <span className="action-queue__item-title">{item.title}</span>
+                  <span className="action-queue__item-title">
+                    <JiraIssueText text={item.title} />
+                  </span>
                 </div>
                 {item.description ? (
-                  <p className="action-queue__description">{item.description}</p>
+                  <p className="action-queue__description">
+                    <JiraIssueText text={item.description} />
+                  </p>
                 ) : null}
               </div>
               <Button

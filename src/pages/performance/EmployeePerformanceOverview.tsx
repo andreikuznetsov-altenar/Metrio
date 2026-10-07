@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { usePerformanceData } from "../../app/PerformanceDataContext";
 import { useOptionalPerformanceAnalytics } from "../../app/performanceAnalyticsContext";
+import { usePersonNavigation } from "../../app/PersonNavigationContext";
 import { usePerformanceExport } from "../../app/PerformanceExportContext";
 import {
   readPersistedEmployeePerformanceView,
@@ -60,6 +61,7 @@ export function EmployeePerformanceOverview({ personId }: EmployeePerformanceOve
   );
   const { viewModels, status, data } = usePerformanceData();
   const analytics = useOptionalPerformanceAnalytics();
+  const { openPerson } = usePersonNavigation();
   const selfPerson = useMemo(
     () => data?.teamSnapshot.persons.find((person) => person.id === personId),
     [data, personId],
@@ -93,7 +95,7 @@ export function EmployeePerformanceOverview({ personId }: EmployeePerformanceOve
 
   const handleFocusAction = (item: import("../../domain/actions/actionTypes").ActionItem) => {
     navigateActionTarget(item.target, {
-      openPerson: (id, tab) => analytics?.openPersonDrawer({ personId: id, tab }),
+      openPerson,
     });
   };
   useEffect(() => {

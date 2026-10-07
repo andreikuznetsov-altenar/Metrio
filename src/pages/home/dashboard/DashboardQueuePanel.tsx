@@ -17,6 +17,7 @@ import { resolveJiraBaseUrl } from "../../../config/product";
 import {
   readDashboardVisualQueryFlag,
 } from "../../../fixtures/dashboardVisualOverrides";
+import { useOptionalPerformanceIssueCatalog } from "../../../app/PerformanceIssueCatalogContext";
 import "../../performance/action-queue.css";
 
 const QUEUE_COLUMNS = [
@@ -53,6 +54,7 @@ export function DashboardQueuePanel({
   onOpenJiraIssue,
   testId,
 }: DashboardQueuePanelProps) {
+  const issueCatalog = useOptionalPerformanceIssueCatalog();
   const [tasksOpen, setTasksOpen] = useState(false);
   const [jiraBaseUrl, setJiraBaseUrl] = useState("");
 
@@ -62,6 +64,23 @@ export function DashboardQueuePanel({
     });
   }, []);
   const sourceItems = useMemo(() => {
+    if (
+      readDashboardVisualQueryFlag("visualDashboardIssueLink") &&
+      items.length === 0
+    ) {
+      return [
+        {
+          id: "visual-my-focus-issue-link",
+          kind: "task_attention",
+          severity: "warning",
+          title: "Review UX-5808",
+          description: "Deterministic Jira-link acceptance fixture.",
+          issueKeys: ["UX-5808"],
+          target: { kind: "jira", issueKey: "UX-5808" },
+          source: "jira",
+        } satisfies ActionItem,
+      ];
+    }
     if (
       readDashboardVisualQueryFlag("visualDashboardTaskModal") &&
       items.length > 0 &&
@@ -104,8 +123,14 @@ export function DashboardQueuePanel({
     [sortedRows],
   );
   const taskRows = useMemo(
-    () => buildTaskListModalRows(sourceItems, teamPersons, resolveJiraBaseUrl()),
-    [sourceItems, teamPersons],
+    () =>
+      buildTaskListModalRows(
+        sourceItems,
+        teamPersons,
+        resolveJiraBaseUrl(),
+        issueCatalog,
+      ),
+    [sourceItems, teamPersons, issueCatalog],
   );
 
   return (

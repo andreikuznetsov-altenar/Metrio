@@ -15,6 +15,7 @@ import {
   navigateActionTarget,
 } from "../../app/actionNavigation";
 import { useOptionalPerformanceAnalytics } from "../../app/performanceAnalyticsContext";
+import { usePersonNavigation } from "../../app/PersonNavigationContext";
 import {
   buildHomeWorkspace,
   resolveHomeRoleVariant,
@@ -133,9 +134,11 @@ export function HomePage() {
     performanceLastUpdatedAt,
     revalidatingFromCache,
     refreshStartedAt,
+    issueCatalog,
   } = usePerformanceData();
   const dashboardRefreshing = status === "loading" || status === "refreshing";
   const analytics = useOptionalPerformanceAnalytics();
+  const { openPerson: openPersonDetail } = usePersonNavigation();
   const surveyData = useFeedbackSurveyStore((state) => state.data);
   const feedbackSummary = useMemo(
     () => summarizeFeedbackActions(surveyData),
@@ -407,11 +410,7 @@ export function HomePage() {
   ]);
 
   const openPerson = (personId: string, tab?: "overview" | "work" | "history") => {
-    if (analytics) {
-      analytics.openPersonDrawer({ personId, tab });
-      return;
-    }
-    window.dispatchEvent(new CustomEvent("metrio-open-person", { detail: personId }));
+    openPersonDetail(personId, tab);
   };
 
   const handleAction = (item: import("../../domain/actions/actionTypes").ActionItem) => {
@@ -425,9 +424,10 @@ export function HomePage() {
             trendTaskModal.issueKeys,
             data?.teamSnapshot?.persons ?? [],
             homeJiraBaseUrl || resolveJiraBaseUrl(),
+            issueCatalog,
           )
         : [],
-    [trendTaskModal, data?.teamSnapshot?.persons, homeJiraBaseUrl],
+    [trendTaskModal, data?.teamSnapshot?.persons, homeJiraBaseUrl, issueCatalog],
   );
 
   const openTrendPoint = useCallback(
@@ -832,9 +832,8 @@ export function HomePage() {
         onClose={() => setTrendTaskModal(null)}
         title={trendTaskModal?.title ?? ""}
         rows={trendTaskRows}
-        onOpenIssue={(issueKey, url) => {
+        onOpenIssue={(issueKey) => {
           void openJiraAssignment(issueKey);
-          if (url) void openExternalUrl(url);
         }}
       />
     </div>

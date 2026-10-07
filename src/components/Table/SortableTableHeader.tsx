@@ -1,8 +1,9 @@
+import type { ReactNode } from "react";
 import type { TableSortState } from "./tableSort";
 
 export interface SortableTableHeaderProps {
   columnId: string;
-  label: string;
+  label: ReactNode;
   sort: TableSortState;
   onToggle: (columnId: string) => void;
   className?: string;
@@ -31,6 +32,7 @@ export function SortableTableHeader({
     <th
       className={className}
       aria-sort={ariaSort}
+      scope="col"
     >
       <button
         type="button"

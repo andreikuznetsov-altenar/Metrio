@@ -60,6 +60,7 @@ function activeIssue(
   summary: string,
   status = "In Progress",
   ownerCanonical?: string,
+  withStatusHistory = false,
 ): AuditIssue {
   return {
     issueKey: key,
@@ -74,7 +75,22 @@ function activeIssue(
     epicStatus: "",
     epicContentType: "",
     epicDesignImprovementType: "",
-    events: [],
+    events: withStatusHistory
+      ? [
+          {
+            eventType: "Status",
+            changedAt: "2026-02-10T10:00:00.000Z",
+            changedBy: "Visual",
+            fromValue: "To Do",
+            toValue: status,
+            timeSincePreviousStatusMs: null,
+            isBackflow: false,
+            isHandoff: false,
+            isReturnToTeam: false,
+            excludeFromEfficiencyBackflow: false,
+          },
+        ]
+      : [],
     rangeEvents: [],
     currentStatus: status,
     ...(ownerCanonical ? { currentAssigneeCanonical: ownerCanonical } : {}),
@@ -320,12 +336,14 @@ function buildTeamPersons(): Person[] {
           "Checkout flow regression",
           "In Progress",
           "jira-person-01",
+          true,
         ),
         activeIssue(
           "UX-5203",
           "Mobile nav polish",
           "In Review",
           "jira-person-01",
+          true,
         ),
       ],
     }),
@@ -361,6 +379,7 @@ function buildTeamPersons(): Person[] {
           "Checkout flow regression",
           "In Progress",
           "jira-person-01",
+          true,
         ),
       ],
     }),
