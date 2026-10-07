@@ -2,7 +2,12 @@ import { describe, expect, it, vi } from 'vitest';
 import { createPerformanceDateRange, previousComparableRange } from '../performance/performanceDateRange';
 import { resolveRequiredComparisonCoverage } from '../history/historyRanges';
 import { getTeamTrendHistoryState } from '../trends/teamTrendHistory';
-import { compareTrendPeriodsForDisplayRange } from '../trends/trendEngine';
+import {
+  compareTrendPeriodsForDisplayRange,
+  compareWeightedAvgCycleTrend,
+  compareWeightedFirstPassTrend,
+  trendSufficiencyForDisplayRange,
+} from '../trends/trendEngine';
 import { teamTrendPoints } from '../snapshots/snapshotEngine';
 import { buildIssueCatalog } from '../jira/issueCatalog';
 import { collectUniqueTeamIssues } from '../jira/uniqueIssues';
@@ -12,8 +17,13 @@ import { buildJiraIssueBrowseUrl } from '../../platform/jiraIssueUrl';
 import { resolveJiraBaseUrl } from '../../config/product';
 import { buildIssueEvents } from '../jira/events';
 import type { AuditIssue } from '../jira/types';
+import { DEFAULT_WORKFLOW_MAPPINGS } from '../workflows/defaultWorkflowMappings';
+import { extractProfileContributorCycles } from '../workflows/profileCycles';
 import { resolveWorkflowProfile } from '../workflows/resolveWorkflowProfile';
-import { resolveWorkflowStage } from '../workflows/resolveWorkflowStage';
+import {
+  isExplicitProfileStatus,
+  resolveWorkflowStage,
+} from '../workflows/resolveWorkflowStage';
 import { buildMyWeek } from '../personal/myWeek';
 
 const runReal =
@@ -72,6 +82,50 @@ function issueFromJira(
   };
 }
 
+const FOCUS_NAME_TOKENS = ['andrei', 'valeriia', 'daria', 'konstantin', 'nikita'];
+const CONFIGURED_PROJECTS = new Set(
+  DEFAULT_WORKFLOW_MAPPINGS.map((mapping) => mapping.projectKey).filter(
+    (projectKey): projectKey is string => Boolean(projectKey),
+  ),
+);
+const RAW_EXECUTION_STATUS = /^(in progress|investigating|translation|writing|applying patch|need to fix)$/i;
+
+function statusIntervals(issue: AuditIssue) {
+  const profile = resolveWorkflowProfile(issue);
+  const events = (issue.events || [])
+    .filter((event) => event.eventType === 'Status')
+    .slice()
+    .sort((a, b) => new Date(a.changedAt).getTime() - new Date(b.changedAt).getTime());
+  const rows: Array<{
+    status: string;
+    canonical: string;
+    from: string;
+    to: string;
+    capacity: boolean;
+    review: boolean;
+    hold: boolean;
+    waiting: boolean;
+  }> = [];
+  let cursor = issue.issueCreated || events[0]?.changedAt || '';
+  let status = events[0]?.fromValue || issue.currentStatus || '';
+  for (const event of events) {
+    const stage = resolveWorkflowStage(profile, status);
+    rows.push({
+      status,
+      canonical: stage.canonicalStage,
+      from: cursor,
+      to: event.changedAt,
+      capacity: stage.countsAsCapacityContributor,
+      review: stage.countsAsReview,
+      hold: stage.countsAsHold,
+      waiting: stage.countsAsWaiting,
+    });
+    cursor = event.changedAt;
+    status = event.toValue || status;
+  }
+  return rows;
+}
+
 describe.skipIf(!runReal)('PASS 14.4 real Jira read-only acceptance', () => {
   it(
     'verifies AGTC-105, samples, workload, 6m history, and cross-screen consistency',
@@ -101,15 +155,30 @@ describe.skipIf(!runReal)('PASS 14.4 real Jira read-only acceptance', () => {
 
       const changelog = (await jira.fetchAllChangelog('AGTC-105')) as unknown[];
       const agtcIssue = issueFromJira(agtcRaw, changelog);
+      const agtcProfile = resolveWorkflowProfile(agtcIssue);
+      const agtcStage = resolveWorkflowStage(agtcProfile, agtcIssue.currentStatus);
       const statusEvents = agtcIssue.events.filter((event) => event.eventType === 'Status');
-      // Changelog is populated when Jira returns histories; empty is allowed only if Jira has none.
+      const lastStatusChange = statusEvents
+        .slice()
+        .sort((a, b) => new Date(b.changedAt).getTime() - new Date(a.changedAt).getTime())[0]?.changedAt || null;
+      expect(isExplicitProfileStatus(agtcProfile, agtcIssue.currentStatus)).toBe(true);
       console.info(
         JSON.stringify({
           agtc105: {
             key: agtcIssue.issueKey,
-            titlePopulated: Boolean(agtcIssue.issueSummary),
-            status: agtcIssue.currentStatus,
+            summary: agtcIssue.issueSummary,
+            currentStatus: agtcIssue.currentStatus,
             created: agtcIssue.issueCreated,
+            lastStatusChange,
+            project: agtcIssue.projectKey,
+            issueType: agtcIssue.issueTypeName,
+            profileId: agtcProfile.id,
+            canonicalStage: agtcStage.canonicalStage,
+            active: agtcStage.countsAsActiveWork,
+            review: agtcStage.countsAsReview,
+            capacity: agtcStage.countsAsCapacityContributor,
+            assignee: agtcRaw.fields?.assignee?.displayName || null,
+            assigneeAccountId: agtcRaw.fields?.assignee?.accountId || null,
             statusChangeEvents: statusEvents.length,
             jiraUrl: buildJiraIssueBrowseUrl(jiraBase, 'AGTC-105'),
           },
@@ -140,11 +209,15 @@ describe.skipIf(!runReal)('PASS 14.4 real Jira read-only acceptance', () => {
       );
       expect(modalRows).toHaveLength(1);
       expect(modalRows[0].title).toBe(agtcIssue.issueSummary);
+      expect(modalRows[0].title).not.toBe('AGTC-105');
       expect(modalRows[0].status).toBe(agtcIssue.currentStatus);
+      expect(modalRows[0].status).not.toBe('—');
       expect(modalRows[0].createdAt).toBe(agtcIssue.issueCreated);
+      expect(modalRows[0].createdLabel).not.toBe('—');
       expect(modalRows[0].jiraUrl).toBe(buildJiraIssueBrowseUrl(jiraBase, 'AGTC-105'));
       if (statusEvents.length > 0) {
         expect(modalRows[0].lastStatusChangedAt).toBeTruthy();
+        expect(modalRows[0].lastStatusChangeLabel).not.toBe('—');
       }
 
       const uniqueIssues = collectUniqueTeamIssues(persons);
@@ -180,22 +253,61 @@ describe.skipIf(!runReal)('PASS 14.4 real Jira read-only acceptance', () => {
       };
       console.info(JSON.stringify({ samples }));
       expect(uxSample || agtcReview || completedSample || activeSample).toBeTruthy();
+      if (uxSample) {
+        const uxRows = buildTaskListModalRowsFromIssueKeys(
+          [uxSample.issueKey],
+          persons,
+          jiraBase,
+          catalog,
+        );
+        expect(uxRows[0].title).not.toBe(uxSample.issueKey);
+        expect(uxRows[0].title).not.toBe('—');
+        expect(uxRows[0].status).not.toBe('—');
+        expect(uxRows[0].createdLabel).not.toBe('—');
+        expect(uxRows[0].jiraUrl).toBe(buildJiraIssueBrowseUrl(jiraBase, uxSample.issueKey));
+      }
 
+      const inferredCorporateOwned: string[] = [];
+      const activeZeroBlockers: string[] = [];
       const workloadTable = persons.map((person) => {
         const w = person.workload;
         const owned = getOperationalIssues(person);
         const ownedKeys = owned.map((issue) => issue.issueKey);
         expect(new Set(ownedKeys).size).toBe(ownedKeys.length);
+        const stageCounts: Record<string, number> = {};
+        let rawExecutionNonActive = 0;
         const reviewInActive = owned.filter((issue) => {
-          const stage = resolveWorkflowStage(
-            resolveWorkflowProfile(issue),
-            issue.currentStatus || '',
-          );
+          const profile = resolveWorkflowProfile(issue);
+          const stage = resolveWorkflowStage(profile, issue.currentStatus || '');
+          stageCounts[stage.canonicalStage] = (stageCounts[stage.canonicalStage] || 0) + 1;
+          const project = issue.projectKey || issue.issueKey.split('-')[0];
+          if (
+            CONFIGURED_PROJECTS.has(project) &&
+            issue.currentStatus &&
+            !isExplicitProfileStatus(profile, issue.currentStatus) &&
+            stage.canonicalStage !== 'unknown'
+          ) {
+            inferredCorporateOwned.push(
+              `${person.bamboo.displayName} ${issue.issueKey} ${issue.currentStatus} → ${stage.canonicalStage}`,
+            );
+          }
+          const rawExecution = RAW_EXECUTION_STATUS.test((issue.currentStatus || '').trim());
+          if (rawExecution && !stage.countsAsActiveWork && !stage.isTerminal && !stage.isCompletion) {
+            rawExecutionNonActive += 1;
+            activeZeroBlockers.push(
+              `${person.bamboo.displayName} ${issue.issueKey} status=${issue.currentStatus} stage=${stage.canonicalStage} active=${stage.countsAsActiveWork}`,
+            );
+          }
           return stage.countsAsReview && stage.countsAsActiveWork;
         });
         expect(reviewInActive, `${person.bamboo.displayName} review counted as active`).toEqual([]);
         if ((w?.activeWorkCount ?? 0) === 0) {
           expect(w?.capacityBreakdown?.activeSegmentHours ?? 0).toBe(0);
+        }
+        if (rawExecutionNonActive > 0 && (w?.activeWorkCount ?? 0) === 0) {
+          activeZeroBlockers.push(
+            `${person.bamboo.displayName} has raw execution statuses but activeWorkCount=0`,
+          );
         }
         if ((w?.capacityLoadPercent ?? 0) > 100) {
           expect(w?.level).toBe('overloaded');
@@ -206,39 +318,101 @@ describe.skipIf(!runReal)('PASS 14.4 real Jira read-only acceptance', () => {
         }
         return {
           person: person.bamboo.displayName,
-          activeWorkCount: w?.activeWorkCount ?? 0,
-          reviewCount: w?.reviewCount ?? 0,
-          qaCount: w?.qaCount ?? 0,
-          holdCount: w?.holdCount ?? 0,
-          waitingCount: w?.waitingCount ?? 0,
+          owned: ownedKeys.length,
+          active: w?.activeWorkCount ?? 0,
+          review: w?.reviewCount ?? 0,
+          qa: w?.qaCount ?? 0,
+          hold: w?.holdCount ?? 0,
+          waiting: w?.waitingCount ?? 0,
+          backlog: w?.backlogCount ?? 0,
+          unknown: w?.unknownCount ?? 0,
+          capacityContributorCurrent: w?.capacityContributorIssueCount ?? 0,
           capacityLoadPercent: w?.capacityLoadPercent ?? 0,
           capacityDataState: w?.capacityDataState ?? 'insufficient_history',
           workloadLevel: w?.level ?? 'low',
           completedCyclesInPeriod: w?.capacityBreakdown?.completedCyclesInPeriod ?? 0,
-          avgHoursPerCycle: w?.capacityBreakdown?.avgHoursPerCycle ?? 0,
-          daysInPeriod: w?.capacityBreakdown?.daysInPeriod ?? 0,
-          estimatedMonthlyHours: w?.capacityBreakdown?.estimatedMonthlyHours ?? 0,
-          completedCycleHours: w?.capacityBreakdown?.completedCycleHours ?? 0,
+          executionHours: w?.capacityBreakdown?.completedCycleHours ?? 0,
           activeSegmentHours: w?.capacityBreakdown?.activeSegmentHours ?? 0,
-          ownedIssueCount: ownedKeys.length,
+          stageCounts,
         };
       });
-      console.info(JSON.stringify({ workloadTable }));
+      const focusTeam = workloadTable.filter((row) =>
+        FOCUS_NAME_TOKENS.some((token) => row.person.toLowerCase().includes(token)),
+      );
+      console.info(JSON.stringify({ workloadTable, focusTeam }));
+      expect(inferredCorporateOwned, inferredCorporateOwned.join('\n')).toEqual([]);
+      expect(activeZeroBlockers, activeZeroBlockers.join('\n')).toEqual([]);
+
+      const capacitySamples: unknown[] = [];
+      const completedCandidates = uniqueIssues.filter((issue) => {
+        const stage = resolveWorkflowStage(
+          resolveWorkflowProfile(issue),
+          issue.currentStatus || '',
+        );
+        return stage.isCompletion;
+      });
+      for (const candidate of completedCandidates.slice(0, 12)) {
+        let full = candidate;
+        const hasStatusEvents = (candidate.events || []).some((event) => event.eventType === 'Status');
+        if (!hasStatusEvents) {
+          const raw = (await jira.fetchIssueByKey(candidate.issueKey)) as JiraIssuePayload;
+          const history = (await jira.fetchAllChangelog(candidate.issueKey)) as unknown[];
+          full = issueFromJira(raw, history);
+        }
+        const profile = resolveWorkflowProfile(full);
+        const cycles = extractProfileContributorCycles(
+          full,
+          profile,
+          fetchResult.reportData.params,
+        ).filter((cycle) => cycle.completedAt);
+        if (!cycles.length) continue;
+        capacitySamples.push({
+          key: full.issueKey,
+          profile: profile.id,
+          currentStatus: full.currentStatus,
+          sequence: statusIntervals(full).map(
+            (row) => `${row.status}→${row.canonical}${row.capacity ? '*cap' : ''}${row.review ? '*rev' : ''}${row.hold || row.waiting ? '*wait' : ''}`,
+          ),
+          intervals: statusIntervals(full),
+          cycles: cycles.map((cycle) => ({
+            startedAt: cycle.startedAt,
+            completedAt: cycle.completedAt,
+            firstPass: cycle.isFirstPass,
+            backflow: cycle.hasBackflow,
+            activeCapacityMs: cycle.activeCapacityMs,
+            activeCapacityMsInPeriod: cycle.activeCapacityMsInPeriod,
+          })),
+        });
+        if (capacitySamples.length >= 3) break;
+      }
+      console.info(JSON.stringify({ capacitySamples }));
 
       const coverage = resolveRequiredComparisonCoverage(range);
       const historyState = getTeamTrendHistoryState(fetchResult.kpiSnapshots);
       const completedPoints = teamTrendPoints(fetchResult.kpiSnapshots, 'completedOnDate');
       const firstPassPoints = teamTrendPoints(fetchResult.kpiSnapshots, 'firstPassOnDate');
       const backflowPoints = teamTrendPoints(fetchResult.kpiSnapshots, 'backflowsOnDate');
+      const cycleSumPoints = teamTrendPoints(fetchResult.kpiSnapshots, 'cycleMsSumOnDate');
+      const cycleCountPoints = teamTrendPoints(
+        fetchResult.kpiSnapshots,
+        'completedWithCycleOnDate',
+      );
       const completedTrend = compareTrendPeriodsForDisplayRange(
         completedPoints,
         'completed',
         range,
       );
-      const firstPassTrend = compareTrendPeriodsForDisplayRange(
+      const firstPassTrend = compareWeightedFirstPassTrend(
+        completedPoints,
         firstPassPoints,
-        'firstPass',
-        range,
+        Math.max(1, Math.round((Date.parse(range.to) - Date.parse(range.from)) / 86400000) + 1),
+        new Date(`${range.to}T12:00:00`),
+      );
+      const avgCycleTrend = compareWeightedAvgCycleTrend(
+        cycleSumPoints,
+        cycleCountPoints,
+        Math.max(1, Math.round((Date.parse(range.to) - Date.parse(range.from)) / 86400000) + 1),
+        new Date(`${range.to}T12:00:00`),
       );
       const backflowTrend = compareTrendPeriodsForDisplayRange(
         backflowPoints,
@@ -246,6 +420,7 @@ describe.skipIf(!runReal)('PASS 14.4 real Jira read-only acceptance', () => {
         range,
       );
       const comparison = previousComparableRange(range);
+      const completedSufficiency = trendSufficiencyForDisplayRange(completedPoints, range);
       const coveredDays = fetchResult.kpiSnapshots.teamSnapshots.filter(
         (snapshot) => snapshot.source === 'historical_jira' || snapshot.source === 'live_daily',
       ).length;
@@ -255,16 +430,44 @@ describe.skipIf(!runReal)('PASS 14.4 real Jira read-only acceptance', () => {
         (fetchResult.kpiSnapshots.historicalCoverage?.bootstrapStatus === 'complete');
 
       const history = {
-        displayRange: range,
-        comparisonRange: comparison,
-        historicalCoverage: fetchResult.kpiSnapshots.historicalCoverage,
-        coveredDays,
-        completedCurrent: completedTrend.current,
-        completedPrevious: completedTrend.previous,
-        firstPassSamples: firstPassTrend.current,
-        firstPassSufficient: firstPassTrend.sufficient,
-        firstPassMessage: firstPassTrend.sufficiencyMessage,
-        backflowsCurrent: backflowTrend.current,
+        displayFrom: range.from,
+        displayTo: range.to,
+        previousFrom: comparison.from,
+        previousTo: comparison.to,
+        fetchFrom: coverage.requiredFetchStart,
+        fetchTo: coverage.requiredFetchEnd,
+        historicalCoverage: {
+          start: fetchResult.kpiSnapshots.historicalCoverage?.coverageStart ?? null,
+          end: fetchResult.kpiSnapshots.historicalCoverage?.coverageEnd ?? null,
+          bootstrapStatus: fetchResult.kpiSnapshots.historicalCoverage?.bootstrapStatus ?? null,
+        },
+        teamSnapshotDays: coveredDays,
+        completed: {
+          current: completedTrend.current,
+          previous: completedTrend.previous,
+          currentSampleDays: completedSufficiency.daysRecorded,
+          previousSampleDays: completedSufficiency.previousDaysRecorded,
+          sufficient: completedTrend.sufficient,
+          reason: completedTrend.sufficiencyMessage,
+        },
+        firstPass: {
+          current: firstPassTrend.current,
+          previous: firstPassTrend.previous,
+          sufficient: firstPassTrend.sufficient,
+          reason: firstPassTrend.sufficiencyMessage,
+        },
+        avgCycle: {
+          current: avgCycleTrend.current,
+          previous: avgCycleTrend.previous,
+          sufficient: avgCycleTrend.sufficient,
+          reason: avgCycleTrend.sufficiencyMessage,
+        },
+        backflows: {
+          current: backflowTrend.current,
+          previous: backflowTrend.previous,
+          sufficient: backflowTrend.sufficient,
+          reason: backflowTrend.sufficiencyMessage,
+        },
         canShowTrends: historyState.canShowTrends,
         historyMessage: historyState.message,
         bootstrapRan: fetchResult.historicalBootstrapRan,

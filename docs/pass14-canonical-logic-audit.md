@@ -1,4 +1,4 @@
-# PASS 14.1 canonical logic audit
+# PASS 14.4 canonical logic audit
 
 ## Canonical definitions and production authority
 
@@ -45,8 +45,24 @@
 Resolution precedence is implemented in
 `domain/workflows/resolveWorkflowProfile.ts` and
 `domain/workflows/resolveWorkflowStage.ts`: company project+type mapping,
-project mapping, profile status mapping, safe semantic fallback, unknown.
-Current and historical transitions resolve through the same issue profile.
+project mapping, explicit profile status mapping, then:
+
+- corporate `strictStatusMap` profiles → `unknown` + `unmapped_status`
+- generic `simple` profile only → name inference with `isMapped: false`
+  and `inferred_status`
+
+Inference never masquerades as an explicit corporate mapping. Current and
+historical transitions resolve through the same issue profile.
+
+QA, completion, cancellation, and rework are project-aware. Verified 2026-10-08:
+
+- UX/AGTC Need to Fix is execution rework (`In Review → Need to Fix`).
+- ADF Quality Assurance is non-execution QA (`Code Review → Quality Assurance`).
+- ADF Rejected is terminal cancellation, not rework (`In Progress/To Do → Rejected`).
+- AGP Testing on Stage is QA (`Ready for test → Testing on Stage`).
+- CRC Queue is waiting despite Jira category new (`Proofreading/Translation → Queue → Publish`).
+- CIT Ongoing is successful completion (Jira category done).
+- Review never restores Active or Capacity on configured profiles.
 
 ## Workload and capacity findings
 

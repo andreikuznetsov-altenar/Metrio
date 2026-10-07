@@ -9,6 +9,7 @@ export const classicReviewWorkflowProfile = createStatusMapProfile({
     New: 'backlog',
     TODO: 'backlog',
     'To Do': 'backlog',
+    'Picked for Development': 'backlog',
     'Testing on Stage': 'qa',
     'In Progress': 'active',
     'Need to Fix': 'active',

@@ -17,6 +17,7 @@ export const designReviewWorkflowProfile = createStatusMapProfile({
     'Under review': 'review',
     Pending: 'waiting',
     Approved: 'done',
+    'Published / Closed': 'done',
     Rejected: 'active',
     Done: 'done',
     'On Hold': 'hold',

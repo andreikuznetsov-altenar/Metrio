@@ -1,9 +1,19 @@
-# PASS 14.1 corporate Jira workflow matrix
+# PASS 14.4 corporate Jira workflow matrix
 
 Source of truth: `defaultWorkflowMappings.ts`, registered workflow profiles,
-and read-only Jira `/project/{key}/statuses` metadata captured 2026-10-07.
+read-only Jira `/project/{key}/statuses` metadata, and sampled changelog
+transitions re-verified 2026-10-08.
+
 Every status exposed by Jira metadata is explicitly present in its resolved
-profile; the live audit fails if a metadata status falls through inference.
+profile. Corporate profiles use `strictStatusMap`; generic
+`inferCanonicalFromStatusName()` is not the production path for configured
+projects. The live audit fails if a metadata or current status falls through
+inference.
+
+Jira verified = **VERIFIED** only when metadata exists, the profile map is
+explicit, and sampled transitions (current or historical) match the assigned
+canonical role. Historical aliases that no longer appear in metadata are
+listed separately and remain explicit so Active intervals are not dropped.
 
 Flags are resolved-profile semantics before issue eligibility: E execution-active,
 R review, Q QA, W waiting, H hold, C successful completion, X cancellation,
@@ -14,18 +24,18 @@ Rows group statuses only when their canonical semantics are identical.
 | Project | Issue type / workflow | Profile | Raw Jira status | Stage | E | R | Q | W | H | C | X | Cap | Attn | Source | Jira verified | Notes |
 |---|---|---|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---|---|---|
 | UX | Design Improvement | design_review | TODO / To Do | backlog | N | N | N | N | N | N | N | N | N | project+type | Y | |
-| UX | Design Improvement | design_review | Draft / In Progress / Need to Fix | active | Y | N | N | N | N | N | N | Y | Y | project+type | Y | Draft verified from historical changelog |
+| UX | Design Improvement | design_review | Draft / In Progress / Need to Fix | active | Y | N | N | N | N | N | N | Y | Y | project+type | Y | Need to Fix sampled as In Review → Need to Fix (rework/backflow) |
 | UX | Design Improvement | design_review | In Review | review | N | Y | N | N | N | N | N | N | Y | project+type | Y | |
 | UX | Design Improvement | design_review | Pending | waiting | N | N | N | Y | N | N | N | N | N | project+type | Y | Historical pre-review queue |
 | UX | Design Improvement | design_review | On Hold | hold | N | N | N | N | Y | N | N | N | Y | project+type | Y | |
 | UX | Design Improvement | design_review | Done | done | N | N | N | N | N | Y | N | N | N | project+type | Y | |
 | UX | Design Improvement | design_review | Cancelled | cancelled | N | N | N | N | N | N | Y | N | N | project+type | Y | |
 | UX | Design Task / Epic / Sub-task | ux | TODO | backlog | N | N | N | N | N | N | N | N | N | project | Y | |
-| UX | Design Task / Sub-task | ux | Draft / In Progress / Need to Fix | active | Y | N | N | N | N | N | N | Y | Y | project | Y | Draft verified from historical changelog |
+| UX | Design Task / Sub-task | ux | Draft / In Progress / Need to Fix | active | Y | N | N | N | N | N | N | Y | Y | project | Y | Need to Fix sampled as In Review → Need to Fix (rework/backflow) |
 | UX | Design Task / Epic / Sub-task | ux | In Review | review | N | Y | N | N | N | N | N | N | Y | project | Y | |
 | UX | Design Task / Epic / Sub-task | ux | Pending | waiting | N | N | N | Y | N | N | N | N | N | project | Y | Historical pre-review queue |
 | UX | Design Task / Epic / Sub-task | ux | On Hold | hold | N | N | N | N | Y | N | N | N | Y | project | Y | |
-| UX | Design Task / Epic / Sub-task | ux | Done | done | N | N | N | N | N | Y | N | N | N | project | Y | |
+| UX | Design Task / Epic / Sub-task | ux | Done / Published / Closed | done | N | N | N | N | N | Y | N | N | N | project | Y | Published / Closed is a historical alias |
 | UX | Design Task / Epic / Sub-task | ux | Cancelled | cancelled | N | N | N | N | N | N | Y | N | N | project | Y | |
 | WS | Skin | wskins_skin | Not started WS | backlog | N | N | N | N | N | N | N | N | N | project+type | Y | |
 | WS | Skin | wskins_skin | In Progress | active | Y | N | N | N | N | N | N | Y | Y | project+type | Y | |
@@ -54,11 +64,11 @@ Rows group statuses only when their canonical semantics are identical.
 | AIVA | all metadata issue types | design_review | On hold | hold | N | N | N | N | Y | N | N | N | Y | project | Y | |
 | AIVA | all metadata issue types | design_review | Done | done | N | N | N | N | N | Y | N | N | N | project | Y | |
 | AIVA | all metadata issue types | design_review | Cancel | cancelled | N | N | N | N | N | N | Y | N | N | project | Y | |
-| AGP | Bug / Improvement / Task / Sub-task / Epic | classic_review | TODO / To Do / New / Testing on Stage | backlog | N | N | N | N | N | N | N | N | N | project | Y | Testing on Stage is Jira category new |
+| AGP | Bug / Improvement / Task / Sub-task / Epic | classic_review | TODO / To Do / New / Picked for Development | backlog | N | N | N | N | N | N | N | N | N | project | Y | Picked for Development is a historical Epic alias; New → TODO |
 | AGP | same | classic_review | In Progress / Need to Fix | active | Y | N | N | N | N | N | N | Y | Y | project | Y | |
-| AGP | same | classic_review | In Review | review | N | Y | N | N | N | N | N | N | Y | project | Y | |
-| AGP | same | classic_review | Ready for test / Tested on Stage | qa | N | N | Y | N | N | N | N | N | Y | project | Y | |
-| AGP | same | classic_review | Ready for Release | waiting | N | N | N | Y | N | N | N | N | N | project | Y | |
+| AGP | same | classic_review | In Review | review | N | Y | N | N | N | N | N | N | Y | project | Y | In Progress → In Review |
+| AGP | same | classic_review | Ready for test / Testing on Stage / Tested on Stage | qa | N | N | Y | N | N | N | N | N | Y | project | Y | Testing on Stage sampled as Ready for test → Testing on Stage; Jira category new is ignored |
+| AGP | same | classic_review | Ready for Release | waiting | N | N | N | Y | N | N | N | N | N | project | Y | Tested on Stage → Ready for Release → Released |
 | AGP | same | classic_review | On Hold | hold | N | N | N | N | Y | N | N | N | Y | project | Y | |
 | AGP | same | classic_review | Done / Released | done | N | N | N | N | N | Y | N | N | N | project | Y | |
 | AGP | same | classic_review | Cancelled | cancelled | N | N | N | N | N | N | Y | N | N | project | Y | |
@@ -76,11 +86,11 @@ Rows group statuses only when their canonical semantics are identical.
 | ADF | Arch Review / Bug / Epic / Story / Subtask / Supertask / Task | dev_qa_release | To Do | backlog | N | N | N | N | N | N | N | N | N | project | Y | |
 | ADF | same | dev_qa_release | In Progress | active | Y | N | N | N | N | N | N | Y | Y | project | Y | |
 | ADF | same | dev_qa_release | Code Review | review | N | Y | N | N | N | N | N | N | Y | project | Y | |
-| ADF | same | dev_qa_release | QA IN PROGRESS / Quality Assurance | qa | N | N | Y | N | N | N | N | N | Y | project | Y | |
-| ADF | same | dev_qa_release | Release Candidate | waiting | N | N | N | Y | N | N | N | N | N | project | Y | |
+| ADF | same | dev_qa_release | QA IN PROGRESS / Quality Assurance | qa | N | N | Y | N | N | N | N | N | Y | project | Y | Code Review → Quality Assurance; assignee is not executing |
+| ADF | same | dev_qa_release | Release Candidate | waiting | N | N | N | Y | N | N | N | N | N | project | Y | Quality Assurance → Release Candidate |
 | ADF | same | dev_qa_release | Blocked / QA on hold | hold | N | N | N | N | Y | N | N | N | Y | project | Y | |
 | ADF | same | dev_qa_release | Done | done | N | N | N | N | N | Y | N | N | N | project | Y | |
-| ADF | same | dev_qa_release | Rejected | cancelled | N | N | N | N | N | N | Y | N | N | project | Y | Jira category done, unsuccessful terminal |
+| ADF | same | dev_qa_release | Rejected | cancelled | N | N | N | N | N | N | Y | N | N | project | Y | Sampled In Progress/To Do → Rejected; not QA rework |
 | ADF | Incident | adf_incident | To Do | backlog | N | N | N | N | N | N | N | N | N | project+type | Y | |
 | ADF | Incident | adf_incident | In Progress | active | Y | N | N | N | N | N | N | Y | Y | project+type | Y | |
 | ADF | Incident | adf_incident | Waiting for User Story | waiting | N | N | N | Y | N | N | N | N | N | project+type | Y | |
@@ -94,14 +104,14 @@ Rows group statuses only when their canonical semantics are identical.
 | PRD | same | prd_phased | L. Completed | done | N | N | N | N | N | Y | N | N | N | project+type | Y | |
 | PRD | same | prd_phased | L. Cancelled / M. Cancelled | cancelled | N | N | N | N | N | N | Y | N | N | project+type | Y | Historical renamed status included |
 | PRD | Improvement / New Feature | prd_discovery | Request/Idea / Postponed | backlog | N | N | N | N | N | N | N | N | N | project+type | Y | |
-| PRD | same | prd_discovery | Analysis / Business Analysis / High Fidelity UX / Technical Decomposition / In development | active | Y | N | N | N | N | N | N | Y | Y | project+type | Y | |
+| PRD | same | prd_discovery | Analysis / Business Analysis / High Fidelity UX / Technical Decomposition / In development / In Progress | active | Y | N | N | N | N | N | N | Y | Y | project+type | Y | In Progress is a historical alias retained for cycle reconstruction |
 | PRD | same | prd_discovery | Analysis Completed / Issue Approved / Handover | review | N | Y | N | N | N | N | N | N | Y | project+type | Y | |
 | PRD | same | prd_discovery | Rollout/QA | qa | N | N | Y | N | N | N | N | N | Y | project+type | Y | |
-| PRD | same | prd_discovery | Handover Completed | waiting | N | N | N | Y | N | N | N | N | N | project+type | Y | |
+| PRD | same | prd_discovery | Handover Completed / Waiting for support | waiting | N | N | N | Y | N | N | N | N | N | project+type | Y | Handover → Handover Completed; Waiting for support is a historical alias |
 | PRD | same | prd_discovery | Completed | done | N | N | N | N | N | Y | N | N | N | project+type | Y | |
 | PRD | same | prd_discovery | Discarded | cancelled | N | N | N | N | N | N | Y | N | N | project+type | Y | |
 | PRD | Task / Sub-task | prd_task | Open | backlog | N | N | N | N | N | N | N | N | N | project+type | Y | |
-| PRD | Task / Sub-task | prd_task | Analysis | active | Y | N | N | N | N | N | N | Y | Y | project+type | Y | |
+| PRD | Task / Sub-task | prd_task | Analysis | active | Y | N | N | N | N | N | N | Y | Y | project+type | Y | Open → Analysis; Review → Analysis is backflow |
 | PRD | Task / Sub-task | prd_task | Review | review | N | Y | N | N | N | N | N | N | Y | project+type | Y | |
 | PRD | Task / Sub-task | prd_task | Completed | done | N | N | N | N | N | Y | N | N | N | project+type | Y | |
 | PRD | Task / Sub-task | prd_task | Not Required / Cancelled | cancelled | N | N | N | N | N | N | Y | N | N | project+type | Y | |
@@ -114,8 +124,8 @@ Rows group statuses only when their canonical semantics are identical.
 | CRC | Task / Sub-task | editorial | Backlog / New | backlog | N | N | N | N | N | N | N | N | N | project | Y | |
 | CRC | Task / Sub-task | editorial | Translation / Writing / Update needed | active | Y | N | N | N | N | N | N | Y | Y | project | Y | |
 | CRC | Task / Sub-task | editorial | Proofreading | review | N | Y | N | N | N | N | N | N | Y | project | Y | |
-| CRC | Task / Sub-task | editorial | Queue | waiting | N | N | N | Y | N | N | N | N | N | project | Y | |
-| CRC | Task / Sub-task | editorial | Publish | done | N | N | N | N | N | Y | N | N | N | project | Y | |
+| CRC | Task / Sub-task | editorial | Queue | waiting | N | N | N | Y | N | N | N | N | N | project | Y | Proofreading/Translation → Queue → Publish; Jira category new is ignored |
+| CRC | Task / Sub-task | editorial | Publish | done | N | N | N | N | N | Y | N | N | N | project | Y | Queue → Publish |
 | CIT | Epic / Problem / Story / Task / Sub-task / System Change | cit_delivery | Backlog | backlog | N | N | N | N | N | N | N | N | N | project | Y | |
 | CIT | same | cit_delivery | In Progress | active | Y | N | N | N | N | N | N | Y | Y | project | Y | |
 | CIT | same | cit_delivery | Deployed on UAT | qa | N | N | Y | N | N | N | N | N | Y | project | Y | |
@@ -135,14 +145,39 @@ Rows group statuses only when their canonical semantics are identical.
 | CIT | Security Patch | cit_security_patch | Cancelled | cancelled | N | N | N | N | N | N | Y | N | N | project+type | Y | |
 | any | unmatched project/type/status | resolved profile/simple | unknown label | unknown | N | N | N | N | N | N | N | N | N | safe fallback | n/a | Raw status retained; `unmapped_status` diagnostic |
 
+## Project verification
+
+| Project | Status | Evidence |
+|---|---|---|
+| UX | VERIFIED | Metadata + Need to Fix / In Review / In Progress samples |
+| WS | VERIFIED | Metadata + Skin/Sub-task samples |
+| AGTC | VERIFIED | Metadata + Provider To Do → Provider; Task Design Review |
+| AIVA | VERIFIED | Metadata + Cancel from In Progress/To Do |
+| AGP | VERIFIED | Metadata + Testing on Stage / In Review / Ready for Release transitions |
+| ADF | VERIFIED | Metadata + QA after Code Review; Rejected is terminal cancel |
+| PRD | VERIFIED | Metadata + A–M, Analysis backflow, Handover Completed |
+| ARCH | VERIFIED | Metadata + approval/comments/paused/suspended/process-exception samples |
+| CRC | VERIFIED | Metadata + Queue/Translation/Proofreading/Publish transitions |
+| CIT | VERIFIED | Metadata + Investigating / Ongoing / Ready for Scan samples |
+
+## Remaining fallback
+
+Configured corporate statuses do not use `inferCanonicalFromStatusName()`.
+That helper remains only on the generic `simple` profile (`strictStatusMap:
+false`) for unconfigured projects, and those inferred stages are
+`isMapped: false` with `inferred_status`.
+
+Unknown/unlisted statuses on corporate profiles stay `unknown`: not active,
+not capacity, not completed, diagnostic `unmapped_status`.
+
 ## Verification result
 
 - All configured projects were readable: UX, WS, AGTC, AIVA, AGP, ADF, PRD,
   ARCH, CRC, CIT.
 - Jira metadata was inspected per issue type, including status category.
-- Representative current issues and changelog transitions were sampled.
+- Hard-target statuses were sampled with adjacent transitions on 2026-10-08.
 - The real audit asserts that every metadata status is explicit in the resolved
-  profile; no configured metadata status currently uses generic inference.
+  profile; no configured current status uses generic inference.
 - Issue-type-specific workflows are separate for AGTC Provider, AGP Story and
   Dev Internals, ADF Incident, three PRD workflows, and three CIT workflows.
 - Unknown labels outside current Jira metadata remain safe and diagnostic.

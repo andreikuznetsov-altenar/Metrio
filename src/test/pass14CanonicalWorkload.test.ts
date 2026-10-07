@@ -63,7 +63,7 @@ describe('PASS14 canonical workload', () => {
         issue('UX-1', 'In Progress'),
         issue('UX-2', 'In Review'),
         issue('UX-3', 'On Hold'),
-        issue('UX-4', 'Waiting for dependency'),
+        issue('UX-4', 'Pending'),
         issue('UX-5', 'To Do'),
         issue('UX-6', 'Done'),
         issue('UX-7', 'Corporate Mystery Gate'),
@@ -119,7 +119,7 @@ describe('PASS14 canonical workload', () => {
   it.each([
     ['In Review', 0],
     ['On Hold', 0],
-    ['Waiting for dependency', 0],
+    ['Pending', 0],
   ])('%s current segment contributes %s execution capacity', (status, expected) => {
     const item = issue(`UX-${status}`, status, [
       event('To Do', status, '2026-01-05T09:00:00.000Z'),

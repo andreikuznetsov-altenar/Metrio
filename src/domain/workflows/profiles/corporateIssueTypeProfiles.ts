@@ -91,6 +91,8 @@ export const prdDiscoveryWorkflowProfile = createStatusMapProfile({
   statusMap: {
     'Request/Idea': 'backlog',
     Postponed: 'backlog',
+    'In Progress': 'active',
+    'Waiting for support': 'waiting',
     Analysis: 'active',
     'Business Analysis / High Fidelity UX': 'active',
     'Analysis Completed': 'review',

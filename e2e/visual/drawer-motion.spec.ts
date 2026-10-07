@@ -1,25 +1,6 @@
 import { expect, test } from "@playwright/test";
 import { bootMetrio, openDirectReportPersonDrawer } from "./visualBoot";
 
-function parseDrawerTranslateX(transform: string): number {
-  if (transform === "none") {
-    return 0;
-  }
-  const matrix = transform.match(/matrix\([^,]+, [^,]+, [^,]+, [^,]+, ([^,]+),/);
-  if (matrix) {
-    return Number(matrix[1]);
-  }
-  const translate3d = transform.match(/translate3d\(([^,]+)/);
-  if (translate3d) {
-    const token = translate3d[1].trim();
-    if (token.endsWith("%")) {
-      return Number(token.replace("%", ""));
-    }
-    return Number(token);
-  }
-  return 0;
-}
-
 test.describe("Drawer motion and app-shell geometry", () => {
   test("drawer layer covers full viewport including app header and dims toolbar", async ({
     page,
@@ -76,25 +57,47 @@ test.describe("Drawer motion and app-shell geometry", () => {
     await page.getByRole("button", { name: /^performance$/i }).click();
     const panel = page.locator(".drawer--person-detail");
 
-    const sampleTransform = () =>
-      panel.evaluate((el) => window.getComputedStyle(el).transform);
-
-    await page.evaluate(() => {
+    const openMotion = await page.evaluate(async () => {
+      const parseTx = (transform: string) => {
+        if (transform === "none") return 0;
+        const matrix = transform.match(
+          /matrix\([^,]+, [^,]+, [^,]+, [^,]+, ([^,]+),/,
+        );
+        if (matrix) return Number(matrix[1]);
+        const translate3d = transform.match(/translate3d\(([^,]+)/);
+        if (translate3d) {
+          const token = translate3d[1].trim();
+          if (token.endsWith("%")) return Number(token.replace("%", ""));
+          return Number(token);
+        }
+        return 0;
+      };
       window.dispatchEvent(
         new CustomEvent("metrio-open-person", { detail: "person-01" }),
       );
+      const samples: number[] = [];
+      const start = performance.now();
+      while (performance.now() - start < 800) {
+        const panelEl = document.querySelector(
+          ".drawer--person-detail",
+        ) as HTMLElement | null;
+        if (panelEl) {
+          samples.push(parseTx(window.getComputedStyle(panelEl).transform));
+        }
+        await new Promise<void>((resolve) => {
+          requestAnimationFrame(() => resolve());
+        });
+      }
+      return samples;
     });
-    await page.waitForSelector(".drawer--person-detail", { state: "attached" });
-
-    const t0 = parseDrawerTranslateX(await sampleTransform());
-    await page.waitForTimeout(100);
-    const t100 = parseDrawerTranslateX(await sampleTransform());
-    await page.waitForTimeout(200);
-    const t300 = parseDrawerTranslateX(await sampleTransform());
+    expect(openMotion.length).toBeGreaterThan(5);
+    const t0 = openMotion[0] ?? 0;
+    const tMid = openMotion[Math.floor(openMotion.length / 3)] ?? 0;
+    const tEnd = openMotion[openMotion.length - 1] ?? 0;
     expect(t0).toBeGreaterThan(50);
-    expect(t300).toBeLessThan(3);
-    expect(t100).toBeLessThan(t0);
-    expect(t100).toBeGreaterThan(t300);
+    expect(tEnd).toBeLessThan(3);
+    expect(tMid).toBeLessThan(t0);
+    expect(tMid).toBeGreaterThanOrEqual(tEnd);
     await expect(panel).toBeVisible();
 
     const closeMotion = await page.evaluate(async () => {

@@ -11,7 +11,11 @@ Production Metrio is **not** used as the legacy reference.
 
 UX Apps Script date-filters changelog via `rangeEvents`. Metrio product KPI uses full history and keeps cycles whose `completedAt` falls in the inclusive `dateFrom`/`dateTo` window. Fixtures feed the GS oracle range-truncated events so period semantics are comparable.
 
-Workload / capacity is **not** a GS Time Stat port. Those rows are tagged `PRODUCT_RULE` against PASS 14.1 canonical rules.
+Workload / capacity is **not** a GS Time Stat port. Those rows are tagged `PRODUCT_RULE` against PASS 14 canonical rules.
+
+**LEGACY PARITY** covers only concepts Apps Script implemented: completed-cycle KPI, first pass, backflow, hold, cycle durations, efficiency, per-user and team KPI, WSkins Internal Review completion.
+
+**METRIO PRODUCT RULE** covers hierarchical workload, organizational-unit workload, drawer data, recommendations, capacity contributor intervals, and corporate statuses Apps Script never named (Need to Fix, Quality Assurance, Handover Completed, and other project-specific states).
 
 Generated rows: 380. Unexplained mismatches: 0.
 

@@ -17,6 +17,7 @@ export const uxWorkflowProfile = createStatusMapProfile({
     Review: 'review',
     Approved: 'done',
     Published: 'done',
+    'Published / Closed': 'done',
     Done: 'done',
     Closed: 'done',
     'On Hold': 'hold',

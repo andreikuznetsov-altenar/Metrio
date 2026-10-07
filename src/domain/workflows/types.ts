@@ -16,9 +16,9 @@ export type WorkflowEfficiencyModel = 'ux' | 'wskins' | 'none';
 export interface ResolvedWorkflowStage {
   canonicalStage: CanonicalStage;
   statusName: string;
-  /** False when no explicit/profile-safe mapping exists for the raw Jira status. */
+  /** True only for an explicit profile status map entry. Inference is never mapped. */
   isMapped: boolean;
-  diagnosticCode?: 'unmapped_status';
+  diagnosticCode?: 'unmapped_status' | 'inferred_status';
   countsAsActiveWork: boolean;
   countsAsReview: boolean;
   countsAsQa: boolean;
@@ -48,6 +48,11 @@ export interface WorkflowProfile {
   stages: Record<CanonicalStage, ResolvedWorkflowStage>;
   statusToCanonical: Record<string, CanonicalStage>;
   transitionRules: WorkflowTransitionRule[];
+  /**
+   * When true (corporate default), statuses missing from `statusToCanonical`
+   * stay `unknown` instead of using generic name inference.
+   */
+  strictStatusMap: boolean;
 }
 
 export interface WorkflowProfileMapping {

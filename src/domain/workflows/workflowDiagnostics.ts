@@ -18,6 +18,7 @@ export interface WorkflowIssueDiagnostic {
   capacityEligible: boolean;
   completedCycles: number;
   unmappedStatuses: string[];
+  inferredStatuses: string[];
 }
 
 export function diagnoseIssueWorkflow(
@@ -38,6 +39,10 @@ export function diagnoseIssueWorkflow(
     const key = normalizeStatusKey(status);
     return !profile.statusToCanonical[key] && canonicalStageForStatus(profile, status) === 'unknown';
   });
+  const inferredStatuses = [...statusNames].filter((status) => {
+    const key = normalizeStatusKey(status);
+    return !profile.statusToCanonical[key] && canonicalStageForStatus(profile, status) !== 'unknown';
+  });
 
   const stage = resolveWorkflowStage(profile, issue.currentStatus || '');
   const cycles = extractProfileContributorCycles(issue, profile);
@@ -54,6 +59,7 @@ export function diagnoseIssueWorkflow(
     capacityEligible: isWorkflowCapacityEligible(issue),
     completedCycles: cycles.length,
     unmappedStatuses,
+    inferredStatuses,
   };
 }
 

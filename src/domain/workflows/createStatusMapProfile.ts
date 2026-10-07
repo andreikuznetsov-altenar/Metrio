@@ -14,6 +14,11 @@ export interface StatusMapProfileInput {
   efficiencyModel: WorkflowEfficiencyModel;
   /** Raw Jira status name → canonical stage. */
   statusMap: Record<string, CanonicalStage>;
+  /**
+   * Corporate profiles stay strict. Only the generic `simple` fallback
+   * should set this false so name inference remains a compatibility path.
+   */
+  strictStatusMap?: boolean;
   transitionRules?: WorkflowTransitionRule[];
   stageOverrides?: Partial<
     Record<CanonicalStage, Partial<Omit<ResolvedWorkflowStage, 'canonicalStage' | 'statusName'>>>
@@ -81,5 +86,6 @@ export function createStatusMapProfile(input: StatusMapProfileInput): WorkflowPr
     statusToCanonical,
     stages,
     transitionRules: input.transitionRules ?? DEFAULT_TRANSITION_RULES,
+    strictStatusMap: input.strictStatusMap ?? true,
   };
 }
