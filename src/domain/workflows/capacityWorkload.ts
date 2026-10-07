@@ -74,11 +74,12 @@ export function calculateCapacityBreakdown(input: CapacityWorkloadInput): Capaci
     );
     cycles.forEach((cycle) => {
       // A completed workflow cycle is only a capacity sample when execution
-      // contributor time was actually observed. Full-cycle time includes review,
-      // hold and queue waiting and must never be substituted for execution time.
-      if (cycle.activeCapacityMs <= 0) return;
+      // contributor time was actually observed inside the report window.
+      // Pre-period In Progress must not inflate monthly load.
+      const capacityMs = cycle.activeCapacityMsInPeriod;
+      if (capacityMs <= 0) return;
       completedCyclesInPeriod++;
-      completedCycleHours += cycle.activeCapacityMs / 3600000;
+      completedCycleHours += capacityMs / 3600000;
     });
     activeSegmentHours += getActiveCapacitySegmentMs(issue, profile, nowIso) / 3600000;
   });

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { getWorkingDurationMs, formatDuration } from './dates';
+import { getWorkingDurationMs, getWorkingDurationMsWithinRange, formatDuration } from './dates';
 
 describe('getWorkingDurationMs', () => {
   it('excludes weekends between two weekdays', () => {
@@ -16,6 +16,23 @@ describe('getWorkingDurationMs', () => {
 
   it('returns 0 when end before start', () => {
     expect(getWorkingDurationMs('2024-01-10T12:00:00.000Z', '2024-01-10T10:00:00.000Z')).toBe(0);
+  });
+});
+
+describe('getWorkingDurationMsWithinRange', () => {
+  it('clips pre-period execution out of the report window', () => {
+    const full = getWorkingDurationMs(
+      '2023-01-02T09:00:00.000Z',
+      '2026-01-07T09:00:00.000Z',
+    );
+    const clipped = getWorkingDurationMsWithinRange(
+      '2023-01-02T09:00:00.000Z',
+      '2026-01-07T09:00:00.000Z',
+      { dateFrom: '2026-01-01', dateTo: '2026-01-31' },
+    );
+    expect(full).toBeGreaterThan(clipped ?? 0);
+    expect(clipped).toBeGreaterThan(0);
+    expect(clipped!).toBeLessThan(24 * 8 * 3600000);
   });
 });
 

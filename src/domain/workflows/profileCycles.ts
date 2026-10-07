@@ -1,4 +1,4 @@
-import { getWorkingDurationMs } from '../jira/dates';
+import { getWorkingDurationMs, getWorkingDurationMsWithinRange } from '../jira/dates';
 import type { AuditIssue, IssueEvent, ReportParams } from '../jira/types';
 import { canonicalStageForStatus, resolveWorkflowStage } from './resolveWorkflowStage';
 import type { CanonicalStage, ProfileContributorCycle, WorkflowProfile } from './types';
@@ -50,7 +50,7 @@ function ruleMatches(
 export function extractProfileContributorCycles(
   issue: AuditIssue,
   profile: WorkflowProfile,
-  _params?: ReportParams,
+  params?: ReportParams,
 ): ProfileContributorCycle[] {
   const events = getStatusEvents(issue);
   const cycles: ProfileContributorCycle[] = [];
@@ -61,6 +61,7 @@ export function extractProfileContributorCycles(
   let reviewStartedAt: string | null = null;
   let cycleTodoStartedAt: string | null = null;
   let activeCapacityMs = 0;
+  let activeCapacityMsInPeriod = 0;
   let lastCapacityAt: string | null = null;
   let lastCanonical: CanonicalStage | null = null;
 
@@ -70,6 +71,8 @@ export function extractProfileContributorCycles(
     if (!stage?.countsAsCapacityContributor) return;
     const ms = getWorkingDurationMs(lastCapacityAt, endedAt);
     if (ms !== null && ms >= 0) activeCapacityMs += ms;
+    const inPeriod = getWorkingDurationMsWithinRange(lastCapacityAt, endedAt, params);
+    if (inPeriod !== null && inPeriod >= 0) activeCapacityMsInPeriod += inPeriod;
   };
 
   events.forEach((event) => {
@@ -93,6 +96,7 @@ export function extractProfileContributorCycles(
       reviewStartedAt = null;
       cycleHasBackflow = false;
       activeCapacityMs = 0;
+      activeCapacityMsInPeriod = 0;
       lastCapacityAt = event.changedAt;
       lastCanonical = to;
       return;
@@ -105,6 +109,7 @@ export function extractProfileContributorCycles(
       reviewStartedAt = null;
       cycleHasBackflow = false;
       activeCapacityMs = 0;
+      activeCapacityMsInPeriod = 0;
       return;
     }
 
@@ -148,6 +153,7 @@ export function extractProfileContributorCycles(
         reviewToDoneMs,
         fullCycleMs,
         activeCapacityMs,
+        activeCapacityMsInPeriod,
       });
 
       cycleStart = null;
@@ -156,6 +162,7 @@ export function extractProfileContributorCycles(
       reviewStartedAt = null;
       cycleHasBackflow = false;
       activeCapacityMs = 0;
+      activeCapacityMsInPeriod = 0;
       lastCapacityAt = null;
       lastCanonical = null;
     }

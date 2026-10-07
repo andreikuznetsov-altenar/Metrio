@@ -111,17 +111,21 @@ export function buildWorkflowKpi(
       });
     }
 
-    const holdTransitions = extractProfileHoldTransitions(issue, profile);
-    holdTransitions.forEach((transition) => {
-      if (!isDateWithinRange(transition.changedAt, params)) return;
-      holdCount++;
-      if (
-        transition.progressToHoldMs !== null &&
-        transition.progressToHoldMs >= 0
-      ) {
-        progressToHoldDurations.push(transition.progressToHoldMs);
-      }
-    });
+    // WSkins sheet KPI hardcodes holdCount: 0 (WskinsAudit.gs buildWSkinsKpiFromIssues_).
+    // Internal Review is operational hold for capacity, but not a UX-style KPI hold.
+    if (profile.efficiencyModel !== 'wskins') {
+      const holdTransitions = extractProfileHoldTransitions(issue, profile);
+      holdTransitions.forEach((transition) => {
+        if (!isDateWithinRange(transition.changedAt, params)) return;
+        holdCount++;
+        if (
+          transition.progressToHoldMs !== null &&
+          transition.progressToHoldMs >= 0
+        ) {
+          progressToHoldDurations.push(transition.progressToHoldMs);
+        }
+      });
+    }
 
     const cycles = extractProfileContributorCycles(issue, profile, params).filter(
       (cycle) => cycle.completedAt && isDateWithinRange(cycle.completedAt, params),

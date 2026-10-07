@@ -80,6 +80,19 @@ describe('PASS14 canonical workload', () => {
     expect(result.activeCount).toBe(1);
   });
 
+  it('clips completed-cycle capacity to the report window', () => {
+    const completed = issue('UX-PRE', 'Done', [
+      event('To Do', 'In Progress', '2023-01-02T09:00:00.000Z'),
+      event('In Progress', 'In Review', '2026-01-07T09:00:00.000Z'),
+      event('In Review', 'Done', '2026-01-08T09:00:00.000Z'),
+    ]);
+    const result = calculateWorkload([completed], params);
+    const hours = result.capacityBreakdown?.completedCycleHours ?? 0;
+    expect(hours).toBeGreaterThan(0);
+    expect(hours).toBeLessThan(24 * 8);
+    expect(result.capacityLoadPercent ?? 0).toBeLessThan(400);
+  });
+
   it('ten review tasks do not create execution overload', () => {
     const reviews = Array.from({ length: 10 }, (_, index) =>
       issue(`UX-R${index}`, 'In Review'),

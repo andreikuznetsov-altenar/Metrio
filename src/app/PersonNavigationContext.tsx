@@ -2,6 +2,7 @@ import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
   useRef,
   useState,
@@ -65,6 +66,25 @@ export function PersonNavigationProvider({ children }: { children: ReactNode }) 
     },
     [],
   );
+
+  useEffect(() => {
+    const handler = (event: Event) => {
+      const detail = (
+        event as CustomEvent<string | { personId: string; tab?: PersonDrawerTab }>
+      ).detail;
+      let nextId: string | null = null;
+      let nextTab: PersonDrawerTab = "overview";
+      if (typeof detail === "string" && detail) {
+        nextId = detail;
+      } else if (detail && typeof detail === "object" && detail.personId) {
+        nextId = detail.personId;
+        nextTab = detail.tab ?? "overview";
+      }
+      if (nextId) openPerson(nextId, nextTab);
+    };
+    window.addEventListener("metrio-open-person", handler);
+    return () => window.removeEventListener("metrio-open-person", handler);
+  }, [openPerson]);
 
   const value = useMemo(
     () => ({ openPerson, registerPersonDrawerHandler }),

@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { buildKpiFromIssues } from '../jira/kpi';
 import type { AuditIssue, IssueEvent, ReportParams } from '../jira/types';
 import {
   buildWskinsKpiFromIssues,
@@ -95,5 +96,6 @@ describe('wskins KPI parity', () => {
     expect(kpi.firstPassAcceptedCount).toBe(0);
     expect(kpi.holdCount).toBe(0);
     expect(kpi.efficiencyIndex).toBeGreaterThan(0);
+    expect(buildKpiFromIssues([main], {}, params).holdCount).toBe(0);
   });
 });

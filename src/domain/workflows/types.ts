@@ -69,7 +69,10 @@ export interface ProfileContributorCycle {
   progressToReviewMs: number | null;
   reviewToDoneMs: number | null;
   fullCycleMs: number | null;
+  /** Full contributor execution time for the cycle (may start before the report window). */
   activeCapacityMs: number;
+  /** Execution time overlapping the report window — used for monthly capacity load. */
+  activeCapacityMsInPeriod: number;
 }
 
 export interface WorkflowKpiTotals {

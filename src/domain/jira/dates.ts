@@ -59,6 +59,25 @@ export function getWorkingDurationMs(
   return total;
 }
 
+/** Working duration of [from, to] overlapped with inclusive report dateFrom/dateTo. */
+export function getWorkingDurationMsWithinRange(
+  fromValue: string | null | undefined,
+  toValue: string | null | undefined,
+  params?: { dateFrom?: string; dateTo?: string },
+): number | null {
+  const start = parseJiraDateSafe(fromValue);
+  const end = parseJiraDateSafe(toValue);
+  if (!start || !end) return null;
+  if (end <= start) return 0;
+
+  const from = parseDateStartOfDay(params?.dateFrom);
+  const to = parseDateEndOfDay(params?.dateTo);
+  const clippedStart = from && start < from ? from : start;
+  const clippedEnd = to && end > to ? to : end;
+  if (clippedEnd <= clippedStart) return 0;
+  return getWorkingDurationMs(clippedStart.toISOString(), clippedEnd.toISOString());
+}
+
 export function isDateWithinRange(
   dateValue: string,
   params: { dateFrom?: string; dateTo?: string },
