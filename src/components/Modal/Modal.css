@@ -1,10 +1,7 @@
 .metrio-modal-root {
   position: fixed;
-  top: var(--app-side-surface-top, var(--app-header-height));
-  right: 0;
-  bottom: 0;
-  left: 0;
-  z-index: var(--z-modal-scrim, 60);
+  inset: 0;
+  z-index: var(--z-modal-scrim, 120);
   display: flex;
   align-items: center;
   justify-content: center;

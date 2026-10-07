@@ -5,19 +5,30 @@ import { describe, expect, it } from "vitest";
 const read = (rel: string) =>
   fs.readFileSync(path.resolve(process.cwd(), rel), "utf8");
 
-describe("UI13 drawer app-height geometry", () => {
-  it("drawer viewport top is header-only, not page toolbar offset", () => {
+describe("UI13 drawer full-app overlay geometry", () => {
+  it("drawer layer and root cover full web viewport (including header)", () => {
     const drawerCss = read("src/components/Drawer/Drawer.css");
     const shellCss = read("src/components/AppShell/AppShell.css");
-    expect(shellCss).toContain("--app-drawer-viewport-top");
+    expect(shellCss).toMatch(/\.app-drawer-layer[\s\S]*inset:\s*0/);
+    expect(drawerCss).toMatch(/\.drawer-root[\s\S]*inset:\s*0/);
+    expect(drawerCss).toMatch(/\.drawer-root__backdrop[\s\S]*inset:\s*0/);
+    expect(drawerCss).toMatch(/\.drawer[\s\S]*top:\s*0/);
     expect(drawerCss).not.toMatch(
       /\.drawer-root\s*\{[\s\S]*?top:\s*var\(--app-side-surface-top/,
     );
     expect(shellCss).not.toMatch(
       /\.app-drawer-layer[\s\S]*?top:\s*var\(--app-side-surface-top/,
     );
+    expect(shellCss).not.toContain("--app-drawer-viewport-top");
+  });
+
+  it("explicit z-index stack includes drawer scrim, drawer, modal scrim, modal", () => {
     const surfaces = read("src/styles/app-surfaces.css");
-    expect(surfaces).toContain("--app-drawer-viewport-top: var(--app-header-height)");
+    expect(surfaces).toContain("--z-drawer-scrim:");
+    expect(surfaces).toContain("--z-drawer-panel:");
+    expect(surfaces).toContain("--z-modal-scrim:");
+    expect(surfaces).toContain("--z-modal-panel:");
+    expect(surfaces).toContain("--z-toast:");
   });
 
   it("shared Drawer and DrawerStack portal to app-drawer-layer", () => {

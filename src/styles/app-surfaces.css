@@ -1,16 +1,17 @@
 /**
- * Stacking: chrome (header) > modal > drawer > app content.
- * Drawers use --app-drawer-viewport-top (header only). Modals may use --app-side-surface-top.
+ * Stacking (low → high): app content → app chrome → drawer scrim → drawer → modal scrim → modal → toast.
+ * Drawers and drawer scrim cover the full web viewport (including app header).
  */
 
 :root {
-  --app-drawer-viewport-top: var(--app-header-height);
   --z-app-content: 1;
-  --z-drawer-scrim: calc(var(--z-app-chrome) - 1);
-  --z-drawer-panel: calc(var(--z-app-chrome) - 1);
-  --z-modal-scrim: 60;
-  --z-modal-panel: 61;
   --z-app-chrome: 100;
+  --z-app-floating: 105;
+  --z-drawer-scrim: 110;
+  --z-drawer-panel: 111;
+  --z-modal-scrim: 120;
+  --z-modal-panel: 121;
+  --z-toast: 200;
   --drawer-scrim-color: rgba(15, 17, 21, 0.28);
   --modal-scrim-color: rgba(15, 17, 21, 0.45);
 }

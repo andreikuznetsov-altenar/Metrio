@@ -60,7 +60,7 @@ export function DrawerStack({
 }: DrawerStackProps) {
   const titleId = useId();
   const [panelMotionKey, setPanelMotionKey] = useState(0);
-  const { mounted, presented, phase, panelRef } = useDrawerSurfaceLifecycle(open, onClosed);
+  const { mounted, phase, panelRef, backdropRef } = useDrawerSurfaceLifecycle(open, onClosed);
 
   useEffect(() => {
     if (!open) return;
@@ -93,20 +93,15 @@ export function DrawerStack({
       ? "drawer-stack-panel drawer-stack-panel--secondary"
       : "drawer-stack-panel drawer-stack-panel--primary";
 
-  const stackOpen = presented && !animatingOut;
-
   return portalDrawerSurface(
     <div
-      className={
-        stackOpen
-          ? "drawer-root drawer-root--stack is-visible is-open"
-          : "drawer-root drawer-root--stack is-visible"
-      }
+      className="drawer-root drawer-root--stack is-visible"
       data-drawer-panel={activePanel}
       data-drawer-phase={phase}
       data-testid={testId}
     >
       <button
+        ref={backdropRef}
         type="button"
         className="drawer-root__backdrop"
         aria-label="Close drawer"

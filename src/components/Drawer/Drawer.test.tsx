@@ -1,23 +1,19 @@
-import { act, cleanup, render, screen } from "@testing-library/react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { cleanup, render, screen } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { Drawer } from "./Drawer";
 import {
-  dispatchDrawerPanelTransitionEnd,
   ensureAppDrawerLayer,
-  flushDrawerCloseFrames,
-  flushDrawerOpenFrames,
+  flushDrawerAnimations,
+  installDrawerMotionMock,
 } from "./drawerTestUtils";
 
-function completeDrawerCloseMotion() {
-  const panel = screen.getByRole("dialog");
-  act(() => {
-    dispatchDrawerPanelTransitionEnd(panel);
-  });
-}
-
 describe("Drawer", () => {
+  beforeEach(() => {
+    installDrawerMotionMock();
+  });
+
   afterEach(() => {
-    vi.useRealTimers();
+    vi.restoreAllMocks();
     cleanup();
     document.getElementById("app-drawer-layer")?.remove();
   });
@@ -41,7 +37,7 @@ describe("Drawer", () => {
     host.remove();
   });
 
-  it("enters through opening phase before is-open applies", async () => {
+  it("enters through entering phase before open", async () => {
     ensureAppDrawerLayer();
     render(
       <Drawer open onClose={vi.fn()} ariaLabel="Test drawer">
@@ -49,26 +45,21 @@ describe("Drawer", () => {
       </Drawer>,
     );
     const root = ensureAppDrawerLayer().querySelector(".drawer-root");
-    expect(root).toHaveAttribute("data-drawer-phase", "opening");
-    expect(root).not.toHaveClass("is-open");
-    await flushDrawerOpenFrames();
+    expect(root).toHaveAttribute("data-drawer-phase", "entering");
+    await flushDrawerAnimations();
     expect(root).toHaveAttribute("data-drawer-phase", "open");
-    expect(root).toHaveClass("is-open");
   });
 
-  it("syncs scrim backdrop with open state for content-area dimming", async () => {
+  it("syncs scrim backdrop element with drawer surface", async () => {
     ensureAppDrawerLayer();
     render(
       <Drawer open onClose={vi.fn()} ariaLabel="Test drawer">
         Body
       </Drawer>,
     );
-    await flushDrawerOpenFrames();
-    const root = ensureAppDrawerLayer().querySelector(".drawer-root");
+    await flushDrawerAnimations();
     const backdrop = ensureAppDrawerLayer().querySelector(".drawer-root__backdrop");
     expect(backdrop).toBeTruthy();
-    expect(root).toHaveClass("is-open");
-    expect(backdrop).toHaveClass("drawer-root__backdrop");
   });
 
   it("applies size variant class for analytics width token", () => {
@@ -81,7 +72,7 @@ describe("Drawer", () => {
     expect(screen.getByRole("dialog")).toHaveClass("drawer--analytics");
   });
 
-  it("exposes closing phase before unmount and completes on transform transitionend", async () => {
+  it("exposes exiting phase before unmount and completes on WAAPI finish", async () => {
     ensureAppDrawerLayer();
     const onClose = vi.fn();
     const { rerender } = render(
@@ -89,7 +80,7 @@ describe("Drawer", () => {
         Body
       </Drawer>,
     );
-    await flushDrawerOpenFrames();
+    await flushDrawerAnimations();
     expect(screen.getByRole("dialog")).toBeInTheDocument();
     const root = ensureAppDrawerLayer().querySelector(".drawer-root");
     expect(root).toHaveAttribute("data-drawer-phase", "open");
@@ -100,16 +91,8 @@ describe("Drawer", () => {
       </Drawer>,
     );
     expect(screen.getByRole("dialog")).toBeInTheDocument();
-    expect(root).toHaveAttribute("data-drawer-phase", "open");
-    expect(root).toHaveClass("is-open");
-
-    await flushDrawerCloseFrames();
-    expect(root).toHaveAttribute("data-drawer-phase", "closing");
-    expect(root).not.toHaveClass("is-open");
-
-    act(() => {
-      completeDrawerCloseMotion();
-    });
+    expect(root).toHaveAttribute("data-drawer-phase", "exiting");
+    await flushDrawerAnimations();
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
 });

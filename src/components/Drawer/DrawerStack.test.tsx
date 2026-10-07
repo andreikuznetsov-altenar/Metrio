@@ -1,28 +1,22 @@
-import { cleanup, fireEvent, render, screen, act } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { DrawerStack } from "./DrawerStack";
 import {
-  dispatchDrawerPanelTransitionEnd,
   ensureAppDrawerLayer,
-  flushDrawerCloseFrames,
-  flushDrawerOpenFrames,
+  flushDrawerAnimations,
+  installDrawerMotionMock,
 } from "./drawerTestUtils";
 
-function completeDrawerCloseMotion() {
-  const panel = screen.getByRole("dialog");
-  act(() => {
-    dispatchDrawerPanelTransitionEnd(panel);
-  });
-}
-
 describe("DrawerStack", () => {
+  beforeEach(() => {
+    installDrawerMotionMock();
+    ensureAppDrawerLayer();
+  });
+
   afterEach(() => {
+    vi.restoreAllMocks();
     cleanup();
     document.getElementById("app-drawer-layer")?.remove();
-  });
-
-  beforeEach(() => {
-    ensureAppDrawerLayer();
   });
 
   it("keeps a single backdrop while switching primary to secondary and back", async () => {
@@ -42,7 +36,7 @@ describe("DrawerStack", () => {
       </DrawerStack>,
     );
 
-    await flushDrawerOpenFrames();
+    await flushDrawerAnimations();
     expect(document.querySelectorAll(".drawer-root__backdrop")).toHaveLength(1);
     expect(screen.getByTestId("drawer-stack-test")).toHaveAttribute(
       "data-drawer-panel",
@@ -102,10 +96,7 @@ describe("DrawerStack", () => {
       </DrawerStack>,
     );
 
-    await flushDrawerCloseFrames();
-    act(() => {
-      completeDrawerCloseMotion();
-    });
+    await flushDrawerAnimations();
 
     expect(screen.queryByTestId("drawer-stack-test")).toBeNull();
     expect(document.querySelectorAll(".drawer-root__backdrop")).toHaveLength(0);
@@ -124,7 +115,7 @@ describe("DrawerStack", () => {
         Primary
       </DrawerStack>,
     );
-    await flushDrawerOpenFrames();
+    await flushDrawerAnimations();
     expect(screen.getByRole("dialog")).toBeInTheDocument();
 
     rerender(
@@ -140,8 +131,7 @@ describe("DrawerStack", () => {
     );
     expect(screen.getByRole("dialog")).toBeInTheDocument();
 
-    await flushDrawerCloseFrames();
-    completeDrawerCloseMotion();
+    await flushDrawerAnimations();
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
 });

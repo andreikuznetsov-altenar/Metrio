@@ -21,7 +21,7 @@ function parseDrawerTranslateX(transform: string): number {
 }
 
 test.describe("Drawer motion and app-shell geometry", () => {
-  test("drawer spans header bottom through viewport bottom and dims filters", async ({
+  test("drawer layer covers full viewport including app header and dims toolbar", async ({
     page,
   }) => {
     await bootMetrio(page, "lead");
@@ -42,7 +42,12 @@ test.describe("Drawer motion and app-shell geometry", () => {
       const toolbarBox = toolbar.getBoundingClientRect();
       const panelBox = panel.getBoundingClientRect();
       const layerBox = layer.getBoundingClientRect();
+      const backdrop = document.querySelector(
+        ".drawer-root__backdrop",
+      ) as HTMLElement | null;
+      const backdropBox = backdrop?.getBoundingClientRect();
       return {
+        headerTop: headerBox.top,
         headerBottom: headerBox.bottom,
         layerTop: layerBox.top,
         panelTop: panelBox.top,
@@ -50,15 +55,18 @@ test.describe("Drawer motion and app-shell geometry", () => {
         viewportBottom: window.innerHeight,
         toolbarTop: toolbarBox.top,
         toolbarBottom: toolbarBox.bottom,
+        backdropTop: backdropBox?.top ?? null,
         layerParent: layer.parentElement?.className ?? "",
       };
     });
 
     expect(geometry).not.toBeNull();
-    expect(Math.abs(geometry!.layerTop - geometry!.headerBottom)).toBeLessThan(2);
-    expect(Math.abs(geometry!.panelTop - geometry!.layerTop)).toBeLessThan(2);
+    expect(Math.abs(geometry!.layerTop)).toBeLessThan(2);
+    expect(Math.abs(geometry!.panelTop)).toBeLessThan(2);
     expect(Math.abs(geometry!.layerBottom - geometry!.viewportBottom)).toBeLessThan(2);
-    expect(geometry!.toolbarTop).toBeGreaterThanOrEqual(geometry!.headerBottom - 1);
+    expect(geometry!.backdropTop).not.toBeNull();
+    expect(Math.abs(geometry!.backdropTop!)).toBeLessThan(2);
+    expect(geometry!.headerTop).toBeGreaterThanOrEqual(-1);
     expect(geometry!.toolbarBottom).toBeLessThan(geometry!.layerBottom);
     expect(geometry!.layerParent).toContain("app-shell");
   });

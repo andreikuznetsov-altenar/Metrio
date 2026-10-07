@@ -1,45 +1,50 @@
 // @vitest-environment jsdom
-import { act, render, screen } from "@testing-library/react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { render, screen } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { Drawer } from "./Drawer";
 import {
-  dispatchDrawerPanelTransitionEnd,
   ensureAppDrawerLayer,
-  flushDrawerCloseFrames,
-  flushDrawerOpenFrames,
+  flushDrawerAnimations,
+  installDrawerMotionMock,
   readDrawerPanelTranslateX,
 } from "./drawerTestUtils";
 
-describe("Drawer transform motion (computed style)", () => {
+describe("Drawer transform motion (WAAPI)", () => {
+  beforeEach(() => {
+    installDrawerMotionMock();
+  });
+
   afterEach(() => {
+    vi.restoreAllMocks();
     document.getElementById("app-drawer-layer")?.remove();
   });
 
-  it("progresses transform while opening across animation frames", async () => {
+  it("starts off-screen then settles at open position after motion finishes", async () => {
     ensureAppDrawerLayer();
+    const animate = HTMLElement.prototype.animate as ReturnType<typeof installDrawerMotionMock>;
     render(
       <Drawer open onClose={vi.fn()} ariaLabel="Motion drawer">
         Body
       </Drawer>,
     );
     const panel = screen.getByRole("dialog");
-    const t0 = readDrawerPanelTranslateX(panel);
+    expect(readDrawerPanelTranslateX(panel)).toBeGreaterThanOrEqual(100);
 
-    await flushDrawerOpenFrames();
-    const tOpen = readDrawerPanelTranslateX(panel);
-    expect(t0).toBeGreaterThanOrEqual(100);
-    expect(tOpen).toBeLessThan(1);
-    expect(t0).toBeGreaterThan(tOpen);
+    await flushDrawerAnimations();
+    expect(readDrawerPanelTranslateX(panel)).toBeLessThan(1);
+    expect(animate).toHaveBeenCalled();
+    const panelCalls = animate.mock.calls.filter((call) => call[0]?.[0]?.transform);
+    expect(String(panelCalls[0]?.[0]?.[0]?.transform)).toContain("100%");
   });
 
-  it("progresses transform while closing before unmount", async () => {
+  it("animates off-screen while closing before unmount", async () => {
     ensureAppDrawerLayer();
     const { rerender } = render(
       <Drawer open onClose={vi.fn()} ariaLabel="Motion drawer">
         Body
       </Drawer>,
     );
-    await flushDrawerOpenFrames();
+    await flushDrawerAnimations();
     const panel = screen.getByRole("dialog");
     expect(readDrawerPanelTranslateX(panel)).toBeLessThan(1);
 
@@ -49,13 +54,10 @@ describe("Drawer transform motion (computed style)", () => {
       </Drawer>,
     );
     expect(screen.getByRole("dialog")).toBeInTheDocument();
+    expect(readDrawerPanelTranslateX(panel)).toBeLessThan(1);
 
-    await flushDrawerCloseFrames();
+    await flushDrawerAnimations();
     expect(readDrawerPanelTranslateX(panel)).toBeGreaterThanOrEqual(100);
-
-    act(() => {
-      dispatchDrawerPanelTransitionEnd(panel);
-    });
     expect(screen.queryByRole("dialog")).toBeNull();
   });
 });

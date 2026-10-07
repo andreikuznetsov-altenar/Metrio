@@ -6,7 +6,7 @@ const read = (rel: string) =>
   fs.readFileSync(path.resolve(process.cwd(), rel), "utf8");
 
 describe("UI Repair Pass 13.8B surfaces, drawers, modals", () => {
-  it("drawer scrim uses token dimming below app chrome", () => {
+  it("drawer scrim uses token dimming over full viewport", () => {
     const surfaces = read("src/styles/app-surfaces.css");
     expect(surfaces).toContain("--drawer-scrim-color");
     expect(surfaces).toContain("--z-drawer-scrim");
@@ -16,27 +16,28 @@ describe("UI Repair Pass 13.8B surfaces, drawers, modals", () => {
     const drawerCss = read("src/components/Drawer/Drawer.css");
     expect(drawerCss).toMatch(/\.drawer-root__backdrop[\s\S]*--drawer-scrim-color/);
     const shellCss = read("src/components/AppShell/AppShell.css");
-    expect(shellCss).toContain("--app-drawer-viewport-top");
+    expect(shellCss).toMatch(/\.app-drawer-layer[\s\S]*inset:\s*0/);
     expect(drawerCss).toMatch(/\.drawer-root__backdrop[\s\S]*opacity:\s*0/);
-    expect(drawerCss).toMatch(/\.drawer-root\.is-open \.drawer-root__backdrop[\s\S]*opacity:\s*1/);
   });
 
-  it("modal layer sits above drawer and below header chrome", () => {
+  it("modal layer sits above drawer across full viewport", () => {
     const modalCss = read("src/components/Modal/Modal.css");
-    expect(modalCss).toContain("top: var(--app-side-surface-top");
+    expect(modalCss).toMatch(/\.metrio-modal-root[\s\S]*inset:\s*0/);
     expect(modalCss).toContain("--z-modal-scrim");
     expect(modalCss).toContain("--z-modal-panel");
 
-    const shellCss = read("src/components/AppShell/AppShell.css");
-    expect(shellCss).toContain("--z-app-chrome");
-    expect(shellCss).toMatch(/\.app-shell__viewport[\s\S]*isolation:\s*isolate/);
+    const surfaces = read("src/styles/app-surfaces.css");
+    const drawerScrim = /--z-drawer-scrim:\s*(\d+)/.exec(surfaces)?.[1];
+    const modalScrim = /--z-modal-scrim:\s*(\d+)/.exec(surfaces)?.[1];
+    expect(Number(modalScrim)).toBeGreaterThan(Number(drawerScrim));
   });
 
-  it("drawer lifecycle waits for transform transitionend", () => {
+  it("drawer lifecycle completes unmount on WAAPI animation.finished", () => {
     const source = read("src/components/Drawer/useDrawerSurfaceLifecycle.ts");
-    expect(source).toContain('event.propertyName !== "transform"');
-    expect(source).toContain("transitionend");
-    expect(source).toContain("requestAnimationFrame");
+    expect(source).toContain("playDrawerEnterMotion");
+    expect(source).toContain("playDrawerExitMotion");
+    expect(source).toContain("motion.finished");
+    expect(source).not.toContain("transitionend");
   });
 
   it("tabular modals stay on shared Modal shell", () => {

@@ -51,11 +51,8 @@
 
 .app-drawer-layer {
   position: fixed;
-  top: var(--app-drawer-viewport-top, var(--app-header-height));
-  right: 0;
-  bottom: 0;
-  left: 0;
-  z-index: var(--z-drawer-scrim, calc(var(--z-app-chrome, 100) - 1));
+  inset: 0;
+  z-index: var(--z-drawer-scrim, 110);
   pointer-events: none;
 }
 

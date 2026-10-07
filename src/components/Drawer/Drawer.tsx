@@ -52,7 +52,7 @@ export function Drawer({
   testId,
 }: DrawerProps) {
   const titleId = useId();
-  const { mounted, presented, phase, panelRef } = useDrawerSurfaceLifecycle(open, onClosed);
+  const { mounted, phase, panelRef, backdropRef } = useDrawerSurfaceLifecycle(open, onClosed);
 
   useEffect(() => {
     if (!open) {
@@ -75,15 +75,12 @@ export function Drawer({
 
   return portalDrawerSurface(
     <div
-      className={
-        presented
-          ? "drawer-root is-visible is-open"
-          : "drawer-root is-visible"
-      }
+      className="drawer-root is-visible"
       data-drawer-phase={phase}
       data-testid={testId ? `${testId}-root` : undefined}
     >
       <button
+        ref={backdropRef}
         type="button"
         className="drawer-root__backdrop"
         aria-label="Close drawer"

@@ -1,128 +1,127 @@
-import { useCallback, useEffect, useRef, useState, type RefObject } from "react";
-import { readMotionDrawerCloseMs } from "../../styles/motion";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, type RefObject } from "react";
+import {
+  logDrawerMotionDev,
+  playDrawerEnterMotion,
+  playDrawerExitMotion,
+  type DrawerMotionRun,
+} from "./drawerPanelMotion";
 
-export type DrawerSurfacePhase =
-  | "closed"
-  | "mounted-closed"
-  | "opening"
-  | "open"
-  | "closing";
+export type DrawerSurfacePhase = "closed" | "entering" | "open" | "exiting";
 
 export interface DrawerSurfaceLifecycle {
   mounted: boolean;
-  /** Drives `is-open` (panel on-screen); false while offscreen or exiting. */
-  presented: boolean;
   phase: DrawerSurfacePhase;
   panelRef: RefObject<HTMLElement | null>;
+  backdropRef: RefObject<HTMLButtonElement | null>;
 }
 
-function runDoubleFrame(callback: () => void): number {
-  return window.requestAnimationFrame(() => {
-    window.requestAnimationFrame(callback);
-  });
-}
-
-/**
- * WKWebView-safe drawer lifecycle: paint offscreen before open, paint onscreen before close exit.
- */
 export function useDrawerSurfaceLifecycle(
   open: boolean,
   onClosed?: () => void,
 ): DrawerSurfaceLifecycle {
   const panelRef = useRef<HTMLElement | null>(null);
+  const backdropRef = useRef<HTMLButtonElement | null>(null);
   const [mounted, setMounted] = useState(open);
-  const [presented, setPresented] = useState(false);
-  const frameRef = useRef<number | null>(null);
+  const [phase, setPhase] = useState<DrawerSurfacePhase>(open ? "entering" : "closed");
+  const runGenRef = useRef(0);
+  const openRef = useRef(open);
+  const activeMotionRef = useRef<DrawerMotionRun | null>(null);
 
-  const cancelFrame = useCallback(() => {
-    if (frameRef.current != null) {
-      window.cancelAnimationFrame(frameRef.current);
-      frameRef.current = null;
-    }
+  useEffect(() => {
+    openRef.current = open;
+  }, [open]);
+
+  const cancelMotion = useCallback(() => {
+    activeMotionRef.current?.cancel();
+    activeMotionRef.current = null;
   }, []);
 
   const completeClose = useCallback(() => {
+    cancelMotion();
     setMounted(false);
-    setPresented(false);
+    setPhase("closed");
     onClosed?.();
-  }, [onClosed]);
+    logDrawerMotionDev("unmount", {});
+  }, [cancelMotion, onClosed]);
 
   useEffect(() => {
-    cancelFrame();
-
     if (open) {
       setMounted(true);
-      setPresented(false);
-      frameRef.current = runDoubleFrame(() => {
-        const panel = panelRef.current;
-        if (panel) {
-          void panel.getBoundingClientRect();
-        }
-        setPresented(true);
-      });
-      return cancelFrame;
     }
+  }, [open]);
 
+  useLayoutEffect(() => {
     if (!mounted) {
       return undefined;
     }
 
-    frameRef.current = runDoubleFrame(() => {
-      const panel = panelRef.current;
-      if (panel) {
-        void panel.getBoundingClientRect();
-      }
-      setPresented(false);
-    });
-    return cancelFrame;
-  }, [cancelFrame, mounted, open]);
-
-  useEffect(() => {
-    if (!mounted || open || presented) {
-      return;
-    }
-
     const panel = panelRef.current;
-    if (!panel) {
-      completeClose();
-      return;
+    const backdrop = backdropRef.current;
+    if (!panel || !backdrop) {
+      if (!open) {
+        completeClose();
+      }
+      return undefined;
     }
 
     const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     if (reducedMotion) {
-      completeClose();
-      return;
+      cancelMotion();
+      if (open) {
+        setPhase("open");
+        panel.style.transform = "translate3d(0, 0, 0)";
+        panel.style.opacity = "1";
+        backdrop.style.opacity = "1";
+      } else {
+        completeClose();
+      }
+      return undefined;
     }
 
-    let finished = false;
-    const finish = () => {
-      if (finished) return;
-      finished = true;
-      completeClose();
-    };
+    const generation = ++runGenRef.current;
+    cancelMotion();
 
-    const onTransitionEnd = (event: TransitionEvent) => {
-      if (event.target !== panel) return;
-      if (event.propertyName !== "transform") return;
-      finish();
-    };
-
-    panel.addEventListener("transitionend", onTransitionEnd);
-    const fallback = window.setTimeout(finish, readMotionDrawerCloseMs() + 80);
+    if (open) {
+      setPhase("entering");
+      panel.style.transform = "translate3d(100%, 0, 0)";
+      panel.style.opacity = "0";
+      backdrop.style.opacity = "0";
+      void panel.getBoundingClientRect();
+      logDrawerMotionDev("enter-start", {
+        transform: getComputedStyle(panel).transform,
+      });
+      const motion = playDrawerEnterMotion(panel, backdrop);
+      activeMotionRef.current = motion;
+      void motion.finished.then(() => {
+        if (runGenRef.current !== generation) return;
+        if (!openRef.current) return;
+        setPhase("open");
+        logDrawerMotionDev("enter-finish", {
+          transform: getComputedStyle(panel).transform,
+        });
+      });
+    } else {
+      setPhase("exiting");
+      logDrawerMotionDev("exit-start", {
+        transform: getComputedStyle(panel).transform,
+      });
+      const motion = playDrawerExitMotion(panel, backdrop);
+      activeMotionRef.current = motion;
+      void motion.finished.then(() => {
+        if (runGenRef.current !== generation) return;
+        if (openRef.current) return;
+        logDrawerMotionDev("exit-finish", {
+          transform: getComputedStyle(panel).transform,
+        });
+        completeClose();
+      });
+    }
 
     return () => {
-      panel.removeEventListener("transitionend", onTransitionEnd);
-      window.clearTimeout(fallback);
+      runGenRef.current += 1;
+      cancelMotion();
     };
-  }, [completeClose, mounted, open, presented]);
+  }, [cancelMotion, completeClose, mounted, open]);
 
-  const phase: DrawerSurfacePhase = !mounted
-    ? "closed"
-    : open && !presented
-      ? "opening"
-      : (open && presented) || (!open && presented)
-        ? "open"
-        : "closing";
-
-  return { mounted, presented, phase, panelRef };
+  return { mounted, phase, panelRef, backdropRef };
 }

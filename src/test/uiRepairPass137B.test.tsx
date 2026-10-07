@@ -6,12 +6,12 @@ const read = (rel: string) =>
   fs.readFileSync(path.resolve(process.cwd(), rel), "utf8");
 
 describe("UI Repair Pass 13.7B side panels and motion", () => {
-  it("drawers use soft left shadow token and viewport top inset", () => {
+  it("drawers use soft left shadow token and full-viewport overlay layer", () => {
     const drawerCss = read("src/components/Drawer/Drawer.css");
     expect(drawerCss).toContain("box-shadow: var(--drawer-panel-shadow)");
 
     const shellCss = read("src/components/AppShell/AppShell.css");
-    expect(shellCss).toContain("--app-drawer-viewport-top");
+    expect(shellCss).toMatch(/\.app-drawer-layer[\s\S]*inset:\s*0/);
     expect(shellCss).toContain("--app-side-surface-top");
     expect(shellCss).toMatch(/\.app-shell__header[\s\S]*--z-app-chrome/);
   });
@@ -36,9 +36,10 @@ describe("UI Repair Pass 13.7B side panels and motion", () => {
   });
 
   it("drawer motion uses open/close durations without transition all", () => {
+    const motion = read("src/components/Drawer/drawerPanelMotion.ts");
+    expect(motion).toContain("readMotionDrawerOpenMs");
+    expect(motion).toContain("readMotionDrawerCloseMs");
     const css = read("src/components/Drawer/Drawer.css");
-    expect(css).toContain("var(--motion-drawer-open)");
-    expect(css).toContain("var(--motion-drawer-close)");
-    expect(css).not.toContain("transition: all");
+    expect(css).not.toMatch(/\.drawer\s*\{[\s\S]*transition:\s*transform/);
   });
 });
