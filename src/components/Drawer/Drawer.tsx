@@ -138,7 +138,7 @@ export function Drawer({
             </IconButton>
           </div>
         </div>
-        <div className="drawer__body metrio-scroll metrio-scroll--side-panel">{children}</div>
+        <div className="drawer__body metrio-scroll">{children}</div>
       </aside>
     </div>
   );

@@ -621,7 +621,7 @@ export function TeamOverviewView({
                   sort={workloadSort.sort}
                   onToggle={workloadSort.toggleSort}
                   className="performance-table__num"
-                  align="right"
+
                 />
                 <SortableTableHeader
                   columnId="atRisk"
@@ -629,7 +629,7 @@ export function TeamOverviewView({
                   sort={workloadSort.sort}
                   onToggle={workloadSort.toggleSort}
                   className="performance-table__num"
-                  align="right"
+
                 />
                 <SortableTableHeader
                   columnId="workload"

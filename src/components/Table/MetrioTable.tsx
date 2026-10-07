@@ -43,7 +43,11 @@ export function TableClampCell({
 
   return (
     <td
-      className={[clampClass, align === "right" ? "performance-table__num" : "", className]
+      className={[
+        clampClass,
+        align === "right" ? "performance-table__num" : "",
+        className,
+      ]
         .filter(Boolean)
         .join(" ")}
     >

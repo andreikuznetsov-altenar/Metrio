@@ -20,8 +20,7 @@ describe("motion tokens", () => {
       path.resolve(process.cwd(), "src/styles/ui-interaction-system.css"),
       "utf8",
     );
-    expect(system).toContain(".metrio-placeholder__icon + .metrio-placeholder__text");
-    expect(system).toContain("margin-top: var(--space-6)");
+    expect(system).toContain("margin-top: var(--space-2)");
   });
 });
 
@@ -37,8 +36,8 @@ describe("layout shell", () => {
     );
     const scrollCss = fs.readFileSync(scrollPath, "utf8");
     expect(scrollCss).toContain(".metrio-scroll");
-    expect(scrollCss).toContain(".metrio-scroll--side-panel");
-    expect(scrollCss).toContain("scrollbar-gutter: stable");
+    expect(scrollCss).toContain("--metrio-scrollbar-size");
+    expect(scrollCss).toContain("scrollbar-gutter: auto");
     expect(scrollCss).toContain("overflow-y: auto");
     expect(scrollCss).toContain("overflow-x: hidden");
   });

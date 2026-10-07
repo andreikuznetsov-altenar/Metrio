@@ -6,6 +6,7 @@ export interface SortableTableHeaderProps {
   sort: TableSortState;
   onToggle: (columnId: string) => void;
   className?: string;
+  /** @deprecated All columns are left-aligned; ignored. */
   align?: "left" | "right";
 }
 
@@ -20,7 +21,6 @@ export function SortableTableHeader({
   sort,
   onToggle,
   className,
-  align = "left",
 }: SortableTableHeaderProps) {
   const active = sort?.columnId === columnId;
   const ariaSort =
@@ -31,7 +31,6 @@ export function SortableTableHeader({
     <th
       className={className}
       aria-sort={ariaSort}
-      style={align === "right" ? { textAlign: "right" } : undefined}
     >
       <button
         type="button"

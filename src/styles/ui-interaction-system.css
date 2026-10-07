@@ -87,51 +87,25 @@
   text-decoration: none;
 }
 
-/* —— Shared scrollbars —— */
+/* —— Shared overlay scrollbars (4px thumb, 4px inset, no layout gutter) —— */
 .metrio-scroll {
   overflow-x: hidden;
   overflow-y: auto;
   overscroll-behavior: contain;
-  scrollbar-gutter: stable;
   scroll-behavior: smooth;
+  scrollbar-gutter: auto;
   scrollbar-width: thin;
   scrollbar-color: var(--scrollbar-thumb) transparent;
 }
 
-/** Overlay-style scrollbar: no gutter, thumb floats over content (modals). */
-.metrio-scroll--overlay {
-  scrollbar-gutter: auto;
-  padding-inline-end: var(--space-1);
-}
-
-.metrio-scroll--overlay::-webkit-scrollbar {
-  width: 4px;
-}
-
-/** Side panels: stable width + 4px thumb inset from panel edge. */
+.metrio-scroll--overlay,
 .metrio-scroll--side-panel {
-  scrollbar-gutter: stable;
-  padding-inline-end: var(--side-panel-scrollbar-inset, 4px);
-  scrollbar-width: thin;
-}
-
-.metrio-scroll--side-panel::-webkit-scrollbar {
-  width: var(--side-panel-scrollbar-size, 4px);
-}
-
-.metrio-scroll--side-panel::-webkit-scrollbar-thumb {
-  border-radius: var(--radius-round);
-  min-height: 32px;
-}
-
-.metrio-scroll--overlay::-webkit-scrollbar-thumb {
-  border-radius: var(--radius-round);
-  min-height: 32px;
+  scrollbar-gutter: auto;
 }
 
 .metrio-scroll::-webkit-scrollbar {
-  width: 4px;
-  height: 4px;
+  width: calc(var(--metrio-scrollbar-inset, 4px) + var(--metrio-scrollbar-size, 4px));
+  height: calc(var(--metrio-scrollbar-inset, 4px) + var(--metrio-scrollbar-size, 4px));
 }
 
 .metrio-scroll::-webkit-scrollbar-track {
@@ -140,9 +114,10 @@
 
 .metrio-scroll::-webkit-scrollbar-thumb {
   background: var(--scrollbar-thumb);
-  border: none;
+  border-right: var(--metrio-scrollbar-inset, 4px) solid transparent;
   background-clip: padding-box;
   border-radius: var(--radius-round);
+  min-height: 32px;
   transition: background var(--motion-hover) var(--transition-easing);
 }
 
@@ -150,6 +125,39 @@
 .metrio-scroll:focus-within::-webkit-scrollbar-thumb {
   background: var(--scrollbar-thumb-hover);
   background-clip: padding-box;
+}
+
+/* —— Textual links (count links, inline actions) —— */
+.metrio-text-link,
+.grouped-issue-preview__count-link,
+.grouped-issue-preview__inline-link,
+.performance-table__link-button {
+  border: none;
+  padding: 0;
+  background: none;
+  font: inherit;
+  font-weight: 500;
+  color: var(--color-accent);
+  cursor: pointer;
+  text-decoration: none;
+  border-radius: var(--radius-small);
+}
+
+.metrio-text-link:hover,
+.grouped-issue-preview__count-link:hover,
+.grouped-issue-preview__inline-link:hover,
+.performance-table__link-button:hover {
+  color: var(--color-accent-hover);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.metrio-text-link:focus-visible,
+.grouped-issue-preview__count-link:focus-visible,
+.grouped-issue-preview__inline-link:focus-visible,
+.performance-table__link-button:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -178,7 +186,13 @@
 
 .performance-table th.performance-table__num,
 .performance-table td.performance-table__num {
-  text-align: right;
+  text-align: left;
+  font-variant-numeric: tabular-nums;
+}
+
+.performance-table col.col-action {
+  width: 0.01%;
+  white-space: nowrap;
 }
 
 .performance-table thead th {
@@ -229,8 +243,9 @@
 }
 
 .performance-table__action {
-  text-align: right;
+  text-align: left;
   white-space: nowrap;
+  width: 0.01%;
   padding-right: var(--performance-table-action-inset-end, var(--space-4));
 }
 
@@ -260,8 +275,11 @@
   background: var(--color-surface-secondary);
 }
 
-/* —— Centered placeholders (icon, 24px gap, text) —— */
-.metrio-placeholder {
+@import "../components/EmptyState/empty-state.css";
+
+/* Legacy alias — prefer EmptyState component */
+.metrio-placeholder,
+.metrio-empty-state {
   flex: 1 1 auto;
   display: flex;
   flex-direction: column;
@@ -270,16 +288,17 @@
   min-height: 10rem;
   padding: var(--space-4);
   text-align: center;
-  color: var(--color-text-tertiary);
   box-sizing: border-box;
 }
 
-.metrio-placeholder__icon {
+.metrio-placeholder__icon,
+.metrio-empty-state__icon {
   flex-shrink: 0;
   color: var(--color-text-tertiary);
 }
 
-.metrio-placeholder__text {
+.metrio-placeholder__text,
+.metrio-empty-state__text {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -287,25 +306,29 @@
   max-width: 22rem;
 }
 
-.metrio-placeholder__icon + .metrio-placeholder__text {
-  margin-top: var(--space-6);
+.metrio-placeholder__icon + .metrio-placeholder__text,
+.metrio-empty-state__icon + .metrio-empty-state__text {
+  margin-top: var(--space-2);
 }
 
-.metrio-placeholder__title {
+.metrio-placeholder__title,
+.metrio-empty-state__title {
   margin: 0;
   font-size: 14px;
   font-weight: 600;
   color: var(--color-text-secondary);
 }
 
-.metrio-placeholder__copy {
+.metrio-placeholder__copy,
+.metrio-empty-state__description {
   margin: 0;
   font-size: 13px;
   line-height: 1.45;
   color: var(--color-text-tertiary);
 }
 
-.metrio-placeholder__actions {
+.metrio-placeholder__actions,
+.metrio-empty-state__actions {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
@@ -313,19 +336,17 @@
   margin-top: var(--space-4);
 }
 
+.metrio-empty-state--drawer-panel,
 .metrio-placeholder--drawer-panel {
   width: 100%;
   min-height: 12rem;
   padding: var(--space-6) var(--space-4);
 }
 
+.metrio-empty-state--compact,
 .metrio-placeholder--drawer-panel--compact {
   min-height: 7rem;
   padding: var(--space-5) var(--space-3);
-}
-
-.metrio-placeholder--drawer-panel--compact .metrio-placeholder__icon + .metrio-placeholder__text {
-  margin-top: var(--space-4);
 }
 
 /* —— Collapsible / accordion surfaces —— */

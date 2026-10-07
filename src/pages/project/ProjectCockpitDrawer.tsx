@@ -340,7 +340,7 @@ export function ProjectCockpitDrawer({
                       sort={workSort.sort}
                       onToggle={workSort.toggleSort}
                       className="performance-table__num"
-                      align="right"
+
                     />
                   </tr>
                 </thead>

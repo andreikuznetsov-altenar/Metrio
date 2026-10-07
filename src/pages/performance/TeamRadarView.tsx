@@ -110,7 +110,7 @@ export function TeamRadarView({ rows, onOpenPerson }: TeamRadarViewProps) {
                 sort={sort}
                 onToggle={toggleSort}
                 className="performance-table__num"
-                align="right"
+
               />
               <SortableTableHeader columnId="action" label="Action" sort={sort} onToggle={toggleSort} />
               <SortableTableHeader columnId="severity" label="Severity" sort={sort} onToggle={toggleSort} />

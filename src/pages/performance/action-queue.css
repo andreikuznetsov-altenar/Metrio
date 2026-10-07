@@ -176,8 +176,8 @@
 }
 
 .action-queue__dashboard-header-cell--end {
-  justify-self: end;
-  text-align: right;
+  justify-self: start;
+  text-align: left;
   padding-right: var(--performance-table-action-inset-end, var(--space-4));
 }
 
@@ -274,7 +274,7 @@
 }
 
 .action-queue__dashboard-cta {
-  justify-self: end;
+  justify-self: start;
   width: auto;
   max-width: 100%;
   flex-shrink: 0;

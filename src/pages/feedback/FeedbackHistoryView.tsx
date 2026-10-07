@@ -87,7 +87,7 @@ export function FeedbackHistoryView({
                 sort={sort}
                 onToggle={toggleSort}
                 className="performance-table__num"
-                align="right"
+
               />
               <SortableTableHeader
                 columnId="responses"
@@ -95,7 +95,7 @@ export function FeedbackHistoryView({
                 sort={sort}
                 onToggle={toggleSort}
                 className="performance-table__num"
-                align="right"
+
               />
               <SortableTableHeader
                 columnId="rate"
@@ -103,7 +103,7 @@ export function FeedbackHistoryView({
                 sort={sort}
                 onToggle={toggleSort}
                 className="performance-table__num"
-                align="right"
+
               />
               <SortableTableHeader columnId="status" label="Status" sort={sort} onToggle={toggleSort} />
               <SortableTableHeader columnId="state" label="State" sort={sort} onToggle={toggleSort} />

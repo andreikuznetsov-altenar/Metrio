@@ -1,4 +1,5 @@
 import { Badge } from "../Badge/Badge";
+import { EmptyState } from "../EmptyState/EmptyState";
 import { TabularModal } from "../Modal/TabularModal";
 import type { TaskListModalRow } from "../../domain/actions/buildTaskListModalRows";
 import { issueStatusBadgeVariant } from "../../domain/jira/issueStatusBadgeVariant";
@@ -21,11 +22,13 @@ export function TaskListModal({
   return (
     <TabularModal open={open} onClose={onClose} title={title} testId="task-list-modal">
         {rows.length === 0 ? (
-          <div className="metrio-placeholder" role="status">
-            <p className="metrio-placeholder__text">No tasks to show for this selection.</p>
-          </div>
+          <EmptyState
+            title="No tasks to show for this selection."
+            compact
+            className="metrio-empty-state--modal"
+          />
         ) : (
-          <MetrioTableWrap>
+          <MetrioTableWrap className="metrio-scroll metrio-scroll--overlay">
             <table className={`${METRIO_TABLE_CLASS} performance-table--task-list`}>
               <PerformanceTableColgroup
                 columns={["issueKey", "title", "date", "date", "status"]}

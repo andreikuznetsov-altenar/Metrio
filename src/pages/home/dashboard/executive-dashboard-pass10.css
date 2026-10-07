@@ -45,7 +45,7 @@
 
 .executive-attention-now__action-col {
   width: 5.5rem;
-  text-align: right;
+  text-align: left;
   white-space: nowrap;
   padding-right: var(--performance-table-action-inset-end, var(--space-4));
 }

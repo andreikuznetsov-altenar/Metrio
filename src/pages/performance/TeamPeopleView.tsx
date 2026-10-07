@@ -86,7 +86,7 @@ export function TeamPeopleView({ rows, onOpenPerson }: TeamPeopleViewProps) {
                 sort={sort}
                 onToggle={toggleSort}
                 className="performance-table__num"
-                align="right"
+
               />
               <SortableTableHeader columnId="attention" label="Attention" sort={sort} onToggle={toggleSort} />
               <SortableTableHeader columnId="availability" label="Availability" sort={sort} onToggle={toggleSort} />

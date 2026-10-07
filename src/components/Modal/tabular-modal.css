@@ -25,6 +25,7 @@
   background: transparent;
   max-height: min(60vh, 520px);
   overflow: auto;
+  scrollbar-gutter: auto;
 }
 
 .metrio-tabular-modal .performance-table th,

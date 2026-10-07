@@ -116,7 +116,7 @@ export function DirectorTeamsView({
                 sort={sort}
                 onToggle={toggleSort}
                 className="performance-table__num"
-                align="right"
+
               />
               <SortableTableHeader
                 columnId="active"
@@ -124,7 +124,7 @@ export function DirectorTeamsView({
                 sort={sort}
                 onToggle={toggleSort}
                 className="performance-table__num"
-                align="right"
+
               />
               <SortableTableHeader
                 columnId="attention"
@@ -132,7 +132,7 @@ export function DirectorTeamsView({
                 sort={sort}
                 onToggle={toggleSort}
                 className="performance-table__num"
-                align="right"
+
               />
               <SortableTableHeader
                 columnId="completed"
@@ -140,7 +140,7 @@ export function DirectorTeamsView({
                 sort={sort}
                 onToggle={toggleSort}
                 className="performance-table__num"
-                align="right"
+
               />
               <SortableTableHeader
                 columnId="firstPass"
@@ -148,7 +148,7 @@ export function DirectorTeamsView({
                 sort={sort}
                 onToggle={toggleSort}
                 className="performance-table__num"
-                align="right"
+
               />
               <SortableTableHeader
                 columnId="avgCycle"
@@ -162,7 +162,7 @@ export function DirectorTeamsView({
                 sort={sort}
                 onToggle={toggleSort}
                 className="performance-table__num"
-                align="right"
+
               />
             </tr>
           </thead>

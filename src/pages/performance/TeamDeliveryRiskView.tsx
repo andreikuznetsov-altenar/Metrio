@@ -122,7 +122,7 @@ export function TeamDeliveryRiskView({
                 sort={sort}
                 onToggle={toggleSort}
                 className="performance-table__num"
-                align="right"
+
               />
               <SortableTableHeader
                 columnId="riskReason"
@@ -137,7 +137,7 @@ export function TeamDeliveryRiskView({
                 sort={sort}
                 onToggle={toggleSort}
                 className="performance-table__action"
-                align="right"
+
               />
             </tr>
           </thead>

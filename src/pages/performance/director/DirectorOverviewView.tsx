@@ -81,7 +81,7 @@ export function DirectorOverviewView({
                   sort={sort}
                   onToggle={toggleSort}
                   className="performance-table__num"
-                  align="right"
+
                 />
                 <SortableTableHeader
                   columnId="active"
@@ -89,7 +89,7 @@ export function DirectorOverviewView({
                   sort={sort}
                   onToggle={toggleSort}
                   className="performance-table__num"
-                  align="right"
+
                 />
               </tr>
             </thead>

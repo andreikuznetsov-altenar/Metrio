@@ -133,7 +133,7 @@ export function FeedbackRecipientsDrawer({
                   sort={sort}
                   onToggle={toggleSort}
                   className="performance-table__num"
-                  align="right"
+
                 />
                 <SortableTableHeader columnId="status" label="Status" sort={sort} onToggle={toggleSort} />
               </tr>

@@ -127,7 +127,7 @@ export function FeedbackDeliveryView({
                   sort={sort}
                   onToggle={toggleSort}
                   className="performance-table__num"
-                  align="right"
+
                 />
                 <SortableTableHeader columnId="email" label="Email" sort={sort} onToggle={toggleSort} />
                 <SortableTableHeader
@@ -136,7 +136,7 @@ export function FeedbackDeliveryView({
                   sort={sort}
                   onToggle={toggleSort}
                   className="performance-table__action"
-                  align="right"
+
                 />
               </tr>
             </thead>

@@ -65,7 +65,7 @@ export function AttentionSignalsTable({
               sort={sort}
               onToggle={toggleSort}
               className="performance-table__num"
-              align="right"
+
             />
             <SortableTableHeader columnId="reason" label="Reason" sort={sort} onToggle={toggleSort} />
             <SortableTableHeader
