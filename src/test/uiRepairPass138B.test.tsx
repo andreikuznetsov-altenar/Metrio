@@ -43,4 +43,11 @@ describe("UI Repair Pass 13.8B surfaces, drawers, modals", () => {
     expect(source).toContain('from "./Modal"');
     expect(source).toContain("metrio-modal--tabular");
   });
+
+  it("modal layer portals to document body above drawer stacking", () => {
+    const source = read("src/components/Modal/Modal.tsx");
+    expect(source).toContain("createPortal");
+    expect(source).toContain("document.body");
+    expect(source).toMatch(/addEventListener\("keydown", onKeyDown, true\)/);
+  });
 });

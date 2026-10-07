@@ -1,5 +1,5 @@
-import { fireEvent, render, screen } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { GroupedIssuePreview } from "./GroupedIssuePreview";
 
 vi.mock("@tauri-apps/api/core", () => ({
@@ -7,6 +7,10 @@ vi.mock("@tauri-apps/api/core", () => ({
 }));
 
 describe("GroupedIssuePreview", () => {
+  afterEach(() => {
+    cleanup();
+  });
+
   it("renders one issue inline", () => {
     render(
       <GroupedIssuePreview issueKeys={["UX-1"]} jiraBaseUrl="https://jira.example.com" />,
@@ -28,5 +32,26 @@ describe("GroupedIssuePreview", () => {
     fireEvent.click(screen.getByTestId("grouped-issue-count-link"));
     expect(screen.getByTestId("task-list-modal")).toBeTruthy();
     expect(screen.getByRole("columnheader", { name: "Issue" })).toBeTruthy();
+  });
+
+  it("opens task modal at app level when rendered inside a drawer host", () => {
+    const host = document.createElement("div");
+    host.className = "drawer-root";
+    host.style.overflow = "hidden";
+    document.body.appendChild(host);
+    render(
+      <GroupedIssuePreview
+        issueKeys={["UX-1", "UX-2"]}
+        jiraBaseUrl="https://jira.example.com"
+        modalTitle="No activity"
+      />,
+      { container: host },
+    );
+    fireEvent.click(screen.getByTestId("grouped-issue-count-link"));
+    const modalRoot = screen.getByTestId("metrio-modal-root");
+    expect(modalRoot.parentElement).toBe(document.body);
+    expect(screen.getByTestId("task-list-modal")).toBeTruthy();
+    expect(host.querySelector(".metrio-modal-root")).toBeNull();
+    host.remove();
   });
 });

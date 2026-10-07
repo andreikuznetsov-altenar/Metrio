@@ -1,6 +1,8 @@
 import { act, cleanup, render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { Modal } from "./Modal";
+import { TabularModal } from "./TabularModal";
 
 describe("Modal", () => {
   afterEach(() => {
@@ -34,5 +36,54 @@ describe("Modal", () => {
     });
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     vi.useRealTimers();
+  });
+
+  it("renders through an app-level portal on document.body", () => {
+    const host = document.createElement("div");
+    host.setAttribute("data-testid", "drawer-host");
+    document.body.appendChild(host);
+    render(
+      <Modal open onClose={vi.fn()} title="Tasks">
+        Body
+      </Modal>,
+      { container: host },
+    );
+    const root = screen.getByTestId("metrio-modal-root");
+    expect(root.parentElement).toBe(document.body);
+    expect(host.querySelector(".metrio-modal-root")).toBeNull();
+    host.remove();
+  });
+
+  it("uses tabular modal width class for task-list shells", () => {
+    render(
+      <TabularModal open onClose={vi.fn()} title="Tasks" testId="task-list-modal">
+        Table
+      </TabularModal>,
+    );
+    const dialog = screen.getByRole("dialog");
+    expect(dialog.className).toContain("metrio-modal--tabular");
+    expect(dialog.className).toContain("metrio-modal--task-list");
+    expect(dialog.closest('[data-testid="metrio-modal-root"]')).toBeTruthy();
+  });
+
+  it("stops Escape from bubbling so parent drawers can stay open", async () => {
+    const user = userEvent.setup();
+    const drawerClose = vi.fn();
+    const modalClose = vi.fn();
+    const drawerKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") drawerClose();
+    };
+    document.addEventListener("keydown", drawerKeyDown);
+    render(
+      <div data-testid="drawer-panel">
+        <Modal open onClose={modalClose} title="Tasks">
+          Body
+        </Modal>
+      </div>,
+    );
+    await user.keyboard("{Escape}");
+    expect(modalClose).toHaveBeenCalledTimes(1);
+    expect(drawerClose).not.toHaveBeenCalled();
+    document.removeEventListener("keydown", drawerKeyDown);
   });
 });

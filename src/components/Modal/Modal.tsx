@@ -1,4 +1,5 @@
 import { useEffect, useId, useRef, useState, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 import { IconButton } from "../IconButton/IconButton";
 import { readMotionModalMs } from "../../styles/motion";
 import "./Modal.css";
@@ -75,11 +76,12 @@ export function Modal({
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
         event.preventDefault();
+        event.stopPropagation();
         onClose();
       }
     };
-    document.addEventListener("keydown", onKeyDown);
-    return () => document.removeEventListener("keydown", onKeyDown);
+    document.addEventListener("keydown", onKeyDown, true);
+    return () => document.removeEventListener("keydown", onKeyDown, true);
   }, [open, onClose]);
 
   useEffect(() => {
@@ -89,11 +91,12 @@ export function Modal({
 
   if (!mounted) return null;
 
-  return (
+  return createPortal(
     <div
       className={
         visible ? "metrio-modal-root metrio-modal-root--open" : "metrio-modal-root"
       }
+      data-testid="metrio-modal-root"
       role="presentation"
       onClick={(event) => event.stopPropagation()}
       onPointerDown={(event) => event.stopPropagation()}
@@ -123,6 +126,7 @@ export function Modal({
         </header>
         <div className="metrio-modal__body metrio-scroll">{children}</div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
