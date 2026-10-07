@@ -1,6 +1,7 @@
 import { useEffect, useId, type ReactNode } from "react";
 import { IconButton } from "../IconButton/IconButton";
 import { useDrawerSurfaceLifecycle } from "./useDrawerSurfaceLifecycle";
+import { portalDrawerSurface } from "./drawerPortal";
 import "./Drawer.css";
 
 function CloseIcon() {
@@ -72,7 +73,7 @@ export function Drawer({
     return null;
   }
 
-  return (
+  return portalDrawerSurface(
     <div
       className={
         visible
@@ -108,6 +109,6 @@ export function Drawer({
         </div>
         <div className="drawer__body metrio-scroll">{children}</div>
       </aside>
-    </div>
+    </div>,
   );
 }

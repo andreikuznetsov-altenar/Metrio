@@ -1,9 +1,10 @@
 /**
  * Stacking: chrome (header) > modal > drawer > app content.
- * Drawer/modal roots are positioned below --app-side-surface-top (not over header).
+ * Drawers use --app-drawer-viewport-top (header only). Modals may use --app-side-surface-top.
  */
 
 :root {
+  --app-drawer-viewport-top: var(--app-header-height);
   --z-app-content: 1;
   --z-drawer-scrim: 40;
   --z-drawer-panel: 41;

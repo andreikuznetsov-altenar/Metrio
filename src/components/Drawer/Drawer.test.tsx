@@ -19,6 +19,38 @@ describe("Drawer", () => {
     cleanup();
   });
 
+  it("portals drawer root to document.body outside page containers", async () => {
+    const host = document.createElement("div");
+    host.className = "app-shell app-shell--page-toolbar";
+    host.style.setProperty("--app-side-surface-top", "120px");
+    document.body.appendChild(host);
+    render(
+      <Drawer open onClose={vi.fn()} ariaLabel="Test drawer">
+        Body
+      </Drawer>,
+      { container: host },
+    );
+    const root = document.body.querySelector(".drawer-root");
+    expect(root).toBeTruthy();
+    expect(root?.parentElement).toBe(document.body);
+    expect(host.querySelector(".drawer-root")).toBeNull();
+    host.remove();
+  });
+
+  it("enters through opening phase before is-open applies", async () => {
+    render(
+      <Drawer open onClose={vi.fn()} ariaLabel="Test drawer">
+        Body
+      </Drawer>,
+    );
+    const root = document.body.querySelector(".drawer-root");
+    expect(root).toHaveAttribute("data-drawer-phase", "opening");
+    expect(root).not.toHaveClass("is-open");
+    await flushDrawerOpenFrames();
+    expect(root).toHaveAttribute("data-drawer-phase", "open");
+    expect(root).toHaveClass("is-open");
+  });
+
   it("syncs scrim backdrop with open state for content-area dimming", async () => {
     render(
       <Drawer open onClose={vi.fn()} ariaLabel="Test drawer">
@@ -26,8 +58,8 @@ describe("Drawer", () => {
       </Drawer>,
     );
     await flushDrawerOpenFrames();
-    const root = document.querySelector(".drawer-root");
-    const backdrop = document.querySelector(".drawer-root__backdrop");
+    const root = document.body.querySelector(".drawer-root");
+    const backdrop = document.body.querySelector(".drawer-root__backdrop");
     expect(backdrop).toBeTruthy();
     expect(root).toHaveClass("is-open");
     expect(backdrop).toHaveClass("drawer-root__backdrop");
@@ -51,7 +83,7 @@ describe("Drawer", () => {
     );
     await flushDrawerOpenFrames();
     expect(screen.getByRole("dialog")).toBeInTheDocument();
-    const root = document.querySelector(".drawer-root");
+    const root = document.body.querySelector(".drawer-root");
     expect(root).toHaveAttribute("data-drawer-phase", "open");
 
     rerender(

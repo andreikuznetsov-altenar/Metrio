@@ -20,7 +20,8 @@ export function useDrawerSurfaceLifecycle(
 ): DrawerSurfaceLifecycle {
   const panelRef = useRef<HTMLElement | null>(null);
   const [mounted, setMounted] = useState(open);
-  const [visible, setVisible] = useState(open);
+  /** Always start offscreen so the first painted frame can transition (WKWebView-safe). */
+  const [visible, setVisible] = useState(false);
   const frameRef = useRef<number | null>(null);
 
   const completeClose = useCallback(() => {
@@ -34,6 +35,10 @@ export function useDrawerSurfaceLifecycle(
       setVisible(false);
       const frame = window.requestAnimationFrame(() => {
         frameRef.current = window.requestAnimationFrame(() => {
+          const panel = panelRef.current;
+          if (panel) {
+            void panel.getBoundingClientRect();
+          }
           setVisible(true);
         });
       });
