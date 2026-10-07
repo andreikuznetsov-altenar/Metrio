@@ -6,10 +6,12 @@ const read = (rel: string) =>
   fs.readFileSync(path.resolve(process.cwd(), rel), "utf8");
 
 describe("UI13 drawer full-app overlay geometry", () => {
-  it("drawer layer and root cover full web viewport (including header)", () => {
+  it("drawer layer anchors to app shell (header top), not native titlebar", () => {
     const drawerCss = read("src/components/Drawer/Drawer.css");
     const shellCss = read("src/components/AppShell/AppShell.css");
-    expect(shellCss).toMatch(/\.app-drawer-layer[\s\S]*inset:\s*0/);
+    expect(shellCss).toMatch(/\.app-shell[\s\S]*position:\s*relative/);
+    expect(shellCss).toMatch(/\.app-drawer-layer[\s\S]*position:\s*absolute/);
+    expect(shellCss).toMatch(/\.app-drawer-layer[\s\S]*top:\s*0/);
     expect(drawerCss).toMatch(/\.drawer-root[\s\S]*inset:\s*0/);
     expect(drawerCss).toMatch(/\.drawer-root__backdrop[\s\S]*inset:\s*0/);
     expect(drawerCss).toMatch(/\.drawer[\s\S]*top:\s*0/);
@@ -29,6 +31,12 @@ describe("UI13 drawer full-app overlay geometry", () => {
     expect(surfaces).toContain("--z-modal-scrim:");
     expect(surfaces).toContain("--z-modal-panel:");
     expect(surfaces).toContain("--z-toast:");
+  });
+
+  it("modal layer portals to app-modal-layer outside drawer tree", () => {
+    const modal = read("src/components/Modal/Modal.tsx");
+    expect(modal).toContain("portalModalSurface");
+    expect(read("src/components/AppShell/AppShell.tsx")).toContain("app-modal-layer");
   });
 
   it("shared Drawer and DrawerStack portal to app-drawer-layer", () => {

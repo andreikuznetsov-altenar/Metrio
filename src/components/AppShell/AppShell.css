@@ -1,5 +1,6 @@
 .app-shell {
   --app-side-surface-top: var(--app-header-height);
+  position: relative;
   display: flex;
   flex-direction: column;
   height: 100%;
@@ -49,13 +50,28 @@
   background: var(--color-surface);
 }
 
-.app-drawer-layer {
-  position: fixed;
-  inset: 0;
-  z-index: var(--z-drawer-scrim, 110);
+.app-drawer-layer,
+.app-modal-layer {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
   pointer-events: none;
 }
 
+.app-drawer-layer {
+  z-index: var(--z-drawer-scrim, 110);
+}
+
+.app-modal-layer {
+  z-index: var(--z-modal-scrim, 120);
+}
+
 .app-drawer-layer:has(.drawer-root.is-visible) {
+  pointer-events: auto;
+}
+
+.app-modal-layer:has(.metrio-modal-root) {
   pointer-events: auto;
 }

@@ -38,6 +38,10 @@ describe("GroupedIssuePreview", () => {
     const host = document.createElement("div");
     host.className = "drawer-root";
     host.style.overflow = "hidden";
+    const modalLayer = document.createElement("div");
+    modalLayer.id = "app-modal-layer";
+    modalLayer.className = "app-modal-layer";
+    document.body.appendChild(modalLayer);
     document.body.appendChild(host);
     render(
       <GroupedIssuePreview
@@ -49,9 +53,10 @@ describe("GroupedIssuePreview", () => {
     );
     fireEvent.click(screen.getByTestId("grouped-issue-count-link"));
     const modalRoot = screen.getByTestId("metrio-modal-root");
-    expect(modalRoot.parentElement).toBe(document.body);
+    expect(modalRoot.parentElement).toBe(modalLayer);
     expect(screen.getByTestId("task-list-modal")).toBeTruthy();
     expect(host.querySelector(".metrio-modal-root")).toBeNull();
     host.remove();
+    modalLayer.remove();
   });
 });

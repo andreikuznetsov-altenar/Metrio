@@ -1,6 +1,6 @@
 /**
  * Stacking (low → high): app content → app chrome → drawer scrim → drawer → modal scrim → modal → toast.
- * Drawers and drawer scrim cover the full web viewport (including app header).
+ * Drawer/modal scrims cover the Metrio app shell (header + content), not the native titlebar.
  */
 
 :root {

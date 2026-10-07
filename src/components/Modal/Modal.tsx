@@ -1,7 +1,7 @@
 import { useEffect, useId, useRef, useState, type ReactNode } from "react";
-import { createPortal } from "react-dom";
 import { IconButton } from "../IconButton/IconButton";
 import { readMotionModalMs } from "../../styles/motion";
+import { portalModalSurface } from "./modalPortal";
 import "./Modal.css";
 
 function CloseIcon() {
@@ -91,7 +91,7 @@ export function Modal({
 
   if (!mounted) return null;
 
-  return createPortal(
+  return portalModalSurface(
     <div
       className={
         visible ? "metrio-modal-root metrio-modal-root--open" : "metrio-modal-root"
@@ -127,6 +127,5 @@ export function Modal({
         <div className="metrio-modal__body metrio-scroll">{children}</div>
       </div>
     </div>,
-    document.body,
   );
 }

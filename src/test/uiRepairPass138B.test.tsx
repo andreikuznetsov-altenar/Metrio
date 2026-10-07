@@ -16,14 +16,15 @@ describe("UI Repair Pass 13.8B surfaces, drawers, modals", () => {
     const drawerCss = read("src/components/Drawer/Drawer.css");
     expect(drawerCss).toMatch(/\.drawer-root__backdrop[\s\S]*--drawer-scrim-color/);
     const shellCss = read("src/components/AppShell/AppShell.css");
-    expect(shellCss).toMatch(/\.app-drawer-layer[\s\S]*inset:\s*0/);
+    expect(shellCss).toMatch(/\.app-drawer-layer[\s\S]*position:\s*absolute/);
     expect(drawerCss).toMatch(/\.drawer-root__backdrop[\s\S]*opacity:\s*0/);
   });
 
   it("modal layer sits above drawer across full viewport", () => {
     const modalCss = read("src/components/Modal/Modal.css");
+    const shellCss = read("src/components/AppShell/AppShell.css");
     expect(modalCss).toMatch(/\.metrio-modal-root[\s\S]*inset:\s*0/);
-    expect(modalCss).toContain("--z-modal-scrim");
+    expect(shellCss).toMatch(/\.app-modal-layer[\s\S]*--z-modal-scrim/);
     expect(modalCss).toContain("--z-modal-panel");
 
     const surfaces = read("src/styles/app-surfaces.css");
@@ -46,10 +47,10 @@ describe("UI Repair Pass 13.8B surfaces, drawers, modals", () => {
     expect(source).toContain("metrio-modal--tabular");
   });
 
-  it("modal layer portals to document body above drawer stacking", () => {
+  it("modal layer portals to app-modal-layer above drawer stacking", () => {
     const source = read("src/components/Modal/Modal.tsx");
-    expect(source).toContain("createPortal");
-    expect(source).toContain("document.body");
+    expect(source).toContain("portalModalSurface");
+    expect(read("src/components/Modal/modalPortal.tsx")).toContain("app-modal-layer");
     expect(source).toMatch(/addEventListener\("keydown", onKeyDown, true\)/);
   });
 });

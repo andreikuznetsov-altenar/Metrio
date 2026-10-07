@@ -38,7 +38,11 @@ describe("Modal", () => {
     vi.useRealTimers();
   });
 
-  it("renders through an app-level portal on document.body", () => {
+  it("renders through app-modal-layer outside drawer host", () => {
+    const modalLayer = document.createElement("div");
+    modalLayer.id = "app-modal-layer";
+    modalLayer.className = "app-modal-layer";
+    document.body.appendChild(modalLayer);
     const host = document.createElement("div");
     host.setAttribute("data-testid", "drawer-host");
     document.body.appendChild(host);
@@ -49,9 +53,10 @@ describe("Modal", () => {
       { container: host },
     );
     const root = screen.getByTestId("metrio-modal-root");
-    expect(root.parentElement).toBe(document.body);
+    expect(root.parentElement).toBe(modalLayer);
     expect(host.querySelector(".metrio-modal-root")).toBeNull();
     host.remove();
+    modalLayer.remove();
   });
 
   it("uses tabular modal width class for task-list shells", () => {

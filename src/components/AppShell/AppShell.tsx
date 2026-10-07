@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { APP_DRAWER_LAYER_ID } from "../Drawer/drawerPortal";
+import { APP_MODAL_LAYER_ID } from "../Modal/modalPortal";
 import "./AppShell.css";
 
 export interface AppShellProps {
@@ -42,6 +43,11 @@ export function AppShell({
         id={APP_DRAWER_LAYER_ID}
         className="app-drawer-layer"
         data-testid="app-drawer-layer"
+      />
+      <div
+        id={APP_MODAL_LAYER_ID}
+        className="app-modal-layer"
+        data-testid="app-modal-layer"
       />
     </div>
   );
