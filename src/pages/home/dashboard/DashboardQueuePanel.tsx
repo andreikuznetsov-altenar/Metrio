@@ -3,6 +3,7 @@ import type { ActionItem } from "../../../domain/actions/actionTypes";
 import {
   buildDashboardQueueRows,
   reasonTagSortRank,
+  stabilizeDashboardQueueRowOrder,
   type DashboardQueueRow,
 } from "../../../domain/actions/buildDashboardQueueRows";
 import { buildTaskListModalRows } from "../../../domain/actions/buildTaskListModalRows";
@@ -95,6 +96,10 @@ export function DashboardQueuePanel({
   );
 
   const { sortedRows, sort, toggleSort } = useTableSort(previewRows, QUEUE_COLUMNS, getValue);
+  const displayRows = useMemo(
+    () => stabilizeDashboardQueueRowOrder(sortedRows),
+    [sortedRows],
+  );
   const taskRows = useMemo(
     () => buildTaskListModalRows(sourceItems, teamPersons, resolveJiraBaseUrl()),
     [sourceItems, teamPersons],
@@ -117,7 +122,7 @@ export function DashboardQueuePanel({
                 { id: "work", label: workColumnLabel, alignEnd: false },
                 { id: "reason", label: "Reason", alignEnd: false },
                 { id: "context", label: "Context", alignEnd: false },
-                { id: "action", label: "Action", alignEnd: true },
+                { id: "action", label: "Action", alignEnd: false },
               ] as const
             ).map((col) => (
               <button
@@ -146,7 +151,7 @@ export function DashboardQueuePanel({
             ))}
           </div>
           <DashboardActionQueueRows
-            rows={sortedRows}
+            rows={displayRows}
             onOpen={onOpen}
             openLabel={openLabel}
           />

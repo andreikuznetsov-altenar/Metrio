@@ -34,7 +34,7 @@ describe("UI pass 5A — dashboard actions layout", () => {
     );
     expect(css).toContain("minmax(0, 1.15fr)");
     expect(css).toContain("minmax(7rem, max-content)");
-    expect(css).toContain("--performance-table-action-inset-end");
+    expect(css).toContain(".action-queue__dashboard-cell--action");
     expect(css).not.toContain("minmax(88px, 120px)");
     expect(css).toContain(".action-queue__dashboard-cta");
     expect(css).toMatch(/\.action-queue__dashboard-cta[\s\S]*width:\s*auto/);

@@ -85,6 +85,30 @@ describe("buildDashboardQueueRows", () => {
     expect(row.contextLines.join(" ")).toMatch(/UX-1490/);
   });
 
+  it("places grouped Long Review row before person workload rows", () => {
+    const aggregate = aggregateStaleReviewActions(
+      Array.from({ length: 12 }, (_, i) => ({
+        issueKey: `UX-${100 + i}`,
+        daysInReview: 9,
+      })),
+    );
+    expect(aggregate).not.toBeNull();
+    const workload: ActionItem = {
+      id: "workload-1",
+      kind: "workload",
+      severity: "warning",
+      title: "Alex has 8 active tasks",
+      personId: "alex",
+      personName: "Alex",
+      count: 8,
+      target: { kind: "person", personId: "alex", tab: "work" },
+      source: "jira",
+    };
+    const rows = buildDashboardQueueRows([workload, aggregate!]);
+    expect(rows[0]!.subject).toBe("12 tasks in Review for 7+ days");
+    expect(rows[1]!.subject).toBe("Alex");
+  });
+
   it("preserves source priority order when un-sorted", () => {
     const a = jiraItem({
       id: "a",

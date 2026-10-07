@@ -43,6 +43,16 @@ describe("UI Repair Pass 13.7A table and tabular modal geometry", () => {
     expect(source).toContain("action-queue__dashboard-person-slot");
   });
 
+  it("team actions tag and action columns use shared cell layout", () => {
+    const css = read("src/pages/performance/action-queue.css");
+    expect(css).toContain(".action-queue__dashboard-cell--tag");
+    expect(css).toContain(".action-queue__dashboard-cell--action");
+    expect(css).toMatch(/\.action-queue__dashboard-cell--action[\s\S]*justify-content:\s*flex-start/);
+    const panel = read("src/pages/home/dashboard/DashboardQueuePanel.tsx");
+    expect(panel).toContain("stabilizeDashboardQueueRowOrder");
+    expect(panel).not.toMatch(/alignEnd:\s*true/);
+  });
+
   it("delivery risk table relies on colgroup not nth-child width hacks", () => {
     const css = read("src/pages/performance/performance-dashboard.css");
     expect(css).toContain(".performance-table--delivery-risk col.col-action");

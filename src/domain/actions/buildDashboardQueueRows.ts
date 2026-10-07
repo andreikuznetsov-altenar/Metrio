@@ -1,12 +1,11 @@
 import type { ActionItem, ActionSeverity } from "./actionTypes";
+import { sortActionsByPriority } from "./actionPriority";
 import {
   mergeReasonTags,
   presentationContextLinesForItem,
   presentationReasonTagsForItem,
   presentationSubjectForItem,
 } from "./actionPresentation";
-import { sortActionsByPriority } from "./actionPriority";
-
 export interface DashboardQueueRow {
   id: string;
   /** Primary source action for navigation and CTA labels. */
@@ -24,6 +23,39 @@ const SEVERITY_RANK: Record<ActionSeverity, number> = {
   warning: 1,
   info: 2,
 };
+
+/** Aggregated task-driven queue rows (e.g. "12 tasks in Review for 7+ days"). */
+export function isGroupedTeamActionItem(item: ActionItem): boolean {
+  return item.kind === "review_bottleneck" && (item.count ?? 0) > 1;
+}
+
+export function dashboardQueueRowTier(item: ActionItem): 0 | 1 | 2 {
+  if (isGroupedTeamActionItem(item)) return 0;
+  if (item.personId) return 2;
+  return 1;
+}
+
+export function compareDashboardQueueRows(a: DashboardQueueRow, b: DashboardQueueRow): number {
+  const tierDiff = dashboardQueueRowTier(a.item) - dashboardQueueRowTier(b.item);
+  if (tierDiff !== 0) return tierDiff;
+  return a.priorityIndex - b.priorityIndex;
+}
+
+/** Keeps grouped task rows before person rows after optional column sorting. */
+export function stabilizeDashboardQueueRowOrder(rows: DashboardQueueRow[]): DashboardQueueRow[] {
+  const grouped: DashboardQueueRow[] = [];
+  const task: DashboardQueueRow[] = [];
+  const person: DashboardQueueRow[] = [];
+  for (const row of rows) {
+    const tier = dashboardQueueRowTier(row.item);
+    if (tier === 0) grouped.push(row);
+    else if (tier === 2) person.push(row);
+    else task.push(row);
+  }
+  const byPriority = (list: DashboardQueueRow[]) =>
+    [...list].sort((a, b) => a.priorityIndex - b.priorityIndex);
+  return [...byPriority(grouped), ...byPriority(task), ...byPriority(person)];
+}
 
 function maxSeverity(items: ActionItem[]): ActionSeverity {
   return items.reduce<ActionSeverity>(
@@ -113,7 +145,7 @@ export function buildDashboardQueueRows(actions: ActionItem[]): DashboardQueueRo
     rows.push(singleItemRow(entry.item, entry.priorityIndex));
   }
 
-  return rows.sort((a, b) => a.priorityIndex - b.priorityIndex);
+  return rows.sort(compareDashboardQueueRows);
 }
 
 export function reasonTagSortRank(tags: string[]): number {

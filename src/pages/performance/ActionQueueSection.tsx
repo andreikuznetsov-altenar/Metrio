@@ -35,11 +35,7 @@ export function ActionQueueSection({
               <span className="action-queue__dashboard-header-cell">Person</span>
               <span className="action-queue__dashboard-header-cell">Tag</span>
               <span className="action-queue__dashboard-header-cell">Info</span>
-              <span
-                className="action-queue__dashboard-header-cell action-queue__dashboard-header-cell--end"
-              >
-                Action
-              </span>
+              <span className="action-queue__dashboard-header-cell">Action</span>
             </div>
             <DashboardActionQueueRows
               rows={buildDashboardQueueRows(items)}
