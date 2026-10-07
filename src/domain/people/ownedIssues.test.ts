@@ -50,6 +50,20 @@ describe('ownedIssues', () => {
     expect(owned).toHaveLength(0);
   });
 
+  it('filters legacy issues when ownedIssues is missing', () => {
+    const person = {
+      id: 'lead',
+      bamboo: { workEmail: 'andrei@co.com' },
+      jira: { canonicalKey: 'andrei@co.com' },
+      issues: [
+        issue('UX-1', 'andrei@co.com'),
+        issue('UX-2', 'ic@co.com'),
+        issue('UX-3', 'ic@co.com'),
+      ],
+    } as unknown as Person;
+    expect(getOperationalIssues(person).map((i) => i.issueKey)).toEqual(['UX-1']);
+  });
+
   it('getOperationalIssues prefers ownedIssues collection', () => {
     const person = {
       id: '1',

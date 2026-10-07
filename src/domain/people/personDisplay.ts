@@ -138,17 +138,18 @@ export function buildWorkloadRowFields(
     capacityDataState,
     availability: person?.availability.label || '—',
   };
-  if (person?.workload?.capacityLoadPercent != null && capacityDataState === "measured") {
+  const personal = person?.personalWorkload ?? person?.workload;
+  if (personal?.capacityLoadPercent != null && capacityDataState === "measured") {
     return {
       ...base,
-      capacityLoadPercent: person.workload.capacityLoadPercent,
-      estimatedMonthlyHours: person.workload.estimatedMonthlyHours,
-      monthlyCapacityHours: person.workload.monthlyCapacityHours,
+      capacityLoadPercent: personal.capacityLoadPercent,
+      estimatedMonthlyHours: personal.estimatedMonthlyHours,
+      monthlyCapacityHours: personal.monthlyCapacityHours,
     };
   }
   return base;
 }
 
 export function capacityDataStateForPerson(person: Person | undefined) {
-  return capacityDataStateFromWorkload(person?.workload ?? null);
+  return capacityDataStateFromWorkload(person?.personalWorkload ?? person?.workload ?? null);
 }

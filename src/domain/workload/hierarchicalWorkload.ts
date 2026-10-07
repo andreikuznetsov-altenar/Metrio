@@ -19,11 +19,17 @@ export type TeamWorkloadViewContext =
       orgGraph: Map<string, OrgNode>;
     };
 
+function resolvePersonalWorkload(person: Person | undefined): Person["workload"] {
+  if (!person) return null;
+  return person.personalWorkload ?? person.workload;
+}
+
 export function personalCapacityLoadPercent(person: Person | undefined): number | null {
-  if (!person?.workload) return null;
-  const state = capacityDataStateFromWorkload(person.workload);
+  const workload = resolvePersonalWorkload(person);
+  if (!workload) return null;
+  const state = capacityDataStateFromWorkload(workload);
   if (state !== "measured") return null;
-  const value = person.workload.capacityLoadPercent;
+  const value = workload.capacityLoadPercent;
   if (value == null || !Number.isFinite(value)) return null;
   return Math.max(0, value);
 }
@@ -107,8 +113,9 @@ export function resolveWorkloadUnitForViewer(
   context: TeamWorkloadViewContext,
   personalPercent: (id: string) => number | null,
 ): ResolvedWorkloadUnit {
-  const activeFallback = person.workload?.activeCount ?? 0;
-  const capacityState = capacityDataStateFromWorkload(person.workload ?? null);
+  const personal = resolvePersonalWorkload(person);
+  const activeFallback = personal?.activeCount ?? 0;
+  const capacityState = capacityDataStateFromWorkload(personal);
 
   if (context.mode === "own_team") {
     return {

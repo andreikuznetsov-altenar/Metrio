@@ -3,6 +3,7 @@ import { buildTeamRadar } from './teamRadar';
 import type { Person, TeamSnapshot } from '../people/types';
 import type { ReportParams } from '../jira/types';
 import { testWorkload } from '../testFixtures';
+import { filterOwnedIssues } from '../people/ownedIssues';
 
 const params: ReportParams = {
   dateFrom: '2026-01-01',
@@ -35,6 +36,9 @@ function person(overrides: Partial<Person> & { id: string; name: string }): Pers
     workload: overrides.workload || testWorkload({ level: 'normal', activeCount: 2 }),
     performance: overrides.performance || null,
     issues: overrides.issues || [],
+    ownedIssues:
+      overrides.ownedIssues ??
+      filterOwnedIssues(overrides.issues || [], overrides.id),
   };
 }
 
@@ -121,6 +125,7 @@ describe('buildTeamRadar', () => {
               events: [],
               rangeEvents: [],
               currentStatus: 'Hold',
+              currentAssigneeCanonical: '1',
             },
           ],
         }),

@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { buildTeamSnapshot } from "./personService";
 import type { AuditReportData } from "../../domain/jira/types";
 import { DEFAULT_WORKLOAD_THRESHOLDS } from "../../domain/workload/workloadEngine";
+import { testKpi } from "../../domain/testFixtures";
 
 const params = {
   dateFrom: "2026-01-01",
@@ -118,9 +119,91 @@ describe("buildTeamSnapshot personal workload inputs", () => {
     const ic = snapshot.persons.find((p) => p.id === "ic");
     expect(lead?.ownedIssues).toHaveLength(1);
     expect(ic?.ownedIssues).toHaveLength(0);
-    const leadPercent = lead?.workload?.capacityLoadPercent ?? 0;
-    const icPercent = ic?.workload?.capacityLoadPercent ?? 0;
+    const leadPercent = lead?.personalWorkload?.capacityLoadPercent ?? 0;
+    const icPercent = ic?.personalWorkload?.capacityLoadPercent ?? 0;
+    expect(lead?.ownedIssues).toHaveLength(1);
+    expect(lead?.issues).toHaveLength(4);
     expect(leadPercent).toBeLessThan(500);
     expect(icPercent).toBeLessThan(500);
+    expect(lead?.ownedIssues.length).toBeLessThan(lead?.issues.length ?? 0);
+  });
+
+  it("keeps Andrei personal capacity off the team issue roll-up (deterministic fixture)", () => {
+    const andreiCanonical = "andrei@co.com";
+    const reportIssues = [
+      issue("UX-5726", andreiCanonical),
+      issue("UX-5203", "daria@co.com"),
+      issue("UX-5204", "daria@co.com"),
+      issue("UX-5205", "daria@co.com"),
+    ];
+    const reportData: AuditReportData = {
+      params,
+      grouped: {
+        [andreiCanonical]: {
+          requestedUser: andreiCanonical,
+          userLabel: "Andrei",
+          issues: reportIssues,
+          transitionStats: {},
+        },
+        "daria@co.com": {
+          requestedUser: "daria@co.com",
+          userLabel: "Daria",
+          issues: reportIssues.filter((i) => i.issueKey !== "UX-5726"),
+          transitionStats: {},
+        },
+      },
+      totalTransitions: 0,
+      teamSummaryColumns: [],
+      teamKpi: testKpi(),
+      perUserKpi: {},
+    };
+
+    const snapshot = buildTeamSnapshot(
+      {
+        ok: true,
+        mode: "team",
+        employee: {
+          id: "andrei",
+          displayName: "Andrei Kuznetsov",
+          firstName: "Andrei",
+          lastName: "Kuznetsov",
+          workEmail: andreiCanonical,
+          jobTitle: "Lead",
+          status: "Active",
+        },
+        directReports: [
+          {
+            id: "daria",
+            displayName: "Daria",
+            firstName: "Daria",
+            lastName: "User",
+            workEmail: "daria@co.com",
+            jobTitle: "Designer",
+            status: "Active",
+          },
+        ],
+        fullTeam: [],
+        missingFields: [],
+        restrictedFields: [],
+        diagnostics: [],
+        reportingSource: "id",
+        ambiguousSupervisorNames: 0,
+      },
+      reportData,
+      [],
+      DEFAULT_WORKLOAD_THRESHOLDS,
+      [{ accountId: "1", displayName: "Andrei", email: andreiCanonical }],
+    );
+
+    const andrei = snapshot.persons.find((p) => p.id === "andrei");
+    const daria = snapshot.persons.find((p) => p.id === "daria");
+    expect(andrei?.ownedIssues.map((i) => i.issueKey)).toEqual(["UX-5726"]);
+    expect(daria?.ownedIssues.length).toBe(3);
+    expect(andrei?.issues.length).toBeGreaterThan(andrei?.ownedIssues.length ?? 0);
+    const andreiActive = andrei?.personalWorkload?.activeCount ?? 0;
+    const dariaActive = daria?.personalWorkload?.activeCount ?? 0;
+    expect(andreiActive).toBe(1);
+    expect(dariaActive).toBe(3);
+    expect(andreiActive + dariaActive).toBeLessThan(reportIssues.length + 1);
   });
 });

@@ -19,7 +19,10 @@ export function filterOwnedIssues(
 }
 
 export function getOperationalIssues(person: Person): AuditIssue[] {
-  return person.ownedIssues ?? person.issues;
+  if (person.ownedIssues) return person.ownedIssues;
+  const canonicalKey =
+    person.jira?.canonicalKey || person.bamboo.workEmail || person.id;
+  return filterOwnedIssues(person.issues, canonicalKey);
 }
 
 /** Ensures each issue key appears in at most one person's ownedIssues (team snapshots). */

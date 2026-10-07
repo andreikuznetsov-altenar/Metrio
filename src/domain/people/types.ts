@@ -37,6 +37,8 @@ export interface Person {
   jira: PersonJiraIdentity | null;
   identity: PersonIdentityDiagnostics;
   availability: PersonAvailability;
+  /** Personal Jira workload — only issues currently assigned to this person. */
+  personalWorkload?: WorkloadResult | null;
   workload: WorkloadResult | null;
   performance: KpiData | null;
   /** Historically attributed issues for KPI / work history. */

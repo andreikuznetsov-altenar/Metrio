@@ -45,7 +45,7 @@ export function buildTeamSnapshot(
     const availability = classifyAvailability(timeOff, undefined, vacationSoonWithinDays);
 
     const performance = reportData?.perUserKpi[canonicalKey] || null;
-    const workload =
+    const personalWorkload =
       params
         ? calculateWorkload(ownedIssues, params, workloadThresholds, availability)
         : null;
@@ -56,7 +56,8 @@ export function buildTeamSnapshot(
       jira,
       identity,
       availability,
-      workload,
+      personalWorkload,
+      workload: personalWorkload,
       performance,
       issues,
       ownedIssues,
