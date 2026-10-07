@@ -73,7 +73,10 @@ describe("UI13 settings cleanup", () => {
     expect(screen.queryByText(/System health/i)).toBeNull();
     expect(screen.queryByText(/Workflow capacity audit/i)).toBeNull();
     expect(screen.queryByText(/Diagnostics/i)).toBeNull();
-    expect(screen.getByText("Support")).toBeInTheDocument();
+    expect(screen.queryByText("Support")).toBeNull();
+    expect(screen.queryByText(/Run connection checks/i)).toBeNull();
+    expect(screen.queryByText(/Export support bundle/i)).toBeNull();
+    expect(screen.queryByTestId("diagnostics-support-settings")).toBeNull();
   });
 
   it("renders desktop switches and wires menu bar mode", async () => {
@@ -128,9 +131,8 @@ describe("UI13 settings cleanup", () => {
     expect(screen.getByRole("link", { name: /person-sam@fixture\.test/i })).toBeInTheDocument();
   });
 
-  it("renders independent settings cards for support and caches", () => {
+  it("renders caches card without support tools", () => {
     renderCompanySettings(DEFAULT_PREFERENCES);
-    expect(screen.getByTestId("diagnostics-support-settings")).toBeInTheDocument();
     expect(screen.getByTestId("settings-cache-clear")).toBeInTheDocument();
     const clearBtn = screen.getByRole("button", { name: /Clear temporary caches/i });
     expect(clearBtn).toBeInTheDocument();

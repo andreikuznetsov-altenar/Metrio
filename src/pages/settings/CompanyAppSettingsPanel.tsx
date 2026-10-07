@@ -2,7 +2,6 @@ import type { AppPreferences } from "../../platform/preferences";
 import { AboutSettingsPanel } from "./AboutSettingsPanel";
 import { CompanySettingsPanel } from "./CompanySettingsPanel";
 import { DesktopSettingsSection } from "./DesktopSettingsSection";
-import { DiagnosticsSettingsPanel } from "./DiagnosticsSettingsPanel";
 import { OrganizationIdentitySettingsPanel } from "./OrganizationIdentitySettingsPanel";
 import { SettingsCacheClearPanel } from "./SettingsCacheClearPanel";
 import type { PersistPreferences } from "./generalDesktopPreferences";
@@ -19,7 +18,7 @@ export function CompanyAppSettingsPanel({
   return (
     <div className="settings-panel" data-testid="company-app-settings">
       <p className="settings-intro">
-        Company configuration, desktop behavior, organization context, and support tools.
+        Company configuration, desktop behavior, and organization context.
       </p>
 
       <section className="settings-card">
@@ -40,11 +39,6 @@ export function CompanyAppSettingsPanel({
       <section className="settings-card">
         <h3 className="settings-card__title">Organization</h3>
         <OrganizationIdentitySettingsPanel prefs={prefs} />
-      </section>
-
-      <section className="settings-card" data-testid="diagnostics-settings">
-        <h3 className="settings-card__title">Support</h3>
-        <DiagnosticsSettingsPanel prefs={prefs} />
       </section>
 
       <section className="settings-card">

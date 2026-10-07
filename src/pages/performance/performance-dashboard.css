@@ -821,29 +821,36 @@
 }
 
 .performance-table-wrap--people,
-.performance-table-wrap--radar,
 .performance-table-wrap--attention {
   overflow-x: auto;
+}
+
+.performance-table-wrap--radar,
+.performance-table-wrap--report-history {
+  overflow-x: visible;
+  max-width: 100%;
 }
 
 .performance-table--people {
   min-width: 960px;
 }
 
-.performance-table--report-history {
-  min-width: 480px;
-}
-
-.performance-table-wrap--report-history {
-  overflow-x: auto;
-}
-
+.performance-table--report-history,
 .performance-table--radar {
-  min-width: 960px;
+  table-layout: fixed;
+  width: 100%;
+  min-width: 0;
+}
+
+.performance-table--report-history col.col-date,
+.performance-table--report-history col.col-time {
+  width: auto;
 }
 
 .performance-table--radar .performance-table__reason {
   min-width: 0;
+  white-space: normal;
+  word-break: break-word;
 }
 
 .performance-table--radar .performance-table__severity {
@@ -906,6 +913,20 @@
   font-size: 13px;
   color: var(--color-text-secondary);
   line-height: 1.35;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  max-width: 100%;
+}
+
+.performance-table--radar .performance-table__person-button {
+  max-width: 100%;
+  min-width: 0;
+}
+
+.performance-table--radar .performance-table__person-text {
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .performance-table__radar-action {

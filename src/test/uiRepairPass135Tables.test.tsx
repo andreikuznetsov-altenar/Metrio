@@ -17,6 +17,10 @@ describe("UI Repair Pass 13.5 table geometry", () => {
       "utf8",
     );
     expect(css).not.toMatch(/performance-table--attention[\s\S]*min-width:\s*960px/);
+    expect(css).not.toMatch(/performance-table--radar[\s\S]*min-width:\s*960px/);
+    expect(css).not.toMatch(/performance-table--report-history[\s\S]*min-width:\s*480px/);
+    expect(css).toMatch(/performance-table-wrap--radar[\s\S]*overflow-x:\s*visible/);
+    expect(css).toMatch(/performance-table-wrap--report-history[\s\S]*overflow-x:\s*visible/);
     const tableCss = fs.readFileSync(
       path.resolve(process.cwd(), "src/styles/ui-interaction-system.css"),
       "utf8",

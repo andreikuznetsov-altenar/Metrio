@@ -1,5 +1,6 @@
 import { FileText } from "lucide-react";
 import { save } from "@tauri-apps/plugin-dialog";
+import { Button } from "../../components/Button/Button";
 import { EmptyState } from "../../components/EmptyState/EmptyState";
 import { useToast } from "../../components/Toast/ToastContext";
 import {
@@ -75,13 +76,13 @@ export function HistoryReportsView() {
                 <td>{formatReportHistoryDate(report.createdAt)}</td>
                 <td>{formatReportHistoryTime(report.createdAt)}</td>
                 <td className="performance-table__action">
-                  <button
+                  <Button
                     type="button"
-                    className="metrio-text-link"
+                    variant="secondary"
                     onClick={() => void download(report.id, report.filename)}
                   >
                     Download
-                  </button>
+                  </Button>
                 </td>
               </tr>
             ))}
