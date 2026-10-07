@@ -10,7 +10,8 @@ describe("motion tokens", () => {
     expect(css).toContain("--motion-hover: 120ms");
     expect(css).toContain("--motion-control: 140ms");
     expect(css).toContain("--motion-popover: 160ms");
-    expect(css).toContain("--motion-drawer: 240ms");
+    expect(css).toContain("--motion-drawer-open: 300ms");
+    expect(css).toContain("--motion-drawer-close: 320ms");
     expect(css).toContain("--ease-drawer:");
 
     const system = fs.readFileSync(

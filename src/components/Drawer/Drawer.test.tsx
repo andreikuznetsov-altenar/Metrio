@@ -34,7 +34,7 @@ describe("Drawer", () => {
     expect(screen.getByRole("dialog")).toBeInTheDocument();
 
     act(() => {
-      vi.advanceTimersByTime(239);
+      vi.advanceTimersByTime(319);
     });
     expect(screen.getByRole("dialog")).toBeInTheDocument();
 

@@ -1,13 +1,24 @@
-/** Keep in sync with `--motion-drawer` in `tokens.css`. */
-export const MOTION_DRAWER_MS = 240;
+/** Keep in sync with drawer motion tokens in `tokens.css`. */
+export const MOTION_DRAWER_OPEN_MS = 300;
+export const MOTION_DRAWER_CLOSE_MS = 320;
 
 export function readMotionDrawerMs(): number {
+  return readMotionDrawerCloseMs();
+}
+
+function readMotionToken(name: string, fallback: number): number {
   if (typeof document === "undefined") {
-    return MOTION_DRAWER_MS;
+    return fallback;
   }
-  const raw = getComputedStyle(document.documentElement)
-    .getPropertyValue("--motion-drawer")
-    .trim();
+  const raw = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
   const match = /^([\d.]+)ms$/.exec(raw);
-  return match ? Number(match[1]) : MOTION_DRAWER_MS;
+  return match ? Number(match[1]) : fallback;
+}
+
+export function readMotionDrawerOpenMs(): number {
+  return readMotionToken("--motion-drawer-open", MOTION_DRAWER_OPEN_MS);
+}
+
+export function readMotionDrawerCloseMs(): number {
+  return readMotionToken("--motion-drawer-close", MOTION_DRAWER_CLOSE_MS);
 }
