@@ -1,6 +1,17 @@
 import { act, cleanup, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { Drawer } from "./Drawer";
+import {
+  dispatchDrawerPanelTransitionEnd,
+  flushDrawerOpenFrames,
+} from "./drawerTestUtils";
+
+function completeDrawerCloseMotion() {
+  const panel = screen.getByRole("dialog");
+  act(() => {
+    dispatchDrawerPanelTransitionEnd(panel);
+  });
+}
 
 describe("Drawer", () => {
   afterEach(() => {
@@ -8,15 +19,18 @@ describe("Drawer", () => {
     cleanup();
   });
 
-  it("does not dim the app behind the panel", () => {
+  it("syncs scrim backdrop with open state for content-area dimming", async () => {
     render(
       <Drawer open onClose={vi.fn()} ariaLabel="Test drawer">
         Body
       </Drawer>,
     );
+    await flushDrawerOpenFrames();
+    const root = document.querySelector(".drawer-root");
     const backdrop = document.querySelector(".drawer-root__backdrop");
     expect(backdrop).toBeTruthy();
-    expect(getComputedStyle(backdrop!).backgroundColor).toBe("rgba(0, 0, 0, 0)");
+    expect(root).toHaveClass("is-open");
+    expect(backdrop).toHaveClass("drawer-root__backdrop");
   });
 
   it("applies size variant class for analytics width token", () => {
@@ -28,15 +42,17 @@ describe("Drawer", () => {
     expect(screen.getByRole("dialog")).toHaveClass("drawer--analytics");
   });
 
-  it("stays mounted during close exit animation", () => {
-    vi.useFakeTimers();
+  it("exposes closing phase before unmount and completes on transform transitionend", async () => {
     const onClose = vi.fn();
     const { rerender } = render(
       <Drawer open onClose={onClose} ariaLabel="Test drawer">
         Body
       </Drawer>,
     );
+    await flushDrawerOpenFrames();
     expect(screen.getByRole("dialog")).toBeInTheDocument();
+    const root = document.querySelector(".drawer-root");
+    expect(root).toHaveAttribute("data-drawer-phase", "open");
 
     rerender(
       <Drawer open={false} onClose={onClose} ariaLabel="Test drawer">
@@ -44,16 +60,12 @@ describe("Drawer", () => {
       </Drawer>,
     );
     expect(screen.getByRole("dialog")).toBeInTheDocument();
+    expect(root).toHaveAttribute("data-drawer-phase", "closing");
+    expect(root).not.toHaveClass("is-open");
 
     act(() => {
-      vi.advanceTimersByTime(329);
-    });
-    expect(screen.getByRole("dialog")).toBeInTheDocument();
-
-    act(() => {
-      vi.advanceTimersByTime(2);
+      completeDrawerCloseMotion();
     });
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
-    vi.useRealTimers();
   });
 });

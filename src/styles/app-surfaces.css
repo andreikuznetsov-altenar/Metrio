@@ -1,0 +1,15 @@
+/**
+ * Stacking: chrome (header) > modal > drawer > app content.
+ * Drawer/modal roots are positioned below --app-side-surface-top (not over header).
+ */
+
+:root {
+  --z-app-content: 1;
+  --z-drawer-scrim: 40;
+  --z-drawer-panel: 41;
+  --z-modal-scrim: 60;
+  --z-modal-panel: 61;
+  --z-app-chrome: 100;
+  --drawer-scrim-color: rgba(15, 17, 21, 0.28);
+  --modal-scrim-color: rgba(15, 17, 21, 0.45);
+}

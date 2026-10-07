@@ -1,6 +1,6 @@
 /** Keep in sync with drawer motion tokens in `tokens.css`. */
-export const MOTION_DRAWER_OPEN_MS = 310;
-export const MOTION_DRAWER_CLOSE_MS = 330;
+export const MOTION_DRAWER_OPEN_MS = 300;
+export const MOTION_DRAWER_CLOSE_MS = 320;
 export const MOTION_MODAL_MS = 180;
 
 export function readMotionDrawerMs(): number {

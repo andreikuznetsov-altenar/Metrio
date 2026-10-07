@@ -33,7 +33,9 @@ export function AppShell({
       {toolbar ? (
         <div className="app-shell__page-toolbar">{toolbar}</div>
       ) : null}
-      <main className="app-shell__viewport">{children}</main>
+      <main className="app-shell__viewport" id="app-content-surface" data-testid="app-content-surface">
+        {children}
+      </main>
       {footer ? <footer className="app-shell__footer">{footer}</footer> : null}
     </div>
   );

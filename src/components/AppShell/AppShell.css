@@ -14,7 +14,7 @@
 
 .app-shell__header {
   position: relative;
-  z-index: 50;
+  z-index: var(--z-app-chrome, 100);
   flex-shrink: 0;
   height: var(--app-header-height);
   border-bottom: 1px solid var(--color-border);
@@ -23,10 +23,7 @@
 
 .app-shell__page-toolbar {
   position: relative;
-  z-index: 45;
-}
-
-.app-shell__page-toolbar {
+  z-index: calc(var(--z-app-chrome, 100) - 1);
   flex-shrink: 0;
   min-height: var(--page-toolbar-height);
   border-bottom: 1px solid var(--color-border);
@@ -34,12 +31,15 @@
 }
 
 .app-shell__viewport {
+  position: relative;
+  z-index: var(--z-app-content, 1);
   flex: 1;
   min-height: 0;
   min-width: 0;
   overflow: hidden;
   display: flex;
   flex-direction: column;
+  isolation: isolate;
 }
 
 .app-shell__footer {

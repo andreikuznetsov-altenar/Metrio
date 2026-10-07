@@ -1,7 +1,7 @@
-import { useEffect, useId, useRef, useState, type ReactNode } from "react";
+import { useEffect, useId, useState, type ReactNode } from "react";
 import { IconButton } from "../IconButton/IconButton";
-import { readMotionDrawerCloseMs } from "../../styles/motion";
 import type { DrawerSize } from "./Drawer";
+import { useDrawerSurfaceLifecycle } from "./useDrawerSurfaceLifecycle";
 import "./Drawer.css";
 
 function CloseIcon() {
@@ -24,7 +24,6 @@ export interface DrawerStackProps {
   activePanel: DrawerStackPanel;
   onClose: () => void;
   onClosed?: () => void;
-  /** Close secondary panel and return to primary (back). */
   onBack?: () => void;
   ariaLabel: string;
   header?: ReactNode;
@@ -33,7 +32,6 @@ export interface DrawerStackProps {
   size?: DrawerSize;
   className?: string;
   testId?: string;
-  /** When true, panel plays exit slide before unmounting stack. */
   animatingOut?: boolean;
 }
 
@@ -60,46 +58,13 @@ export function DrawerStack({
   animatingOut = false,
 }: DrawerStackProps) {
   const titleId = useId();
-  const [mounted, setMounted] = useState(open);
-  const [visible, setVisible] = useState(open);
   const [panelMotionKey, setPanelMotionKey] = useState(0);
-  const frameRef = useRef<number | null>(null);
+  const { mounted, visible, phase, panelRef } = useDrawerSurfaceLifecycle(open, onClosed);
 
   useEffect(() => {
     if (!open) return;
     setPanelMotionKey((value) => value + 1);
   }, [activePanel, open]);
-
-  useEffect(() => {
-    if (open) {
-      setMounted(true);
-      setVisible(false);
-      const frame = window.requestAnimationFrame(() => {
-        frameRef.current = window.requestAnimationFrame(() => {
-          setVisible(true);
-        });
-      });
-      frameRef.current = frame;
-      return () => {
-        if (frameRef.current != null) {
-          window.cancelAnimationFrame(frameRef.current);
-        }
-      };
-    }
-    setVisible(false);
-    return undefined;
-  }, [open]);
-
-  useEffect(() => {
-    if (!mounted || open) {
-      return;
-    }
-    const timer = window.setTimeout(() => {
-      setMounted(false);
-      onClosed?.();
-    }, readMotionDrawerCloseMs());
-    return () => window.clearTimeout(timer);
-  }, [mounted, onClosed, open]);
 
   useEffect(() => {
     if (!open) {
@@ -127,14 +92,17 @@ export function DrawerStack({
       ? "drawer-stack-panel drawer-stack-panel--secondary"
       : "drawer-stack-panel drawer-stack-panel--primary";
 
+  const stackOpen = visible && !animatingOut;
+
   return (
     <div
       className={
-        visible && !animatingOut
+        stackOpen
           ? "drawer-root drawer-root--stack is-visible is-open"
           : "drawer-root drawer-root--stack is-visible"
       }
       data-drawer-panel={activePanel}
+      data-drawer-phase={phase}
       data-testid={testId}
     >
       <button
@@ -151,6 +119,7 @@ export function DrawerStack({
       />
       <aside
         key={panelMotionKey}
+        ref={panelRef}
         className={[
           "drawer",
           DRAWER_SIZE_CLASS[size],

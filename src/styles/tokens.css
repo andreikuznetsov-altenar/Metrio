@@ -65,8 +65,8 @@
   --motion-popover: 160ms;
   --motion-modal: 180ms;
   --motion-drawer: 310ms;
-  --motion-drawer-open: 310ms;
-  --motion-drawer-close: 330ms;
+  --motion-drawer-open: 300ms;
+  --motion-drawer-close: 320ms;
   --motion-backdrop: 220ms;
   --motion-tab: 200ms;
   --transition-easing: cubic-bezier(0.4, 0, 0.2, 1);
@@ -78,8 +78,9 @@
   --transition-duration: var(--motion-control);
   --drawer-transition-duration: var(--motion-drawer);
   --drawer-panel-shadow:
-    -28px 0 72px rgba(15, 17, 21, 0.07),
-    -10px 0 28px rgba(15, 17, 21, 0.035);
+    -32px 0 80px rgba(15, 17, 21, 0.08),
+    -12px 0 36px rgba(15, 17, 21, 0.04),
+    -4px 0 12px rgba(15, 17, 21, 0.03);
   --side-panel-scrollbar-size: 4px;
   --side-panel-scrollbar-inset: 4px;
   --metrio-scrollbar-size: 4px;

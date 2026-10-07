@@ -1,6 +1,6 @@
-import { useEffect, useId, useRef, useState, type ReactNode } from "react";
+import { useEffect, useId, type ReactNode } from "react";
 import { IconButton } from "../IconButton/IconButton";
-import { readMotionDrawerCloseMs } from "../../styles/motion";
+import { useDrawerSurfaceLifecycle } from "./useDrawerSurfaceLifecycle";
 import "./Drawer.css";
 
 function CloseIcon() {
@@ -31,10 +31,8 @@ export interface DrawerProps {
   onClosed?: () => void;
   ariaLabel: string;
   header?: ReactNode;
-  /** Actions rendered beside the close control (overflow menus, etc.). */
   headerActions?: ReactNode;
   children: ReactNode;
-  /** Shared width variant; use instead of ad-hoc width classes. */
   size?: DrawerSize;
   className?: string;
   testId?: string;
@@ -53,42 +51,7 @@ export function Drawer({
   testId,
 }: DrawerProps) {
   const titleId = useId();
-  const [mounted, setMounted] = useState(open);
-  const [visible, setVisible] = useState(open);
-  const frameRef = useRef<number | null>(null);
-
-  useEffect(() => {
-    if (open) {
-      setMounted(true);
-      setVisible(false);
-      const frame = window.requestAnimationFrame(() => {
-        frameRef.current = window.requestAnimationFrame(() => {
-          setVisible(true);
-        });
-      });
-      frameRef.current = frame;
-      return () => {
-        if (frameRef.current != null) {
-          window.cancelAnimationFrame(frameRef.current);
-        }
-      };
-    }
-
-    setVisible(false);
-    return undefined;
-  }, [open]);
-
-  useEffect(() => {
-    if (!mounted || open) {
-      return;
-    }
-
-    const timer = window.setTimeout(() => {
-      setMounted(false);
-      onClosed?.();
-    }, readMotionDrawerCloseMs());
-    return () => window.clearTimeout(timer);
-  }, [mounted, onClosed, open]);
+  const { mounted, visible, phase, panelRef } = useDrawerSurfaceLifecycle(open, onClosed);
 
   useEffect(() => {
     if (!open) {
@@ -111,7 +74,13 @@ export function Drawer({
 
   return (
     <div
-      className={visible ? "drawer-root is-visible is-open" : "drawer-root is-visible"}
+      className={
+        visible
+          ? "drawer-root is-visible is-open"
+          : "drawer-root is-visible"
+      }
+      data-drawer-phase={phase}
+      data-testid={testId ? `${testId}-root` : undefined}
     >
       <button
         type="button"
@@ -120,9 +89,8 @@ export function Drawer({
         onClick={onClose}
       />
       <aside
-        className={[ "drawer", DRAWER_SIZE_CLASS[size], className]
-          .filter(Boolean)
-          .join(" ")}
+        ref={panelRef}
+        className={["drawer", DRAWER_SIZE_CLASS[size], className].filter(Boolean).join(" ")}
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}

@@ -6,7 +6,7 @@
   right: 0;
   bottom: 0;
   left: 0;
-  z-index: 40;
+  z-index: var(--z-drawer-scrim, 40);
   pointer-events: none;
   overflow: hidden;
 }
@@ -18,17 +18,26 @@
 .drawer-root__backdrop {
   position: absolute;
   inset: 0;
+  z-index: 0;
   border: none;
   padding: 0;
   margin: 0;
-  background: transparent;
   cursor: pointer;
+  background: var(--drawer-scrim-color, rgba(15, 17, 21, 0.28));
+  opacity: 0;
+  transition: opacity var(--motion-drawer-close) var(--ease-drawer);
+}
+
+.drawer-root.is-open .drawer-root__backdrop {
+  opacity: 1;
+  transition: opacity var(--motion-drawer-open) var(--ease-drawer);
 }
 
 .drawer {
   position: absolute;
   top: 0;
   right: 0;
+  z-index: var(--z-drawer-panel, 41);
   height: 100%;
   border-left: none;
   background: var(--color-surface);
@@ -107,7 +116,8 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .drawer {
+  .drawer,
+  .drawer-root__backdrop {
     transition-duration: 0ms;
   }
 

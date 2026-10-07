@@ -1,10 +1,17 @@
 import { cleanup, fireEvent, render, screen, act } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { DrawerStack } from "./DrawerStack";
+import {
+  dispatchDrawerPanelTransitionEnd,
+  flushDrawerOpenFrames,
+} from "./drawerTestUtils";
 
-vi.mock("../../styles/motion", () => ({
-  readMotionDrawerCloseMs: () => 0,
-}));
+function completeDrawerCloseMotion() {
+  const panel = screen.getByRole("dialog");
+  act(() => {
+    dispatchDrawerPanelTransitionEnd(panel);
+  });
+}
 
 describe("DrawerStack", () => {
   afterEach(() => cleanup());
@@ -26,6 +33,7 @@ describe("DrawerStack", () => {
       </DrawerStack>,
     );
 
+    await flushDrawerOpenFrames();
     expect(document.querySelectorAll(".drawer-root__backdrop")).toHaveLength(1);
     expect(screen.getByTestId("drawer-stack-test")).toHaveAttribute(
       "data-drawer-panel",
@@ -85,8 +93,8 @@ describe("DrawerStack", () => {
       </DrawerStack>,
     );
 
-    await act(async () => {
-      await new Promise((resolve) => setTimeout(resolve, 5));
+    act(() => {
+      completeDrawerCloseMotion();
     });
 
     expect(screen.queryByTestId("drawer-stack-test")).toBeNull();
@@ -106,6 +114,7 @@ describe("DrawerStack", () => {
         Primary
       </DrawerStack>,
     );
+    await flushDrawerOpenFrames();
     expect(screen.getByRole("dialog")).toBeInTheDocument();
 
     rerender(
@@ -121,9 +130,7 @@ describe("DrawerStack", () => {
     );
     expect(screen.getByRole("dialog")).toBeInTheDocument();
 
-    await act(async () => {
-      await new Promise((resolve) => setTimeout(resolve, 5));
-    });
+    completeDrawerCloseMotion();
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
 });
