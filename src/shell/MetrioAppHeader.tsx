@@ -16,6 +16,7 @@ export interface MetrioAppHeaderProps {
   activeRoute: AppRoute | null;
   onNavigate: (route: AppRoute) => void;
   feedbackEnabled?: boolean;
+  performanceEnabled?: boolean;
   onOpenSettings?: () => void;
   onOpenNotifications?: () => void;
   onOpenCommandPalette?: () => void;
@@ -29,6 +30,7 @@ export function MetrioAppHeader({
   activeRoute,
   onNavigate,
   feedbackEnabled = true,
+  performanceEnabled = true,
   onOpenSettings,
   onOpenNotifications,
   onOpenCommandPalette,
@@ -48,17 +50,28 @@ export function MetrioAppHeader({
           {navItems.map((item) => {
             const active =
               activeRoute != null && item.route === activeRoute;
+            const disabled =
+              (item.route === "performance" && !performanceEnabled) ||
+              (item.route === "feedback" && !feedbackEnabled);
             return (
               <button
                 key={item.route}
                 type="button"
-                className={
-                  active
-                    ? "app-header__nav-link is-active"
-                    : "app-header__nav-link"
-                }
+                className={[
+                  "app-header__nav-link",
+                  active ? "is-active" : "",
+                  disabled ? "is-disabled" : "",
+                ]
+                  .filter(Boolean)
+                  .join(" ")}
                 aria-current={active ? "page" : undefined}
-                onClick={() => onNavigate(item.route)}
+                aria-disabled={disabled || undefined}
+                disabled={disabled}
+                tabIndex={disabled ? -1 : undefined}
+                onClick={() => {
+                  if (disabled) return;
+                  onNavigate(item.route);
+                }}
               >
                 {item.label}
               </button>

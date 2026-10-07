@@ -1,5 +1,5 @@
-import { cleanup, render, screen } from "@testing-library/react";
-import { afterEach, describe, expect, it } from "vitest";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { MetrioAppHeader } from "./MetrioAppHeader";
 import { CurrentUserProvider } from "../app/CurrentUserContext";
 import { ThemeProvider } from "../theme/ThemeProvider";
@@ -31,6 +31,26 @@ describe("MetrioAppHeader", () => {
   it("labels main nav Home route as Dashboard", () => {
     renderHeader(true);
     expect(screen.getByRole("button", { name: "Dashboard" })).toBeInTheDocument();
+  });
+
+  it("disables Performance navigation until reporting data is ready", () => {
+    const onNavigate = vi.fn();
+    render(
+      <ThemeProvider>
+        <CurrentUserProvider>
+          <MetrioAppHeader
+            activeRoute="home"
+            performanceEnabled={false}
+            feedbackEnabled={false}
+            onNavigate={onNavigate}
+          />
+        </CurrentUserProvider>
+      </ThemeProvider>,
+    );
+    const performance = screen.getByRole("button", { name: "Performance" });
+    expect(performance).toBeDisabled();
+    fireEvent.click(performance);
+    expect(onNavigate).not.toHaveBeenCalled();
   });
 
   it("marks no main nav item active when activeRoute is null", () => {

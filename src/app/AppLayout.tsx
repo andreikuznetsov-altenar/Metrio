@@ -195,7 +195,19 @@ function AppLayoutShell({
   );
   const feedbackEnabled = feedbackFeatureOn && orgFeatureAccess.showFeedbackTab;
   const { resetConnection, invalidateSession } = useConnectionGate();
-  const { refresh, performanceControlsDisabled, data, viewModels } = usePerformanceData();
+  const {
+    refresh,
+    performanceControlsDisabled,
+    data,
+    viewModels,
+    status: performanceStatus,
+  } = usePerformanceData();
+  const reportingNavReady =
+    performanceStatus === "ready" ||
+    performanceStatus === "partial" ||
+    performanceStatus === "refreshing" ||
+    (performanceStatus === "error" && Boolean(data));
+  const performanceNavEnabled = reportingNavReady;
   const performanceExport = usePerformanceExport();
   const workGraph = useWorkGraph();
   const { preference, setPreference } = useTheme();
@@ -296,13 +308,19 @@ function AppLayoutShell({
     const onRoute = (event: Event) => {
       const route = (event as CustomEvent<AppRoute>).detail;
       if (route === "home" || route === "performance" || route === "feedback") {
+        if (
+          !performanceNavEnabled &&
+          (route === "performance" || route === "feedback")
+        ) {
+          return;
+        }
         setSettingsOpen(false);
         setActiveRoute(route);
       }
     };
     window.addEventListener("metrio-navigate-route", onRoute);
     return () => window.removeEventListener("metrio-navigate-route", onRoute);
-  }, [setActiveRoute, setSettingsOpen]);
+  }, [performanceNavEnabled, setActiveRoute, setSettingsOpen]);
 
   useEffect(() => {
     const onSettings = (event: Event) => {
@@ -339,10 +357,16 @@ function AppLayoutShell({
 
   const onNavigate = useCallback(
     (route: AppRoute) => {
+      if (
+        !performanceNavEnabled &&
+        (route === "performance" || route === "feedback")
+      ) {
+        return;
+      }
       setSettingsOpen(false);
       setActiveRoute(route);
     },
-    [setActiveRoute, setSettingsOpen],
+    [performanceNavEnabled, setActiveRoute, setSettingsOpen],
   );
 
   const onOpenSettings = useCallback(
@@ -499,7 +523,8 @@ function AppLayoutShell({
         header={
           <MetrioAppHeader
             activeRoute={settingsOpen ? null : activeRoute}
-            feedbackEnabled={feedbackEnabled}
+            feedbackEnabled={feedbackEnabled && performanceNavEnabled}
+            performanceEnabled={performanceNavEnabled}
             onNavigate={onNavigate}
             onOpenSettings={() => onOpenSettings("preferences")}
             onOpenNotifications={() => setNotificationsOpen(true)}

@@ -23,30 +23,24 @@ describe("UI Repair Pass 13.8C tray popover rewrite", () => {
     expect(panel).toContain("tray-popover__surface");
 
     const css = read("src/tray/tray-popover.css");
-    expect(css).toContain("--tray-popover-radius: 24px");
+    expect(css).toContain("--tray-popover-radius: 8px");
     expect(css).toMatch(/\.tray-popover::before/);
     expect(css).not.toContain(".tray-popover-shell");
   });
 
   it("keeps row hover inset inside horizontal padding", () => {
     const css = read("src/tray/tray-popover.css");
-    expect(css).toContain("--tray-popover-padding-x:");
+    expect(css).toContain("--tray-popover-padding: 16px");
     expect(css).toMatch(/\.tray-popover__action[\s\S]*border-radius:/);
     expect(css).toMatch(/\.tray-popover__surface[\s\S]*padding:/);
   });
 
-  it("creates transparent undecorated tray window and resize hook", () => {
+  it("anchors tray popover from icon gap without shadow host padding", () => {
     const rust = read("src-tauri/src/tray_popover.rs");
-    expect(rust).toContain(".transparent(true)");
-    expect(rust).toContain(".shadow(false)");
-    expect(rust).toContain("tray_popover_resize");
-    expect(rust).toContain("clamp_host_x");
-    expect(rust).toContain("host_position_for_anchor");
-  });
-
-  it("reports measured popover size to native layer", () => {
-    const panel = read("src/tray/TrayPopoverPanel.tsx");
-    expect(panel).toContain("tray_popover_resize");
-    expect(panel).toContain("ResizeObserver");
+    expect(rust).toContain("TRAY_ARROW_TIP_GAP");
+    expect(rust).not.toContain("SHADOW_INSET");
+    const geometry = read("src/tray/trayPopoverGeometry.ts");
+    expect(geometry).toContain("TRAY_ARROW_TIP_GAP_PX");
+    expect(geometry).not.toContain("SHADOW");
   });
 });

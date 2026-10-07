@@ -528,6 +528,14 @@ export function HomePage() {
   });
 
   if (effectiveHealth.state === "cold_start" || visualHomeState === "first-run") {
+    if (status === "loading" || status === "idle") {
+      return (
+        <>
+          <PerformanceStatusBanner />
+          <DashboardWorkspaceLoadingState />
+        </>
+      );
+    }
     return (
       <>
         <PerformanceStatusBanner />
