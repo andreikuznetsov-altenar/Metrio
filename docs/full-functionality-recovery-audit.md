@@ -10,7 +10,7 @@
 | Repo | Branch / HEAD | Notes |
 |------|----------------|-------|
 | **Metrio** (current) | `main` @ `7ae63df571a205fa6c5c0528f983ecd3dfde85e2` → Phase 7 commit pending | Phases 3–6 landed on main before Phase 7. |
-| **Jira App** (old, read-only) | Baseline `43baf2e2f27c3d8c36f622c72b955e4ca7253d51` | Unchanged reference. |
+| **Jira App** (old, read-only) | Baseline `43baf2e2f27c3d8c36f622c72b955e4ca7253d51` | Historical reference; UX KPI canonical source vendored as `docs/canonical-legacy/apps-script/Code.gs`. |
 
 **Entry route (Metrio):** `src/main.tsx` → `App.tsx` → `ConnectionScreen` | `AuthenticatedApp` → `AppLayout` → `PerformancePage` / `FeedbackPage` / `SettingsPage`.
 

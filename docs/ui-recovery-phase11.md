@@ -8,7 +8,7 @@
 
 ## Review target semantics (Metrio presets)
 
-Legacy Jira App sidebar had a single **Target days for designer work time** field (no Team/Sprint/Org dropdown).
+Legacy **Jira App** sidebar had a single **Target days for designer work time** field (no Team/Sprint/Org dropdown). UX KPI formulas are audited against vendored `docs/canonical-legacy/apps-script/Code.gs`.
 
 | Filter | Scope | `targetReviewDays` |
 |--------|--------|-------------------|

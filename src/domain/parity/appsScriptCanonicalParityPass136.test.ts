@@ -11,14 +11,21 @@ import { MONTHLY_CAPACITY_HOURS } from "../workflows/capacityWorkload";
 import { buildTeamWorkloadDonutSegments, workloadDonutWeight } from "../workload/buildTeamWorkloadDonutSegments";
 import type { WorkloadRow } from "../performance";
 
-const CODE_GS = join(
-  process.env.HOME ?? "",
-  "Documents/11. Altenar/Jira App/legacy/Code.gs",
+const CANONICAL_APPS_SCRIPT_DIR = join(
+  process.cwd(),
+  "docs/canonical-legacy/apps-script",
 );
-const WS_GS = join(
-  process.env.HOME ?? "",
-  "Documents/09. Google App Scripts/WSkins-v.2/WskinsAudit.gs.rtf",
-);
+const CODE_GS = join(CANONICAL_APPS_SCRIPT_DIR, "Code.gs");
+const WS_GS = join(CANONICAL_APPS_SCRIPT_DIR, "WskinsAudit.gs");
+
+function readCanonicalSource(path: string, marker: string): string {
+  const content = readFileSync(path, "utf8");
+  expect(content.includes(marker), `Canonical source missing marker ${marker} in ${path}`).toBe(
+    true,
+  );
+  expect(content.includes("{\\rtf"), `RTF markup leaked into ${path}`).toBe(false);
+  return content;
+}
 
 export interface ParityRow {
   metric: string;
@@ -47,34 +54,22 @@ describe("Pass 13.6 Apps Script canonical parity matrix", () => {
   it("records parity rows for required metrics against local canonical sources", () => {
     const rows: ParityRow[] = [];
 
-    const codeAccessible = (() => {
-      try {
-        return readFileSync(CODE_GS, "utf8").includes("calculateEfficiencyIndex_");
-      } catch {
-        return false;
-      }
-    })();
-    const wsAccessible = (() => {
-      try {
-        return readFileSync(WS_GS, "utf8").includes("calculateWSkinsEfficiencyIndex_");
-      } catch {
-        return false;
-      }
-    })();
+    readCanonicalSource(CODE_GS, "calculateEfficiencyIndex_");
+    readCanonicalSource(WS_GS, "calculateWSkinsEfficiencyIndex_");
 
     rows.push({
       metric: "Canonical UX Code.gs",
-      canonical: codeAccessible ? "readable" : "missing",
+      canonical: "readable",
       metrio: "src/domain/jira/kpi.ts",
-      result: codeAccessible ? "PASS" : "SKIP",
-      note: codeAccessible ? undefined : CODE_GS,
+      result: "PASS",
+      note: "docs/canonical-legacy/apps-script/Code.gs",
     });
     rows.push({
       metric: "Canonical WSkins WskinsAudit.gs",
-      canonical: wsAccessible ? "readable" : "missing",
+      canonical: "readable",
       metrio: "src/domain/workflows/wskinsKpi.ts",
-      result: wsAccessible ? "PASS" : "SKIP",
-      note: wsAccessible ? undefined : WS_GS,
+      result: "PASS",
+      note: "docs/canonical-legacy/apps-script/WskinsAudit.gs",
     });
 
     const uxBreakdown = getEfficiencyScoreBreakdown({

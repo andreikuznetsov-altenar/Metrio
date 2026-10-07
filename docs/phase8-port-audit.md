@@ -1,6 +1,8 @@
 # Phase 8 — port audit (Jira App → Metrio)
 
-Old project (read-only): `/Users/andreikuznetsov/Documents/11. Altenar/Jira App`
+**Historical baseline:** old **Jira App** Google Apps Script / React project (git baseline `43baf2e` — see recovery audit docs).
+
+**Canonical Apps Script in Metrio:** `docs/canonical-legacy/apps-script/` (`Code.gs`, `WskinsAudit.gs`). Do not depend on external checkout paths for parity or KPI audits.
 
 Classification: **domain** = product rules; **platform** = host/OS/Tauri; **UI-coupled** = depends on old React/layout (not ported as-is).
 

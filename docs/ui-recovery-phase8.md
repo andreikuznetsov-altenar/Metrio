@@ -2,7 +2,7 @@
 
 **Baseline SHA:** `894f50609ade5d472075b17cc527a767608f3009`  
 **Phase 8 status:** Implemented (see git HEAD after commit)  
-**Reference:** Jira App (read-only), packaged Metrio screenshots (user-provided)
+**Reference:** Jira App (historical baseline name), packaged Metrio screenshots (user-provided). Canonical Apps Script for KPI parity: `docs/canonical-legacy/apps-script/`.
 
 | Problem | Status | Notes |
 |---------|--------|-------|

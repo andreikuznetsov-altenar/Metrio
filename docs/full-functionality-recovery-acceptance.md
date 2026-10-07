@@ -185,4 +185,5 @@ Automated agent session **cannot** substitute for a full signed-in run against p
 ## References
 
 - Phase 1 audit (updated Phase 7): `docs/full-functionality-recovery-audit.md`
-- Old workflow baseline: Jira App @ `43baf2e`
+- Old workflow baseline: **Jira App** @ `43baf2e` (historical project name; KPI formulas audited against vendored `docs/canonical-legacy/apps-script/Code.gs`)
+- WSkins workflow baseline: vendored `docs/canonical-legacy/apps-script/WskinsAudit.gs` (historical **WSkins-v.2** Apps Script)

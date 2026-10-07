@@ -4,10 +4,14 @@ Pass 8 maps Metrio workflow modules to legacy Google Apps Script reporters.
 
 ## Source locations
 
-| Flow | Legacy source path | Baseline |
+**Current canonical copies (vendored in Metrio):** `docs/canonical-legacy/apps-script/`
+
+| Flow | Vendored canonical file | Historical provenance |
 | --- | --- | --- |
-| UX / corporate KPI | `/Users/andreikuznetsov/Documents/11. Altenar/Jira App/legacy/Code.gs` | repo baseline |
-| WSkins KPI, cycles, workload | `/Users/andreikuznetsov/Documents/09. Google App Scripts/WSkins-v.2/WskinsAudit.gs.rtf` | external (converted to text for review) |
+| UX / corporate KPI | `docs/canonical-legacy/apps-script/Code.gs` | Former **Jira App** project `legacy/Code.gs` |
+| WSkins KPI, cycles, workload | `docs/canonical-legacy/apps-script/WskinsAudit.gs` | Former **WSkins-v.2** Apps Script (`WskinsAudit.gs`, plain-text export) |
+
+Parity tests read only repository-local paths (`appsScriptCanonicalParityPass136.test.ts`). External folders are not required for builds or CI.
 
 ## Legacy → Metrio modules
 
