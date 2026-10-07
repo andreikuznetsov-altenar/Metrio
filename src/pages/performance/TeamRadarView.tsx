@@ -17,12 +17,12 @@ const RADAR_COLUMNS = [
   { id: "person", type: "person" as const },
   { id: "reason", type: "text" as const },
   { id: "tasks", type: "number" as const },
-  { id: "action", type: "text" as const },
   {
     id: "severity",
     type: "status" as const,
     statusKind: "attentionSeverity" as const,
   },
+  { id: "action", type: "text" as const },
 ];
 
 function drawerTabForRadarAction(action: RadarPrimaryAction): PersonDrawerTab {
@@ -97,8 +97,8 @@ export function TeamRadarView({ rows, onOpenPerson }: TeamRadarViewProps) {
             <col className="col-person" />
             <col className="col-reason" />
             <col className="col-num" />
-            <col className="col-action" />
             <col className="col-badge" />
+            <col className="col-action" />
           </colgroup>
           <thead>
             <tr>
@@ -112,8 +112,20 @@ export function TeamRadarView({ rows, onOpenPerson }: TeamRadarViewProps) {
                 className="performance-table__num"
 
               />
-              <SortableTableHeader columnId="action" label="Action" sort={sort} onToggle={toggleSort} />
-              <SortableTableHeader columnId="severity" label="Severity" sort={sort} onToggle={toggleSort} />
+              <SortableTableHeader
+                columnId="severity"
+                label="Severity"
+                sort={sort}
+                onToggle={toggleSort}
+                className="performance-table__severity"
+              />
+              <SortableTableHeader
+                columnId="action"
+                label="Action"
+                sort={sort}
+                onToggle={toggleSort}
+                className="performance-table__action"
+              />
             </tr>
           </thead>
           <tbody>
@@ -160,7 +172,10 @@ export function TeamRadarView({ rows, onOpenPerson }: TeamRadarViewProps) {
                   </div>
                 </td>
                 <td className="performance-table__num">{row.tasksAffected}</td>
-                <td>
+                <td className="performance-table__severity">
+                  <Badge variant={row.severityVariant}>{row.severity}</Badge>
+                </td>
+                <td className="performance-table__action">
                   <Button
                     type="button"
                     variant="secondary"
@@ -171,9 +186,6 @@ export function TeamRadarView({ rows, onOpenPerson }: TeamRadarViewProps) {
                   >
                     {row.action}
                   </Button>
-                </td>
-                <td>
-                  <Badge variant={row.severityVariant}>{row.severity}</Badge>
                 </td>
               </tr>
             ))}

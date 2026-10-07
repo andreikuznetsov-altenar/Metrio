@@ -877,19 +877,28 @@
 }
 
 .performance-table--radar col.col-reason {
-  width: 36%;
+  width: 40%;
 }
 
 .performance-table--radar col.col-num {
-  width: 8%;
-}
-
-.performance-table--radar col.col-action {
-  width: 18%;
+  width: 10%;
 }
 
 .performance-table--radar col.col-badge {
-  width: 12%;
+  width: 15%;
+}
+
+.performance-table--radar col.col-action {
+  width: 0.01%;
+}
+
+.performance-table--radar .performance-table__reason {
+  min-width: 0;
+}
+
+.performance-table--radar .performance-table__severity {
+  min-width: 5.75rem;
+  white-space: nowrap;
 }
 
 .performance-table--delivery-risk {
