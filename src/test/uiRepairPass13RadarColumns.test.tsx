@@ -14,11 +14,12 @@ describe("UI Repair Pass 13 Radar severity and action columns", () => {
     expect(source).toContain('className="performance-table__severity"');
     expect(source).toContain('className="performance-table__action"');
 
-    const css = read("src/pages/performance/performance-dashboard.css");
-    const radarBlock = css.match(/\.performance-table--radar[\s\S]*?\.performance-table--delivery-risk/)?.[0];
-    expect(radarBlock).toBeTruthy();
-    expect(radarBlock).toMatch(/\.performance-table--radar col\.col-action[\s\S]*width:\s*0\.01%/);
-    expect(radarBlock).not.toMatch(/\.performance-table--radar col\.col-action[\s\S]*width:\s*18%/);
-    expect(radarBlock).toContain(".performance-table--radar .performance-table__severity");
+    const css = read("src/styles/ui-interaction-system.css");
+    expect(css).toMatch(/\.performance-table col\.col-action[\s\S]*width:\s*0\.01%/);
+    const viewCss = read("src/pages/performance/performance-dashboard.css");
+    expect(viewCss).toContain(".performance-table--radar .performance-table__severity");
+    expect(viewCss).not.toMatch(
+      /\.performance-table--radar col\.col-action[\s\S]*width:\s*18%/,
+    );
   });
 });

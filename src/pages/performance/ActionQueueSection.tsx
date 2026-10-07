@@ -1,7 +1,7 @@
 import { Button } from "../../components/Button/Button";
 import type { ActionItem } from "../../domain/actions/actionTypes";
 import { buildDashboardQueueRows } from "../../domain/actions/buildDashboardQueueRows";
-import { DashboardActionQueueRows } from "./DashboardActionQueueRows";
+import { DashboardActionQueueTable } from "../../components/Table/DashboardActionQueueTable";
 import "./action-queue.css";
 
 export interface ActionQueueSectionProps {
@@ -12,6 +12,7 @@ export interface ActionQueueSectionProps {
   openLabel?: (item: ActionItem) => string;
   footerAction?: { label: string; onClick: () => void };
   variant?: "default" | "dashboard";
+  workColumnLabel?: string;
 }
 
 export function ActionQueueSection({
@@ -22,27 +23,25 @@ export function ActionQueueSection({
   openLabel = () => "Open",
   footerAction,
   variant = "default",
+  workColumnLabel = "Work",
 }: ActionQueueSectionProps) {
   if (variant === "dashboard") {
+    const rows = buildDashboardQueueRows(items);
     return (
       <section className="home-card action-queue action-queue--dashboard" aria-label={title}>
         <h2 className="home-card__title home-card__title--section">{title}</h2>
         {items.length === 0 ? (
           <p className="home-card__empty" role="status">{emptyMessage}</p>
         ) : (
-          <>
-            <div className="action-queue__dashboard-header" role="row" aria-hidden>
-              <span className="action-queue__dashboard-header-cell">Person</span>
-              <span className="action-queue__dashboard-header-cell">Tag</span>
-              <span className="action-queue__dashboard-header-cell">Info</span>
-              <span className="action-queue__dashboard-header-cell">Action</span>
-            </div>
-            <DashboardActionQueueRows
-              rows={buildDashboardQueueRows(items)}
-              onOpen={onOpen}
-              openLabel={openLabel}
-            />
-          </>
+          <DashboardActionQueueTable
+            workColumnLabel={workColumnLabel}
+            rows={rows}
+            onOpen={onOpen}
+            openLabel={openLabel}
+            sortColumnId={null}
+            sortDirection={null}
+            onToggleSort={() => undefined}
+          />
         )}
         {footerAction ? (
           <div className="home-card__actions">

@@ -30,7 +30,11 @@ async function screenshotDashboardSortHeader(
   await page.getByRole("tab", { name: tabName }).click();
   const panel = page.getByTestId(testId);
   await expect(panel).toBeVisible();
-  const workHeader = panel.locator(".action-queue__dashboard-header-cell").first();
+  const workHeader = panel
+    .getByTestId("dashboard-action-queue")
+    .locator("thead th")
+    .first()
+    .getByRole("button");
   await expect(workHeader).toHaveScreenshot(`${snapshotBase}-sort-none.png`, SHOT);
   await workHeader.click();
   await expect(workHeader).toHaveScreenshot(`${snapshotBase}-sort-asc.png`, SHOT);
@@ -54,8 +58,10 @@ test.describe("UI Repair Pass 10 visual acceptance", () => {
     await page.getByRole("tab", { name: /team actions/i }).click();
     const workHeader = page
       .getByTestId("dashboard-tab-team")
-      .locator(".action-queue__dashboard-header-cell")
-      .first();
+      .getByTestId("dashboard-action-queue")
+      .locator("thead th")
+      .first()
+      .getByRole("button");
     await expect(workHeader).toHaveScreenshot("dashboard-my-focus-sort-none.png", SHOT);
   });
 
@@ -65,8 +71,10 @@ test.describe("UI Repair Pass 10 visual acceptance", () => {
     await page.getByRole("tab", { name: /team actions/i }).click();
     const workHeader = page
       .getByTestId("dashboard-tab-team")
-      .locator(".action-queue__dashboard-header-cell")
-      .first();
+      .getByTestId("dashboard-action-queue")
+      .locator("thead th")
+      .first()
+      .getByRole("button");
     await workHeader.click();
     await expect(workHeader).toHaveScreenshot("dashboard-my-focus-sort-asc.png", SHOT);
   });
@@ -77,8 +85,10 @@ test.describe("UI Repair Pass 10 visual acceptance", () => {
     await page.getByRole("tab", { name: /team actions/i }).click();
     const workHeader = page
       .getByTestId("dashboard-tab-team")
-      .locator(".action-queue__dashboard-header-cell")
-      .first();
+      .getByTestId("dashboard-action-queue")
+      .locator("thead th")
+      .first()
+      .getByRole("button");
     await workHeader.click();
     await workHeader.click();
     await expect(workHeader).toHaveScreenshot("dashboard-my-focus-sort-desc.png", SHOT);

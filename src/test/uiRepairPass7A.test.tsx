@@ -7,7 +7,7 @@ import { readFile } from "node:fs/promises";
 describe("UI Repair Pass 7A", () => {
   it("DashboardQueuePanel uses Context column, not Status", async () => {
     const source = await readFile(
-      resolve(import.meta.dirname, "../pages/home/dashboard/DashboardQueuePanel.tsx"),
+      resolve(import.meta.dirname, "../components/Table/DashboardActionQueueTable.tsx"),
       "utf8",
     );
     expect(source).toContain('label: "Context"');
@@ -44,13 +44,13 @@ describe("UI Repair Pass 7A", () => {
     expect(source).toContain("managerTeamBrief");
   });
 
-  it("dashboard action grid styles include reason stack and header row", () => {
-    const css = readFileSync(
-      resolve(import.meta.dirname, "../pages/performance/action-queue.css"),
+  it("dashboard action queue uses canonical performance table markup", () => {
+    const source = readFileSync(
+      resolve(import.meta.dirname, "../components/Table/DashboardActionQueueTable.tsx"),
       "utf8",
     );
-    expect(css).toContain(".action-queue__dashboard-reasons");
-    expect(css).toContain(".action-queue__dashboard-header");
+    expect(source).toContain("performance-table--action-queue");
+    expect(source).toContain("PerformanceTableColgroup");
   });
 
   it("secondary modules share executive-dashboard secondary layout", () => {

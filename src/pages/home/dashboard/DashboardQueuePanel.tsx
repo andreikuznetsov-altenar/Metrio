@@ -8,7 +8,7 @@ import {
 } from "../../../domain/actions/buildDashboardQueueRows";
 import { buildTaskListModalRows } from "../../../domain/actions/buildTaskListModalRows";
 import type { Person } from "../../../domain/people/types";
-import { DashboardActionQueueRows } from "../../performance/DashboardActionQueueRows";
+import { DashboardActionQueueTable } from "../../../components/Table/DashboardActionQueueTable";
 import { Button } from "../../../components/Button/Button";
 import { TaskListModal } from "../../../components/TaskListModal/TaskListModal";
 import { useTableSort } from "../../../components/Table/useTableSort";
@@ -26,11 +26,6 @@ const QUEUE_COLUMNS = [
 ];
 
 const PREVIEW_COUNT = 5;
-
-function sortMark(active: boolean, direction: "asc" | "desc" | null): string {
-  if (!active || !direction) return "↕";
-  return direction === "asc" ? "↑" : "↓";
-}
 
 export interface DashboardQueuePanelProps {
   title: string;
@@ -116,44 +111,14 @@ export function DashboardQueuePanel({
         <p className="executive-secondary-line" role="status">{emptyMessage}</p>
       ) : (
         <>
-          <div className="action-queue__dashboard-header" role="row">
-            {(
-              [
-                { id: "work", label: workColumnLabel, alignEnd: false },
-                { id: "reason", label: "Reason", alignEnd: false },
-                { id: "context", label: "Context", alignEnd: false },
-                { id: "action", label: "Action", alignEnd: false },
-              ] as const
-            ).map((col) => (
-              <button
-                key={col.id}
-                type="button"
-                className={[
-                  "action-queue__dashboard-header-cell",
-                  col.alignEnd ? "action-queue__dashboard-header-cell--end" : "",
-                ]
-                  .filter(Boolean)
-                  .join(" ")}
-                onClick={() => toggleSort(col.id)}
-                aria-sort={
-                  sort?.columnId === col.id
-                    ? sort.direction === "asc"
-                      ? "ascending"
-                      : "descending"
-                    : "none"
-                }
-              >
-                <span>{col.label}</span>
-                <span className="performance-table__sort-icon" aria-hidden>
-                  {sortMark(sort?.columnId === col.id, sort?.direction ?? null)}
-                </span>
-              </button>
-            ))}
-          </div>
-          <DashboardActionQueueRows
+          <DashboardActionQueueTable
+            workColumnLabel={workColumnLabel}
             rows={displayRows}
             onOpen={onOpen}
             openLabel={openLabel}
+            sortColumnId={sort?.columnId ?? null}
+            sortDirection={sort?.direction ?? null}
+            onToggleSort={toggleSort}
           />
         </>
       )}

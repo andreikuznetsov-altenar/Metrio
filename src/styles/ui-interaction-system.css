@@ -173,6 +173,25 @@
 /* —— Table system (all performance-table + future grids) —— */
 .performance-table {
   border-collapse: collapse;
+  table-layout: fixed;
+  width: 100%;
+}
+
+.performance-table col.col-data,
+.performance-table col.col-person,
+.performance-table col.col-reason,
+.performance-table col.col-issues,
+.performance-table col.col-issue-key,
+.performance-table col.col-title,
+.performance-table col.col-date,
+.performance-table col.col-num,
+.performance-table col.col-badge,
+.performance-table col.col-status,
+.performance-table col.col-issue,
+.performance-table col.col-description,
+.performance-table col.col-owner,
+.performance-table col.col-attention {
+  width: auto;
 }
 
 .performance-table th,
@@ -269,6 +288,64 @@
 
 .performance-table__action .btn {
   vertical-align: middle;
+}
+
+.performance-table__work-lead {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+  text-align: left;
+}
+
+.performance-table__work-lead-media {
+  width: var(--performance-table-lead-size, 32px);
+  height: var(--performance-table-lead-size, 32px);
+  flex: 0 0 var(--performance-table-lead-size, 32px);
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-start;
+}
+
+.performance-table__work-lead-media .person-avatar {
+  flex-shrink: 0;
+}
+
+.performance-table__work-lead-slot {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.performance-table__work-lead-label {
+  min-width: 0;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.35;
+  color: var(--color-text-primary);
+}
+
+.performance-table--action-queue thead .performance-table__sort-label {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.performance-table__tag-stack {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  justify-content: flex-start;
+  width: 100%;
+}
+
+.performance-table__inline-badge {
+  width: auto;
+  max-width: max-content;
+  flex-shrink: 0;
+  white-space: nowrap;
 }
 
 .performance-table--interactive tbody tr:hover {

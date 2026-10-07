@@ -2548,11 +2548,13 @@ test.describe("Metrio visual regression", () => {
 
   test("dashboard-my-focus-deduped", async ({ page }) => {
     await bootDashboardManager(page, 1440);
-    const focus = page.getByTestId("dashboard-my-focus");
+    const focus = page.getByTestId("dashboard-tab-focus");
     await expect(focus).toBeVisible();
     const rowCount = await focus.getByTestId("dashboard-action-row").count();
     if (rowCount > 0) {
-      await expect(focus.getByRole("button", { name: /Context/i })).toBeVisible();
+      await expect(
+        focus.getByTestId("dashboard-action-queue").getByRole("button", { name: /Context/i }),
+      ).toBeVisible();
       await expect(focus).not.toContainText("Status");
       const issueKeys = await focus.getByTestId("dashboard-action-row").allTextContents();
       const duplicates = issueKeys.filter((text, index, all) =>
@@ -2567,8 +2569,11 @@ test.describe("Metrio visual regression", () => {
 
   test("dashboard-team-actions-context", async ({ page }) => {
     await bootDashboardManager(page, 1440);
-    const teamActions = page.getByTestId("dashboard-team-actions");
-    await expect(teamActions.getByRole("button", { name: /Context/i })).toBeVisible();
+    await page.getByRole("tab", { name: /team actions/i }).click();
+    const teamActions = page.getByTestId("dashboard-tab-team");
+    await expect(
+      teamActions.getByTestId("dashboard-action-queue").getByRole("button", { name: /Context/i }),
+    ).toBeVisible();
     await expect(teamActions).toHaveScreenshot("dashboard-team-actions-context.png", {
       maxDiffPixelRatio: 0.02,
     });
@@ -2638,7 +2643,7 @@ test.describe("Metrio visual regression", () => {
   test("dashboard-employee", async ({ page }) => {
     await bootConnected(page, "employee", "light");
     await expect(page.getByTestId("dashboard-ready")).toBeVisible({ timeout: 30_000 });
-    await expect(page.getByTestId("dashboard-my-focus")).toBeVisible();
+    await expect(page.getByTestId("dashboard-tab-focus")).toBeVisible();
     await expect(page).toHaveScreenshot("dashboard-employee.png", {
       fullPage: true,
       maxDiffPixelRatio: 0.02,
@@ -2706,13 +2711,15 @@ test.describe("Metrio visual regression", () => {
 
   test("dashboard-team-actions-long-label", async ({ page }) => {
     await bootDashboardManager(page, 1280);
-    const cta = page.getByTestId("dashboard-team-actions").getByRole("button", {
+    await page.getByRole("tab", { name: /team actions/i }).click();
+    const teamActions = page.getByTestId("dashboard-tab-team");
+    const cta = teamActions.getByRole("button", {
       name: /Open Delivery Risk/i,
     });
     await expect(cta.first()).toBeVisible();
     const box = await cta.first().boundingBox();
     expect(box).not.toBeNull();
-    await expect(page.getByTestId("dashboard-team-actions")).toHaveScreenshot(
+    await expect(teamActions).toHaveScreenshot(
       "dashboard-team-actions-long-label.png",
       { maxDiffPixelRatio: 0.02 },
     );

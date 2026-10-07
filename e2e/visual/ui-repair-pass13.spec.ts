@@ -48,8 +48,8 @@ async function assertTableColumnAlignment(
   await expect(header).toBeVisible();
   await expect(cell).toBeVisible();
   if (options?.numericColumn) {
-    const headerX = await contentRight(header);
-    const bodyX = await contentRight(cell);
+    const headerX = await contentLeft(header);
+    const bodyX = await contentLeft(cell);
     expect(Math.abs(headerX - bodyX)).toBeLessThanOrEqual(ALIGN_TOLERANCE_PX);
     return;
   }
@@ -59,8 +59,9 @@ async function assertTableColumnAlignment(
 }
 
 async function assertDashboardQueueColumnAlignment(panel: Locator, columnIndex: number) {
-  const header = panel.locator(".action-queue__dashboard-header-cell").nth(columnIndex);
-  const cell = panel.locator(".action-queue__dashboard-row").first().locator("> *").nth(columnIndex);
+  const table = panel.getByTestId("dashboard-action-queue");
+  const header = table.locator("thead th").nth(columnIndex);
+  const cell = table.locator("tbody tr").first().locator("td").nth(columnIndex);
   await expect(header).toBeVisible();
   await expect(cell).toBeVisible();
   const headerX = await contentLeft(header);
@@ -175,7 +176,7 @@ test.describe("UI Repair Pass 13 acceptance", () => {
     await page.getByRole("tab", { name: /my focus/i }).click();
     const panel = page.getByTestId("dashboard-tab-focus");
     await expect(panel).toBeVisible({ timeout: 15_000 });
-    const rows = panel.locator(".action-queue__dashboard-row");
+    const rows = panel.getByTestId("dashboard-action-queue").locator("tbody tr");
     if ((await rows.count()) > 0) {
       await assertDashboardQueueColumnAlignment(panel, 0);
       await assertDashboardQueueColumnAlignment(panel, 1);

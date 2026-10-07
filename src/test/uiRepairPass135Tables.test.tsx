@@ -17,7 +17,11 @@ describe("UI Repair Pass 13.5 table geometry", () => {
       "utf8",
     );
     expect(css).not.toMatch(/performance-table--attention[\s\S]*min-width:\s*960px/);
-    expect(css).toContain(".performance-table--task-list col.col-title");
+    const tableCss = fs.readFileSync(
+      path.resolve(process.cwd(), "src/styles/ui-interaction-system.css"),
+      "utf8",
+    );
+    expect(tableCss).toContain("col.col-title");
   });
 
   it("attention now caps visible rows without internal scroll viewport", () => {

@@ -292,6 +292,7 @@ export function TeamOverviewView({
       <ActionQueueSection
         variant="dashboard"
         title={actionTitle}
+        workColumnLabel="Work"
         items={teamActions}
         emptyMessage="No high-priority team actions right now."
         onOpen={handleAction}

@@ -25,37 +25,20 @@ describe("UI Repair Pass 13.7A table and tabular modal geometry", () => {
     expect(css).toMatch(/\.performance-table__action[\s\S]*padding-right/);
   });
 
-  it("dashboard action queue header and rows share column grid", () => {
-    const css = read("src/pages/performance/action-queue.css");
-    const headerMatch = css.match(
-      /\.action-queue__dashboard-header\s*\{[\s\S]*?grid-template-columns:\s*([\s\S]*?);/,
-    );
-    const rowMatch = css.match(
-      /\.action-queue__dashboard-row\s*\{[\s\S]*?grid-template-columns:\s*([\s\S]*?);/,
-    );
-    expect(headerMatch?.[1]?.replace(/\s+/g, " ").trim()).toBe(
-      rowMatch?.[1]?.replace(/\s+/g, " ").trim(),
-    );
-  });
-
-  it("rows without a person keep avatar column structure", () => {
-    const source = read("src/pages/performance/DashboardActionQueueRows.tsx");
-    expect(source).toContain("action-queue__dashboard-person-slot");
-  });
-
-  it("team actions tag and action columns use shared cell layout", () => {
-    const css = read("src/pages/performance/action-queue.css");
-    expect(css).toContain(".action-queue__dashboard-cell--tag");
-    expect(css).toContain(".action-queue__dashboard-cell--action");
-    expect(css).toMatch(/\.action-queue__dashboard-cell--action[\s\S]*justify-content:\s*flex-start/);
+  it("dashboard action queue uses canonical performance table", () => {
+    const source = read("src/components/Table/DashboardActionQueueTable.tsx");
+    expect(source).toContain("performance-table--action-queue");
+    expect(source).toContain("TableWorkLead");
+    expect(source).toContain("PerformanceTableColgroup");
     const panel = read("src/pages/home/dashboard/DashboardQueuePanel.tsx");
     expect(panel).toContain("stabilizeDashboardQueueRowOrder");
-    expect(panel).not.toMatch(/alignEnd:\s*true/);
+    expect(panel).toContain("DashboardActionQueueTable");
   });
 
   it("delivery risk table relies on colgroup not nth-child width hacks", () => {
+    const source = read("src/pages/performance/TeamDeliveryRiskView.tsx");
+    expect(source).toContain('className="col-action"');
     const css = read("src/pages/performance/performance-dashboard.css");
-    expect(css).toContain(".performance-table--delivery-risk col.col-action");
     expect(css).not.toMatch(
       /\.performance-table--delivery-risk th:nth-child\(7\)/,
     );
