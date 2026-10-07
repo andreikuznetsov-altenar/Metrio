@@ -54,6 +54,8 @@ import {
   saveDashboardCache,
   type DashboardCacheIdentity,
 } from "../platform/dashboard/dashboardCache";
+import { buildIssueCatalog, type IssueCatalog } from "../domain/jira/issueCatalog";
+import { PerformanceIssueCatalogProvider } from "./PerformanceIssueCatalogContext";
 
 export type PerformanceLoadStatus =
   | "idle"
@@ -82,6 +84,7 @@ export interface PerformanceDataContextValue {
   performanceLastUpdatedAt: string | null;
   /** Wall-clock ms when the current loading/refresh cycle started; cleared when settled. */
   refreshStartedAt: number | null;
+  issueCatalog: IssueCatalog;
 }
 
 const PerformanceDataContext =
@@ -462,6 +465,11 @@ export function PerformanceDataProvider({
 
   const refreshing = status === "refreshing";
 
+  const issueCatalog = useMemo(
+    () => buildIssueCatalog({ persons: data?.teamSnapshot?.persons ?? [] }),
+    [data?.teamSnapshot?.persons],
+  );
+
   const value = useMemo(
     (): PerformanceDataContextValue => ({
       status,
@@ -480,11 +488,13 @@ export function PerformanceDataProvider({
       revalidatingFromCache,
       performanceLastUpdatedAt: data?.lastUpdatedAt ?? null,
       refreshStartedAt,
+      issueCatalog,
     }),
     [
       status,
       data,
       viewModels,
+      issueCatalog,
       loadingMessage,
       errorMessage,
       stale,
@@ -501,9 +511,11 @@ export function PerformanceDataProvider({
   );
 
   return (
-    <PerformanceDataContext.Provider value={value}>
-      {children}
-    </PerformanceDataContext.Provider>
+    <PerformanceIssueCatalogProvider catalog={issueCatalog}>
+      <PerformanceDataContext.Provider value={value}>
+        {children}
+      </PerformanceDataContext.Provider>
+    </PerformanceIssueCatalogProvider>
   );
 }
 
@@ -518,3 +530,4 @@ export function usePerformanceData(): PerformanceDataContextValue {
 export function useOptionalPerformanceData(): PerformanceDataContextValue | null {
   return useContext(PerformanceDataContext);
 }
+

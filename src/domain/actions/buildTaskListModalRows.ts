@@ -2,7 +2,13 @@ import type { ActionItem } from "../actions/actionTypes";
 import type { AuditIssue } from "../jira/types";
 import type { Person } from "../people/types";
 import { getOperationalIssues } from "../people/ownedIssues";
+import {
+  type IssueCatalog,
+  resolveCatalogIssue,
+} from "../jira/issueCatalog";
 import { format, parseISO } from "date-fns";
+
+export const TASK_LIST_ISSUE_UNAVAILABLE_TITLE = "Issue details unavailable";
 
 export interface TaskListModalRow {
   issueKey: string;
@@ -42,7 +48,13 @@ export function formatTaskLastStatusChangeLabel(changedAt: string | null): strin
   }
 }
 
-function findIssue(persons: Person[], issueKey: string): AuditIssue | undefined {
+function findIssue(
+  issueKey: string,
+  persons: Person[],
+  catalog?: IssueCatalog,
+): AuditIssue | undefined {
+  const fromCatalog = resolveCatalogIssue(catalog, issueKey);
+  if (fromCatalog) return fromCatalog;
   for (const person of persons) {
     const match = getOperationalIssues(person).find((i) => i.issueKey === issueKey);
     if (match) return match;
@@ -56,16 +68,22 @@ function rowFromIssueKey(
   issueKey: string,
   persons: Person[],
   jiraBaseUrl: string | undefined,
+  catalog?: IssueCatalog,
   fallbackTitle?: string,
 ): TaskListModalRow {
-  const issue = findIssue(persons, issueKey);
+  const issue = findIssue(issueKey, persons, catalog);
   const lastStatusChangedAt = issue ? latestStatusChangeIso(issue) : null;
   const createdAt = issue?.issueCreated ?? null;
   const base = jiraBaseUrl?.replace(/\/$/, "") ?? "";
+  const title = issue?.issueSummary
+    ? issue.issueSummary
+    : fallbackTitle && fallbackTitle !== issueKey
+      ? fallbackTitle
+      : TASK_LIST_ISSUE_UNAVAILABLE_TITLE;
 
   return {
     issueKey,
-    title: issue?.issueSummary ?? fallbackTitle ?? issueKey,
+    title,
     status: issue?.currentStatus ?? "—",
     createdAt,
     lastStatusChangedAt,
@@ -81,15 +99,19 @@ export function buildTaskListModalRowsFromIssueKeys(
   issueKeys: string[],
   persons: Person[],
   jiraBaseUrl?: string,
+  catalog?: IssueCatalog,
 ): TaskListModalRow[] {
   const unique = [...new Set(issueKeys.filter(Boolean))];
-  return unique.map((issueKey) => rowFromIssueKey(issueKey, persons, jiraBaseUrl));
+  return unique.map((issueKey) =>
+    rowFromIssueKey(issueKey, persons, jiraBaseUrl, catalog),
+  );
 }
 
 export function buildTaskListModalRows(
   actions: ActionItem[],
   persons: Person[],
   jiraBaseUrl?: string,
+  catalog?: IssueCatalog,
 ): TaskListModalRow[] {
   const keys: string[] = [];
   const seen = new Set<string>();
@@ -113,6 +135,6 @@ export function buildTaskListModalRows(
         (a.target.kind === "jira" && a.target.issueKey === issueKey) ||
         a.issueKeys?.includes(issueKey),
     );
-    return rowFromIssueKey(issueKey, persons, jiraBaseUrl, item?.title);
+    return rowFromIssueKey(issueKey, persons, jiraBaseUrl, catalog, item?.title);
   });
 }

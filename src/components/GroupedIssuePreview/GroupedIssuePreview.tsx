@@ -14,6 +14,8 @@ import {
   shouldShowTaskCountLink,
 } from "../../domain/actions/taskIssueDisplayPolicy";
 import type { Person } from "../../domain/people/types";
+import type { IssueCatalog } from "../../domain/jira/issueCatalog";
+import { useOptionalPerformanceIssueCatalog } from "../../app/PerformanceIssueCatalogContext";
 import { buildJiraIssueBrowseUrl } from "../../platform/jiraIssueUrl";
 import "./GroupedIssuePreview.css";
 
@@ -23,6 +25,7 @@ export interface GroupedIssuePreviewProps {
   persons?: Person[];
   modalTitle?: string;
   modalRows?: TaskListModalRow[];
+  issueCatalog?: IssueCatalog;
   onOpenIssue?: (issueKey: string, url?: string) => void;
   className?: string;
   /** @deprecated Use default policy (1 inline, >1 count). Kept for call-site clarity. */
@@ -36,10 +39,13 @@ export function GroupedIssuePreview({
   persons = [],
   modalTitle = "Tasks",
   modalRows,
+  issueCatalog: issueCatalogProp,
   onOpenIssue,
   className,
   personNameForModal,
 }: GroupedIssuePreviewProps) {
+  const contextCatalog = useOptionalPerformanceIssueCatalog();
+  const issueCatalog = issueCatalogProp ?? contextCatalog;
   const [open, setOpen] = useState(false);
   const uniqueKeys = useMemo(
     () => [...new Set(issueKeys.filter(Boolean))],
@@ -49,8 +55,13 @@ export function GroupedIssuePreview({
   const rows = useMemo(
     () =>
       modalRows ??
-      buildTaskListModalRowsFromIssueKeys(uniqueKeys, persons, jiraBaseUrl),
-    [modalRows, uniqueKeys, persons, jiraBaseUrl],
+      buildTaskListModalRowsFromIssueKeys(
+        uniqueKeys,
+        persons,
+        jiraBaseUrl,
+        issueCatalog,
+      ),
+    [modalRows, uniqueKeys, persons, jiraBaseUrl, issueCatalog],
   );
 
   if (uniqueKeys.length === 0) {
