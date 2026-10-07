@@ -12,20 +12,25 @@ vi.mock("recharts", () => ({
     children,
     onClick,
     onMouseEnter,
+    stroke,
   }: {
     children: ReactNode;
     onClick?: (_: unknown, index: number) => void;
     onMouseEnter?: (_: unknown, index: number) => void;
+    stroke?: string;
   }) => (
     <div
       data-testid="team-workload-pie"
+      data-stroke={stroke ?? ""}
       onClick={() => onClick?.(null, 1)}
       onMouseEnter={() => onMouseEnter?.(null, 0)}
     >
       {children}
     </div>
   ),
-  Cell: () => <div data-testid="team-workload-pie-cell" />,
+  Cell: ({ stroke }: { stroke?: string }) => (
+    <div data-testid="team-workload-pie-cell" data-stroke={stroke ?? ""} />
+  ),
 }));
 
 const workload: WorkloadRow[] = [
@@ -79,6 +84,17 @@ describe("TeamWorkloadDonut", () => {
     expect(within(root as HTMLElement).getByText("Workload")).toBeTruthy();
     const detail = within(root as HTMLElement).getByTestId("team-brief-workload-detail");
     expect(detail).toHaveTextContent("Ada");
+  });
+
+  it("renders pie segments without chart stroke borders", () => {
+    const { container } = render(<TeamWorkloadDonut workload={workload} />);
+    const root = container.querySelector('[data-testid="team-brief-workload-donut"]')!;
+    expect(within(root as HTMLElement).getByTestId("team-workload-pie")).toHaveAttribute(
+      "data-stroke",
+      "none",
+    );
+    const cells = within(root as HTMLElement).getAllByTestId("team-workload-pie-cell");
+    expect(cells.every((cell) => cell.getAttribute("data-stroke") === "none")).toBe(true);
   });
 
   it("exposes keyboard-accessible member selectors", () => {

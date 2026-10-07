@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { Cell, Pie, PieChart } from "recharts";
+import type { Person } from "../../domain/people/types";
 import type { WorkloadRow } from "../../domain/performance";
+import type { TeamWorkloadViewContext } from "../../domain/workload/hierarchicalWorkload";
 import { workloadBadgeVariantFromLabel } from "../../domain/performance/performanceStatusBadges";
 import {
   buildTeamWorkloadDonutSegments,
@@ -24,8 +26,19 @@ type ChartRow = {
   fill: string;
 };
 
-export function TeamWorkloadDonut({ workload }: { workload: WorkloadRow[] }) {
-  const segments = useMemo(() => buildTeamWorkloadDonutSegments(workload), [workload]);
+export function TeamWorkloadDonut({
+  workload,
+  context = { mode: "own_team" },
+  personsById,
+}: {
+  workload: WorkloadRow[];
+  context?: TeamWorkloadViewContext;
+  personsById?: Map<string, Person>;
+}) {
+  const segments = useMemo(
+    () => buildTeamWorkloadDonutSegments(workload, { context, personsById }),
+    [workload, context, personsById],
+  );
   const workloadById = useMemo(
     () => new Map(workload.map((row) => [row.personId, row])),
     [workload],
@@ -85,8 +98,7 @@ export function TeamWorkloadDonut({ workload }: { workload: WorkloadRow[] }) {
               innerRadius={68}
               outerRadius={102}
               paddingAngle={1}
-              stroke="var(--color-surface)"
-              strokeWidth={2}
+              stroke="none"
               onClick={(_data, index) => {
                 const row = chartData[index];
                 if (row) setSelectedId(row.personId);
@@ -103,13 +115,7 @@ export function TeamWorkloadDonut({ workload }: { workload: WorkloadRow[] }) {
                 if (selectedId && !isSelected) opacity = 0.5;
                 if (isHovered && !isSelected) opacity = 0.72;
                 return (
-                  <Cell
-                    key={row.personId}
-                    fill={row.fill}
-                    opacity={opacity}
-                    stroke={isSelected ? "var(--color-text-primary)" : undefined}
-                    strokeWidth={isSelected ? 2 : 1}
-                  />
+                  <Cell key={row.personId} fill={row.fill} opacity={opacity} stroke="none" />
                 );
               })}
             </Pie>
@@ -128,7 +134,9 @@ export function TeamWorkloadDonut({ workload }: { workload: WorkloadRow[] }) {
           <dl className="team-workload-donut__detail-stack">
             <div>
               <dt>Load</dt>
-              <dd>{selected.detailLabel} · {selected.sharePct}% of team</dd>
+              <dd>
+                {selected.detailLabel} · {selected.sharePct}% of team
+              </dd>
             </div>
             <div>
               <dt>Active</dt>

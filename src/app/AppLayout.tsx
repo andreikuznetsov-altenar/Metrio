@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { AppShell } from "../components/AppShell/AppShell";
 import { bootLog } from "./bootDiagnostics";
 import { ScrollArea } from "../components/ScrollArea/ScrollArea";
+import type { Person } from "../domain/people/types";
 import type { PerformanceReviewTarget } from "../domain/performance";
 import {
   readSessionPerformanceDateRange,
@@ -477,6 +478,18 @@ function AppLayoutShell({
     <FeedbackPage />
   );
 
+  const teamBriefPersonsById = useMemo(() => {
+    const rows = viewModels?.teamOverview?.workload;
+    const getPerson = viewModels?.getPerson;
+    if (!rows?.length || !getPerson) return undefined;
+    const map = new Map<string, Person>();
+    for (const row of rows) {
+      const person = getPerson(row.personId);
+      if (person) map.set(row.personId, person);
+    }
+    return map.size > 0 ? map : undefined;
+  }, [viewModels]);
+
   return (
     <>
       <TrayMenuEffects onRefresh={() => void refresh()} />
@@ -551,6 +564,7 @@ function AppLayoutShell({
         open={digestOpen}
         onClose={() => setDigestOpen(false)}
         teamWorkload={viewModels?.teamOverview?.workload ?? []}
+        personsById={teamBriefPersonsById}
       />
     </>
   );

@@ -1,4 +1,14 @@
+import type { Person } from "../people/types";
 import type { WorkloadRow } from "../performance";
+import {
+  personalCapacityLoadPercent,
+  resolveWorkloadUnitForViewer,
+  workloadStatusLabelForUnit,
+  workloadUnitDetailLabel,
+  workloadUnitDonutWeight,
+  type TeamWorkloadViewContext,
+  type WorkloadUnitKind,
+} from "./hierarchicalWorkload";
 
 export interface TeamWorkloadDonutSegment {
   personId: string;
@@ -6,6 +16,12 @@ export interface TeamWorkloadDonutSegment {
   weight: number;
   workloadLabel: string;
   detailLabel: string;
+  loadKind: WorkloadUnitKind;
+}
+
+export interface BuildTeamWorkloadDonutOptions {
+  context?: TeamWorkloadViewContext;
+  personsById?: Map<string, Person>;
 }
 
 /** Share of team measured load uses the same capacity % as Team Workload when available. */
@@ -25,14 +41,37 @@ export function workloadDonutDetailLabel(row: WorkloadRow): string {
 
 export function buildTeamWorkloadDonutSegments(
   workload: WorkloadRow[],
+  options: BuildTeamWorkloadDonutOptions = {},
 ): TeamWorkloadDonutSegment[] {
-  return workload.map((row) => ({
-    personId: row.personId,
-    personName: row.personName ?? row.personId,
-    weight: workloadDonutWeight(row),
-    workloadLabel: row.workload,
-    detailLabel: workloadDonutDetailLabel(row),
-  }));
+  const context = options.context ?? { mode: "own_team" };
+  const personsById = options.personsById;
+  const personalPercent = (personId: string) => {
+    const person = personsById?.get(personId);
+    return person ? personalCapacityLoadPercent(person) : null;
+  };
+
+  return workload.map((row) => {
+    const person = personsById?.get(row.personId);
+    if (person) {
+      const unit = resolveWorkloadUnitForViewer(person, context, personalPercent);
+      return {
+        personId: row.personId,
+        personName: row.personName ?? row.personId,
+        weight: workloadUnitDonutWeight(unit),
+        workloadLabel: workloadStatusLabelForUnit(unit),
+        detailLabel: workloadUnitDetailLabel(unit),
+        loadKind: unit.kind,
+      };
+    }
+    return {
+      personId: row.personId,
+      personName: row.personName ?? row.personId,
+      weight: workloadDonutWeight(row),
+      workloadLabel: row.workload,
+      detailLabel: workloadDonutDetailLabel(row),
+      loadKind: "personal",
+    };
+  });
 }
 
 export function workloadDonutSupportingMetric(row: WorkloadRow): string {

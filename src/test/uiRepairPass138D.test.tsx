@@ -43,4 +43,9 @@ describe("UI Repair Pass 13.8D performance blocks and team brief donut", () => {
     expect(component).toContain("selectDefaultTeamWorkloadDonutPersonId");
     expect(component).toContain("workloadDonutSupportingMetric");
   });
+
+  it("disables recharts pie stroke so segments have no dark ring outline", () => {
+    const component = read("src/components/charts/TeamWorkloadDonut.tsx");
+    expect(component).toContain('stroke="none"');
+  });
 });

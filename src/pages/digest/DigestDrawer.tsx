@@ -2,6 +2,7 @@ import { Button } from "../../components/Button/Button";
 import { TeamWorkloadDonut } from "../../components/charts/TeamWorkloadDonut";
 import { Drawer } from "../../components/Drawer/Drawer";
 import type { OperationalDigest } from "../../domain/digests/digestTypes";
+import type { Person } from "../../domain/people/types";
 import type { WorkloadRow } from "../../domain/performance";
 import {
   digestSectionCards,
@@ -15,9 +16,16 @@ export interface DigestDrawerProps {
   open: boolean;
   onClose: () => void;
   teamWorkload?: WorkloadRow[];
+  personsById?: Map<string, Person>;
 }
 
-export function DigestDrawer({ digest, open, onClose, teamWorkload = [] }: DigestDrawerProps) {
+export function DigestDrawer({
+  digest,
+  open,
+  onClose,
+  teamWorkload = [],
+  personsById,
+}: DigestDrawerProps) {
   const copy = () => {
     if (!digest?.plainText) return;
     void navigator.clipboard.writeText(digest.plainText);
@@ -54,7 +62,11 @@ export function DigestDrawer({ digest, open, onClose, teamWorkload = [] }: Diges
       {digest ? (
         <div className="digest-drawer__body" data-testid="digest-drawer">
           {digest.kind === "daily" && teamWorkload.length > 0 ? (
-            <TeamWorkloadDonut workload={teamWorkload} />
+            <TeamWorkloadDonut
+              workload={teamWorkload}
+              context={{ mode: "own_team" }}
+              personsById={personsById}
+            />
           ) : null}
           {cards.map((card) => (
             <section key={card.id} className="digest-drawer__card">

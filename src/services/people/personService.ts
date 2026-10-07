@@ -38,7 +38,7 @@ export function buildTeamSnapshot(
     const canonicalKey = jira?.canonicalKey || employee.workEmail || employee.id;
     const block = reportData?.grouped[canonicalKey];
     const issues = block?.issues || [];
-    const ownedIssues = filterOwnedIssues(issues, jira?.canonicalKey || undefined);
+    const ownedIssues = filterOwnedIssues(issues, canonicalKey);
     const params = reportData?.params;
 
     const timeOff = pickRelevantTimeOff(timeOffEntries, employee.id);
@@ -47,7 +47,7 @@ export function buildTeamSnapshot(
     const performance = reportData?.perUserKpi[canonicalKey] || null;
     const workload =
       params
-        ? calculateWorkload(issues, params, workloadThresholds, availability)
+        ? calculateWorkload(ownedIssues, params, workloadThresholds, availability)
         : null;
 
     return {
