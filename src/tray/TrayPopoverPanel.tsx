@@ -8,6 +8,7 @@ export function TrayPopoverPanel({ summary }: { summary: TraySummaryModel }) {
   };
 
   return (
+    <div className="tray-popover-shell">
     <div className="tray-popover" data-testid="tray-popover">
       <section className="tray-popover__summary" aria-label="Tray summary">
         <div className="tray-popover__row">
@@ -58,6 +59,7 @@ export function TrayPopoverPanel({ summary }: { summary: TraySummaryModel }) {
       <button type="button" className="tray-popover__action" onClick={() => run("quit")}>
         Quit
       </button>
+    </div>
     </div>
   );
 }

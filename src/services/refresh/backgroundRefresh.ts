@@ -4,11 +4,13 @@ import { createCoalescedRefresh } from './refreshCoordinator';
 export type BackgroundRefreshEvent =
   | 'background-jira-refresh'
   | 'background-bamboo-refresh'
+  | 'background-app-refresh'
   | 'system-resumed';
 
 export interface BackgroundRefreshHandlers {
   onJiraRefresh?: () => void | Promise<void>;
   onBambooRefresh?: () => void | Promise<void>;
+  onAppRefresh?: () => void | Promise<void>;
   onSystemResumed?: () => void | Promise<void>;
 }
 
@@ -25,6 +27,9 @@ export async function registerBackgroundRefreshListeners(
   }
   if (handlers.onBambooRefresh) {
     unsubs.push(await listen('background-bamboo-refresh', () => handlers.onBambooRefresh?.()));
+  }
+  if (handlers.onAppRefresh) {
+    unsubs.push(await listen('background-app-refresh', () => handlers.onAppRefresh?.()));
   }
   if (handlers.onSystemResumed) {
     unsubs.push(await listen('system-resumed', () => handlers.onSystemResumed?.()));
@@ -60,6 +65,7 @@ export async function registerCoalescedBackgroundRefresh(
   return registerBackgroundRefreshListeners({
     onJiraRefresh: trigger,
     onBambooRefresh: trigger,
+    onAppRefresh: trigger,
     onSystemResumed: () => {
       if (resumeTimer) {
         clearTimeout(resumeTimer);

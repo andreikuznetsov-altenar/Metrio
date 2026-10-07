@@ -4,17 +4,35 @@
 
 body {
   margin: 0;
-  background: transparent;
+  background: var(--color-surface, #fff);
   font-family: var(--font-sans, system-ui, -apple-system, sans-serif);
 }
 
+.tray-popover-shell {
+  position: relative;
+  padding-top: 8px;
+}
+
+.tray-popover-shell::before {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 14px;
+  height: 8px;
+  background: var(--color-surface, #fff);
+  clip-path: polygon(50% 0%, 0% 100%, 100% 100%);
+  filter: drop-shadow(0 -1px 0 rgba(15, 17, 21, 0.06));
+}
+
 .tray-popover {
-  margin: 8px;
+  margin: 0;
   padding: var(--space-3, 12px);
-  border: 1px solid var(--color-border, #d8dce3);
+  border: none;
   border-radius: var(--radius-card, 10px);
   background: var(--color-surface, #fff);
-  box-shadow: 0 12px 32px rgba(15, 17, 21, 0.18);
+  box-shadow: 0 10px 28px rgba(15, 17, 21, 0.14);
   display: flex;
   flex-direction: column;
   gap: var(--space-2, 8px);
@@ -32,7 +50,7 @@ body {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
-  gap: var(--space-3, 12px);
+  gap: var(--space-2, 8px);
   font-size: 13px;
   color: var(--color-text-secondary, #4b5563);
 }

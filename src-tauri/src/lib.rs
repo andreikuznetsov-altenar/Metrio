@@ -415,12 +415,13 @@ fn install_tray(app: &AppHandle) -> Result<(), Box<dyn std::error::Error>> {
             if let TrayIconEvent::Click {
                 button: MouseButton::Left,
                 button_state: MouseButtonState::Up,
+                rect,
                 ..
             } = event
             {
                 #[cfg(target_os = "macos")]
                 {
-                    let _ = tray_popover::toggle_tray_popover(tray.app_handle());
+                    let _ = tray_popover::toggle_tray_popover(tray.app_handle(), Some(rect));
                 }
                 #[cfg(not(target_os = "macos"))]
                 {
@@ -617,6 +618,7 @@ pub fn run() {
             write_setup_log(app.handle(), "NATIVE 03 tray installed");
             spawn_background_emitter(app.handle().clone(), "background-bamboo-refresh", 60 * 60);
             spawn_background_emitter(app.handle().clone(), "background-jira-refresh", 30 * 60);
+            spawn_background_emitter(app.handle().clone(), "background-app-refresh", 5 * 60);
             spawn_background_emitter(app.handle().clone(), "background-survey-sync", 15 * 60);
             if let Some(window) = app.get_webview_window("main") {
                 let handle = app.handle().clone();

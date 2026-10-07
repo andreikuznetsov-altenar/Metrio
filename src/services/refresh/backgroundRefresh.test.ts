@@ -25,9 +25,10 @@ describe("registerCoalescedBackgroundRefresh", () => {
   it("coalesces rapid background events into one refresh", async () => {
     const refresh = vi.fn(async () => undefined);
     await registerCoalescedBackgroundRefresh(refresh);
-    expect(handlers.length).toBe(3);
+    expect(handlers.length).toBe(4);
     handlers[0]?.();
     handlers[1]?.();
+    handlers[2]?.();
     await Promise.resolve();
     await Promise.resolve();
     expect(refresh).toHaveBeenCalledTimes(1);
@@ -36,8 +37,8 @@ describe("registerCoalescedBackgroundRefresh", () => {
   it("debounces system-resumed handler", async () => {
     const refresh = vi.fn(async () => undefined);
     await registerCoalescedBackgroundRefresh(refresh);
-    handlers[2]?.();
-    handlers[2]?.();
+    handlers[3]?.();
+    handlers[3]?.();
     expect(refresh).not.toHaveBeenCalled();
     await vi.advanceTimersByTimeAsync(1500);
     expect(refresh).toHaveBeenCalledTimes(1);
