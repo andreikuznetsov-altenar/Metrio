@@ -1,4 +1,5 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { loadPreferences } from "../../../platform/preferences";
 import type { ActionItem } from "../../../domain/actions/actionTypes";
 import {
   buildDashboardQueueRows,
@@ -53,6 +54,13 @@ export function DashboardQueuePanel({
   testId,
 }: DashboardQueuePanelProps) {
   const [tasksOpen, setTasksOpen] = useState(false);
+  const [jiraBaseUrl, setJiraBaseUrl] = useState("");
+
+  useEffect(() => {
+    void loadPreferences().then((prefs) => {
+      setJiraBaseUrl(resolveJiraBaseUrl(prefs));
+    });
+  }, []);
   const sourceItems = useMemo(() => {
     if (
       readDashboardVisualQueryFlag("visualDashboardTaskModal") &&
@@ -119,6 +127,7 @@ export function DashboardQueuePanel({
             sortColumnId={sort?.columnId ?? null}
             sortDirection={sort?.direction ?? null}
             onToggleSort={toggleSort}
+            jiraBaseUrl={jiraBaseUrl}
           />
         </>
       )}

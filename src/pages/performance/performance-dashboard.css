@@ -750,22 +750,23 @@
 }
 
 .performance-table-wrap--delivery-risk {
-  overflow-x: auto;
+  overflow-x: visible;
   max-width: 100%;
 }
 
 .performance-table--delivery-risk {
   table-layout: fixed;
   width: 100%;
-  min-width: 960px;
+  min-width: 0;
 }
 
 .performance-table__sort-btn {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: flex-start;
-  gap: var(--space-1);
-  width: 100%;
+  gap: var(--space-2);
+  width: auto;
+  max-width: 100%;
   padding: 0;
   margin: 0;
   border: none;
@@ -774,7 +775,6 @@
   font: inherit;
   font-weight: 600;
   cursor: pointer;
-  max-width: 100%;
   white-space: nowrap;
   text-align: inherit;
 }
@@ -822,7 +822,6 @@
 
 .performance-table-wrap--people,
 .performance-table-wrap--radar,
-.performance-table-wrap--delivery-risk,
 .performance-table-wrap--attention {
   overflow-x: auto;
 }
@@ -852,8 +851,10 @@
   white-space: nowrap;
 }
 
-.performance-table--delivery-risk {
-  min-width: 1120px;
+.performance-table--delivery-risk td.performance-table__cell--clamp-2,
+.performance-table--delivery-risk td.performance-table__reason {
+  white-space: normal;
+  word-break: break-word;
 }
 
 .performance-table__date-cell {

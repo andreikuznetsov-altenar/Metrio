@@ -132,7 +132,10 @@ describe("UI13 settings cleanup", () => {
     renderCompanySettings(DEFAULT_PREFERENCES);
     expect(screen.getByTestId("diagnostics-support-settings")).toBeInTheDocument();
     expect(screen.getByTestId("settings-cache-clear")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /Clear temporary caches/i })).toBeInTheDocument();
+    const clearBtn = screen.getByRole("button", { name: /Clear temporary caches/i });
+    expect(clearBtn).toBeInTheDocument();
+    expect(clearBtn).toHaveClass("btn");
+    expect(getComputedStyle(clearBtn).width).not.toBe("100%");
   });
 
   it("hides review-build updater copy in about", () => {

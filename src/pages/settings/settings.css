@@ -510,7 +510,13 @@
 .settings-cache-clear {
   display: flex;
   flex-direction: column;
+  align-items: flex-start;
   gap: var(--space-4);
+}
+
+.settings-cache-clear .btn {
+  width: auto;
+  flex: 0 0 auto;
 }
 
 .settings-identity-block {

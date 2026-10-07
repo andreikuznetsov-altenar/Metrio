@@ -10,6 +10,12 @@ import { badgeVariantForAttentionLabel } from "../../platform/attentionSemanticB
 import { PerformanceTableColgroup } from "./PerformanceTableColgroup";
 import { METRIO_TABLE_CLASS, MetrioTableWrap } from "./MetrioTable";
 import { TableWorkLead } from "./TableWorkLead";
+import { EntityLink } from "../EntityLink/EntityLink";
+import { buildJiraIssueBrowseUrl } from "../../platform/jiraIssueUrl";
+import {
+  looksLikeIssueKey,
+  normalizeIssueKeyQuery,
+} from "../../domain/commandPalette/issueKeyPattern";
 
 const QUEUE_COLGROUP = ["person", "reason", "issues", "action"] as const;
 
@@ -26,6 +32,7 @@ export interface DashboardActionQueueTableProps {
   sortColumnId: string | null;
   sortDirection: "asc" | "desc" | null;
   onToggleSort: (columnId: string) => void;
+  jiraBaseUrl?: string;
 }
 
 export function DashboardActionQueueTable({
@@ -36,7 +43,20 @@ export function DashboardActionQueueTable({
   sortColumnId,
   sortDirection,
   onToggleSort,
+  jiraBaseUrl = "",
 }: DashboardActionQueueTableProps) {
+  const renderWorkLabel = (row: DashboardQueueRow) => {
+    const subject = row.subject;
+    if (jiraBaseUrl && looksLikeIssueKey(subject)) {
+      const key = normalizeIssueKeyQuery(subject);
+      return (
+        <EntityLink href={buildJiraIssueBrowseUrl(jiraBaseUrl, key)} mono>
+          {key}
+        </EntityLink>
+      );
+    }
+    return subject;
+  };
   const headerColumns = [
     { id: "work", label: workColumnLabel },
     { id: "reason", label: "Reason" },
@@ -109,7 +129,7 @@ export function DashboardActionQueueTable({
             >
               <td>
                 <TableWorkLead
-                  label={row.subject}
+                  label={renderWorkLabel(row)}
                   media={
                     row.item.personId && row.item.personName ? (
                       <PersonAvatar

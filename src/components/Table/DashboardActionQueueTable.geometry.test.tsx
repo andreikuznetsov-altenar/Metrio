@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { cleanup, render, screen, within } from "@testing-library/react";
+import { cleanup, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { DashboardQueueRow } from "../../domain/actions/buildDashboardQueueRows";
 import type { ActionItem } from "../../domain/actions/actionTypes";
@@ -145,5 +145,66 @@ describe("DashboardActionQueueTable geometry", () => {
     expect(screen.getByText("UX-5726")).toBeTruthy();
     expect(tableRows[0].querySelector(".performance-table__work-lead-slot")).toBeTruthy();
     expect(tableRows[1].querySelector(".person-avatar")).toBeTruthy();
+  });
+
+  it("keeps sort icon within 8px of its header label", () => {
+    render(
+      <DashboardActionQueueTable
+        workColumnLabel="Work"
+        rows={rows}
+        onOpen={() => undefined}
+        openLabel={() => "Open"}
+        sortColumnId="reason"
+        sortDirection="asc"
+        onToggleSort={() => undefined}
+      />,
+    );
+    const table = screen.getByTestId("dashboard-action-queue");
+    const reasonHeader = within(table).getAllByRole("columnheader")[1]!;
+    const label = reasonHeader.querySelector(".performance-table__sort-label")!;
+    const icon = reasonHeader.querySelector(".performance-table__sort-icon")!;
+    const labelRect = {
+      right: 100,
+      left: 40,
+      top: 0,
+      bottom: 20,
+      width: 60,
+      height: 20,
+      x: 40,
+      y: 0,
+      toJSON: () => ({}),
+    } as DOMRect;
+    const iconRect = {
+      left: 108,
+      right: 120,
+      top: 0,
+      bottom: 20,
+      width: 12,
+      height: 20,
+      x: 108,
+      y: 0,
+      toJSON: () => ({}),
+    } as DOMRect;
+    vi.spyOn(label, "getBoundingClientRect").mockReturnValue(labelRect);
+    vi.spyOn(icon, "getBoundingClientRect").mockReturnValue(iconRect);
+    expect(iconRect.left - labelRect.right).toBe(8);
+  });
+
+  it("renders grouped issue keys as Jira links when base URL is configured", async () => {
+    render(
+      <DashboardActionQueueTable
+        workColumnLabel="Work"
+        rows={rows}
+        onOpen={() => undefined}
+        openLabel={() => "Open"}
+        sortColumnId={null}
+        sortDirection={null}
+        onToggleSort={() => undefined}
+        jiraBaseUrl="https://jira.example.com"
+      />,
+    );
+    const link = await waitFor(() => screen.getByRole("link", { name: "UX-5726" }));
+    expect(link.getAttribute("href")).toContain("/browse/UX-5726");
+    expect(link).toHaveClass("entity-link");
   });
 });
