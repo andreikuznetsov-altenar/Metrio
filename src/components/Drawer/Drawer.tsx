@@ -52,7 +52,7 @@ export function Drawer({
   testId,
 }: DrawerProps) {
   const titleId = useId();
-  const { mounted, visible, phase, panelRef } = useDrawerSurfaceLifecycle(open, onClosed);
+  const { mounted, presented, phase, panelRef } = useDrawerSurfaceLifecycle(open, onClosed);
 
   useEffect(() => {
     if (!open) {
@@ -76,7 +76,7 @@ export function Drawer({
   return portalDrawerSurface(
     <div
       className={
-        visible
+        presented
           ? "drawer-root is-visible is-open"
           : "drawer-root is-visible"
       }

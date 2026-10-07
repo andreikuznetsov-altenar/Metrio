@@ -1,18 +1,29 @@
 import { useCallback, useEffect, useRef, useState, type RefObject } from "react";
 import { readMotionDrawerCloseMs } from "../../styles/motion";
 
-export type DrawerSurfacePhase = "closed" | "opening" | "open" | "closing";
+export type DrawerSurfacePhase =
+  | "closed"
+  | "mounted-closed"
+  | "opening"
+  | "open"
+  | "closing";
 
 export interface DrawerSurfaceLifecycle {
   mounted: boolean;
-  visible: boolean;
+  /** Drives `is-open` (panel on-screen); false while offscreen or exiting. */
+  presented: boolean;
   phase: DrawerSurfacePhase;
   panelRef: RefObject<HTMLElement | null>;
 }
 
+function runDoubleFrame(callback: () => void): number {
+  return window.requestAnimationFrame(() => {
+    window.requestAnimationFrame(callback);
+  });
+}
+
 /**
- * Keeps the drawer mounted through transform/opacity exit and tears down on transitionend.
- * Opening uses a double rAF so the offscreen state paints before `is-open` applies.
+ * WKWebView-safe drawer lifecycle: paint offscreen before open, paint onscreen before close exit.
  */
 export function useDrawerSurfaceLifecycle(
   open: boolean,
@@ -20,42 +31,54 @@ export function useDrawerSurfaceLifecycle(
 ): DrawerSurfaceLifecycle {
   const panelRef = useRef<HTMLElement | null>(null);
   const [mounted, setMounted] = useState(open);
-  /** Always start offscreen so the first painted frame can transition (WKWebView-safe). */
-  const [visible, setVisible] = useState(false);
+  const [presented, setPresented] = useState(false);
   const frameRef = useRef<number | null>(null);
+
+  const cancelFrame = useCallback(() => {
+    if (frameRef.current != null) {
+      window.cancelAnimationFrame(frameRef.current);
+      frameRef.current = null;
+    }
+  }, []);
 
   const completeClose = useCallback(() => {
     setMounted(false);
+    setPresented(false);
     onClosed?.();
   }, [onClosed]);
 
   useEffect(() => {
+    cancelFrame();
+
     if (open) {
       setMounted(true);
-      setVisible(false);
-      const frame = window.requestAnimationFrame(() => {
-        frameRef.current = window.requestAnimationFrame(() => {
-          const panel = panelRef.current;
-          if (panel) {
-            void panel.getBoundingClientRect();
-          }
-          setVisible(true);
-        });
-      });
-      frameRef.current = frame;
-      return () => {
-        if (frameRef.current != null) {
-          window.cancelAnimationFrame(frameRef.current);
+      setPresented(false);
+      frameRef.current = runDoubleFrame(() => {
+        const panel = panelRef.current;
+        if (panel) {
+          void panel.getBoundingClientRect();
         }
-      };
+        setPresented(true);
+      });
+      return cancelFrame;
     }
 
-    setVisible(false);
-    return undefined;
-  }, [open]);
+    if (!mounted) {
+      return undefined;
+    }
+
+    frameRef.current = runDoubleFrame(() => {
+      const panel = panelRef.current;
+      if (panel) {
+        void panel.getBoundingClientRect();
+      }
+      setPresented(false);
+    });
+    return cancelFrame;
+  }, [cancelFrame, mounted, open]);
 
   useEffect(() => {
-    if (!mounted || open || visible) {
+    if (!mounted || open || presented) {
       return;
     }
 
@@ -91,17 +114,15 @@ export function useDrawerSurfaceLifecycle(
       panel.removeEventListener("transitionend", onTransitionEnd);
       window.clearTimeout(fallback);
     };
-  }, [completeClose, mounted, open, visible]);
+  }, [completeClose, mounted, open, presented]);
 
   const phase: DrawerSurfacePhase = !mounted
     ? "closed"
-    : visible
-      ? open
+    : open && !presented
+      ? "opening"
+      : (open && presented) || (!open && presented)
         ? "open"
-        : "closing"
-      : open
-        ? "opening"
         : "closing";
 
-  return { mounted, visible, phase, panelRef };
+  return { mounted, presented, phase, panelRef };
 }

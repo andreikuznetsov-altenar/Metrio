@@ -60,7 +60,7 @@ export function DrawerStack({
 }: DrawerStackProps) {
   const titleId = useId();
   const [panelMotionKey, setPanelMotionKey] = useState(0);
-  const { mounted, visible, phase, panelRef } = useDrawerSurfaceLifecycle(open, onClosed);
+  const { mounted, presented, phase, panelRef } = useDrawerSurfaceLifecycle(open, onClosed);
 
   useEffect(() => {
     if (!open) return;
@@ -93,7 +93,7 @@ export function DrawerStack({
       ? "drawer-stack-panel drawer-stack-panel--secondary"
       : "drawer-stack-panel drawer-stack-panel--primary";
 
-  const stackOpen = visible && !animatingOut;
+  const stackOpen = presented && !animatingOut;
 
   return portalDrawerSurface(
     <div

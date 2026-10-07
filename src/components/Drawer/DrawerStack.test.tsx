@@ -1,8 +1,10 @@
 import { cleanup, fireEvent, render, screen, act } from "@testing-library/react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { DrawerStack } from "./DrawerStack";
 import {
   dispatchDrawerPanelTransitionEnd,
+  ensureAppDrawerLayer,
+  flushDrawerCloseFrames,
   flushDrawerOpenFrames,
 } from "./drawerTestUtils";
 
@@ -14,7 +16,14 @@ function completeDrawerCloseMotion() {
 }
 
 describe("DrawerStack", () => {
-  afterEach(() => cleanup());
+  afterEach(() => {
+    cleanup();
+    document.getElementById("app-drawer-layer")?.remove();
+  });
+
+  beforeEach(() => {
+    ensureAppDrawerLayer();
+  });
 
   it("keeps a single backdrop while switching primary to secondary and back", async () => {
     const onClose = vi.fn();
@@ -93,6 +102,7 @@ describe("DrawerStack", () => {
       </DrawerStack>,
     );
 
+    await flushDrawerCloseFrames();
     act(() => {
       completeDrawerCloseMotion();
     });
@@ -130,6 +140,7 @@ describe("DrawerStack", () => {
     );
     expect(screen.getByRole("dialog")).toBeInTheDocument();
 
+    await flushDrawerCloseFrames();
     completeDrawerCloseMotion();
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });

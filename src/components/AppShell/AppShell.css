@@ -48,3 +48,17 @@
   border-top: 1px solid var(--color-border);
   background: var(--color-surface);
 }
+
+.app-drawer-layer {
+  position: fixed;
+  top: var(--app-drawer-viewport-top, var(--app-header-height));
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: var(--z-drawer-scrim, 40);
+  pointer-events: none;
+}
+
+.app-drawer-layer:has(.drawer-root.is-visible) {
+  pointer-events: auto;
+}

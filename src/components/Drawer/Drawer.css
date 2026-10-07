@@ -1,12 +1,9 @@
 @import "./drawer-sizes.css";
 
 .drawer-root {
-  position: fixed;
-  top: var(--app-drawer-viewport-top, var(--app-header-height));
-  right: 0;
-  bottom: 0;
-  left: 0;
-  z-index: var(--z-drawer-scrim, 40);
+  position: absolute;
+  inset: 0;
+  z-index: 0;
   pointer-events: none;
   overflow: hidden;
 }

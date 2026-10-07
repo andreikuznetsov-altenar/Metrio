@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { APP_DRAWER_LAYER_ID } from "../Drawer/drawerPortal";
 import "./AppShell.css";
 
 export interface AppShellProps {
@@ -37,6 +38,11 @@ export function AppShell({
         {children}
       </main>
       {footer ? <footer className="app-shell__footer">{footer}</footer> : null}
+      <div
+        id={APP_DRAWER_LAYER_ID}
+        className="app-drawer-layer"
+        data-testid="app-drawer-layer"
+      />
     </div>
   );
 }
