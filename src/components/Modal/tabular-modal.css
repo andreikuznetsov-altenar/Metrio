@@ -1,0 +1,49 @@
+.metrio-modal.metrio-modal--tabular,
+.metrio-modal.metrio-modal--task-list {
+  width: min(1180px, calc(100vw - var(--space-8)));
+  max-height: min(80vh, 720px);
+}
+
+.metrio-modal--tabular .metrio-modal__body {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  padding: 0;
+}
+
+.metrio-tabular-modal {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.metrio-tabular-modal .performance-table-wrap {
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  max-height: min(60vh, 520px);
+  overflow: auto;
+}
+
+.metrio-tabular-modal .performance-table th,
+.metrio-tabular-modal .performance-table td {
+  padding-top: var(--space-2);
+  padding-bottom: var(--space-2);
+}
+
+.metrio-tabular-modal .performance-table th:first-child,
+.metrio-tabular-modal .performance-table td:first-child {
+  padding-left: var(--performance-table-edge-inset, var(--space-4));
+}
+
+.metrio-tabular-modal .performance-table th:last-child,
+.metrio-tabular-modal .performance-table td:last-child {
+  padding-right: var(--performance-table-edge-inset, var(--space-4));
+}
+
+.metrio-tabular-modal .metrio-placeholder {
+  padding: var(--space-6) var(--space-4);
+  min-height: 8rem;
+}

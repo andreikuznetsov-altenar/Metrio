@@ -1,5 +1,5 @@
 import { Badge } from "../Badge/Badge";
-import { Modal } from "../Modal/Modal";
+import { TabularModal } from "../Modal/TabularModal";
 import type { TaskListModalRow } from "../../domain/actions/buildTaskListModalRows";
 import { issueStatusBadgeVariant } from "../../domain/jira/issueStatusBadgeVariant";
 import { METRIO_TABLE_CLASS, MetrioTableWrap } from "../Table/MetrioTable";
@@ -19,8 +19,7 @@ export function TaskListModal({
   onOpenIssue?: (issueKey: string, url?: string) => void;
 }) {
   return (
-    <Modal open={open} onClose={onClose} title={title} className="metrio-modal--task-list">
-      <div data-testid="task-list-modal">
+    <TabularModal open={open} onClose={onClose} title={title} testId="task-list-modal">
         {rows.length === 0 ? (
           <div className="metrio-placeholder" role="status">
             <p className="metrio-placeholder__text">No tasks to show for this selection.</p>
@@ -76,7 +75,6 @@ export function TaskListModal({
             </table>
           </MetrioTableWrap>
         )}
-      </div>
-    </Modal>
+    </TabularModal>
   );
 }
