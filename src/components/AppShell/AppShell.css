@@ -50,6 +50,15 @@
   background: var(--color-surface);
 }
 
+.app-refresh-status-layer {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: var(--z-app-floating, 105);
+  pointer-events: none;
+}
+
 .app-drawer-layer,
 .app-modal-layer,
 .app-tooltip-layer {

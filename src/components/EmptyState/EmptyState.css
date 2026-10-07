@@ -42,7 +42,7 @@
 }
 
 .empty-state__icon + .empty-state__text {
-  margin-top: var(--space-6);
+  margin-top: var(--icon-text-gap);
 }
 
 .empty-state__title {

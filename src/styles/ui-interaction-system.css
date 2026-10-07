@@ -379,7 +379,7 @@
 
 .metrio-placeholder__icon + .metrio-placeholder__text,
 .metrio-empty-state__icon + .metrio-empty-state__text {
-  margin-top: var(--space-2);
+  margin-top: var(--icon-text-gap);
 }
 
 .metrio-placeholder__title,

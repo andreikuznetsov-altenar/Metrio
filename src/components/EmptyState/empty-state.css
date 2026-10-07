@@ -30,7 +30,7 @@
 }
 
 .metrio-empty-state__icon + .metrio-empty-state__text {
-  margin-top: var(--space-2);
+  margin-top: var(--icon-text-gap);
 }
 
 .metrio-empty-state__title {

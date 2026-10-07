@@ -8,13 +8,17 @@
   --tray-popover-action-min-height: 32px;
   --tray-popover-row-hover-radius: 8px;
   --tray-popover-surface: var(--color-surface, #fff);
+  --tray-popover-shadow: 0 4px 14px rgba(15, 17, 21, 0.12);
+  --tray-host-shadow-inset: 16px;
 }
 
 /** Rounded popover surface. Native positioning owns the exact 4px anchor gap. */
 .tray-popover {
   position: relative;
-  width: var(--tray-popover-width);
+  width: calc(var(--tray-popover-width) + (2 * var(--tray-host-shadow-inset)));
   margin: 0 auto;
+  padding: var(--tray-host-shadow-inset);
+  box-sizing: border-box;
   box-shadow: none;
   filter: none;
 }
@@ -25,7 +29,7 @@
   border: none;
   border-radius: var(--tray-popover-radius);
   background: var(--tray-popover-surface);
-  box-shadow: none;
+  box-shadow: var(--tray-popover-shadow);
   padding: var(--tray-popover-padding);
   display: flex;
   flex-direction: column;

@@ -3,6 +3,11 @@ export const TRAY_POPOVER_GAP_PX = 4;
 /** @deprecated Use TRAY_POPOVER_GAP_PX. */
 export const TRAY_ARROW_TIP_GAP_PX = TRAY_POPOVER_GAP_PX;
 
+/** Transparent host inset so the soft CSS shadow is not clipped. */
+export const TRAY_HOST_SHADOW_INSET_PX = 16;
+
+export const TRAY_POPOVER_SHADOW_TOKEN = "var(--tray-popover-shadow)";
+
 export type TrayAnchorRect = {
   left: number;
   top: number;
@@ -23,9 +28,9 @@ export function trayArrowTipYFromAnchor(anchor: TrayAnchorRect): number {
   return trayBottomY(anchor) + TRAY_POPOVER_GAP_PX;
 }
 
-/** Native host window origin Y; it is the visible surface top (there is no notch). */
+/** Native host window origin Y; inset above the visible surface for shadow room. */
 export function trayHostWindowYFromArrowTip(arrowTipY: number): number {
-  return arrowTipY;
+  return arrowTipY - TRAY_HOST_SHADOW_INSET_PX;
 }
 
 export function trayHostWindowPosition(
@@ -54,5 +59,6 @@ export function hostFitsPopoverContent(
   popoverWidth: number,
   popoverHeight: number,
 ): boolean {
-  return hostWidth >= popoverWidth && hostHeight >= popoverHeight;
+  const pad = TRAY_HOST_SHADOW_INSET_PX * 2;
+  return hostWidth >= popoverWidth + pad && hostHeight >= popoverHeight + pad;
 }

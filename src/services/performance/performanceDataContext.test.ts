@@ -133,6 +133,7 @@ describe("PerformanceDataContext", () => {
       wrapper: wrapper(),
     });
     await waitFor(() => expect(result.current.status).toBe("ready"));
+    expect(result.current.refreshFailedWithUsableCache).toBe(false);
     mockFetch.mockClear();
     await act(async () => {
       await result.current.refresh();
@@ -160,6 +161,7 @@ describe("PerformanceDataContext", () => {
     expect(result.current.viewModels).toBe(previous);
     expect(result.current.data).toBe(previousData);
     expect(result.current.stale).toBe(true);
+    expect(result.current.refreshFailedWithUsableCache).toBe(true);
     expect(result.current.errorMessage).toMatch(/Jira/i);
   });
 

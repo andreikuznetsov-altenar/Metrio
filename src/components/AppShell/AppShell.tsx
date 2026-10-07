@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { APP_DRAWER_LAYER_ID } from "../Drawer/drawerPortal";
 import { APP_MODAL_LAYER_ID } from "../Modal/modalPortal";
 import { APP_TOOLTIP_LAYER_ID } from "../Tooltip/tooltipPortal";
+import { GlobalRefreshStatusPanel } from "../GlobalRefreshStatusPanel/GlobalRefreshStatusPanel";
 import "./AppShell.css";
 
 export interface AppShellProps {
@@ -40,6 +41,12 @@ export function AppShell({
         {children}
       </main>
       {footer ? <footer className="app-shell__footer">{footer}</footer> : null}
+      <div
+        className="app-refresh-status-layer"
+        data-testid="app-refresh-status-layer"
+      >
+        <GlobalRefreshStatusPanel />
+      </div>
       <div
         id={APP_DRAWER_LAYER_ID}
         className="app-drawer-layer"

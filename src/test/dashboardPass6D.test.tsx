@@ -188,8 +188,7 @@ describe("Dashboard pass 6D — stale-while-revalidate", () => {
       errorMessage: "fail",
       healthState: "refresh_failed_with_cache",
     });
-    expect(failed?.showRetry).toBe(true);
-    expect(failed?.line).toMatch(/Couldn't refresh · showing data from/);
+    expect(failed).toBeNull();
     const stuck = buildDashboardSyncStatus({
       lastUpdatedAt: "2026-03-01T22:15:00.000Z",
       refreshing: true,

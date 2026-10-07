@@ -17,5 +17,6 @@ describe("AppShell", () => {
     expect(screen.getByText("Footer")).toBeInTheDocument();
     expect(screen.getByText("Content")).toBeInTheDocument();
     expect(screen.getByTestId("app-shell")).toBeInTheDocument();
+    expect(screen.getByTestId("app-refresh-status-layer")).toBeInTheDocument();
   });
 });

@@ -368,6 +368,7 @@
   align-items: center;
   justify-content: center;
   text-align: center;
+  gap: var(--icon-text-gap);
   border: 1px dashed var(--color-border);
   border-radius: var(--radius-card);
   background: var(--color-surface-secondary);
@@ -378,8 +379,12 @@
   margin: 0;
 }
 
+.performance-empty--compact .performance-empty__icon + .performance-empty__message {
+  margin: 0;
+}
+
 .performance-empty--compact .performance-empty__message {
-  margin: var(--space-6) 0 0;
+  margin: 0;
   font-size: 13px;
   color: var(--color-text-secondary);
   line-height: 1.45;
@@ -387,7 +392,7 @@
 
 .performance-empty--timeoff {
   align-items: center;
-  gap: 8px;
+  gap: var(--icon-text-gap);
 }
 
 .performance-empty__icon {
@@ -855,9 +860,15 @@
   width: 7.5rem;
 }
 
-.performance-table.performance-table--radar col.col-action,
 .performance-table.performance-table--report-history col.col-action {
   width: 8rem;
+}
+
+.performance-table.performance-table--radar col.col-action {
+  width: calc(
+    var(--radar-action-button-width) + var(--performance-table-action-inset-end) +
+      0.75rem
+  );
 }
 
 .performance-table--radar .performance-table__reason {
@@ -943,8 +954,12 @@
 }
 
 .performance-table__radar-action {
-  width: auto;
-  max-width: 100%;
+  width: var(--radar-action-button-width);
+  min-width: var(--radar-action-button-width);
+  max-width: var(--radar-action-button-width);
+  box-sizing: border-box;
+  justify-content: center;
+  text-align: center;
   white-space: nowrap;
 }
 

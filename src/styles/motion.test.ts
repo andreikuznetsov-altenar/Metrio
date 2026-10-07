@@ -20,7 +20,7 @@ describe("motion tokens", () => {
       path.resolve(process.cwd(), "src/styles/ui-interaction-system.css"),
       "utf8",
     );
-    expect(system).toContain("margin-top: var(--space-2)");
+    expect(system).toContain("margin-top: var(--icon-text-gap)");
   });
 });
 

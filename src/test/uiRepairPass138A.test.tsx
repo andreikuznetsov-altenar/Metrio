@@ -32,7 +32,7 @@ describe("UI Repair Pass 13.8A global primitives", () => {
 
   it("EmptyState defines icon-title spacing of 8px", () => {
     const css = read("src/components/EmptyState/empty-state.css");
-    expect(css).toContain("margin-top: var(--space-2)");
+    expect(css).toContain("margin-top: var(--icon-text-gap)");
     expect(read("src/components/EmptyState/EmptyState.tsx")).toContain(
       "metrio-empty-state__title",
     );

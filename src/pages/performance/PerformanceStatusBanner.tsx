@@ -6,7 +6,6 @@ export function PerformanceStatusBanner() {
     status,
     loadingMessage,
     errorMessage,
-    stale,
     viewModels,
     data,
     refresh,
@@ -41,16 +40,6 @@ export function PerformanceStatusBanner() {
   }
 
   const messages: string[] = [];
-  if (stale && errorMessage) {
-    messages.push(
-      "Couldn't refresh data. Showing the last successful result.",
-    );
-    if (errorMessage && !messages.includes(errorMessage)) {
-      messages.push(errorMessage);
-    }
-  } else if (errorMessage && stale) {
-    messages.push(errorMessage);
-  }
   if (viewModels?.statusMessage) {
     messages.push(viewModels.statusMessage);
   }
@@ -69,11 +58,6 @@ export function PerformanceStatusBanner() {
       role="status"
     >
       <p>{messages.join(" ")}</p>
-      {stale ? (
-        <Button type="button" variant="secondary" onClick={() => void refresh()}>
-          Retry
-        </Button>
-      ) : null}
     </div>
   );
 }

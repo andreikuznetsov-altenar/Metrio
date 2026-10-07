@@ -25,14 +25,14 @@ export function useMinimumVisibleDuration(
       return;
     }
     let cancelled = false;
-    const timer = window.setTimeout(() => {
-      if (cancelled) return;
+    const timer = setTimeout(() => {
+      if (cancelled || typeof window === "undefined") return;
       activeSinceRef.current = null;
       setVisible(false);
     }, remaining);
     return () => {
       cancelled = true;
-      window.clearTimeout(timer);
+      clearTimeout(timer);
     };
   }, [active, minMs, visible]);
 

@@ -36,12 +36,16 @@ describe("icon + text horizontal gap (8px token)", () => {
     }
   });
 
-  it("documents vertical empty-state icon exception", () => {
-    const css = readFileSync(
-      join(repoRoot, "src/components/EmptyState/EmptyState.css"),
-      "utf8",
-    );
-    expect(css).toContain(".empty-state__icon + .empty-state__text");
-    expect(css).toContain("margin-top: var(--space-6)");
+  it("empty-state icon + associated text uses --icon-text-gap (8px)", () => {
+    const files = [
+      "src/components/EmptyState/empty-state.css",
+      "src/components/EmptyState/EmptyState.css",
+      "src/styles/ui-interaction-system.css",
+      "src/pages/feedback/feedback-ds.css",
+    ];
+    for (const file of files) {
+      const css = readFileSync(join(repoRoot, file), "utf8");
+      expect(css, file).toMatch(/margin-top:\s*var\(--icon-text-gap\)/);
+    }
   });
 });

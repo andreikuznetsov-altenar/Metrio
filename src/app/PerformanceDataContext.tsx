@@ -73,6 +73,11 @@ export interface PerformanceDataContextValue {
   loadingMessage: string | null;
   errorMessage: string | null;
   stale: boolean;
+  /**
+   * True only after a refresh actually failed while a previous dataset remains usable.
+   * Stays latched across retry-in-progress so the global panel does not flicker.
+   */
+  refreshFailedWithUsableCache: boolean;
   refresh: () => Promise<void>;
   refreshing: boolean;
   contentLoadingActive: boolean;
@@ -138,6 +143,8 @@ export function PerformanceDataProvider({
   const [status, setStatus] = useState<PerformanceLoadStatus>("idle");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [stale, setStale] = useState(false);
+  const [refreshFailedWithUsableCache, setRefreshFailedWithUsableCache] =
+    useState(false);
   const [longLoadingMessage, setLongLoadingMessage] = useState<string | null>(
     null,
   );
@@ -240,6 +247,7 @@ export function PerformanceDataProvider({
           next.partialWarnings.length > 0 || Boolean(models.statusMessage);
         setStatus(partial ? "partial" : "ready");
         setStale(false);
+        setRefreshFailedWithUsableCache(false);
         setRevalidatingFromCache(false);
         setErrorMessage(null);
         const cacheIdentity: DashboardCacheIdentity = {
@@ -279,14 +287,18 @@ export function PerformanceDataProvider({
         setErrorMessage(message);
         if (dataRef.current) {
           setStale(true);
+          setRefreshFailedWithUsableCache(true);
           setRevalidatingFromCache(true);
           setStatus("partial");
           await markPerformanceIntegrationsStale({
             jira: /jira/i.test(message),
             bamboo: /bamboo/i.test(message),
           });
-        } else if (showOverlay) {
-          setStatus("error");
+        } else {
+          setRefreshFailedWithUsableCache(false);
+          if (showOverlay) {
+            setStatus("error");
+          }
         }
       }
     },
@@ -497,6 +509,7 @@ export function PerformanceDataProvider({
       loadingMessage,
       errorMessage,
       stale,
+      refreshFailedWithUsableCache,
       refresh,
       refreshing,
       contentLoadingActive,
@@ -517,6 +530,7 @@ export function PerformanceDataProvider({
       loadingMessage,
       errorMessage,
       stale,
+      refreshFailedWithUsableCache,
       refresh,
       refreshing,
       contentLoadingActive,

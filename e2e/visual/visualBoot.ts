@@ -14,6 +14,7 @@ import {
   VISUAL_DASHBOARD_CACHE_STORAGE_KEY,
   VISUAL_PERFORMANCE_DELAY_MS_KEY,
   VISUAL_PERFORMANCE_FAIL_KEY,
+  serializeDashboardCacheVisualFixtureForPlaywright,
 } from "../../src/fixtures/dashboardCacheVisualFixture";
 import { OPEN_RESOURCES_EVENT } from "../../src/platform/openOnboardingResource";
 import {
@@ -201,6 +202,49 @@ export async function bootDashboardManager(
   );
   await page.goto("/");
   await expect(page.getByTestId("dashboard-ready")).toBeVisible({ timeout: 30_000 });
+}
+
+export async function bootDashboardWithCache(
+  page: Page,
+  options: {
+    theme?: "light" | "dark";
+    delayMs?: number;
+    failRefresh?: boolean;
+    width?: number;
+    path?: string;
+  } = {},
+) {
+  const theme = options.theme ?? "light";
+  const cache = serializeDashboardCacheVisualFixtureForPlaywright(undefined, {
+    preset: "3m",
+  });
+  if (options.width) {
+    await setViewport(page, options.width, 900);
+  }
+  await page.clock.install({ time: new Date("2026-10-03T09:30:00+02:00") });
+  await page.addInitScript(
+    ({ fixtureId, cachePayload, themeId, delayMs, failRefresh }) => {
+      localStorage.setItem("metrio-connection-connected", "true");
+      localStorage.setItem("metrio-dev-fixture", fixtureId);
+      localStorage.setItem("metrio-theme", themeId);
+      localStorage.setItem("metrio-visual-dashboard-cache", cachePayload);
+      if (delayMs > 0) {
+        localStorage.setItem("metrio-visual-performance-delay-ms", String(delayMs));
+      }
+      if (failRefresh) {
+        localStorage.setItem("metrio-visual-performance-fail", "1");
+      }
+    },
+    {
+      fixtureId: "lead",
+      cachePayload: cache,
+      themeId: theme,
+      delayMs: options.delayMs ?? 0,
+      failRefresh: options.failRefresh ?? false,
+    },
+  );
+  await page.goto(options.path ?? "/");
+  await page.clock.resume();
 }
 
 export async function bootMetrio(page: Page, fixture: "lead" | "employee" = "lead") {

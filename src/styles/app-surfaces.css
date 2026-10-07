@@ -1,6 +1,6 @@
 /**
- * Stacking (low → high): app content → app chrome → drawer scrim → drawer →
- * modal scrim → modal → tooltip → toast.
+ * Stacking (low → high): app content → app chrome → floating (global refresh) →
+ * drawer scrim → drawer → modal scrim → modal → tooltip → toast.
  * Drawer/modal scrims cover the Metrio app shell (header + content), not the native titlebar.
  */
 

@@ -545,15 +545,19 @@ export function buildVisualPerformanceFetchResult(
 
   const kpiSnapshots = buildKpiHistory(teamSnapshot, reportData);
 
-  const timeOffEntries: TimeOffEntry[] = [
-    {
-      employeeId: "person-04",
-      name: getPerson("person-04").name,
-      type: "vacation",
-      startDate: "2026-03-10",
-      endDate: "2026-03-14",
-    },
-  ];
+  const timeOffEntries: TimeOffEntry[] =
+    typeof window !== "undefined" &&
+    window.localStorage.getItem("metrio-visual-empty-timeoff") === "1"
+      ? []
+      : [
+          {
+            employeeId: "person-04",
+            name: getPerson("person-04").name,
+            type: "vacation",
+            startDate: "2026-03-10",
+            endDate: "2026-03-14",
+          },
+        ];
 
   return withVisualCapacityInsufficientAll({
     teamSnapshot,

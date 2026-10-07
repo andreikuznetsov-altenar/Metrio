@@ -692,7 +692,10 @@ export function TeamOverviewView({
       <section aria-label="Time off" className="performance-section">
         <SectionTitle title="Time off" help={performanceHelp.timeOff} />
         {snapshot.timeOff.length === 0 ? (
-          <div className="performance-empty performance-empty--compact performance-empty--timeoff">
+          <div
+            className="performance-empty performance-empty--compact performance-empty--timeoff"
+            data-testid="time-off-empty-state"
+          >
             <CalendarDays size={18} strokeWidth={1.75} aria-hidden className="performance-empty__icon" />
             <p className="performance-empty__message">No upcoming time off</p>
           </div>

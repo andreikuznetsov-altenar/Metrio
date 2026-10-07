@@ -291,7 +291,7 @@
 }
 
 .feedback-empty-state__icon + .feedback-empty-state__text {
-  margin-top: var(--space-6);
+  margin-top: var(--icon-text-gap);
 }
 
 .feedback-empty-state__title {

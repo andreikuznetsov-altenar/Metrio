@@ -1,4 +1,3 @@
-import { format, parseISO } from "date-fns";
 import type { DashboardDataHealthState } from "./dashboardDataHealth";
 
 export interface DashboardSyncStatusInput {
@@ -16,25 +15,11 @@ export interface DashboardSyncStatus {
   showDiagnostics?: boolean;
 }
 
-function formatClockTime(iso: string): string {
-  try {
-    return format(parseISO(iso), "HH:mm");
-  } catch {
-    return iso;
-  }
-}
-
 /** Subtle Dashboard greeting sync line — never blocks content. */
 export function buildDashboardSyncStatus(
   input: DashboardSyncStatusInput,
 ): DashboardSyncStatus | null {
-  const {
-    lastUpdatedAt,
-    refreshing,
-    stale,
-    errorMessage,
-    healthState,
-  } = input;
+  const { lastUpdatedAt, refreshing, healthState } = input;
 
   if (healthState === "refresh_stuck") {
     return {
@@ -48,25 +33,6 @@ export function buildDashboardSyncStatus(
     if (refreshing) {
       return { line: "Loading performance data…", showRetry: false };
     }
-    return null;
-  }
-
-  if (refreshing) {
-    return null;
-  }
-
-  if (
-    (stale && errorMessage) ||
-    healthState === "refresh_failed_with_cache" ||
-    healthState === "stale"
-  ) {
-    return {
-      line: `Couldn't refresh · showing data from ${formatClockTime(lastUpdatedAt)}`,
-      showRetry: true,
-    };
-  }
-
-  if (healthState === "ready" || healthState === "refreshing") {
     return null;
   }
 
