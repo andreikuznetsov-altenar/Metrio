@@ -61,7 +61,7 @@ describe('calculateWorkload', () => {
       { status: 'Cancelled', active: false },
       { status: 'In Progress', active: true },
       { status: 'Review', active: false },
-      { status: 'On Hold', active: true },
+      { status: 'On Hold', active: false },
     ];
     statuses.forEach(({ status, active }) => {
       const result = calculateWorkload([activeIssue(status, status)], params);

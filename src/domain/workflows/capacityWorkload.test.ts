@@ -111,7 +111,9 @@ describe('capacityWorkload', () => {
     expect(wsCycles.length).toBe(1);
 
     const workload = calculateWorkload([ux, ws], params);
-    expect(workload.capacityBreakdown?.completedCyclesInPeriod).toBe(2);
+    // WS cycle occurred on a weekend and therefore has no execution duration;
+    // it is not a valid capacity sample.
+    expect(workload.capacityBreakdown?.completedCyclesInPeriod).toBe(1);
     expect(workload.monthlyCapacityHours).toBe(164);
   });
 });

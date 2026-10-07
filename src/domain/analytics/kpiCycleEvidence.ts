@@ -1,7 +1,7 @@
-import { buildCompletedCyclesFromSegments, getCycleSegments } from "../jira/cycles";
-import { isCompletedCycleInReportingPeriod } from "../jira/cycleKpi";
 import { isDateWithinRange } from "../jira/dates";
 import type { AuditIssue, CompletedCycle, ReportParams } from "../jira/types";
+import { extractProfileContributorCycles, isProfileBackflow } from "../workflows/profileCycles";
+import { resolveWorkflowProfile } from "../workflows/resolveWorkflowProfile";
 
 export interface ReportingCycleRecord {
   issue: AuditIssue;
@@ -18,10 +18,35 @@ export function collectReportingPeriodCycles(
   const records: ReportingCycleRecord[] = [];
 
   for (const issue of issues || []) {
-    const segments = getCycleSegments(issue, params);
-    const completedCycles = buildCompletedCyclesFromSegments(segments).filter((cycle) =>
-      isCompletedCycleInReportingPeriod(cycle, params),
-    );
+    const profile = resolveWorkflowProfile(issue);
+    const completedCycles = extractProfileContributorCycles(issue, profile)
+      .filter((cycle) => cycle.completedAt && isDateWithinRange(cycle.completedAt, params))
+      .map((cycle): CompletedCycle => ({
+        progressToReview: cycle.progressToReviewMs == null
+          ? null
+          : {
+              type: "progress_to_review",
+              ms: cycle.progressToReviewMs,
+              startedAt: cycle.startedAt,
+              endedAt: cycle.completedAt!,
+              hasBackflow: cycle.hasBackflow,
+              cycleTodoStartedAt: cycle.startedAt,
+              isCompleteCycle: true,
+            },
+        progressToHolds: [],
+        reviewToDone: {
+          type: "review_to_done",
+          ms: cycle.reviewToDoneMs,
+          startedAt: cycle.startedAt,
+          endedAt: cycle.completedAt!,
+          hasBackflow: cycle.hasBackflow,
+          cycleTodoStartedAt: cycle.startedAt,
+          fullCycleMs: cycle.fullCycleMs,
+          isCompleteCycle: true,
+        },
+        hasBackflow: cycle.hasBackflow,
+        isFirstPass: cycle.isFirstPass,
+      }));
 
     completedCycles.forEach((cycle, index) => {
       records.push({
@@ -46,11 +71,12 @@ export function backflowEventsInCycle(
 
   const startMs = new Date(start).getTime();
   const endMs = new Date(end).getTime();
+  const profile = resolveWorkflowProfile(issue);
 
   return (issue.events || [])
     .filter((event) => {
       if (event.eventType !== "Status") return false;
-      if (!event.isBackflow || event.excludeFromEfficiencyBackflow) return false;
+      if (!isProfileBackflow(profile, event.fromValue, event.toValue, event)) return false;
       const t = new Date(event.changedAt).getTime();
       return t >= startMs && t <= endMs;
     })
@@ -82,10 +108,11 @@ export function collectBackflowEventsOnDate(
   }[] = [];
 
   for (const issue of issues) {
+    const profile = resolveWorkflowProfile(issue);
     const events = (issue.events || [])
       .filter((event) => {
         if (event.eventType !== "Status") return false;
-        if (!event.isBackflow || event.excludeFromEfficiencyBackflow) return false;
+        if (!isProfileBackflow(profile, event.fromValue, event.toValue, event)) return false;
         return cycleMatchesBucketDate(event.changedAt, bucketDate);
       })
       .map((event) => ({

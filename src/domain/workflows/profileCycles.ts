@@ -4,6 +4,7 @@ import { canonicalStageForStatus, resolveWorkflowStage } from './resolveWorkflow
 import type { CanonicalStage, ProfileContributorCycle, WorkflowProfile } from './types';
 
 const STAGE_RANK: Record<CanonicalStage, number> = {
+  unknown: 0,
   backlog: 1,
   active: 2,
   review: 3,
@@ -21,7 +22,7 @@ function getStatusEvents(issue: AuditIssue): IssueEvent[] {
     .sort((a, b) => new Date(a.changedAt).getTime() - new Date(b.changedAt).getTime());
 }
 
-function isProfileBackflow(
+export function isProfileBackflow(
   profile: WorkflowProfile,
   fromStatus: string,
   toStatus: string,
@@ -191,4 +192,34 @@ export function sumCompletedCycleCapacityHours(
 ): number {
   const totalMs = cycles.reduce((sum, c) => sum + c.activeCapacityMs, 0);
   return totalMs / 3600000;
+}
+
+export interface ProfileHoldTransition {
+  changedAt: string;
+  progressToHoldMs: number | null;
+}
+
+/** Profile-aware active → hold transitions used by KPI hold metrics. */
+export function extractProfileHoldTransitions(
+  issue: AuditIssue,
+  profile: WorkflowProfile,
+): ProfileHoldTransition[] {
+  const transitions: ProfileHoldTransition[] = [];
+  let activeStartedAt: string | null = null;
+  for (const event of getStatusEvents(issue)) {
+    const from = canonicalStageForStatus(profile, event.fromValue || '');
+    const to = canonicalStageForStatus(profile, event.toValue || '');
+    if (to === 'active') activeStartedAt = event.changedAt;
+    if (from === 'active' && to === 'hold') {
+      transitions.push({
+        changedAt: event.changedAt,
+        progressToHoldMs: activeStartedAt
+          ? getWorkingDurationMs(activeStartedAt, event.changedAt)
+          : null,
+      });
+      activeStartedAt = null;
+    }
+    if (to !== 'active' && to !== 'hold') activeStartedAt = null;
+  }
+  return transitions;
 }

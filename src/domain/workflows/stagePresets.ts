@@ -5,10 +5,27 @@ export function presetForCanonicalStage(
   statusName: string,
 ): ResolvedWorkflowStage {
   switch (canonicalStage) {
+    case 'unknown':
+      return {
+        canonicalStage,
+        statusName,
+        isMapped: false,
+        diagnosticCode: 'unmapped_status',
+        countsAsActiveWork: false,
+        countsAsReview: false,
+        countsAsQa: false,
+        countsAsWaiting: false,
+        countsAsHold: false,
+        countsAsAttentionEligible: false,
+        countsAsCapacityContributor: false,
+        isTerminal: false,
+        isCompletion: false,
+      };
     case 'backlog':
       return {
         canonicalStage,
         statusName,
+        isMapped: true,
         countsAsActiveWork: false,
         countsAsReview: false,
         countsAsQa: false,
@@ -23,6 +40,7 @@ export function presetForCanonicalStage(
       return {
         canonicalStage,
         statusName,
+        isMapped: true,
         countsAsActiveWork: true,
         countsAsReview: false,
         countsAsQa: false,
@@ -37,6 +55,7 @@ export function presetForCanonicalStage(
       return {
         canonicalStage,
         statusName,
+        isMapped: true,
         countsAsActiveWork: false,
         countsAsReview: true,
         countsAsQa: false,
@@ -51,13 +70,14 @@ export function presetForCanonicalStage(
       return {
         canonicalStage,
         statusName,
-        countsAsActiveWork: true,
+        isMapped: true,
+        countsAsActiveWork: false,
         countsAsReview: false,
         countsAsQa: true,
         countsAsWaiting: false,
         countsAsHold: false,
         countsAsAttentionEligible: true,
-        countsAsCapacityContributor: true,
+        countsAsCapacityContributor: false,
         isTerminal: false,
         isCompletion: false,
       };
@@ -65,6 +85,7 @@ export function presetForCanonicalStage(
       return {
         canonicalStage,
         statusName,
+        isMapped: true,
         countsAsActiveWork: false,
         countsAsReview: false,
         countsAsQa: false,
@@ -79,6 +100,7 @@ export function presetForCanonicalStage(
       return {
         canonicalStage,
         statusName,
+        isMapped: true,
         countsAsActiveWork: false,
         countsAsReview: false,
         countsAsQa: false,
@@ -93,6 +115,7 @@ export function presetForCanonicalStage(
       return {
         canonicalStage,
         statusName,
+        isMapped: true,
         countsAsActiveWork: false,
         countsAsReview: false,
         countsAsQa: false,
@@ -107,6 +130,7 @@ export function presetForCanonicalStage(
       return {
         canonicalStage,
         statusName,
+        isMapped: true,
         countsAsActiveWork: false,
         countsAsReview: false,
         countsAsQa: false,

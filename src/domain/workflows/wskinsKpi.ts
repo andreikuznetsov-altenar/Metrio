@@ -3,6 +3,8 @@ import { isDateWithinRange } from '../jira/dates';
 import type { AuditIssue, KpiData, ReportParams } from '../jira/types';
 import { calculateWskinsEfficiencyIndex } from './wskinsEfficiency';
 import { normalizeStatusKey } from './normalizeStatus';
+import { isProfileBackflow } from './profileCycles';
+import { resolveWorkflowProfile } from './resolveWorkflowProfile';
 
 function wskinsStatusMatches(statusValue: string, names: string[]): boolean {
   const normalized = normalizeStatusKey(statusValue);
@@ -92,6 +94,7 @@ export function calculateWskinsSubtaskKpiContribution(
   issue: AuditIssue,
   params: ReportParams,
 ): WskinsIssueKpiContribution {
+  const profile = resolveWorkflowProfile(issue);
   const events = (issue.events || [])
     .filter((e) => e.eventType === 'Status')
     .slice()
@@ -110,7 +113,7 @@ export function calculateWskinsSubtaskKpiContribution(
     const toStatus = e.toValue || '';
     const eventInRange = isDateWithinRange(e.changedAt, params);
 
-    if (e.isBackflow && !e.excludeFromEfficiencyBackflow && eventInRange) {
+    if (isProfileBackflow(profile, e.fromValue, e.toValue, e) && eventInRange) {
       backflowCount++;
     }
 

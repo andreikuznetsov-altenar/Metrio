@@ -2,6 +2,7 @@ import { personAtRiskCount, personProblematicCount, personRouteKey } from '../pe
 import type { Person } from '../people/types';
 import type { ReportParams } from '../jira/types';
 import type { TeamSnapshot } from '../people/types';
+import { getOperationalIssues } from '../people/ownedIssues';
 import {
   classifyIssueAttention,
   getActiveIssues,
@@ -45,13 +46,13 @@ function buildPersonRadarItem(
   const relatedIssueKeys: string[] = [];
   let severity: RadarSeverity = 'info';
 
-  const activeIssues = getActiveIssues(person);
+  const operationalIssues = getOperationalIssues(person);
   const atRiskCount = personAtRiskCount(person, params);
   const problematicCount = personProblematicCount(person, params);
   const workload = person.workload?.level || 'normal';
-  const activeCount = person.workload?.activeCount ?? activeIssues.length;
+  const activeCount = person.workload?.activeCount ?? getActiveIssues(person).length;
 
-  for (const issue of activeIssues) {
+  for (const issue of operationalIssues) {
     const attention = classifyIssueAttention(issue, params, now, rules);
     if (!attention) continue;
     severity = maxSeverity(severity, attention.severity);

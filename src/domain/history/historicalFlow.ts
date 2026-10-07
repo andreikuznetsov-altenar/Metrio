@@ -9,6 +9,8 @@ import {
   getIssueFullCycleMs,
   withFullIssueHistory,
 } from '../periods/issueCompletion';
+import { isProfileBackflow } from '../workflows/profileCycles';
+import { resolveWorkflowProfile } from '../workflows/resolveWorkflowProfile';
 import type { DailyPersonSnapshot, DailyTeamSnapshot } from '../snapshots/types';
 import { getEarliestFetchDate } from './historyRanges';
 import { SNAPSHOT_RETENTION_DAYS } from './constants';
@@ -73,12 +75,12 @@ export function indexPersonDailyFlow(
 
   for (const issue of issues) {
     const fullIssue = withFullIssueHistory(issue);
+    const profile = resolveWorkflowProfile(fullIssue);
 
     for (const event of fullIssue.events || []) {
       if (
         event.eventType === 'Status' &&
-        event.isBackflow &&
-        !event.excludeFromEfficiencyBackflow
+        isProfileBackflow(profile, event.fromValue, event.toValue, event)
       ) {
         const ts = Date.parse(event.changedAt);
         if (ts >= minTs && ts <= maxTs) {

@@ -1,7 +1,8 @@
 import { formatDuration } from "../jira/dates";
 import { buildKpiFromIssues } from "../jira/kpi";
 import type { ReportParams } from "../jira/types";
-import { isCompletionStatus } from "../periods/issueCompletion";
+import { resolveWorkflowProfile } from "../workflows/resolveWorkflowProfile";
+import { resolveWorkflowStage } from "../workflows/resolveWorkflowStage";
 import type { CurrentUser } from "../types";
 import { canOpenPersonDetail } from "../personAccess";
 import type { Person, TeamSnapshot } from "../people/types";
@@ -224,7 +225,8 @@ export function buildProjectCockpit(input: BuildProjectCockpitInput): ProjectCoc
 
   for (const issue of issues) {
     const status = issue.currentStatus || "—";
-    const completed = isCompletionStatus(status);
+    const profile = resolveWorkflowProfile(issue);
+    const completed = resolveWorkflowStage(profile, status).isCompletion;
     const owner = ownerForIssue(input.snapshot, issue.issueKey);
     const attention = classifyIssueAttention(issue, input.params, now, rules);
     const health = classifyTaskHealth({

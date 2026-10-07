@@ -69,7 +69,7 @@ describe('snapshotEngine', () => {
     expect(second.teamSnapshots).toHaveLength(1);
   });
 
-  it('migrates v1 cumulative flow fields to v2 daily semantics', () => {
+  it('invalidates pre-v4 derived person snapshots', () => {
     const migrated = migrateKpiSnapshotFile({
       schemaVersion: 1,
       personSnapshots: [
@@ -89,8 +89,8 @@ describe('snapshotEngine', () => {
       teamSnapshots: [],
     } as unknown as Parameters<typeof migrateKpiSnapshotFile>[0]);
     expect(migrated.schemaVersion).toBe(KPI_SNAPSHOT_SCHEMA_VERSION);
-    expect(migrated.personSnapshots[0].completedOnDate).toBe(0);
-    expect(migrated.personSnapshots[0].activeCount).toBe(2);
+    expect(migrated.personSnapshots).toEqual([]);
+    expect(migrated.teamSnapshots).toEqual([]);
   });
 
   it('uses local date key for snapshot date', () => {
@@ -99,7 +99,7 @@ describe('snapshotEngine', () => {
     expect(file.personSnapshots[0]?.date).toBe('2026-03-04');
   });
 
-  it('migrates v2 snapshots to v3 with source and nullable semantics', () => {
+  it('invalidates pre-v4 derived team snapshots', () => {
     const migrated = migrateKpiSnapshotFile({
       schemaVersion: 2,
       personSnapshots: [
@@ -120,6 +120,7 @@ describe('snapshotEngine', () => {
       teamSnapshots: [],
     } as unknown as Parameters<typeof migrateKpiSnapshotFile>[0]);
     expect(migrated.schemaVersion).toBe(KPI_SNAPSHOT_SCHEMA_VERSION);
-    expect(migrated.personSnapshots[0].source).toBe('live_daily');
+    expect(migrated.personSnapshots).toEqual([]);
+    expect(migrated.teamSnapshots).toEqual([]);
   });
 });

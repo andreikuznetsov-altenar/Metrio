@@ -36,7 +36,7 @@ export function diagnoseIssueWorkflow(
 
   const unmappedStatuses = [...statusNames].filter((status) => {
     const key = normalizeStatusKey(status);
-    return !profile.statusToCanonical[key] && canonicalStageForStatus(profile, status) === 'backlog';
+    return !profile.statusToCanonical[key] && canonicalStageForStatus(profile, status) === 'unknown';
   });
 
   const stage = resolveWorkflowStage(profile, issue.currentStatus || '');

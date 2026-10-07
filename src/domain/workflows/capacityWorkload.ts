@@ -35,6 +35,14 @@ export interface CapacityWorkloadInput {
   now?: Date;
 }
 
+function uniqueEligibleIssues(issues: AuditIssue[]): AuditIssue[] {
+  const byKey = new Map<string, AuditIssue>();
+  issues.filter(isWorkflowCapacityEligible).forEach((issue) => {
+    if (!byKey.has(issue.issueKey)) byKey.set(issue.issueKey, issue);
+  });
+  return [...byKey.values()];
+}
+
 export function daysInReportingPeriod(params: ReportParams): number {
   const from = parseISO(params.dateFrom);
   const to = parseISO(params.dateTo);
@@ -59,20 +67,18 @@ export function calculateCapacityBreakdown(input: CapacityWorkloadInput): Capaci
   let completedCycleHours = 0;
   let activeSegmentHours = 0;
 
-  issues.filter(isWorkflowCapacityEligible).forEach((issue) => {
+  uniqueEligibleIssues(issues).forEach((issue) => {
     const profile = resolveWorkflowProfile(issue, { mappings: input.mappings });
     const cycles = extractProfileContributorCycles(issue, profile, params).filter(
       (cycle) => cycle.completedAt && isDateWithinRange(cycle.completedAt, params),
     );
     cycles.forEach((cycle) => {
+      // A completed workflow cycle is only a capacity sample when execution
+      // contributor time was actually observed. Full-cycle time includes review,
+      // hold and queue waiting and must never be substituted for execution time.
+      if (cycle.activeCapacityMs <= 0) return;
       completedCyclesInPeriod++;
-      const hours =
-        cycle.activeCapacityMs > 0
-          ? cycle.activeCapacityMs / 3600000
-          : cycle.fullCycleMs
-            ? cycle.fullCycleMs / 3600000
-            : 0;
-      completedCycleHours += hours;
+      completedCycleHours += cycle.activeCapacityMs / 3600000;
     });
     activeSegmentHours += getActiveCapacitySegmentMs(issue, profile, nowIso) / 3600000;
   });
@@ -111,15 +117,21 @@ export function countOperationalWorkload(
   qaCount: number;
   waitingCount: number;
   holdCount: number;
+  backlogCount: number;
+  unknownCount: number;
+  capacityContributorIssueCount: number;
 } {
   let activeWorkCount = 0;
   let reviewCount = 0;
   let qaCount = 0;
   let waitingCount = 0;
   let holdCount = 0;
+  let backlogCount = 0;
+  let unknownCount = 0;
+  let capacityContributorIssueCount = 0;
   let currentAssignedIssueCount = 0;
 
-  issues.filter(isWorkflowCapacityEligible).forEach((issue) => {
+  uniqueEligibleIssues(issues).forEach((issue) => {
     currentAssignedIssueCount++;
     const profile = resolveWorkflowProfile(issue, { mappings });
     const stage = resolveWorkflowStage(profile, issue.currentStatus || '');
@@ -129,6 +141,9 @@ export function countOperationalWorkload(
     if (stage.countsAsQa) qaCount++;
     if (stage.countsAsWaiting) waitingCount++;
     if (stage.countsAsHold) holdCount++;
+    if (stage.canonicalStage === 'backlog') backlogCount++;
+    if (stage.canonicalStage === 'unknown') unknownCount++;
+    if (stage.countsAsCapacityContributor) capacityContributorIssueCount++;
   });
 
   return {
@@ -138,6 +153,9 @@ export function countOperationalWorkload(
     qaCount,
     waitingCount,
     holdCount,
+    backlogCount,
+    unknownCount,
+    capacityContributorIssueCount,
   };
 }
 

@@ -105,9 +105,8 @@ describe('current vs historical ownership', () => {
     assertUniqueCurrentOwnership(snapshot);
 
     expect(getActiveIssues(andreiHistorical, params)).toHaveLength(0);
-    expect(getActiveIssues(valeriia, params).map((i) => i.issueKey)).toEqual([
-      'ABC-123',
-    ]);
+    expect(getActiveIssues(valeriia, params)).toHaveLength(0);
+    expect(valeriia.ownedIssues.map((i) => i.issueKey)).toEqual(['ABC-123']);
 
     const risk = buildDeliveryRiskItems(snapshot, params);
     const abcRows = risk.filter((r) => r.issueKey === 'ABC-123');

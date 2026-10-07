@@ -1,10 +1,11 @@
 import { isDateWithinRange } from '../jira/dates';
-import { isHoldSegmentInReportingPeriod } from '../jira/cycleKpi';
-import { getCycleSegments } from '../jira/cycles';
 import { calculateEfficiencyIndex } from '../jira/kpi';
 import type { AuditIssue, KpiData, ReportParams } from '../jira/types';
 import { isWorkflowKpiEligible } from './eligibility';
-import { extractProfileContributorCycles } from './profileCycles';
+import {
+  extractProfileContributorCycles,
+  extractProfileHoldTransitions,
+} from './profileCycles';
 import { resolveWorkflowProfile } from './resolveWorkflowProfile';
 import type { WorkflowProfileMapping } from './types';
 import { calculateWskinsEfficiencyIndex } from './wskinsEfficiency';
@@ -110,12 +111,15 @@ export function buildWorkflowKpi(
       });
     }
 
-    const segments = getCycleSegments(issue, params);
-    segments.forEach((segment) => {
-      if (!isHoldSegmentInReportingPeriod(segment, params)) return;
+    const holdTransitions = extractProfileHoldTransitions(issue, profile);
+    holdTransitions.forEach((transition) => {
+      if (!isDateWithinRange(transition.changedAt, params)) return;
       holdCount++;
-      if (segment.ms !== null && segment.ms >= 0) {
-        progressToHoldDurations.push(segment.ms);
+      if (
+        transition.progressToHoldMs !== null &&
+        transition.progressToHoldMs >= 0
+      ) {
+        progressToHoldDurations.push(transition.progressToHoldMs);
       }
     });
 

@@ -3,7 +3,6 @@ import {
   isActiveWorkStatus,
   isTerminalNonCompletionStatus,
 } from "./issueTerminalStatus";
-import { isCompletionStatus } from "./issueCompletion";
 
 describe("issueTerminalStatus", () => {
   it("recognizes cancelled variants", () => {
@@ -21,6 +20,6 @@ describe("issueTerminalStatus", () => {
     expect(isActiveWorkStatus("Cancelled", false)).toBe(false);
     expect(isActiveWorkStatus("M. Cancelled", false)).toBe(false);
     expect(isActiveWorkStatus("In Progress", false)).toBe(true);
-    expect(isActiveWorkStatus("Done", isCompletionStatus("Done"))).toBe(false);
+    expect(isActiveWorkStatus("Done", true)).toBe(false);
   });
 });

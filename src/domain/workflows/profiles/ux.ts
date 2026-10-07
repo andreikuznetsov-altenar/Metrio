@@ -6,9 +6,13 @@ export const uxWorkflowProfile = createStatusMapProfile({
   efficiencyModel: 'ux',
   statusMap: {
     'To Do': 'backlog',
+    TODO: 'backlog',
     'Open': 'backlog',
     Backlog: 'backlog',
+    Draft: 'active',
     'In Progress': 'active',
+    'Need to Fix': 'active',
+    Pending: 'waiting',
     'In Review': 'review',
     Review: 'review',
     Approved: 'done',

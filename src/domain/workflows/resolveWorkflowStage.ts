@@ -14,7 +14,7 @@ export function canonicalStageForStatus(
 
 export function inferCanonicalFromStatusName(status: string): CanonicalStage {
   const n = normalizeStatusKey(status);
-  if (!n) return 'backlog';
+  if (!n) return 'unknown';
   if (n.includes('cancel')) return 'cancelled';
   if (
     n.includes('done') ||
@@ -44,7 +44,7 @@ export function inferCanonicalFromStatusName(status: string): CanonicalStage {
   ) {
     return 'backlog';
   }
-  return 'backlog';
+  return 'unknown';
 }
 
 export function resolveWorkflowStage(
@@ -56,17 +56,28 @@ export function resolveWorkflowStage(
   const preset = presetForCanonicalStage(canonicalStage, status);
   const profileStage = profile.stages[canonicalStage];
   const explicitlyMapped = !!profile.statusToCanonical[key];
+  if (canonicalStage === 'unknown') {
+    return presetForCanonicalStage('unknown', status);
+  }
   if (!explicitlyMapped && profileStage) {
     return {
       ...preset,
       ...profileStage,
       statusName: status || preset.statusName,
       canonicalStage,
+      isMapped: true,
+      diagnosticCode: undefined,
       countsAsAttentionEligible: preset.countsAsAttentionEligible,
       countsAsHold: preset.countsAsHold || profileStage.countsAsHold,
       countsAsWaiting: preset.countsAsWaiting || profileStage.countsAsWaiting,
     };
   }
   const resolved = profileStage || preset;
-  return { ...resolved, statusName: status || resolved.statusName, canonicalStage };
+  return {
+    ...resolved,
+    statusName: status || resolved.statusName,
+    canonicalStage,
+    isMapped: true,
+    diagnosticCode: undefined,
+  };
 }

@@ -35,7 +35,12 @@ export interface ParityRow {
   note?: string;
 }
 
-function statusEvent(changedAt: string, fromValue: string, toValue: string) {
+function statusEvent(
+  changedAt: string,
+  fromValue: string,
+  toValue: string,
+  isBackflow = false,
+) {
   return {
     eventType: "Status" as const,
     changedAt,
@@ -43,7 +48,7 @@ function statusEvent(changedAt: string, fromValue: string, toValue: string) {
     fromValue,
     toValue,
     timeSincePreviousStatusMs: null,
-    isBackflow: false,
+    isBackflow,
     isHandoff: false,
     isReturnToTeam: false,
     excludeFromEfficiencyBackflow: false,
@@ -51,6 +56,60 @@ function statusEvent(changedAt: string, fromValue: string, toValue: string) {
 }
 
 describe("Pass 13.6 Apps Script canonical parity matrix", () => {
+  it("LEGACY PARITY: reproduces first-pass and backflow counts on one deterministic fixture", () => {
+    const params = {
+      dateFrom: "2024-01-01",
+      dateTo: "2024-01-31",
+      targetReviewDays: 3,
+      users: ["alex"],
+      projects: ["UX"],
+    };
+    const events = [
+      statusEvent("2024-01-02T09:00:00.000Z", "To Do", "In Progress"),
+      statusEvent("2024-01-03T09:00:00.000Z", "In Progress", "In Review"),
+      statusEvent("2024-01-04T09:00:00.000Z", "In Review", "In Progress", true),
+      statusEvent("2024-01-05T09:00:00.000Z", "In Progress", "In Review"),
+      statusEvent("2024-01-08T09:00:00.000Z", "In Review", "Done"),
+    ];
+    const issue = {
+      issueKey: "UX-LEGACY-1",
+      projectKey: "UX",
+      issueSummary: "Legacy parity",
+      issueCreated: "2024-01-01T09:00:00.000Z",
+      assigneeName: "Alex",
+      issueTypeName: "Task",
+      contentType: "none",
+      designImprovementType: "none",
+      epicKey: "none",
+      epicSummary: "none",
+      epicStatus: "none",
+      epicContentType: "none",
+      epicDesignImprovementType: "none",
+      currentStatus: "Done",
+      events,
+      rangeEvents: events,
+    };
+
+    // Faithful test-only reference for Code.gs `buildKpiFromIssues_`:
+    // started/review/completed count completed cycles, while review→progress
+    // marks that cycle as backflow and therefore not first-pass.
+    const legacyReference = {
+      startedCount: 1,
+      reviewSubmittedCount: 1,
+      completedCount: 1,
+      firstPassAcceptedCount: 0,
+      backflowCount: 1,
+    };
+    const metrio = buildKpiFromIssues([issue], {}, params);
+    expect({
+      startedCount: metrio.startedCount,
+      reviewSubmittedCount: metrio.reviewSubmittedCount,
+      completedCount: metrio.completedCount,
+      firstPassAcceptedCount: metrio.firstPassAcceptedCount,
+      backflowCount: metrio.backflowCount,
+    }).toEqual(legacyReference);
+  });
+
   it("records parity rows for required metrics against local canonical sources", () => {
     const rows: ParityRow[] = [];
 

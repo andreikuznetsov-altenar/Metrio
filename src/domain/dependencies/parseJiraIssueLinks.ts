@@ -5,6 +5,7 @@ export interface ParsedIssueSnapshot {
   key: string;
   summary: string;
   status: string;
+  issueTypeName: string;
   dueDate?: string;
   parentKey?: string;
 }
@@ -31,10 +32,12 @@ export function snapshotFromRawIssue(issue: unknown): ParsedIssueSnapshot | null
   const summary = String(fields?.summary ?? "");
   const status =
     (fields?.status as { name?: string } | undefined)?.name?.toString() ?? "";
+  const issueTypeName =
+    (fields?.issuetype as { name?: string } | undefined)?.name?.toString() ?? "";
   const dueDate =
     typeof fields?.duedate === "string" ? fields.duedate : undefined;
   const parentKey = (fields?.parent as { key?: string } | undefined)?.key;
-  return { key, summary, status, dueDate, parentKey };
+  return { key, summary, status, issueTypeName, dueDate, parentKey };
 }
 
 function normalizeLinkType(name: string): DependencyType {

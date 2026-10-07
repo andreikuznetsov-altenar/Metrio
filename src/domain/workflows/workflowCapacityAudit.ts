@@ -81,6 +81,10 @@ export interface WorkflowCapacityPersonRow {
   qaCount: number;
   waitingCount: number;
   holdCount: number;
+  backlogCount: number;
+  unknownCount: number;
+  capacityContributorIssueCount: number;
+  capacityHours: number;
   estimatedMonthlyHours: number;
   capacityLoadPercent: number;
   capacityLevel: WorkloadLevel;
@@ -182,6 +186,12 @@ export function runWorkflowCapacityAudit(reportData: AuditReportData): WorkflowC
       qaCount: workload.qaCount ?? 0,
       waitingCount: workload.waitingCount ?? 0,
       holdCount: workload.holdCount ?? 0,
+      backlogCount: workload.backlogCount ?? 0,
+      unknownCount: workload.unknownCount ?? 0,
+      capacityContributorIssueCount: workload.capacityContributorIssueCount ?? 0,
+      capacityHours:
+        (workload.capacityBreakdown?.completedCycleHours ?? 0) +
+        (workload.capacityBreakdown?.activeSegmentHours ?? 0),
       estimatedMonthlyHours: workload.estimatedMonthlyHours ?? 0,
       capacityLoadPercent: workload.capacityLoadPercent ?? 0,
       capacityLevel: workload.level,
@@ -244,7 +254,7 @@ export function runWorkflowCapacityAudit(reportData: AuditReportData): WorkflowC
   flat.forEach((issue) => {
     const diag = diagnoseWorkflowIssues([issue])[0];
     if (!diag?.unmappedStatuses.length) return;
-    const key = `${issue.projectKey || '?'} | ${issue.issueTypeName} | ${issue.currentStatus}`;
+    const key = `${issue.issueKey} | ${issue.projectKey || '?'} | ${issue.issueTypeName} | ${issue.currentStatus} | unmapped: ${diag.unmappedStatuses.join(', ')}`;
     unknownCounts[key] = (unknownCounts[key] || 0) + 1;
   });
   const unknownCombinations = Object.entries(unknownCounts)
@@ -254,7 +264,7 @@ export function runWorkflowCapacityAudit(reportData: AuditReportData): WorkflowC
   const lines: string[] = [];
   lines.push('=== Workload legacy vs capacity (read-only) ===');
   lines.push(
-    'person | capacity evidence | assigned | active | review | qa | wait | hold | estMonthlyH | capacity% (raw) | legacyScore | legacyLevel',
+    'person | capacity evidence | assigned | active | review | qa | wait | hold | backlog | unknown | contributors | capacityH | estMonthlyH | capacity% (raw) | legacyScore | legacyLevel',
   );
   personRows.forEach((row) => {
     const evidence =
@@ -271,6 +281,10 @@ export function runWorkflowCapacityAudit(reportData: AuditReportData): WorkflowC
         row.qaCount,
         row.waitingCount,
         row.holdCount,
+        row.backlogCount,
+        row.unknownCount,
+        row.capacityContributorIssueCount,
+        row.capacityHours.toFixed(1),
         row.estimatedMonthlyHours.toFixed(1),
         row.capacityDataState === 'insufficient_history'
           ? `${row.capacityLoadPercent.toFixed(0)} (unmeasured)`

@@ -1,5 +1,5 @@
-import { isCompletionStatus } from "../periods/issueCompletion";
-import { isTerminalNonCompletionStatus } from "../periods/issueTerminalStatus";
+import { resolveWorkflowProfile } from "../workflows/resolveWorkflowProfile";
+import { resolveWorkflowStage } from "../workflows/resolveWorkflowStage";
 import { getActiveIssues } from "../radar/taskSignals";
 import type { Person, TeamSnapshot } from "../people/types";
 import type {
@@ -35,10 +35,18 @@ export function emptyDependencyIndex(now = new Date()): DeliveryDependencyIndex 
   };
 }
 
-export function isBlockerResolvedStatus(status: string): boolean {
-  return (
-    isCompletionStatus(status) || isTerminalNonCompletionStatus(status)
-  );
+export function isBlockerResolvedStatus(issue: ParsedIssueSnapshot): boolean {
+  const workflowIssue = {
+    issueKey: issue.key,
+    projectKey: projectForKey(issue.key),
+    issueTypeName: issue.issueTypeName,
+    currentStatus: issue.status,
+    events: [],
+  };
+  return resolveWorkflowStage(
+    resolveWorkflowProfile(workflowIssue),
+    issue.status,
+  ).isTerminal;
 }
 
 function ownerForIssue(
@@ -96,7 +104,7 @@ function buildWorkDependency(
     (edge.type === "blocked_by" || edge.type === "explicit_dependency" || edge.type === "blocks");
 
   const sourceActive = isIssueActiveInTeam(snapshot, source.key);
-  const blockerResolved = isBlockerResolvedStatus(target.status);
+  const blockerResolved = isBlockerResolvedStatus(target);
   const isActiveBlock =
     isBlockingEdge &&
     edge.type === "blocked_by" &&

@@ -1,6 +1,7 @@
-import { buildCompletedCyclesFromSegments, getCycleSegments } from './cycles';
-import { isCompletedCycleInReportingPeriod } from './cycleKpi';
+import { isDateWithinRange } from './dates';
 import type { AuditIssue, AuditReportData, ReportParams } from './types';
+import { extractProfileContributorCycles } from '../workflows/profileCycles';
+import { resolveWorkflowProfile } from '../workflows/resolveWorkflowProfile';
 
 function round2(value: number): number {
   return Math.round(Number(value || 0) * 100) / 100;
@@ -28,9 +29,13 @@ export function buildFirstPassRateMetrics(reportData: {
   let operationalNotFirstPass = 0;
 
   issues.forEach((issue) => {
-    const segments = getCycleSegments(issue, reportData.params || ({} as ReportParams));
-    const completedCycles = buildCompletedCyclesFromSegments(segments).filter((cycle) =>
-      isCompletedCycleInReportingPeriod(cycle, reportData.params || ({} as ReportParams)),
+    const completedCycles = extractProfileContributorCycles(
+      issue,
+      resolveWorkflowProfile(issue),
+    ).filter(
+      (cycle) =>
+        cycle.completedAt &&
+        isDateWithinRange(cycle.completedAt, reportData.params || ({} as ReportParams)),
     );
 
     completedCycles.forEach((cycle) => {

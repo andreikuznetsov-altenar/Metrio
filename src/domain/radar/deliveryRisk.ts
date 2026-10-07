@@ -1,10 +1,10 @@
 import { personRouteKey } from '../people/personDisplay';
 import type { ReportParams } from '../jira/types';
 import type { TeamSnapshot } from '../people/types';
+import { getOperationalIssues } from '../people/ownedIssues';
 import {
   classifyIssueAttention,
   formatStageAgeLabel,
-  getActiveIssues,
   vacationDaysLabel,
 } from './taskSignals';
 import type { DeliveryRiskItem, RadarSeverity } from './types';
@@ -30,7 +30,7 @@ export function buildDeliveryRiskItems(
     const routeKey = personRouteKey(person);
     const vacationLabel = vacationDaysLabel(person);
 
-    for (const issue of getActiveIssues(person)) {
+    for (const issue of getOperationalIssues(person)) {
       const attention = classifyIssueAttention(issue, params, now, rules);
       if (!attention) continue;
 

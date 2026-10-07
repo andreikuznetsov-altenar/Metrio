@@ -1,4 +1,4 @@
-export const KPI_SNAPSHOT_SCHEMA_VERSION = 3;
+export const KPI_SNAPSHOT_SCHEMA_VERSION = 4;
 
 export type SnapshotSource = 'live_daily' | 'historical_jira';
 

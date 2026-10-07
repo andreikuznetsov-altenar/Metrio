@@ -55,3 +55,31 @@ export function isQaWorkloadStatus(
   const stage = classifyWorkflowStage(issue, mappings);
   return stage.countsAsQa;
 }
+
+export function isWaitingWorkloadStatus(
+  issue: AuditIssue,
+  mappings?: WorkflowProfileMapping[],
+): boolean {
+  return classifyWorkflowStage(issue, mappings).countsAsWaiting;
+}
+
+export function isBacklogWorkloadStatus(
+  issue: AuditIssue,
+  mappings?: WorkflowProfileMapping[],
+): boolean {
+  return classifyWorkflowStage(issue, mappings).canonicalStage === "backlog";
+}
+
+export function isUnknownWorkloadStatus(
+  issue: AuditIssue,
+  mappings?: WorkflowProfileMapping[],
+): boolean {
+  return classifyWorkflowStage(issue, mappings).canonicalStage === "unknown";
+}
+
+export function isCapacityContributorStatus(
+  issue: AuditIssue,
+  mappings?: WorkflowProfileMapping[],
+): boolean {
+  return classifyWorkflowStage(issue, mappings).countsAsCapacityContributor;
+}

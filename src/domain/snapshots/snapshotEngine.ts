@@ -80,14 +80,19 @@ function migrateV2ToV3(file: KpiSnapshotFile): KpiSnapshotFile {
 }
 
 /**
- * v1 snapshots stored report-period cumulative flow metrics.
- * They cannot be migrated to daily event semantics — flow fields reset to zero.
- * Current-state fields are preserved.
+ * Pre-v4 snapshots contain derived workflow/workload values that cannot be
+ * recomputed safely without the raw Jira history, so they are invalidated.
  */
 export function migrateKpiSnapshotFile(
   raw: Partial<KpiSnapshotFile> & { schemaVersion?: number },
 ): KpiSnapshotFile {
   const version = raw.schemaVersion ?? 1;
+  // Pre-v4 files contain workload/current-state and flow values derived with
+  // legacy raw-status semantics. There is no raw Jira history in this file
+  // from which they can be repaired, so invalidate only this derived cache.
+  if (version < 4) {
+    return { ...EMPTY_KPI_SNAPSHOT_FILE };
+  }
   const personSnapshots = (raw.personSnapshots || []).map((snapshot) =>
     normalizePersonSnapshot(snapshot as LegacyDailyPersonSnapshot & Partial<DailyPersonSnapshot>),
   );

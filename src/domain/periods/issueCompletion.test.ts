@@ -5,6 +5,7 @@ import {
   getIssueFullCycleMs,
   isTransitionToCompletion,
 } from './issueCompletion';
+import { getProfileById } from '../workflows/profileRegistry';
 
 function issue(partial: Partial<AuditIssue> & Pick<AuditIssue, 'issueKey'>): AuditIssue {
   return {
@@ -28,8 +29,9 @@ function issue(partial: Partial<AuditIssue> & Pick<AuditIssue, 'issueKey'>): Aud
 
 describe('issueCompletion', () => {
   it('detects completion transitions', () => {
-    expect(isTransitionToCompletion('In Review', 'Done')).toBe(true);
-    expect(isTransitionToCompletion('Done', 'In Progress')).toBe(false);
+    const profile = getProfileById('ux')!;
+    expect(isTransitionToCompletion(profile, 'In Review', 'Done')).toBe(true);
+    expect(isTransitionToCompletion(profile, 'Done', 'In Progress')).toBe(false);
   });
 
   it('uses final completion when reopened and completed again', () => {

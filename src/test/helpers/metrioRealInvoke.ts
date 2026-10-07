@@ -144,6 +144,14 @@ export async function metrioRealInvoke(
         `/rest/api/3/issue/${encodeURIComponent(issueKey)}?fields=${encodeURIComponent(fields)}`,
       );
     }
+    case "jira_get_project_statuses": {
+      const config = args?.config as JiraConfig;
+      const projectKey = String(args?.projectKey ?? "");
+      return jiraRequest(
+        config,
+        `/rest/api/3/project/${encodeURIComponent(projectKey)}/statuses`,
+      );
+    }
     case "jira_search_users": {
       const config = args?.config as JiraConfig;
       const query = String(args?.query ?? "");

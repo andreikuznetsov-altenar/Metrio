@@ -1,4 +1,6 @@
 import type { Person } from "../people/types";
+import { resolveWorkflowProfile } from "../workflows/resolveWorkflowProfile";
+import { resolveWorkflowStage } from "../workflows/resolveWorkflowStage";
 import type { Goal } from "./goalTypes";
 
 export interface LinkedWorkContext {
@@ -34,12 +36,15 @@ export function buildLinkedWorkContext(
   let inReviewCount = 0;
   let activeCount = 0;
   for (const issue of issues) {
-    const status = (issue.currentStatus ?? "").toLowerCase();
-    if (status === "done" || status === "closed") {
+    const stage = resolveWorkflowStage(
+      resolveWorkflowProfile(issue),
+      issue.currentStatus ?? "",
+    );
+    if (stage.isCompletion) {
       completedCount += 1;
-    } else if (status.includes("review")) {
+    } else if (stage.countsAsReview) {
       inReviewCount += 1;
-    } else {
+    } else if (stage.countsAsActiveWork) {
       activeCount += 1;
     }
   }
@@ -57,7 +62,10 @@ export function buildLinkedWorkContext(
       issues.some(
         (i) =>
           i.issueKey.toUpperCase() === key.toUpperCase() &&
-          /done|closed/i.test(i.currentStatus ?? ""),
+          resolveWorkflowStage(
+            resolveWorkflowProfile(i),
+            i.currentStatus ?? "",
+          ).isCompletion,
       ),
     ).length;
     linkedWorkCompletionLabel = `Linked work completion: ${completedLinked}/${total}`;

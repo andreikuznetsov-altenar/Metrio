@@ -2,7 +2,8 @@ import { invoke } from "@tauri-apps/api/core";
 import type { UserRole } from "../../domain/types";
 import type { PerformanceFetchResult } from "../../services/performance/performanceTypes";
 
-export const DASHBOARD_CACHE_SCHEMA_VERSION = 1;
+/** v2 invalidates snapshots derived before canonical execution/review semantics. */
+export const DASHBOARD_CACHE_SCHEMA_VERSION = 2;
 
 const VISUAL_DASHBOARD_CACHE_KEY = "metrio-visual-dashboard-cache";
 

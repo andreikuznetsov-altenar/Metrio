@@ -1,7 +1,5 @@
 import { formatDuration } from '../jira/dates';
 import type { AuditIssue, ReportParams } from '../jira/types';
-import { isCompletionStatus } from '../periods/issueCompletion';
-import { isActiveWorkStatus } from '../periods/issueTerminalStatus';
 import {
   classifyTaskHealth,
   getCurrentStageAgeMs,
@@ -18,20 +16,6 @@ import { resolveWorkflowStage } from '../workflows/resolveWorkflowStage';
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
-function isInProgressStatus(status: string): boolean {
-  return status.toLowerCase().includes('in progress');
-}
-
-function isInReviewStatus(status: string): boolean {
-  const n = status.toLowerCase();
-  return n === 'review' || n.includes('in review');
-}
-
-function isBlockedStatus(status: string): boolean {
-  const n = status.toLowerCase();
-  return n.includes('hold') || n.includes('blocked');
-}
-
 export function stageAgeDays(issue: AuditIssue, now: Date): number | null {
   const ms = getCurrentStageAgeMs(issue, now);
   if (ms === null) return null;
@@ -47,13 +31,14 @@ export function formatStageAgeLabel(issue: AuditIssue, now: Date): string {
 
 export function getActiveIssues(person: Person, params?: ReportParams): AuditIssue[] {
   return getOperationalIssues(person).filter((issue) => {
-    const status = (issue.currentStatus || '').trim();
-    if (!status) return false;
-    if (params) {
-      const health = classifyTaskHealth({ issue, params });
-      return isActiveWorkStatus(status, health.isCompleted);
-    }
-    return isActiveWorkStatus(status, isCompletionStatus(status));
+    if (!issue.currentStatus?.trim()) return false;
+    const stage = resolveWorkflowStage(
+      resolveWorkflowProfile(issue),
+      issue.currentStatus,
+    );
+    if (stage.isTerminal || stage.isCompletion) return false;
+    void params;
+    return stage.countsAsActiveWork;
   });
 }
 
@@ -81,7 +66,7 @@ export function classifyIssueAttention(
     return { severity: 'critical', reason, health };
   }
 
-  if (isBlockedStatus(status)) {
+  if (workflowStage.countsAsHold) {
     return { severity: 'critical', reason: 'Blocked or on hold', health };
   }
 
@@ -97,7 +82,7 @@ export function classifyIssueAttention(
     return { severity: 'warning', reason: 'Returned from Review', health };
   }
 
-  if (stageDays !== null && isInReviewStatus(status) && stageDays >= reviewDays) {
+  if (stageDays !== null && workflowStage.countsAsReview && stageDays >= reviewDays) {
     return {
       severity: 'warning',
       reason: `Review for ${stageDays} day${stageDays === 1 ? '' : 's'}`,
@@ -105,7 +90,7 @@ export function classifyIssueAttention(
     };
   }
 
-  if (stageDays !== null && isInProgressStatus(status) && stageDays >= inProgressDays) {
+  if (stageDays !== null && workflowStage.countsAsActiveWork && stageDays >= inProgressDays) {
     return {
       severity: 'warning',
       reason: `In Progress for ${stageDays} days`,

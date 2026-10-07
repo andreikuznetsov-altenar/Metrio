@@ -9,7 +9,12 @@ import { spawnSync } from 'node:child_process';
 
 const result = spawnSync(
   'npm',
-  ['test', '--', 'src/domain/workflows/auditLiveWorkflowCapacity.real.test.ts'],
+  [
+    'test',
+    '--',
+    'src/domain/workflows/auditLiveWorkflowCapacity.real.test.ts',
+    'src/domain/workflows/auditCorporateWorkflowMatrix.real.test.ts',
+  ],
   {
     stdio: 'inherit',
     env: { ...process.env, METRIO_WORKFLOW_AUDIT: '1' },

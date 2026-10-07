@@ -10,6 +10,18 @@ import { uxWorkflowProfile } from './profiles/ux';
 import { wskinsSkinWorkflowProfile } from './profiles/wskinsSkin';
 import { wskinsSubtaskWorkflowProfile } from './profiles/wskinsSubtask';
 import type { WorkflowProfile } from './types';
+import {
+  adfIncidentWorkflowProfile,
+  agpDevelopmentWorkflowProfile,
+  agpInternalWorkflowProfile,
+  agtcProviderWorkflowProfile,
+  citDeliveryWorkflowProfile,
+  citPurchaseWorkflowProfile,
+  citSecurityPatchWorkflowProfile,
+  prdDiscoveryWorkflowProfile,
+  prdPhasedWorkflowProfile,
+  prdTaskWorkflowProfile,
+} from './profiles/corporateIssueTypeProfiles';
 
 const BUILTIN_PROFILES: WorkflowProfile[] = [
   uxWorkflowProfile,
@@ -23,6 +35,16 @@ const BUILTIN_PROFILES: WorkflowProfile[] = [
   governanceWorkflowProfile,
   editorialWorkflowProfile,
   serviceWaitWorkflowProfile,
+  agtcProviderWorkflowProfile,
+  agpDevelopmentWorkflowProfile,
+  agpInternalWorkflowProfile,
+  adfIncidentWorkflowProfile,
+  prdPhasedWorkflowProfile,
+  prdDiscoveryWorkflowProfile,
+  prdTaskWorkflowProfile,
+  citDeliveryWorkflowProfile,
+  citPurchaseWorkflowProfile,
+  citSecurityPatchWorkflowProfile,
 ];
 
 const byId: Record<string, WorkflowProfile> = {};

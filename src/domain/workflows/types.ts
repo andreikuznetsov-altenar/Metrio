@@ -1,6 +1,7 @@
 import type { AuditIssue } from '../jira/types';
 
 export type CanonicalStage =
+  | 'unknown'
   | 'backlog'
   | 'active'
   | 'review'
@@ -15,6 +16,9 @@ export type WorkflowEfficiencyModel = 'ux' | 'wskins' | 'none';
 export interface ResolvedWorkflowStage {
   canonicalStage: CanonicalStage;
   statusName: string;
+  /** False when no explicit/profile-safe mapping exists for the raw Jira status. */
+  isMapped: boolean;
+  diagnosticCode?: 'unmapped_status';
   countsAsActiveWork: boolean;
   countsAsReview: boolean;
   countsAsQa: boolean;

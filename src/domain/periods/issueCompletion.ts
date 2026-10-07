@@ -1,21 +1,31 @@
-import { getStageRank } from '../jira/transitions';
-import { buildCompletedCyclesFromSegments, getCycleSegments } from '../jira/cycles';
 import type { AuditIssue, IssueEvent } from '../jira/types';
+import {
+  extractProfileContributorCycles,
+  isProfileBackflow,
+} from '../workflows/profileCycles';
+import { resolveWorkflowProfile } from '../workflows/resolveWorkflowProfile';
+import { resolveWorkflowStage } from '../workflows/resolveWorkflowStage';
+import type { WorkflowProfile } from '../workflows/types';
 import type { DateRange } from './dateRange';
 import { isTimestampInRange } from './dateRange';
 
-const COMPLETION_STATUS_KEYWORDS = ['done', 'approved', 'published', 'closed'];
-
-export function isCompletionStatus(status: string): boolean {
-  const normalized = (status || '').toLowerCase();
-  return COMPLETION_STATUS_KEYWORDS.some((keyword) => normalized.includes(keyword));
+export function isCompletionStatus(
+  status: string,
+  profile?: WorkflowProfile,
+): boolean {
+  if (!profile) return false;
+  return resolveWorkflowStage(profile, status).isCompletion;
 }
 
-/** Transition into a completion status (Done / Approved / Published / Closed). */
-export function isTransitionToCompletion(fromValue: string, toValue: string): boolean {
-  const fromRank = getStageRank(fromValue);
-  const toRank = getStageRank(toValue);
-  return toRank === 4 && fromRank > 0 && fromRank < 4;
+/** Profile-aware transition into canonical successful completion. */
+export function isTransitionToCompletion(
+  profile: WorkflowProfile,
+  fromValue: string,
+  toValue: string,
+): boolean {
+  const from = resolveWorkflowStage(profile, fromValue);
+  const to = resolveWorkflowStage(profile, toValue);
+  return to.isCompletion && !from.isTerminal && from.canonicalStage !== 'unknown';
 }
 
 /** Prefer full issue history for completion/cycle semantics. */
@@ -35,11 +45,12 @@ function getAllStatusEvents(issue: AuditIssue): IssueEvent[] {
  * Uses the last transition into a completion status (handles backflow/reopen).
  */
 export function getIssueCompletionAt(issue: AuditIssue): string | null {
-  if (!isCompletionStatus(issue.currentStatus || '')) return null;
+  const profile = resolveWorkflowProfile(issue);
+  if (!isCompletionStatus(issue.currentStatus || '', profile)) return null;
 
   let lastCompletion: string | null = null;
   for (const event of getAllStatusEvents(withFullIssueHistory(issue))) {
-    if (isTransitionToCompletion(event.fromValue, event.toValue)) {
+    if (isTransitionToCompletion(profile, event.fromValue, event.toValue)) {
       lastCompletion = event.changedAt;
     }
   }
@@ -47,20 +58,21 @@ export function getIssueCompletionAt(issue: AuditIssue): string | null {
 }
 
 export function countBackflowEventsInRange(issue: AuditIssue, range: DateRange): number {
+  const profile = resolveWorkflowProfile(issue);
   return getAllStatusEvents(withFullIssueHistory(issue)).filter(
     (event) =>
-      event.isBackflow &&
-      !event.excludeFromEfficiencyBackflow &&
+      isProfileBackflow(profile, event.fromValue, event.toValue, event) &&
       isTimestampInRange(event.changedAt, range),
   ).length;
 }
 
 /** Canonical end-to-end cycle (todo start → done), same as avgTodoToApprovedMs per issue. */
 export function getIssueFullCycleMs(issue: AuditIssue): number | null {
-  const segments = getCycleSegments(withFullIssueHistory(issue));
-  const cycles = buildCompletedCyclesFromSegments(segments);
+  const fullIssue = withFullIssueHistory(issue);
+  const profile = resolveWorkflowProfile(fullIssue);
+  const cycles = extractProfileContributorCycles(fullIssue, profile);
   const lastCycle = cycles[cycles.length - 1];
-  return lastCycle?.reviewToDone.fullCycleMs ?? null;
+  return lastCycle?.fullCycleMs ?? null;
 }
 
 export function isIssueCompletedInRange(issue: AuditIssue, range: DateRange): boolean {

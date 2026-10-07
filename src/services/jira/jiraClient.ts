@@ -171,14 +171,18 @@ export class JiraClient {
     return map;
   }
 
-  async searchIssues(jql: string, maxResults = 8): Promise<unknown[]> {
+  async searchIssues(
+    jql: string,
+    maxResults = 8,
+    fields = "summary,status",
+  ): Promise<unknown[]> {
     const response = await invokeJira<{ issues?: unknown[] }>(
       "jira_search_issues",
       {
         config: this.nativeConfig,
         params: {
           jql,
-          fields: "summary,status",
+          fields,
           maxResults,
         },
       },

@@ -1,7 +1,10 @@
 import { getWorkingDurationMs } from '../jira/dates';
 import { getStatusEventsSorted } from '../jira/events';
-import { getCycleSegments, buildCompletedCyclesFromSegments } from '../jira/cycles';
 import type { AuditIssue, ReportParams } from '../jira/types';
+import {
+  extractProfileContributorCycles,
+  isProfileBackflow,
+} from '../workflows/profileCycles';
 import { resolveWorkflowProfile } from '../workflows/resolveWorkflowProfile';
 import { resolveWorkflowStage } from '../workflows/resolveWorkflowStage';
 
@@ -38,11 +41,6 @@ export interface TaskHealthResult {
   isCompleted: boolean;
   currentStageAgeMs: number | null;
   lastActivityAt: string | null;
-}
-
-function isBlockedStatus(status: string): boolean {
-  const n = status.toLowerCase();
-  return n.includes('hold') || n.includes('blocked');
 }
 
 function daysSince(dateStr: string, now: Date): number {
@@ -98,10 +96,11 @@ export function classifyTaskHealth(input: TaskHealthInput): TaskHealthResult {
     workflowStage.isCompletion || (workflowStage.isTerminal && workflowStage.canonicalStage === 'done');
   const attentionEligible = workflowStage.countsAsAttentionEligible;
 
-  const segments = getCycleSegments(issue, params);
-  const completedCycles = buildCompletedCyclesFromSegments(segments);
+  const completedCycles = extractProfileContributorCycles(issue, workflowProfile, params);
   const backflowCount = (issue.events || []).filter(
-    (e) => e.eventType === 'Status' && e.isBackflow,
+    (e) =>
+      e.eventType === 'Status' &&
+      isProfileBackflow(workflowProfile, e.fromValue, e.toValue, e),
   ).length;
 
   const lastCycle = completedCycles[completedCycles.length - 1];
@@ -114,7 +113,11 @@ export function classifyTaskHealth(input: TaskHealthInput): TaskHealthResult {
     if (!attentionEligible) {
       return {
         status: 'stable',
-        reasons: ['Waiting — not attention eligible'],
+        reasons: [
+          workflowStage.canonicalStage === 'unknown'
+            ? 'Unmapped workflow status — not classified'
+            : 'Non-execution stage — not attention eligible',
+        ],
         backflowCount,
         isFirstPass,
         isCompleted: false,
@@ -136,7 +139,7 @@ export function classifyTaskHealth(input: TaskHealthInput): TaskHealthResult {
       };
     }
 
-    if (isBlockedStatus(currentStatus) && workflowStage.countsAsHold) {
+    if (workflowStage.countsAsHold) {
       reasons.push('Blocked or on hold');
       return {
         status: 'problematic',
@@ -195,35 +198,6 @@ export function classifyTaskHealth(input: TaskHealthInput): TaskHealthResult {
       }
     }
 
-    const activeProgressSegment = segments.find((s) => s.type === 'progress_to_review');
-    const progressMs = activeProgressSegment?.ms ?? null;
-
-    if (progressMs !== null && progressMs > targetMs) {
-      reasons.push('Target review time exceeded');
-      return {
-        status: 'problematic',
-        reasons,
-        backflowCount,
-        isFirstPass,
-        isCompleted: false,
-        currentStageAgeMs,
-        lastActivityAt,
-      };
-    }
-
-    if (progressMs !== null && progressMs > atRiskMs) {
-      reasons.push('Approaching target threshold');
-      return {
-        status: 'at_risk',
-        reasons,
-        backflowCount,
-        isFirstPass,
-        isCompleted: false,
-        currentStageAgeMs,
-        lastActivityAt,
-      };
-    }
-
     return {
       status: 'stable',
       reasons: ['Progressing normally'],
@@ -235,8 +209,7 @@ export function classifyTaskHealth(input: TaskHealthInput): TaskHealthResult {
     };
   }
 
-  const activeProgressSegment = segments.find((s) => s.type === 'progress_to_review');
-  const progressMs = activeProgressSegment?.ms ?? null;
+  const progressMs = lastCycle?.progressToReviewMs ?? null;
   const hadIssues = backflowCount > 0 || (progressMs !== null && progressMs > targetMs);
 
   if (hadIssues) {

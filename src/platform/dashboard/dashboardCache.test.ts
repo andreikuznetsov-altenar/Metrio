@@ -39,6 +39,12 @@ describe("dashboardCache", () => {
     ).toBeNull();
   });
 
+  it("invalidates caches produced with pre-canonical workload semantics", () => {
+    expect(
+      validateDashboardCache({ ...sampleFile(), schemaVersion: 1 }, lookup),
+    ).toBeNull();
+  });
+
   it("ignores account mismatch", () => {
     expect(
       validateDashboardCache(sampleFile({ selfPersonId: "other" }), lookup),

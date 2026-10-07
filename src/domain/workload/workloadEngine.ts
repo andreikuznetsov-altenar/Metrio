@@ -52,19 +52,26 @@ export function normalizeWorkloadThresholds(
   };
 }
 
-export function isIssueActive(issue: AuditIssue, params: ReportParams): boolean {
+export function isIssueActive(
+  issue: AuditIssue,
+  _params: ReportParams,
+  mappings?: WorkflowProfileMapping[],
+): boolean {
   if (!isWorkflowCapacityEligible(issue)) {
-    return !classifyTaskHealth({ issue, params }).isCompleted;
+    return false;
   }
-  const profile = resolveWorkflowProfile(issue);
+  const profile = resolveWorkflowProfile(issue, { mappings });
   const stage = resolveWorkflowStage(profile, issue.currentStatus || '');
   if (stage.isTerminal || stage.isCompletion) return false;
-  if (isActiveWorkloadStatus(issue)) return true;
-  return stage.countsAsQa || stage.countsAsHold || stage.countsAsWaiting;
+  return isActiveWorkloadStatus(issue, mappings);
 }
 
-export function countActiveIssues(issues: AuditIssue[], params: ReportParams): number {
-  return issues.filter((issue) => isIssueActive(issue, params)).length;
+export function countActiveIssues(
+  issues: AuditIssue[],
+  params: ReportParams,
+  mappings?: WorkflowProfileMapping[],
+): number {
+  return issues.filter((issue) => isIssueActive(issue, params, mappings)).length;
 }
 
 export interface WorkloadResult {
@@ -88,6 +95,9 @@ export interface WorkloadResult {
   qaCount?: number;
   waitingCount?: number;
   holdCount?: number;
+  backlogCount?: number;
+  unknownCount?: number;
+  capacityContributorIssueCount?: number;
   capacityBreakdown?: ReturnType<typeof calculateCapacityBreakdown>;
   capacityDataState?: CapacityDataState;
 }
@@ -134,16 +144,22 @@ export function calculateWorkload(
       qaCount: 0,
       waitingCount: 0,
       holdCount: 0,
+      backlogCount: 0,
+      unknownCount: 0,
+      capacityContributorIssueCount: 0,
       capacityDataState: 'insufficient_history',
     };
   }
 
+  const uniqueIssues = [
+    ...new Map(issues.map((issue) => [issue.issueKey, issue])).values(),
+  ];
   let problematicCount = 0;
   let atRiskCount = 0;
   let overdueCount = 0;
   let inProgressCount = 0;
 
-  issues.forEach((issue) => {
+  uniqueIssues.forEach((issue) => {
     const health = classifyTaskHealth({ issue, params });
     if (health.isCompleted) return;
 
@@ -155,10 +171,10 @@ export function calculateWorkload(
     if (health.reasons.some((r) => r.includes('exceeded'))) overdueCount++;
   });
 
-  const operational = countOperationalWorkload(issues, params, options.mappings);
-  const activeCount = countActiveIssues(issues, params);
+  const operational = countOperationalWorkload(uniqueIssues, params, options.mappings);
+  const activeCount = countActiveIssues(uniqueIssues, params, options.mappings);
   const capacityBreakdown = calculateCapacityBreakdown({
-    issues,
+    issues: uniqueIssues,
     params,
     mappings: options.mappings,
     now: options.now,
@@ -207,6 +223,9 @@ export function calculateWorkload(
     qaCount: operational.qaCount,
     waitingCount: operational.waitingCount,
     holdCount: operational.holdCount,
+    backlogCount: operational.backlogCount,
+    unknownCount: operational.unknownCount,
+    capacityContributorIssueCount: operational.capacityContributorIssueCount,
     capacityBreakdown,
     capacityDataState,
   };

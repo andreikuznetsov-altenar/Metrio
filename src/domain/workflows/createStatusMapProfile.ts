@@ -41,7 +41,17 @@ export function createStatusMapProfile(input: StatusMapProfileInput): WorkflowPr
     ResolvedWorkflowStage
   >;
 
-  (['backlog', 'active', 'review', 'qa', 'waiting', 'hold', 'done', 'cancelled'] as CanonicalStage[]).forEach(
+  ([
+    'unknown',
+    'backlog',
+    'active',
+    'review',
+    'qa',
+    'waiting',
+    'hold',
+    'done',
+    'cancelled',
+  ] as CanonicalStage[]).forEach(
     (canonicalStage) => {
       const representative =
         Object.entries(input.statusMap).find(([, s]) => s === canonicalStage)?.[0] ||

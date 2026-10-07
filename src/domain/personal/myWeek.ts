@@ -9,6 +9,9 @@ import type { Person } from '../people/types';
 import { classifyIssueAttention, getActiveIssues } from '../radar/taskSignals';
 import type { OperationalRules } from '../operationalRules/operationalRulesTypes';
 import { DEFAULT_OPERATIONAL_RULES } from '../operationalRules/operationalRulesDefaults';
+import { getOperationalIssues } from '../people/ownedIssues';
+import { resolveWorkflowProfile } from '../workflows/resolveWorkflowProfile';
+import { resolveWorkflowStage } from '../workflows/resolveWorkflowStage';
 
 export interface MyWeekAttentionTask {
   issueKey: string;
@@ -34,13 +37,11 @@ export interface MyWeekGroups {
   completedThisWeek: AuditIssue[];
 }
 
-function isInReviewStatus(status: string): boolean {
-  const n = status.toLowerCase();
-  return n === 'review' || n.includes('in review');
-}
-
-function isInProgressStatus(status: string): boolean {
-  return status.toLowerCase().includes('in progress');
+function currentStage(issue: AuditIssue) {
+  return resolveWorkflowStage(
+    resolveWorkflowProfile(issue),
+    issue.currentStatus || '',
+  );
 }
 
 export function buildMyWeek(
@@ -51,10 +52,11 @@ export function buildMyWeek(
 ): MyWeekGroups {
   const weekRange = getCurrentWeekRange(now);
   const completedThisWeek = listCompletedIssuesInRange(person.issues, weekRange);
+  const operationalIssues = getOperationalIssues(person);
   const activeIssues = getActiveIssues(person, params);
 
   const needsAttention: MyWeekAttentionTask[] = [];
-  for (const issue of activeIssues) {
+  for (const issue of operationalIssues) {
     const attention = classifyIssueAttention(issue, params, now, rules);
     if (!attention) continue;
     needsAttention.push({
@@ -66,9 +68,9 @@ export function buildMyWeek(
     });
   }
 
-  const inProgress = activeIssues.filter((issue) => isInProgressStatus(issue.currentStatus || ''));
-  const inReview = activeIssues.filter((issue) => isInReviewStatus(issue.currentStatus || ''));
-  const atRisk = activeIssues.filter(
+  const inProgress = activeIssues;
+  const inReview = operationalIssues.filter((issue) => currentStage(issue).countsAsReview);
+  const atRisk = operationalIssues.filter(
     (issue) => classifyTaskHealth({ issue, params, now }).status === 'at_risk',
   );
 

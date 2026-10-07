@@ -1,8 +1,10 @@
-import type { AuditIssue } from '../jira/types';
 import type { WorkflowProfile, WorkflowProfileMapping } from './types';
 import { DEFAULT_WORKFLOW_MAPPINGS } from './defaultWorkflowMappings';
 import { getProfileById } from './profileRegistry';
-import { classifyWorkflowProfileSemantically } from './semanticClassifier';
+import {
+  classifyWorkflowProfileSemantically,
+  type WorkflowIssueContext,
+} from './semanticClassifier';
 import { simpleWorkflowProfile } from './profiles/simple';
 
 export interface ResolveWorkflowProfileOptions {
@@ -31,12 +33,12 @@ function mappingMatches(
 }
 
 export function resolveWorkflowProfile(
-  issue: AuditIssue,
+  issue: WorkflowIssueContext,
   options: ResolveWorkflowProfileOptions = {},
 ): WorkflowProfile {
   const companyMappings = options.mappings;
   const mappings = companyMappings?.length
-    ? [...DEFAULT_WORKFLOW_MAPPINGS, ...companyMappings]
+    ? [...companyMappings, ...DEFAULT_WORKFLOW_MAPPINGS]
     : DEFAULT_WORKFLOW_MAPPINGS;
   const projectKey = normalizeKey(issue.projectKey || issue.issueKey.split('-')[0]);
   const issueType = normalizeIssueType(issue.issueTypeName);

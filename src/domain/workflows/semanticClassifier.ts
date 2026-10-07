@@ -10,7 +10,12 @@ import type { AuditIssue } from '../jira/types';
 import type { WorkflowProfile } from './types';
 import { canonicalStageForStatus, inferCanonicalFromStatusName } from './resolveWorkflowStage';
 
-function statusSet(issue: AuditIssue): string[] {
+export type WorkflowIssueContext = Pick<
+  AuditIssue,
+  'issueKey' | 'projectKey' | 'issueTypeName' | 'isSubtask' | 'currentStatus' | 'events'
+>;
+
+function statusSet(issue: WorkflowIssueContext): string[] {
   const names = new Set<string>();
   if (issue.currentStatus) names.add(issue.currentStatus);
   (issue.events || []).forEach((e) => {
@@ -23,7 +28,7 @@ function statusSet(issue: AuditIssue): string[] {
 }
 
 /** Generic fallback when no explicit mapping matches. */
-export function classifyWorkflowProfileSemantically(issue: AuditIssue): WorkflowProfile {
+export function classifyWorkflowProfileSemantically(issue: WorkflowIssueContext): WorkflowProfile {
   const statuses = statusSet(issue);
   const canonical = statuses.map((s) => inferCanonicalFromStatusName(s));
 
@@ -62,7 +67,7 @@ export function profileMatchesStatusHistory(
   let hits = 0;
   statuses.forEach((status) => {
     const key = status.toLowerCase();
-    if (profile.statusToCanonical[key] || canonicalStageForStatus(profile, status) !== 'backlog') {
+    if (profile.statusToCanonical[key] || canonicalStageForStatus(profile, status) !== 'unknown') {
       hits++;
     }
   });
