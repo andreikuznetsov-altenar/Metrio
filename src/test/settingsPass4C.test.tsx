@@ -33,10 +33,12 @@ describe("settings pass 4C", () => {
 
   it("does not render theme picker in preferences settings", () => {
     render(
-      <PreferencesSettingsPanel
-        prefs={DEFAULT_PREFERENCES}
-        onPersist={async () => undefined}
-      />,
+      <ToastProvider>
+        <PreferencesSettingsPanel
+          prefs={DEFAULT_PREFERENCES}
+          onPersist={async () => undefined}
+        />
+      </ToastProvider>,
     );
     expect(screen.queryByLabelText("Theme preference")).not.toBeInTheDocument();
     expect(screen.getByTestId("preferences-settings")).toBeInTheDocument();

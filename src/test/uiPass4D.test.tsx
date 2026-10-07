@@ -151,13 +151,15 @@ describe("UI pass 4D — notifications", () => {
         target: { kind: "jira", issueKey: "UX-1" },
       },
     ]);
-    const panel = renderCenter();
+    renderCenter();
+    const panel = document.querySelector(".notification-center__body");
+    expect(panel).toBeTruthy();
 
-    expect(panel.querySelector('button[aria-pressed]')).toBeTruthy();
-    expect(container.textContent).not.toMatch(/\bUnread\b.*filter/i);
+    expect(document.querySelector('button[aria-pressed]')).toBeTruthy();
+    expect(document.body.textContent).not.toMatch(/\bUnread\b.*filter/i);
     expect(document.querySelector('[data-testid="notification-overflow"]')).toBeTruthy();
-    expect(panel.textContent).toContain("Metrio");
-    expect(panel.textContent).not.toMatch(/^Actions$/m);
+    expect(document.body.textContent).toContain("Metrio");
+    expect(document.body.textContent).not.toMatch(/^Actions$/m);
   });
 
   it("renders unread cards with accent border and secondary CTA", () => {
@@ -171,11 +173,11 @@ describe("UI pass 4D — notifications", () => {
         target: { kind: "jira", issueKey: "UX-5446" },
       },
     ]);
-    const panel = renderCenter();
+    renderCenter();
 
-    const card = panel.querySelector(".notification-center__card.is-unread");
+    const card = document.querySelector(".notification-center__card.is-unread");
     expect(card).toBeTruthy();
-    const cta = panel.querySelector(
+    const cta = document.querySelector(
       ".notification-center__cta",
     ) as HTMLButtonElement | null;
     expect(cta?.textContent).toContain("Open Jira");

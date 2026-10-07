@@ -147,7 +147,7 @@ describe("UI pass 5A — notification header", () => {
       "utf8",
     );
     expect(css).toMatch(/white-space:\s*nowrap/);
-    expect(container.textContent).toContain("All sources");
-    expect(container.textContent).toContain("BambooHR");
+    expect(document.body.textContent).toContain("All sources");
+    expect(document.body.textContent).toContain("BambooHR");
   });
 });
