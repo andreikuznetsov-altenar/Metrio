@@ -3,6 +3,9 @@ import { EmptyState } from "../EmptyState/EmptyState";
 import { TabularModal } from "../Modal/TabularModal";
 import type { TaskListModalRow } from "../../domain/actions/buildTaskListModalRows";
 import { issueStatusBadgeVariant } from "../../domain/jira/issueStatusBadgeVariant";
+import { JiraIssueLink } from "../JiraIssueLink/JiraIssueLink";
+import { buildJiraIssueBrowseUrl } from "../../platform/jiraIssueUrl";
+import { resolveJiraBaseUrl } from "../../config/product";
 import { METRIO_TABLE_CLASS, MetrioTableWrap } from "../Table/MetrioTable";
 import { PerformanceTableColgroup } from "../Table/PerformanceTableColgroup";
 
@@ -46,16 +49,29 @@ export function TaskListModal({
                 {rows.map((row) => (
                   <tr key={row.issueKey} className="performance-table__task-row">
                     <td className="performance-table__issue-key-cell">
-                      {onOpenIssue && row.jiraUrl ? (
+                      {onOpenIssue ? (
                         <button
                           type="button"
                           className="performance-table__link-button performance-table__issue-key-link"
-                          onClick={() => onOpenIssue(row.issueKey, row.jiraUrl)}
+                          onClick={() =>
+                            onOpenIssue(
+                              row.issueKey,
+                              row.jiraUrl ??
+                                buildJiraIssueBrowseUrl(
+                                  resolveJiraBaseUrl(),
+                                  row.issueKey,
+                                ),
+                            )
+                          }
                         >
                           {row.issueKey}
                         </button>
                       ) : (
-                        <span className="performance-table__issue-key">{row.issueKey}</span>
+                        <JiraIssueLink
+                          issueKey={row.issueKey}
+                          browseUrl={row.jiraUrl}
+                          className="performance-table__issue-key"
+                        />
                       )}
                     </td>
                     <td className="performance-table__issue-title-cell">

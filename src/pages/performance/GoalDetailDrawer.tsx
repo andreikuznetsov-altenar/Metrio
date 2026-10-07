@@ -16,6 +16,8 @@ import type { Goal, GoalHistoryEntry } from "../../domain/goals/goalTypes";
 import type { CurrentUser } from "../../domain/types";
 import type { Person } from "../../domain/people/types";
 import { searchIssuesQuick } from "../../services/goals/goalJiraLinkSearch";
+import { JiraIssueLink } from "../../components/JiraIssueLink/JiraIssueLink";
+import { resolveJiraBaseUrl } from "../../config/product";
 import "./goal-detail-drawer.css";
 
 function goalStatusBadgeVariant(
@@ -148,7 +150,9 @@ export function GoalDetailDrawer({
           ) : (
             <ul className="goal-drawer__linked-list">
               {goal.linkedJiraIssueKeys.map((key) => (
-                <li key={key}>{key}</li>
+                <li key={key}>
+                  <JiraIssueLink issueKey={key} jiraBaseUrl={resolveJiraBaseUrl()} />
+                </li>
               ))}
             </ul>
           )}

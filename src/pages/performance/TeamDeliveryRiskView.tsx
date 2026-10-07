@@ -6,9 +6,9 @@ import { useTableSort } from "../../components/Table/useTableSort";
 import { resolveJiraBaseUrl } from "../../config/product";
 import type { DeliveryRiskRow } from "../../domain/performance";
 import { performanceHelp } from "../../domain/performance/performanceHelp";
+import { JiraIssueLink } from "../../components/JiraIssueLink/JiraIssueLink";
 import { buildJiraIssueBrowseUrl } from "../../platform/jiraIssueUrl";
 import { loadPreferences } from "../../platform/preferences";
-import { EntityLink } from "../../components/EntityLink/EntityLink";
 import { openExternalUrl } from "../../platform/openExternal";
 
 function statusVariant(status: string): "danger" | "warning" | "neutral" {
@@ -147,9 +147,7 @@ export function TeamDeliveryRiskView({
               return (
                 <tr key={row.issueKey}>
                   <td className="performance-delivery-risk__key">
-                    <EntityLink href={issueUrl} mono>
-                      {row.issueKey}
-                    </EntityLink>
+                    <JiraIssueLink issueKey={row.issueKey} jiraBaseUrl={jiraBaseUrl} />
                   </td>
                   <td className="performance-table__cell--clamp-2" title={row.issueTitle}>
                     <span className="performance-table__clamp">{row.issueTitle}</span>

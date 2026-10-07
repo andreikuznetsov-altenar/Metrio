@@ -1,11 +1,9 @@
-import { Button } from "../../components/Button/Button";
 import { Drawer } from "../../components/Drawer/Drawer";
 import type { WorkDependency } from "../../domain/dependencies/dependencyTypes";
 import { buildDrawerChain } from "../../domain/dependencies/buildDeliveryDependencyGraph";
 import type { DeliveryDependencyIndex } from "../../domain/dependencies/dependencyTypes";
 import { formatStageAgeLabel } from "../../domain/radar/taskSignals";
-import { openExternalUrl } from "../../platform/openExternal";
-import { buildJiraIssueBrowseUrl } from "../../platform/jiraIssueUrl";
+import { JiraIssueLink } from "../../components/JiraIssueLink/JiraIssueLink";
 import type { AuditIssue } from "../../domain/jira/types";
 
 export function DependencyDetailDrawer({
@@ -62,23 +60,24 @@ export function DependencyDetailDrawer({
           <ul className="project-cockpit__signals">
             {chain.map((link) => (
               <li key={link.issueKey}>
-                {link.issueKey}
-                {link.blockedByKey ? ` ← ${link.blockedByKey}` : ""}
+                <JiraIssueLink issueKey={link.issueKey} jiraBaseUrl={jiraBaseUrl} />
+                {link.blockedByKey ? (
+                  <>
+                    {" ← "}
+                    <JiraIssueLink issueKey={link.blockedByKey} jiraBaseUrl={jiraBaseUrl} />
+                  </>
+                ) : null}
               </li>
             ))}
           </ul>
         ) : null}
-        <Button
-          type="button"
-          variant="secondary"
-          onClick={() =>
-            void openExternalUrl(
-              buildJiraIssueBrowseUrl(jiraBaseUrl, dependency.targetIssueKey),
-            )
-          }
+        <JiraIssueLink
+          issueKey={dependency.targetIssueKey}
+          jiraBaseUrl={jiraBaseUrl}
+          className="project-cockpit__secondary-link"
         >
           Open in Jira
-        </Button>
+        </JiraIssueLink>
       </div>
     </Drawer>
   );

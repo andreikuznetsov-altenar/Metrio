@@ -8,16 +8,8 @@ import {
 } from "../../domain/availability/changedWhileAway";
 import { Button } from "../../components/Button/Button";
 import { EmployeeCurrentWorkList } from "./EmployeeCurrentWorkList";
-import { resolveJiraBaseUrl } from "../../config/product";
+import { JiraIssueLink } from "../../components/JiraIssueLink/JiraIssueLink";
 import { openExternalUrl } from "../../platform/openExternal";
-import { buildJiraIssueBrowseUrl } from "../../platform/jiraIssueUrl";
-import { loadPreferences } from "../../platform/preferences";
-
-async function openIssueInJira(issueKey: string) {
-  const prefs = await loadPreferences();
-  const url = buildJiraIssueBrowseUrl(resolveJiraBaseUrl(prefs), issueKey);
-  await openExternalUrl(url);
-}
 
 export interface UpcomingTimeOffSectionProps {
   person: Person;
@@ -81,13 +73,10 @@ export function UpcomingTimeOffSection({
               <ul className="performance-timeoff-return-rows">
                 {returnSummary!.rows.map((row) => (
                   <li key={`${row.issueKey}-${row.label}`}>
-                    <button
-                      type="button"
+                    <JiraIssueLink
+                      issueKey={row.issueKey}
                       className="performance-link-button"
-                      onClick={() => void openIssueInJira(row.issueKey)}
-                    >
-                      {row.issueKey}
-                    </button>
+                    />
                     <span className="performance-timeoff-item__meta"> · {row.label}</span>
                   </li>
                 ))}

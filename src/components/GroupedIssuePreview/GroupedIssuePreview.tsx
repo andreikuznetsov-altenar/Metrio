@@ -1,5 +1,5 @@
 import { useMemo, useState, type MouseEvent } from "react";
-import { EntityLink } from "../EntityLink/EntityLink";
+import { JiraIssueLink } from "../JiraIssueLink/JiraIssueLink";
 import { TaskListModal } from "../TaskListModal/TaskListModal";
 import {
   buildTaskListModalRowsFromIssueKeys,
@@ -124,9 +124,7 @@ export function GroupedIssuePreview({
               {key}
             </button>
           ) : (
-            <EntityLink href={href} mono>
-              {key}
-            </EntityLink>
+            <JiraIssueLink issueKey={key} jiraBaseUrl={jiraBaseUrl} browseUrl={href} />
           )}
         </div>
         {modal}

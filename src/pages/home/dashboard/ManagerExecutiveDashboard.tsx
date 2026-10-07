@@ -19,6 +19,7 @@ import { DashboardPrimaryTrend } from "./DashboardPrimaryTrend";
 import { DashboardScopeHealthSummary } from "./DashboardScopeHealthSummary";
 import { DashboardTeamCapacityVisual } from "./DashboardTeamCapacityVisual";
 import { DashboardCompactRow } from "../../../components/DashboardCompactRow/DashboardCompactRow";
+import { JiraIssueLink } from "../../../components/JiraIssueLink/JiraIssueLink";
 import { Button } from "../../../components/Button/Button";
 import { PersonAvatar } from "../../../components/PersonAvatar/PersonAvatar";
 import { HomeGoalsSummaryCard } from "../HomeGoalsSummaryCard";
@@ -295,7 +296,11 @@ export function ManagerExecutiveDashboard({
                 key={record.issueKey}
                 subject={
                   <>
-                    <span className="home-compact-rows__key">{record.issueKey}</span>
+                    <JiraIssueLink
+                      issueKey={record.issueKey}
+                      jiraBaseUrl={jiraBaseUrl}
+                      className="home-compact-rows__key"
+                    />
                     {record.title}
                   </>
                 }

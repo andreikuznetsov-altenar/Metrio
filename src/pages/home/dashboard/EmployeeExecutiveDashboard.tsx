@@ -15,6 +15,7 @@ import { DashboardKpiStrip } from "./DashboardKpiStrip";
 import { DashboardPrimaryTrend } from "./DashboardPrimaryTrend";
 import { DashboardScopeHealthSummary } from "./DashboardScopeHealthSummary";
 import { DashboardCompactRow } from "../../../components/DashboardCompactRow/DashboardCompactRow";
+import { JiraIssueLink } from "../../../components/JiraIssueLink/JiraIssueLink";
 import { HomeGoalsSummaryCard } from "../HomeGoalsSummaryCard";
 import type { summarizeGoalsForHome } from "../../../domain/goals/goalReview";
 import { DashboardYourManagerCard } from "./DashboardYourManagerCard";
@@ -138,7 +139,11 @@ export function EmployeeExecutiveDashboard({
                 key={record.issueKey}
                 subject={
                   <>
-                    <span className="home-compact-rows__key">{record.issueKey}</span>
+                    <JiraIssueLink
+                      issueKey={record.issueKey}
+                      jiraBaseUrl={jiraBaseUrl}
+                      className="home-compact-rows__key"
+                    />
                     {record.title}
                   </>
                 }

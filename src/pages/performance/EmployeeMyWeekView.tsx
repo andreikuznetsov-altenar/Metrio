@@ -5,18 +5,9 @@ import type {
   EmployeeMyWeekSnapshot,
   EmployeeWorkRowView,
 } from "../../domain/performance";
-import { resolveJiraBaseUrl } from "../../config/product";
-import { loadPreferences } from "../../platform/preferences";
-import { buildJiraIssueBrowseUrl } from "../../platform/jiraIssueUrl";
-import { openExternalUrl } from "../../platform/openExternal";
+import { JiraIssueLink } from "../../components/JiraIssueLink/JiraIssueLink";
 import { GroupedAttentionList } from "./GroupedAttentionList";
 import { PersonWorkRow } from "./PersonWorkRow";
-
-async function openIssueInJira(issueKey: string) {
-  const prefs = await loadPreferences();
-  const url = buildJiraIssueBrowseUrl(resolveJiraBaseUrl(prefs), issueKey);
-  await openExternalUrl(url);
-}
 
 function MyWeekSummary({ summary }: { summary: EmployeeMyWeekSnapshot["summary"] }) {
   return (
@@ -50,7 +41,7 @@ function CompletedRow({ item }: { item: EmployeeCompletedRowView }) {
     <div className="performance-work-row performance-work-row--person">
       <div className="performance-work-row__main">
         <div className="person-work-row__head">
-          <span className="performance-work-row__key">{item.key}</span>
+          <JiraIssueLink issueKey={item.key} className="performance-work-row__key" />
           {item.outcome ? (
             <Badge variant={item.outcome === "First pass" ? "success" : "warning"}>
               {item.outcome}
@@ -63,14 +54,13 @@ function CompletedRow({ item }: { item: EmployeeCompletedRowView }) {
         {metaParts.length ? (
           <div className="performance-work-row__meta person-work-row__foot">
             <span>{metaParts.join(" · ")}</span>
-            <button
-              type="button"
+            <JiraIssueLink
+              issueKey={item.key}
               className="person-work-row__jira"
               aria-label={`Open ${item.key} in Jira`}
-              onClick={() => void openIssueInJira(item.key)}
             >
               <ExternalLink size={15} strokeWidth={1.75} aria-hidden />
-            </button>
+            </JiraIssueLink>
           </div>
         ) : null}
       </div>

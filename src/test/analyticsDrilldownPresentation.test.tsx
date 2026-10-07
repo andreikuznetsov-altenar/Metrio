@@ -34,7 +34,7 @@ describe("AnalyticsIssueRow presentation", () => {
     expect(screen.getByText("Konstantin Zhuikov")).toBeInTheDocument();
     expect(screen.queryByText(/@altenar.com/i)).not.toBeInTheDocument();
     expect(
-      screen.getByRole("button", { name: "Open UX-5826 in Jira" }),
+      screen.getByRole("link", { name: "Open UX-5826 in Jira" }),
     ).toBeInTheDocument();
   });
 });

@@ -10,8 +10,7 @@ import { badgeVariantForAttentionLabel } from "../../platform/attentionSemanticB
 import { PerformanceTableColgroup } from "./PerformanceTableColgroup";
 import { METRIO_TABLE_CLASS, MetrioTableWrap } from "./MetrioTable";
 import { TableWorkLead } from "./TableWorkLead";
-import { EntityLink } from "../EntityLink/EntityLink";
-import { buildJiraIssueBrowseUrl } from "../../platform/jiraIssueUrl";
+import { JiraIssueLink } from "../JiraIssueLink/JiraIssueLink";
 import {
   looksLikeIssueKey,
   normalizeIssueKeyQuery,
@@ -50,9 +49,7 @@ export function DashboardActionQueueTable({
     if (jiraBaseUrl && looksLikeIssueKey(subject)) {
       const key = normalizeIssueKeyQuery(subject);
       return (
-        <EntityLink href={buildJiraIssueBrowseUrl(jiraBaseUrl, key)} mono>
-          {key}
-        </EntityLink>
+        <JiraIssueLink issueKey={key} jiraBaseUrl={jiraBaseUrl} />
       );
     }
     return subject;

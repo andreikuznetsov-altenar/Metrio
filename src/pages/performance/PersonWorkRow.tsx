@@ -1,11 +1,17 @@
 import { Badge } from "../../components/Badge/Badge";
 import { Button } from "../../components/Button/Button";
-import { EntityLink } from "../../components/EntityLink/EntityLink";
+import { JiraIssueLink } from "../../components/JiraIssueLink/JiraIssueLink";
 import type { PersonWorkRowData } from "../../domain/analytics/personAnalyticsWorkspace";
 import { resolveJiraBaseUrl } from "../../config/product";
 import { loadPreferences } from "../../platform/preferences";
 import { buildJiraIssueBrowseUrl } from "../../platform/jiraIssueUrl";
 import { openExternalUrl } from "../../platform/openExternal";
+
+async function openIssueInJira(issueKey: string) {
+  const prefs = await loadPreferences();
+  const url = buildJiraIssueBrowseUrl(resolveJiraBaseUrl(prefs), issueKey);
+  await openExternalUrl(url);
+}
 
 import { KnowledgePopover } from "./KnowledgePopover";
 import type { WorkKnowledgeLink } from "../../domain/workGraph/workGraphTypes";
@@ -22,36 +28,6 @@ export interface PersonWorkRowProps {
 function stageAgeLabel(item: PersonWorkRowData): string {
   const inReview = /review/i.test(item.status);
   return `${item.stageAge} in ${inReview ? "review" : "stage"}`;
-}
-
-async function openIssueInJira(issueKey: string) {
-  const prefs = await loadPreferences();
-  const url = buildJiraIssueBrowseUrl(resolveJiraBaseUrl(prefs), issueKey);
-  await openExternalUrl(url);
-}
-
-function IssueKeyLink({
-  issueKey,
-  jiraBaseUrl,
-  className,
-}: {
-  issueKey: string;
-  jiraBaseUrl?: string;
-  className?: string;
-}) {
-  const href = jiraBaseUrl
-    ? buildJiraIssueBrowseUrl(jiraBaseUrl, issueKey)
-    : undefined;
-  return (
-    <EntityLink
-      href={href}
-      mono
-      className={className}
-      onNavigate={href ? undefined : () => void openIssueInJira(issueKey)}
-    >
-      {issueKey}
-    </EntityLink>
-  );
 }
 
 export function PersonWorkRow({
@@ -78,7 +54,7 @@ export function PersonWorkRow({
       <div className="performance-work-row performance-work-row--person performance-work-row--person-inline">
         <div className="performance-work-row__main">
           <div className="person-work-row__head">
-            <IssueKeyLink
+            <JiraIssueLink
               issueKey={item.key}
               jiraBaseUrl={jiraBaseUrl}
               className="performance-work-row__key"
@@ -109,7 +85,7 @@ export function PersonWorkRow({
   return (
     <article className="person-work-card" data-testid="person-work-card">
       <div className="person-work-card__head">
-        <IssueKeyLink
+        <JiraIssueLink
           issueKey={item.key}
           jiraBaseUrl={jiraBaseUrl}
           className="person-work-card__key"

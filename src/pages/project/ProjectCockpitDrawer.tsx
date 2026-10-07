@@ -15,7 +15,7 @@ import { resolveJiraBaseUrl } from "../../config/product";
 import { loadPreferences } from "../../platform/preferences";
 import { openExternalUrl } from "../../platform/openExternal";
 import { buildJiraProjectBrowseUrl } from "../../platform/atlassianUrls";
-import { buildJiraIssueBrowseUrl } from "../../platform/jiraIssueUrl";
+import { JiraIssueLink } from "../../components/JiraIssueLink/JiraIssueLink";
 import { DependencyDetailDrawer } from "./DependencyDetailDrawer";
 import type { ProjectDependencyRow } from "../../domain/dependencies/dependencyTypes";
 import type { WorkDependency } from "../../domain/dependencies/dependencyTypes";
@@ -348,17 +348,11 @@ export function ProjectCockpitDrawer({
                   {workSort.sortedRows.slice(0, 40).map((row) => (
                     <tr key={row.issueKey}>
                       <td>
-                        <button
-                          type="button"
+                        <JiraIssueLink
+                          issueKey={row.issueKey}
+                          jiraBaseUrl={jiraBaseUrl}
                           className="project-cockpit__link"
-                          onClick={() =>
-                            void openExternalUrl(
-                              buildJiraIssueBrowseUrl(jiraBaseUrl, row.issueKey),
-                            )
-                          }
-                        >
-                          {row.issueKey}
-                        </button>
+                        />
                       </td>
                       <TableClampCell title={row.title}>{row.title}</TableClampCell>
                       <td>{row.status}</td>

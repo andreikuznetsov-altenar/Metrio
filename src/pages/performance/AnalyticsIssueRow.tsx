@@ -1,14 +1,10 @@
 import { ExternalLink } from "lucide-react";
 import { Badge } from "../../components/Badge/Badge";
-import { Button } from "../../components/Button/Button";
 import { PersonAvatar } from "../../components/PersonAvatar/PersonAvatar";
 import { Tooltip } from "../../components/Tooltip/Tooltip";
 import type { AnalyticsEvidenceIssue } from "../../domain/analytics/analyticsEvidenceTypes";
 import { formatPerformanceDateDisplay } from "../../domain/performance/performanceDateRange";
-import { resolveJiraBaseUrl } from "../../config/product";
-import { loadPreferences } from "../../platform/preferences";
-import { buildJiraIssueBrowseUrl } from "../../platform/jiraIssueUrl";
-import { openExternalUrl } from "../../platform/openExternal";
+import { JiraIssueLink } from "../../components/JiraIssueLink/JiraIssueLink";
 import {
   displayPersonName,
   formatCycleDurationShort,
@@ -76,22 +72,14 @@ export function AnalyticsIssueRow({
       ? "analytics-issue-row analytics-issue-row--card"
       : "analytics-issue-row";
 
-  const openJira = () => {
-    void (async () => {
-      const prefs = await loadPreferences();
-      const url = buildJiraIssueBrowseUrl(
-        resolveJiraBaseUrl(prefs),
-        issue.issueKey,
-      );
-      await openExternalUrl(url);
-    })();
-  };
-
   return (
     <article className={rowClass} data-testid={variant === "card" ? "person-history-card" : undefined}>
       <div className="analytics-issue-row__top">
         <div className="analytics-issue-row__key-line">
-          <span className="analytics-issue-row__key">{issue.issueKey}</span>
+          <JiraIssueLink
+            issueKey={issue.issueKey}
+            className="analytics-issue-row__key"
+          />
         </div>
         {badge ? (
           <Badge variant={badge.variant} className="analytics-issue-row__badge">
@@ -131,19 +119,21 @@ export function AnalyticsIssueRow({
         </div>
 
         {jiraAction === "secondary-button" ? (
-          <Button type="button" variant="secondary" onClick={openJira}>
+          <JiraIssueLink
+            issueKey={issue.issueKey}
+            className="analytics-issue-row__jira-button"
+          >
             Open Jira
-          </Button>
+          </JiraIssueLink>
         ) : (
           <Tooltip content="Open in Jira">
-            <button
-              type="button"
+            <JiraIssueLink
+              issueKey={issue.issueKey}
               className="analytics-issue-row__jira"
               aria-label={`Open ${issue.issueKey} in Jira`}
-              onClick={openJira}
             >
               <ExternalLink size={15} strokeWidth={1.75} aria-hidden />
-            </button>
+            </JiraIssueLink>
           </Tooltip>
         )}
       </div>
