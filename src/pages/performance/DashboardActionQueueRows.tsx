@@ -25,15 +25,17 @@ export function DashboardActionQueueRows({
           className="action-queue__dashboard-row"
           data-testid="dashboard-action-row"
         >
-          <span className="action-queue__dashboard-subject">
+          <span className="action-queue__dashboard-person">
             {row.item.personId && row.item.personName ? (
               <PersonAvatar
                 personId={row.item.personId}
                 displayName={row.item.personName}
                 size="sm"
               />
-            ) : null}
-            {row.subject}
+            ) : (
+              <span className="action-queue__dashboard-person-slot" aria-hidden />
+            )}
+            <span className="action-queue__dashboard-person-label">{row.subject}</span>
           </span>
           <div className="action-queue__dashboard-reasons">
             {row.reasonTags.map((tag) => (

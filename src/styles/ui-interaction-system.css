@@ -215,6 +215,25 @@
 .performance-table__action {
   text-align: right;
   white-space: nowrap;
+  padding-right: var(--performance-table-action-inset-end, var(--space-4));
+}
+
+.performance-table th.performance-table__action {
+  padding-right: var(--performance-table-action-inset-end, var(--space-4));
+}
+
+.performance-table-wrap .performance-table th:first-child,
+.performance-table-wrap .performance-table td:first-child {
+  padding-left: var(--performance-table-edge-inset, var(--space-3));
+}
+
+.performance-table-wrap .performance-table th:last-child:not(.performance-table__num):not(
+    .performance-table__action
+  ),
+.performance-table-wrap .performance-table td:last-child:not(.performance-table__num):not(
+    .performance-table__action
+  ) {
+  padding-right: var(--performance-table-edge-inset, var(--space-3));
 }
 
 .performance-table__action .btn {

@@ -45,6 +45,10 @@
   --space-1: 4px;
   --space-2: 8px;
   --icon-text-gap: var(--space-2);
+
+  /* Performance / dashboard tables */
+  --performance-table-edge-inset: var(--space-4);
+  --performance-table-action-inset-end: var(--space-4);
   --space-3: 12px;
   --space-4: 16px;
   --space-5: 20px;

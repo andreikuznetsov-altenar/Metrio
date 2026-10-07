@@ -113,12 +113,6 @@
   max-width: 36rem;
 }
 
-.performance-table__action {
-  font-size: 12px;
-  font-weight: 500;
-  color: var(--color-accent);
-}
-
 .performance-issue-key {
   font-family: var(--font-mono, ui-monospace, monospace);
   font-size: 11px;
@@ -766,41 +760,6 @@
   min-width: 960px;
 }
 
-.performance-table--delivery-risk th:nth-child(1),
-.performance-table--delivery-risk td:nth-child(1) {
-  width: 120px;
-}
-
-.performance-table--delivery-risk th:nth-child(2),
-.performance-table--delivery-risk td:nth-child(2) {
-  width: auto;
-}
-
-.performance-table--delivery-risk th:nth-child(3),
-.performance-table--delivery-risk td:nth-child(3) {
-  width: 200px;
-}
-
-.performance-table--delivery-risk th:nth-child(4),
-.performance-table--delivery-risk td:nth-child(4) {
-  width: 100px;
-}
-
-.performance-table--delivery-risk th:nth-child(5),
-.performance-table--delivery-risk td:nth-child(5) {
-  width: 240px;
-}
-
-.performance-table--delivery-risk th:nth-child(6),
-.performance-table--delivery-risk td:nth-child(6) {
-  width: 130px;
-}
-
-.performance-table--delivery-risk th:nth-child(7),
-.performance-table--delivery-risk td:nth-child(7) {
-  width: 120px;
-}
-
 .performance-table__sort-btn {
   display: flex;
   align-items: center;
@@ -964,7 +923,7 @@
 }
 
 .performance-table--delivery-risk col.col-action {
-  width: 9%;
+  width: 11%;
 }
 
 .performance-table--attention {
@@ -999,11 +958,6 @@
 
 .performance-table__task-row:hover {
   background: var(--color-surface-secondary);
-}
-
-.metrio-modal--task-list {
-  width: min(1180px, calc(100vw - 64px));
-  max-height: min(80vh, 720px);
 }
 
 .attention-issue-links {
@@ -1117,11 +1071,6 @@
   font-size: 13px;
   line-height: 1.35;
   color: var(--color-text-secondary);
-}
-
-
-.performance-table__action {
-  text-align: right;
 }
 
 .performance-empty {

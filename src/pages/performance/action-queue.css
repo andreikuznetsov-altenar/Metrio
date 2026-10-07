@@ -146,13 +146,13 @@
 .action-queue__dashboard-header {
   display: grid;
   grid-template-columns:
-    minmax(0, 1.2fr)
-    auto
-    minmax(0, 1fr)
-    minmax(min-content, max-content);
-  gap: 12px;
+    minmax(0, 1.15fr)
+    minmax(5.5rem, 0.72fr)
+    minmax(0, 1.35fr)
+    minmax(7rem, max-content);
+  gap: var(--space-2);
   align-items: center;
-  padding-bottom: var(--space-2);
+  padding: 0 var(--space-3) var(--space-2);
   border-bottom: 1px solid var(--color-border);
   margin-bottom: var(--space-1);
 }
@@ -178,6 +178,7 @@
 .action-queue__dashboard-header-cell--end {
   justify-self: end;
   text-align: right;
+  padding-right: var(--performance-table-action-inset-end, var(--space-4));
 }
 
 .action-queue__dashboard-header-cell:hover {
@@ -204,19 +205,40 @@
 .action-queue__dashboard-row {
   display: grid;
   grid-template-columns:
-    minmax(0, 1.1fr)
-    minmax(0, 0.75fr)
-    minmax(0, 1.25fr)
-    minmax(min-content, max-content);
+    minmax(0, 1.15fr)
+    minmax(5.5rem, 0.72fr)
+    minmax(0, 1.35fr)
+    minmax(7rem, max-content);
   gap: var(--space-2);
   align-items: center;
-  padding: var(--space-2) 0;
+  padding: var(--space-2) var(--space-3);
   border-top: 1px solid var(--color-border);
 }
 
 .action-queue__dashboard-row:first-child {
   border-top: none;
   padding-top: 0;
+}
+
+.action-queue__dashboard-person {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.action-queue__dashboard-person-slot {
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+}
+
+.action-queue__dashboard-person-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  min-width: 0;
+  line-height: 1.35;
 }
 
 .action-queue__dashboard-subject {
@@ -247,6 +269,8 @@
   color: var(--color-text-secondary);
   min-width: 0;
   line-height: 1.35;
+  justify-self: start;
+  text-align: left;
 }
 
 .action-queue__dashboard-cta {
@@ -254,6 +278,7 @@
   width: auto;
   max-width: 100%;
   flex-shrink: 0;
+  margin-right: var(--performance-table-action-inset-end, var(--space-4));
 }
 
 @container (max-width: 420px) {
@@ -269,7 +294,7 @@
     align-items: center;
   }
 
-  .action-queue__dashboard-subject {
+  .action-queue__dashboard-person {
     grid-area: subject;
   }
 
