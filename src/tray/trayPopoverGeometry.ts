@@ -1,14 +1,5 @@
-/** Drop-shadow(0 12px 36px …) safe transparent host margins — keep in sync with tray-popover.css + tray_popover.rs */
-export const TRAY_POPOVER_SHADOW_OFFSET_Y_PX = 12;
-export const TRAY_POPOVER_SHADOW_BLUR_PX = 36;
-
+/** Keep in sync with tray_popover.rs (TRAY_ARROW_TIP_GAP). */
 export const TRAY_ARROW_TIP_GAP_PX = 4;
-
-export const TRAY_HOST_SHADOW_TOP_PX =
-  TRAY_POPOVER_SHADOW_BLUR_PX - TRAY_POPOVER_SHADOW_OFFSET_Y_PX;
-export const TRAY_HOST_SHADOW_BOTTOM_PX =
-  TRAY_POPOVER_SHADOW_OFFSET_Y_PX + TRAY_POPOVER_SHADOW_BLUR_PX;
-export const TRAY_HOST_SHADOW_INLINE_PX = 28;
 
 export type TrayAnchorRect = {
   left: number;
@@ -30,9 +21,9 @@ export function trayArrowTipYFromAnchor(anchor: TrayAnchorRect): number {
   return trayBottomY(anchor) + TRAY_ARROW_TIP_GAP_PX;
 }
 
-/** Native host window origin Y so arrow tip sits below tray with shadow room above. */
+/** Native host window origin Y; arrow tip aligns with the top of the popover content. */
 export function trayHostWindowYFromArrowTip(arrowTipY: number): number {
-  return arrowTipY - TRAY_HOST_SHADOW_TOP_PX;
+  return arrowTipY;
 }
 
 export function trayHostWindowPosition(
@@ -55,14 +46,11 @@ export function visiblePopoverCenterX(hostX: number, hostWidth: number): number 
   return hostX + hostWidth / 2;
 }
 
-export function hostFitsPopoverWithShadow(
+export function hostFitsPopoverContent(
   hostWidth: number,
   hostHeight: number,
   popoverWidth: number,
   popoverHeight: number,
 ): boolean {
-  return (
-    hostWidth >= popoverWidth + TRAY_HOST_SHADOW_INLINE_PX * 2 &&
-    hostHeight >= popoverHeight + TRAY_HOST_SHADOW_TOP_PX + TRAY_HOST_SHADOW_BOTTOM_PX
-  );
+  return hostWidth >= popoverWidth && hostHeight >= popoverHeight;
 }

@@ -5,15 +5,10 @@ use tauri::{
     Size, WebviewUrl, WebviewWindowBuilder,
 };
 
-// Keep in sync with src/tray/trayPopoverGeometry.ts and tray-popover.css
+// Keep in sync with src/tray/trayPopoverGeometry.ts (TRAY_ARROW_TIP_GAP_PX)
 const POPOVER_FALLBACK_WIDTH: f64 = 312.0;
 const POPOVER_FALLBACK_HEIGHT: f64 = 360.0;
 const TRAY_ARROW_TIP_GAP: f64 = 4.0;
-const SHADOW_INSET_TOP: f64 = 24.0;
-#[allow(dead_code)]
-const SHADOW_INSET_BOTTOM: f64 = 48.0;
-#[allow(dead_code)]
-const SHADOW_INSET_INLINE: f64 = 28.0;
 
 struct TrayAnchor {
     center_x: f64,
@@ -82,12 +77,7 @@ fn host_position_for_anchor(
     monitor_height: f64,
 ) -> LogicalPosition<f64> {
     let arrow_tip_y = anchor.tray_bottom_y + TRAY_ARROW_TIP_GAP;
-    let y = clamp_host_y(
-        arrow_tip_y - SHADOW_INSET_TOP,
-        host_height,
-        monitor_y,
-        monitor_height,
-    );
+    let y = clamp_host_y(arrow_tip_y, host_height, monitor_y, monitor_height);
     let x = clamp_host_x(anchor.center_x, monitor_x, monitor_width, host_width);
     LogicalPosition { x, y }
 }
@@ -243,8 +233,7 @@ mod tests {
             tray_bottom_y: 30.0,
         };
         let pos = host_position_for_anchor(&anchor, 300.0, 320.0, 0.0, 0.0, 1920.0, 1080.0);
-        let arrow_tip_y = pos.y + SHADOW_INSET_TOP;
-        assert_eq!(arrow_tip_y - anchor.tray_bottom_y, TRAY_ARROW_TIP_GAP);
+        assert_eq!(pos.y - anchor.tray_bottom_y, TRAY_ARROW_TIP_GAP);
     }
 
     #[test]
@@ -259,9 +248,12 @@ mod tests {
     }
 
     #[test]
-    fn shadow_insets_match_css_contract() {
-        assert_eq!(SHADOW_INSET_TOP, 24.0);
-        assert_eq!(SHADOW_INSET_BOTTOM, 48.0);
-        assert_eq!(SHADOW_INSET_INLINE, 28.0);
+    fn host_top_aligns_with_arrow_tip_without_shadow_padding() {
+        let anchor = TrayAnchor {
+            center_x: 200.0,
+            tray_bottom_y: 40.0,
+        };
+        let pos = host_position_for_anchor(&anchor, 280.0, 300.0, 0.0, 0.0, 1920.0, 1080.0);
+        assert_eq!(pos.y, anchor.tray_bottom_y + TRAY_ARROW_TIP_GAP);
     }
 }

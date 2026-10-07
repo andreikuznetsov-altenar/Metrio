@@ -6,13 +6,9 @@ import "./tray-popover.css";
 function reportTrayPopoverWindowSize(root: HTMLElement | null) {
   if (!root || typeof document === "undefined") return;
   const rect = root.getBoundingClientRect();
-  const body = document.body;
-  const style = getComputedStyle(body);
-  const padX = parseFloat(style.paddingLeft) + parseFloat(style.paddingRight);
-  const padY = parseFloat(style.paddingTop) + parseFloat(style.paddingBottom);
   void invoke("tray_popover_resize", {
-    width: Math.ceil(rect.width + padX),
-    height: Math.ceil(rect.height + padY),
+    width: Math.ceil(rect.width),
+    height: Math.ceil(rect.height),
   }).catch(() => undefined);
 }
 

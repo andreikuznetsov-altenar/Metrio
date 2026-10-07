@@ -23,7 +23,6 @@ body,
 }
 
 body {
-  padding: var(--tray-host-shadow-top) var(--tray-host-shadow-inline) var(--tray-host-shadow-bottom);
   font-family: var(
     --font-sans,
     system-ui,

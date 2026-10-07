@@ -1,34 +1,27 @@
 :root {
   color-scheme: light;
-  --tray-popover-shadow-offset-y: 12px;
-  --tray-popover-shadow-blur: 36px;
-  /* Transparent host padding = drop-shadow(0 offset-y blur) extent */
-  --tray-host-shadow-top: calc(var(--tray-popover-shadow-blur) - var(--tray-popover-shadow-offset-y));
-  --tray-host-shadow-bottom: calc(var(--tray-popover-shadow-offset-y) + var(--tray-popover-shadow-blur));
-  --tray-host-shadow-inline: 28px;
-  --tray-popover-radius: 24px;
+  --tray-popover-radius: 8px;
   --tray-popover-width: 256px;
-  --tray-popover-padding-x: var(--space-3, 12px);
-  --tray-popover-padding-y: 8px;
-  --tray-popover-row-gap: 1px;
-  --tray-popover-section-gap: 4px;
+  --tray-popover-padding: 16px;
+  --tray-popover-summary-gap: 12px;
+  --tray-popover-section-gap: 8px;
   --tray-popover-action-min-height: 32px;
   --tray-popover-row-hover-radius: 8px;
   --tray-popover-arrow-width: 14px;
   --tray-popover-arrow-height: 7px;
   --tray-popover-surface: var(--color-surface, #fff);
-  --tray-popover-drop-shadow: 0 12px 36px rgba(15, 17, 21, 0.14);
 }
 
 /**
- * Single visible surface: arrow + 24px rounded popover. Host/webview stays transparent.
+ * Arrow + rounded popover surface. Host/webview stays fully transparent outside.
  */
 .tray-popover {
   position: relative;
   width: var(--tray-popover-width);
   margin: 0 auto;
   padding-top: var(--tray-popover-arrow-height);
-  filter: drop-shadow(var(--tray-popover-drop-shadow));
+  box-shadow: none;
+  filter: none;
 }
 
 .tray-popover::before {
@@ -42,6 +35,7 @@
   transform: translateX(-50%);
   background: var(--tray-popover-surface);
   clip-path: polygon(50% 0%, 0% 100%, 100% 100%);
+  box-shadow: none;
 }
 
 .tray-popover__surface {
@@ -50,7 +44,8 @@
   border: none;
   border-radius: var(--tray-popover-radius);
   background: var(--tray-popover-surface);
-  padding: var(--tray-popover-padding-y) var(--tray-popover-padding-x);
+  box-shadow: none;
+  padding: var(--tray-popover-padding);
   display: flex;
   flex-direction: column;
   gap: var(--tray-popover-section-gap);
@@ -59,7 +54,7 @@
 .tray-popover__summary {
   display: flex;
   flex-direction: column;
-  gap: var(--tray-popover-row-gap);
+  gap: var(--tray-popover-summary-gap);
   padding: 0;
   margin: 0;
 }
@@ -96,7 +91,7 @@
 .tray-popover__divider {
   flex-shrink: 0;
   height: 1px;
-  margin: 2px 0;
+  margin: 0;
   border: none;
   background: var(--color-border-subtle, #e8ebf0);
 }
@@ -104,7 +99,7 @@
 .tray-popover__actions {
   display: flex;
   flex-direction: column;
-  gap: var(--tray-popover-row-gap);
+  gap: 2px;
   margin: 0;
   padding: 0;
 }
