@@ -1,7 +1,7 @@
 use tauri::{AppHandle, Emitter, LogicalPosition, Manager, PhysicalPosition, Position, Rect, WebviewUrl, WebviewWindowBuilder};
 
 const POPOVER_WIDTH: f64 = 280.0;
-const POPOVER_HEIGHT: f64 = 380.0;
+const POPOVER_HEIGHT: f64 = 332.0;
 const ARROW_GAP: f64 = 6.0;
 
 pub fn ensure_tray_popover(app: &AppHandle) -> Result<tauri::WebviewWindow, String> {

@@ -20,6 +20,8 @@ describe("TrayPopoverPanel", () => {
       unreadNotificationCount: 3,
     });
     render(<TrayPopoverPanel summary={summary} />);
+    expect(screen.getByTestId("tray-popover")).toBeTruthy();
+    expect(screen.getByRole("navigation", { name: /tray commands/i })).toBeTruthy();
     expect(screen.getByText("Open tasks")).toBeTruthy();
     expect(screen.getByText("8")).toBeTruthy();
     expect(screen.getByText("Notifications")).toBeTruthy();
