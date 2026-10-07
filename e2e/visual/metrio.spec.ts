@@ -1648,9 +1648,10 @@ test.describe("Metrio visual regression", () => {
     await page.getByRole("button", { name: /^settings$/i }).click();
     await clickSettingsSection(page, /company & app/i);
     await expect(page.getByTestId("diagnostics-settings")).toBeVisible();
-    await expect(page.getByTestId("diagnostics-checks")).toBeVisible({
-      timeout: 15_000,
-    });
+    await expect(page.getByTestId("desktop-settings")).toBeVisible();
+    await expect(page.getByTestId("organization-identity-settings")).toBeVisible();
+    await expect(page.getByTestId("diagnostics-support-settings")).toBeVisible();
+    await expect(page.getByTestId("settings-cache-clear")).toBeVisible();
     await expect(page.getByTestId("diagnostics-settings")).toHaveScreenshot(
       "diagnostics-summary.png",
       { maxDiffPixelRatio: 0.02 },
@@ -1671,9 +1672,7 @@ test.describe("Metrio visual regression", () => {
     await expect(page.getByTestId("app-shell")).toBeVisible({ timeout: 30_000 });
     await page.getByRole("button", { name: /^settings$/i }).click();
     await clickSettingsSection(page, /company & app/i);
-    await expect(page.getByTestId("diagnostics-checks")).toBeVisible({
-      timeout: 15_000,
-    });
+    await expect(page.getByTestId("diagnostics-support-settings")).toBeVisible();
     await expect(page.locator(".metrio-collapsible.is-open")).toHaveCount(0);
     await expect(page.getByTestId("diagnostics-settings")).toHaveScreenshot(
       "diagnostics-advanced-collapsed.png",
@@ -1691,9 +1690,7 @@ test.describe("Metrio visual regression", () => {
     await expect(page.getByTestId("app-shell")).toBeVisible({ timeout: 30_000 });
     await page.getByRole("button", { name: /^settings$/i }).click();
     await clickSettingsSection(page, /company & app/i);
-    await expect(page.getByTestId("diagnostics-checks")).toBeVisible({
-      timeout: 15_000,
-    });
+    await expect(page.getByTestId("diagnostics-support-settings")).toBeVisible();
     await expect(page.getByTestId("diagnostics-settings")).toHaveScreenshot(
       "diagnostics-dark.png",
       { maxDiffPixelRatio: 0.02 },
@@ -1740,10 +1737,7 @@ test.describe("Metrio visual regression", () => {
     await expect(page.getByTestId("about-settings")).toHaveScreenshot("about-card.png", {
       maxDiffPixelRatio: 0.02,
     });
-    await expect(page.getByTestId("about-update-status")).toHaveScreenshot(
-      "about-review-updater.png",
-      { maxDiffPixelRatio: 0.02 },
-    );
+    await expect(page.getByTestId("about-update-status")).toHaveCount(0);
     await expect(page).toHaveScreenshot("settings-company-app.png", {
       fullPage: true,
       maxDiffPixelRatio: 0.02,

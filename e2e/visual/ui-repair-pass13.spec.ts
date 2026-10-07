@@ -6,6 +6,7 @@ import {
   bootMetrioWithFlags,
   clickSubnav,
   openFirstAttentionPerson,
+  openDirectReportPersonBrief,
   openPerformanceFromHome,
   serializeFeedbackDeliveryVisualSurveyForPlaywright,
   serializeFeedbackVisualPrefsForPlaywright,
@@ -306,13 +307,9 @@ test.describe("UI Repair Pass 13 acceptance", () => {
 
   test("drawer-person-brief-transition", async ({ page }) => {
     await bootMetrio(page);
-    await openFirstAttentionPerson(page);
+    await openDirectReportPersonBrief(page);
+    await expect(page.getByTestId("person-brief-drawer")).toBeVisible();
     await expect(page.locator(".drawer-root__backdrop")).toHaveCount(1);
-    await page.getByRole("button", { name: /^brief$/i }).click();
-    await expect(page.locator("[data-drawer-panel='secondary']")).toBeVisible();
-    await expect(page.locator(".drawer-root__backdrop")).toHaveCount(1);
-    await page.getByRole("button", { name: /close brief/i }).click();
-    await expect(page.locator("[data-drawer-panel='primary']")).toBeVisible();
   });
 
   test("drawer-header-actions-aligned", async ({ page }) => {

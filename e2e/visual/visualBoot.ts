@@ -245,6 +245,28 @@ export async function openFirstAttentionPerson(page: Page) {
   await row.click();
 }
 
+export async function openDirectReportPersonDrawer(
+  page: Page,
+  personId = "person-01",
+) {
+  await page.evaluate((id) => {
+    window.dispatchEvent(new CustomEvent("metrio-open-person", { detail: id }));
+  }, personId);
+  await expect(page.locator(".drawer--person-detail")).toBeVisible({ timeout: 15_000 });
+}
+
+export async function openDirectReportPersonBrief(
+  page: Page,
+  personId = "person-01",
+) {
+  await page.evaluate((id) => {
+    window.dispatchEvent(
+      new CustomEvent("metrio-open-person-brief", { detail: { personId: id } }),
+    );
+  }, personId);
+  await expect(page.locator(".drawer--person-brief")).toBeVisible({ timeout: 15_000 });
+}
+
 export async function expectPerformanceTab(page: Page, label: RegExp) {
   const btn = page.locator(".performance-subnav").getByRole("button", { name: label });
   await expect(btn).toHaveClass(/is-active/, { timeout: 15_000 });

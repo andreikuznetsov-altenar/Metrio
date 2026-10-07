@@ -14,6 +14,7 @@ import {
   clickSubnav,
   clickSettingsSection,
   openFirstAttentionPerson,
+  openDirectReportPersonBrief,
   openPerformanceFromHome,
   openResourceLibrary,
   setViewport,
@@ -139,9 +140,7 @@ test.describe("Executive acceptance — light 1440×900", () => {
 
   test("14-person-brief", async ({ page }) => {
     await bootMetrio(page, "lead");
-    await openFirstAttentionPerson(page);
-    await page.getByRole("button", { name: "Brief" }).click();
-    await expect(page.getByTestId("person-brief-drawer")).toBeVisible();
+    await openDirectReportPersonBrief(page);
     await expect(page).toHaveScreenshot("14-person-brief.png", SHOT);
   });
 
@@ -452,9 +451,7 @@ test.describe("Executive acceptance — dark subset 1440×900", () => {
     await setViewport(page, 1440, 900);
     await bootConnected(page, "lead", "dark");
     await openPerformanceFromHome(page);
-    await openFirstAttentionPerson(page);
-    await page.getByRole("button", { name: "Brief" }).click();
-    await expect(page.getByTestId("person-brief-drawer")).toBeVisible();
+    await openDirectReportPersonBrief(page);
     await expect(page).toHaveScreenshot("dark-14-person-brief.png", SHOT);
   });
 
