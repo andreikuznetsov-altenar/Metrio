@@ -1,5 +1,7 @@
 import { useMemo, useState } from "react";
+import { Search } from "lucide-react";
 import { Drawer } from "../../components/Drawer/Drawer";
+import { DrawerPanelPlaceholder } from "../../components/Drawer/DrawerPanelPlaceholder";
 import { Input } from "../../components/Input/Input";
 import { ResourceRow } from "../../components/ResourceRow/ResourceRow";
 import type { OnboardingResource, OnboardingResourceGroup } from "../../domain/onboarding/resourceTypes";
@@ -72,9 +74,12 @@ export function ResourceLibrary({
           onChange={(event) => setQuery(event.target.value)}
         />
         {groupEntries.length === 0 ? (
-          <p className="resource-library__empty" role="status">
-            No resources match your search.
-          </p>
+          <DrawerPanelPlaceholder
+            className="resource-library__empty"
+            compact
+            icon={<Search size={24} strokeWidth={1.75} aria-hidden />}
+            title="No resources match your search."
+          />
         ) : (
           groupEntries.map(([group, items]) => (
             <section key={group} className="resource-library__group" aria-label={GROUP_LABELS[group]}>

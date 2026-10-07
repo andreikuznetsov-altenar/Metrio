@@ -2,6 +2,7 @@ import { CheckCircle2, Info } from "lucide-react";
 import { Badge } from "../../components/Badge/Badge";
 import { useEffect, useMemo, useState } from "react";
 import { Drawer } from "../../components/Drawer/Drawer";
+import { DrawerPanelPlaceholder } from "../../components/Drawer/DrawerPanelPlaceholder";
 import { SegmentedControl } from "../../components/SegmentedControl/SegmentedControl";
 import type { AnalyticsEvidence } from "../../domain/analytics/analyticsEvidenceTypes";
 import {
@@ -210,15 +211,12 @@ export function AnalyticsDrilldownDrawer({
           <AnalyticsDrawerIntro evidence={evidence} />
 
           {evidence.detailLevel === "aggregate" ? (
-            <div className="analytics-drawer__aggregate-placeholder" role="status">
-              <Info size={20} strokeWidth={1.75} aria-hidden className="analytics-drawer__aggregate-icon" />
-              <p className="analytics-drawer__aggregate-title">
-                Task-level detail unavailable
-              </p>
-              <p className="analytics-drawer__aggregate-copy">
-                {evidence.aggregateNote}
-              </p>
-            </div>
+            <DrawerPanelPlaceholder
+              className="analytics-drawer__aggregate-placeholder"
+              icon={<Info size={24} strokeWidth={1.75} aria-hidden />}
+              title="Task-level detail unavailable"
+              copy={evidence.aggregateNote}
+            />
           ) : null}
 
           {evidence.metric === "efficiency" && evidence.detailLevel === "task" && efficiencyPresentation ? (
@@ -267,17 +265,12 @@ export function AnalyticsDrilldownDrawer({
           ) : null}
 
           {backflowsZero ? (
-            <div className="analytics-drawer__positive-empty">
-              <CheckCircle2 size={20} strokeWidth={1.75} aria-hidden />
-              <div>
-                <p className="analytics-drawer__positive-empty-title">
-                  No backflows in this period
-                </p>
-                <p className="analytics-drawer__positive-empty-copy">
-                  Completed work did not return to an earlier workflow stage.
-                </p>
-              </div>
-            </div>
+            <DrawerPanelPlaceholder
+              className="analytics-drawer__positive-empty"
+              icon={<CheckCircle2 size={24} strokeWidth={1.75} aria-hidden />}
+              title="No backflows in this period"
+              copy="Completed work did not return to an earlier workflow stage."
+            />
           ) : null}
 
           {evidence.metric === "first_pass" && evidence.detailLevel === "task" ? (
@@ -324,15 +317,19 @@ export function AnalyticsDrilldownDrawer({
           evidence.detailLevel === "task" &&
           evidence.metric !== "efficiency" &&
           filteredIssues.length === 0 ? (
-            <p className="analytics-drawer__empty">
-              {evidence.metric === "completed"
-                ? "No completed work in this period."
-                : evidence.metric === "first_pass"
-                  ? "No completed cycles in this period."
-                  : evidence.metric === "avg_cycle"
-                    ? "No cycle data in this period."
-                    : "No matching work in this period."}
-            </p>
+            <DrawerPanelPlaceholder
+              className="analytics-drawer__empty"
+              compact
+              title={
+                evidence.metric === "completed"
+                  ? "No completed work in this period."
+                  : evidence.metric === "first_pass"
+                    ? "No completed cycles in this period."
+                    : evidence.metric === "avg_cycle"
+                      ? "No cycle data in this period."
+                      : "No matching work in this period."
+              }
+            />
           ) : null}
 
           {evidence.metric === "backflows" &&

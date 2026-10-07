@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Button } from "../../components/Button/Button";
 import { Drawer } from "../../components/Drawer/Drawer";
+import { DrawerPanelPlaceholder } from "../../components/Drawer/DrawerPanelPlaceholder";
 import { SegmentedControl } from "../../components/SegmentedControl/SegmentedControl";
 import { useCurrentUser } from "../../app/CurrentUserContext";
 import { usePerformanceData } from "../../app/PerformanceDataContext";
@@ -208,7 +209,10 @@ export function ProjectCockpitDrawer({
       }
     >
       {!model ? (
-        <p className="project-cockpit__empty">Project data is not available.</p>
+        <DrawerPanelPlaceholder
+          className="project-cockpit__empty"
+          title="Project data is not available."
+        />
       ) : (
         <div className="project-cockpit__body" data-testid="project-cockpit">
           <section className="project-cockpit__section">

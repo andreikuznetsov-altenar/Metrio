@@ -1,6 +1,8 @@
+import { FileText } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Button } from "../../components/Button/Button";
 import { Drawer } from "../../components/Drawer/Drawer";
+import { DrawerPanelPlaceholder } from "../../components/Drawer/DrawerPanelPlaceholder";
 import { PersonCycleTimeCard } from "../../components/PersonCycleTimeCard/PersonCycleTimeCard";
 import { Select } from "../../components/Select/Select";
 import { useCurrentUser } from "../../app/CurrentUserContext";
@@ -93,9 +95,10 @@ export function PersonBriefDrawerPanel({
 
   if (!brief) {
     return (
-      <p className="person-brief__empty" role="status">
-        Brief is not available yet.
-      </p>
+      <DrawerPanelPlaceholder
+        icon={<FileText size={24} strokeWidth={1.75} aria-hidden />}
+        title="Brief is not available yet."
+      />
     );
   }
 

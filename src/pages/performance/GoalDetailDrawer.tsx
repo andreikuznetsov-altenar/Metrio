@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Badge } from "../../components/Badge/Badge";
 import { Button } from "../../components/Button/Button";
 import { Drawer } from "../../components/Drawer/Drawer";
+import { DrawerPanelPlaceholder } from "../../components/Drawer/DrawerPanelPlaceholder";
 import { Input } from "../../components/Input/Input";
 import { Select } from "../../components/Select/Select";
 import {
@@ -139,9 +140,11 @@ export function GoalDetailDrawer({
             Search Jira issues available in your team scope and link relevant work to this goal.
           </p>
           {goal.linkedJiraIssueKeys.length === 0 ? (
-            <p className="goal-drawer__empty-linked" role="status">
-              No Jira work linked yet.
-            </p>
+            <DrawerPanelPlaceholder
+              className="goal-drawer__empty-linked"
+              compact
+              title="No Jira work linked yet."
+            />
           ) : (
             <ul className="goal-drawer__linked-list">
               {goal.linkedJiraIssueKeys.map((key) => (

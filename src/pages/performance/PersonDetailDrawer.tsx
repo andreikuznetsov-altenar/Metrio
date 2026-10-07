@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Button } from "../../components/Button/Button";
+import { DrawerPanelPlaceholder } from "../../components/Drawer/DrawerPanelPlaceholder";
 import { DrawerStack } from "../../components/Drawer/DrawerStack";
 import { Select } from "../../components/Select/Select";
 import { SegmentedControl } from "../../components/SegmentedControl/SegmentedControl";
@@ -260,7 +261,10 @@ export function PersonDetailDrawer({
 
             <h3 className="person-detail-drawer__section-title">Attention signals</h3>
             {groupedAttention.length === 0 ? (
-              <p className="person-detail-drawer__empty">No active attention signals.</p>
+              <DrawerPanelPlaceholder
+                compact
+                title="No active attention signals."
+              />
             ) : (
               <AttentionSignalsTable
                 groups={groupedAttention}
@@ -282,7 +286,7 @@ export function PersonDetailDrawer({
             </p>
             <div className="person-detail-drawer__work-list">
               {workspace.workRows.length === 0 ? (
-                <p className="person-detail-drawer__empty">No active work in this period.</p>
+                <DrawerPanelPlaceholder compact title="No active work in this period." />
               ) : (
                 workspace.workRows.map((item) => <PersonWorkRow key={item.key} item={item} />)
               )}
@@ -336,7 +340,7 @@ export function PersonDetailDrawer({
             </div>
 
             {historyGroups.length === 0 ? (
-              <p className="person-detail-drawer__empty">No completed work for this period.</p>
+              <DrawerPanelPlaceholder compact title="No completed work for this period." />
             ) : (
               historyGroups.map((group) => {
                 const groupRows = visibleHistoryRows.filter(
