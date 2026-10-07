@@ -11,7 +11,8 @@ describe("UI Repair Pass 13.7B side panels and motion", () => {
     expect(drawerCss).toContain("box-shadow: var(--drawer-panel-shadow)");
 
     const shellCss = read("src/components/AppShell/AppShell.css");
-    expect(shellCss).toMatch(/\.app-drawer-layer[\s\S]*inset:\s*0/);
+    expect(shellCss).toMatch(/\.app-drawer-layer[\s\S]*position:\s*absolute/);
+    expect(shellCss).toMatch(/\.app-drawer-layer[\s\S]*top:\s*0/);
     expect(shellCss).toContain("--app-side-surface-top");
     expect(shellCss).toMatch(/\.app-shell__header[\s\S]*--z-app-chrome/);
   });

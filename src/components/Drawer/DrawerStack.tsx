@@ -1,4 +1,4 @@
-import { useEffect, useId, useState, type ReactNode } from "react";
+import { useEffect, useId, type ReactNode } from "react";
 import { IconButton } from "../IconButton/IconButton";
 import type { DrawerSize } from "./Drawer";
 import { useDrawerSurfaceLifecycle } from "./useDrawerSurfaceLifecycle";
@@ -33,7 +33,6 @@ export interface DrawerStackProps {
   size?: DrawerSize;
   className?: string;
   testId?: string;
-  animatingOut?: boolean;
 }
 
 const DRAWER_SIZE_CLASS: Record<DrawerSize, string | undefined> = {
@@ -56,16 +55,9 @@ export function DrawerStack({
   size = "default",
   className,
   testId,
-  animatingOut = false,
 }: DrawerStackProps) {
   const titleId = useId();
-  const [panelMotionKey, setPanelMotionKey] = useState(0);
   const { mounted, phase, panelRef, backdropRef } = useDrawerSurfaceLifecycle(open, onClosed);
-
-  useEffect(() => {
-    if (!open) return;
-    setPanelMotionKey((value) => value + 1);
-  }, [activePanel, open]);
 
   useEffect(() => {
     if (!open) {
@@ -114,15 +106,8 @@ export function DrawerStack({
         }}
       />
       <aside
-        key={panelMotionKey}
         ref={panelRef}
-        className={[
-          "drawer",
-          DRAWER_SIZE_CLASS[size],
-          panelClass,
-          animatingOut ? "drawer-stack-panel--exit" : "",
-          className,
-        ]
+        className={["drawer", DRAWER_SIZE_CLASS[size], panelClass, className]
           .filter(Boolean)
           .join(" ")}
         role="dialog"

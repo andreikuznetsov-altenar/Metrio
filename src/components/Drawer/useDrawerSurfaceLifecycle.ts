@@ -31,6 +31,10 @@ export function useDrawerSurfaceLifecycle(
     openRef.current = open;
   }, [open]);
 
+  useEffect(() => {
+    logDrawerMotionDev(open ? "open-requested" : "close-requested", {});
+  }, [open]);
+
   const cancelMotion = useCallback(() => {
     activeMotionRef.current?.cancel();
     activeMotionRef.current = null;
@@ -41,7 +45,7 @@ export function useDrawerSurfaceLifecycle(
     setMounted(false);
     setPhase("closed");
     onClosed?.();
-    logDrawerMotionDev("unmount", {});
+    logDrawerMotionDev("unmounted", {});
   }, [cancelMotion, onClosed]);
 
   useEffect(() => {
@@ -83,36 +87,25 @@ export function useDrawerSurfaceLifecycle(
 
     if (open) {
       setPhase("entering");
-      panel.style.transform = "translate3d(100%, 0, 0)";
-      panel.style.opacity = "0";
-      backdrop.style.opacity = "0";
       void panel.getBoundingClientRect();
-      logDrawerMotionDev("enter-start", {
-        transform: getComputedStyle(panel).transform,
-      });
+      logDrawerMotionDev("animation-started", { kind: "enter" });
       const motion = playDrawerEnterMotion(panel, backdrop);
       activeMotionRef.current = motion;
       void motion.finished.then(() => {
         if (runGenRef.current !== generation) return;
         if (!openRef.current) return;
         setPhase("open");
-        logDrawerMotionDev("enter-finish", {
-          transform: getComputedStyle(panel).transform,
-        });
+        logDrawerMotionDev("animation-finished", { kind: "enter" });
       });
     } else {
       setPhase("exiting");
-      logDrawerMotionDev("exit-start", {
-        transform: getComputedStyle(panel).transform,
-      });
+      logDrawerMotionDev("animation-started", { kind: "exit" });
       const motion = playDrawerExitMotion(panel, backdrop);
       activeMotionRef.current = motion;
       void motion.finished.then(() => {
         if (runGenRef.current !== generation) return;
         if (openRef.current) return;
-        logDrawerMotionDev("exit-finish", {
-          transform: getComputedStyle(panel).transform,
-        });
+        logDrawerMotionDev("animation-finished", { kind: "exit" });
         completeClose();
       });
     }

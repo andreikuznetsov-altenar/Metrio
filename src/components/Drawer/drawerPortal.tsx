@@ -3,7 +3,7 @@ import { createPortal } from "react-dom";
 
 export const APP_DRAWER_LAYER_ID = "app-drawer-layer";
 
-/** Shared app-shell drawer layer (below header, above filters + content). */
+/** Shared app-shell drawer layer (covers header + content, not native titlebar). */
 export function getAppDrawerPortalRoot(): HTMLElement {
   if (typeof document === "undefined") {
     throw new Error("Drawer portal requires document");
