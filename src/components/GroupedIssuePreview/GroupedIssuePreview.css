@@ -18,6 +18,19 @@
   user-select: none;
 }
 
+.grouped-issue-preview__inline-link {
+  border: none;
+  padding: 0;
+  background: none;
+  color: var(--color-link);
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
 .grouped-issue-preview__tasks-link {
   border: none;
   background: transparent;

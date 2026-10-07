@@ -155,7 +155,7 @@ describe("UI Repair Pass 7C", () => {
     expect(
       within(table).queryByText("No activity for 7+ days", { selector: ".badge" }),
     ).toBeNull();
-    await user.click(within(table).getByRole("button", { name: /Show 3 tasks/i }));
+    await user.click(within(table).getByRole("button", { name: /3 tasks/i }));
     expect(screen.getByTestId("task-list-modal")).toBeTruthy();
   });
 

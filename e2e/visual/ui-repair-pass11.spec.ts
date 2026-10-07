@@ -16,7 +16,7 @@ const SHOT = { maxDiffPixelRatio: 0.02 };
 
 async function openGroupedTaskModalFromOverview(page: Page) {
   await clickSubnav(page, /^overview$/i);
-  const showTasks = page.getByTestId("show-grouped-tasks").first();
+  const showTasks = page.getByTestId("grouped-issue-count-link").first();
   await expect(showTasks).toBeVisible({ timeout: 15_000 });
   await showTasks.click();
   await expect(page.getByTestId("task-list-modal")).toBeVisible();
@@ -173,7 +173,7 @@ test.describe("UI Repair Pass 11 visual acceptance", () => {
     await bootMetrioWithFlags(page, { groupedTasks: true });
     await clickSubnav(page, /^people$/i);
     await expect(page.getByTestId("team-people-view")).toBeVisible();
-    const link = page.getByTestId("show-grouped-tasks").first();
+    const link = page.getByTestId("grouped-issue-count-link").first();
     await expect(link).toBeVisible({ timeout: 15_000 });
     await link.click();
     await expect(page.getByTestId("task-list-modal")).toBeVisible();
@@ -184,7 +184,7 @@ test.describe("UI Repair Pass 11 visual acceptance", () => {
     await bootMetrioWithFlags(page, { groupedTasks: true });
     await clickSubnav(page, /^radar$/i);
     await expect(page.getByTestId("team-radar-view")).toBeVisible();
-    const link = page.getByTestId("show-grouped-tasks").first();
+    const link = page.getByTestId("grouped-issue-count-link").first();
     await expect(link).toBeVisible({ timeout: 15_000 });
     await link.click();
     await expect(page.getByTestId("task-list-modal")).toBeVisible();
@@ -196,7 +196,7 @@ test.describe("UI Repair Pass 11 visual acceptance", () => {
     await openFirstAttentionPerson(page);
     const table = page.getByTestId("attention-signals-table");
     await expect(table).toBeVisible();
-    const link = table.getByTestId("show-grouped-tasks").first();
+    const link = table.getByTestId("grouped-issue-count-link").first();
     if (await link.isVisible()) {
       await link.click();
       await expect(page.getByTestId("task-list-modal")).toBeVisible();

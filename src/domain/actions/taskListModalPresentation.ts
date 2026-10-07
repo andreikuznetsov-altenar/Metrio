@@ -18,3 +18,8 @@ export function formatIssueCountLabel(count: number): string {
   const noun = count === 1 ? "issue" : "issues";
   return `${count} ${noun}`;
 }
+
+export function formatTaskCountLabel(count: number): string {
+  const noun = count === 1 ? "task" : "tasks";
+  return `${count} ${noun}`;
+}

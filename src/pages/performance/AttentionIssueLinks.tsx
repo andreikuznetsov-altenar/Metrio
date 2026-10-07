@@ -1,8 +1,8 @@
 import type { Person } from "../../domain/people/types";
 import { GroupedIssuePreview } from "../../components/GroupedIssuePreview/GroupedIssuePreview";
 
-/** @deprecated Use GroupedIssuePreview — inline expansion is not supported. */
-export const ATTENTION_ISSUE_INITIAL_COUNT = 2;
+/** @deprecated Use GroupedIssuePreview — only a single issue is shown inline. */
+export const ATTENTION_ISSUE_INITIAL_COUNT = 1;
 
 export interface AttentionIssueLinksProps {
   issueKeys: string[];

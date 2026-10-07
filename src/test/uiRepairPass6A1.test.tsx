@@ -117,9 +117,7 @@ describe("UI repair pass 6A.1 — attention signals table", () => {
     const user = userEvent.setup();
     render(<AttentionSignalsTable groups={groups} jiraBaseUrl="https://jira.example.com" />);
     expect(screen.getByTestId("attention-signals-table")).toBeTruthy();
-    const links = screen.getAllByRole("link");
-    expect(links.length).toBeGreaterThan(0);
-    await user.click(screen.getByRole("button", { name: /Show 3 tasks/i }));
+    await user.click(screen.getByRole("button", { name: /3 tasks/i }));
     expect(screen.getByTestId("task-list-modal")).toBeTruthy();
   });
 });

@@ -1,5 +1,6 @@
 import { Badge } from "../../../components/Badge/Badge";
 import { Button } from "../../../components/Button/Button";
+import { GroupedIssuePreview } from "../../../components/GroupedIssuePreview/GroupedIssuePreview";
 import type { ExecutiveAttentionItem } from "../../../domain/home/executiveDashboardModel";
 import { buildJiraIssueBrowseUrl } from "../../../platform/jiraIssueUrl";
 import { openExternalUrl } from "../../../platform/openExternal";
@@ -41,9 +42,9 @@ export function DashboardAttentionNow({
   const critical = items.filter((i) => i.severity === "critical").length;
   const warning = items.filter((i) => i.severity === "warning").length;
 
-  const openJira = (issueKey: string) => {
-    if (!jiraBaseUrl) return;
-    void openExternalUrl(buildJiraIssueBrowseUrl(jiraBaseUrl, issueKey));
+  const openJira = (issueKey: string, url?: string) => {
+    const target = url ?? (jiraBaseUrl ? buildJiraIssueBrowseUrl(jiraBaseUrl, issueKey) : undefined);
+    if (target) void openExternalUrl(target);
   };
 
   return (
@@ -86,30 +87,26 @@ export function DashboardAttentionNow({
                     </Badge>
                   </td>
                   <td className="executive-attention-now__subject">
-                    {keys.length ? (
-                      <span className="executive-attention-now__subject-line">
-                        {keys.map((issueKey, index) => (
-                          <span key={issueKey}>
-                            {index > 0 ? " · " : null}
-                            {jiraBaseUrl ? (
-                              <button
-                                type="button"
-                                className="executive-attention-now__issue-link"
-                                onClick={() => openJira(issueKey)}
-                              >
-                                {issueKey}
-                              </button>
-                            ) : (
-                              issueKey
-                            )}
-                          </span>
-                        ))}
-                        {keys.length && item.title ? " — " : null}
-                        {item.title}
-                      </span>
-                    ) : (
-                      item.title
-                    )}
+                    <span className="executive-attention-now__subject-line">
+                      {keys.length > 0 && jiraBaseUrl ? (
+                        <>
+                          <GroupedIssuePreview
+                            issueKeys={keys}
+                            jiraBaseUrl={jiraBaseUrl}
+                            modalTitle={item.title}
+                            onOpenIssue={openJira}
+                          />
+                          {item.title ? (
+                            <span className="executive-attention-now__subject-title">
+                              {keys.length === 1 ? " — " : " · "}
+                              {item.title}
+                            </span>
+                          ) : null}
+                        </>
+                      ) : (
+                        item.title
+                      )}
+                    </span>
                   </td>
                   <td className="executive-attention-now__context">
                     {item.detail ?? "—"}

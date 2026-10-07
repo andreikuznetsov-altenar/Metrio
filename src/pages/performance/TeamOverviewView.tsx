@@ -538,7 +538,6 @@ export function TeamOverviewView({
                             issueKeys={issueKeys}
                             jiraBaseUrl={jiraBaseUrl}
                             persons={teamPersons}
-                            display="count"
                             personNameForModal={name}
                             onOpenIssue={(_issueKey, url) => {
                               if (url) void openExternalUrl(url);
