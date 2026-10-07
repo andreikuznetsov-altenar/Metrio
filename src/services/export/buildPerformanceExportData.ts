@@ -6,6 +6,7 @@ import type { AuditReportData } from '../../domain/jira/types';
 import { buildMyWeek } from '../../domain/personal/myWeek';
 import { buildWorkHistory } from '../../domain/personal/workHistory';
 import type { TeamSnapshot } from '../../domain/people/types';
+import { inclusiveRangeDayCount } from '../../domain/performance/performanceDateRange';
 import { buildDeliveryRiskItems } from '../../domain/radar/deliveryRisk';
 import { buildTeamRadar, summarizeTeamRadar } from '../../domain/radar/teamRadar';
 import type { KpiSnapshotFile } from '../../domain/snapshots/types';
@@ -63,21 +64,25 @@ function buildTeamOverviewSections(
 
   const efficiency = reportData.teamKpi.efficiencyIndex;
   const firstPass = firstPassMetrics?.official.firstPassRatePercent ?? 0;
+  const trendDays = inclusiveRangeDayCount(params.dateFrom, params.dateTo);
+  const trendAnchor = new Date(`${params.dateTo}T12:00:00`);
 
-  const completedTrend = compareTrendPeriods(teamTrendPoints(kpiSnapshots, 'completedOnDate'), 'completed', 28);
+  const completedTrend = compareTrendPeriods(teamTrendPoints(kpiSnapshots, 'completedOnDate'), 'completed', trendDays, trendAnchor);
   const firstPassTrend = compareWeightedFirstPassTrend(
     teamTrendPoints(kpiSnapshots, 'completedOnDate'),
     teamTrendPoints(kpiSnapshots, 'firstPassOnDate'),
-    28,
+    trendDays,
+    trendAnchor,
   );
   const avgCycleTrend = compareWeightedAvgCycleTrend(
     teamTrendPoints(kpiSnapshots, 'cycleMsSumOnDate'),
     teamTrendPoints(kpiSnapshots, 'completedWithCycleOnDate'),
-    28,
+    trendDays,
+    trendAnchor,
   );
-  const backflowTrend = compareTrendPeriods(teamTrendPoints(kpiSnapshots, 'backflowsOnDate'), 'backflows', 28);
+  const backflowTrend = compareTrendPeriods(teamTrendPoints(kpiSnapshots, 'backflowsOnDate'), 'backflows', trendDays, trendAnchor);
   const sparklineNote =
-    teamSparklinePoints(kpiSnapshots, 'completedOnDate').length > 0
+    teamSparklinePoints(kpiSnapshots, 'completedOnDate', trendDays, trendAnchor).length > 0
       ? 'Sparkline data available in app'
       : undefined;
 
@@ -334,6 +339,22 @@ export function buildPerformanceExportData(input: {
     const completedWithCycle = personTrendPoints(kpiSnapshots, person.id, 'completedWithCycleOnDate');
     const backflows = personTrendPoints(kpiSnapshots, person.id, 'backflowsOnDate');
     const hasHistory = kpiSnapshots.personSnapshots.some((s) => s.personId === person.id);
+    const trendDays = inclusiveRangeDayCount(reportData.params.dateFrom, reportData.params.dateTo);
+    const trendAnchor = new Date(`${reportData.params.dateTo}T12:00:00`);
+    const completedTrend = compareTrendPeriods(completed, 'completed', trendDays, trendAnchor);
+    const firstPassTrend = compareWeightedFirstPassTrend(
+      completed,
+      firstPass,
+      trendDays,
+      trendAnchor,
+    );
+    const avgCycleTrend = compareWeightedAvgCycleTrend(
+      cycleSum,
+      completedWithCycle,
+      trendDays,
+      trendAnchor,
+    );
+    const backflowTrend = compareTrendPeriods(backflows, 'backflows', trendDays, trendAnchor);
 
     sections = [
       {
@@ -344,26 +365,26 @@ export function buildPerformanceExportData(input: {
           ? [
               {
                 label: 'Completed',
-                value: compareTrendPeriods(completed, 'completed', 28).sufficient
-                  ? `${Math.round(compareTrendPeriods(completed, 'completed', 28).current)} (${compareTrendPeriods(completed, 'completed', 28).label})`
+                value: completedTrend.sufficient
+                  ? `${Math.round(completedTrend.current)} (${completedTrend.label})`
                   : '—',
               },
               {
                 label: 'First Pass',
-                value: compareWeightedFirstPassTrend(completed, firstPass, 28).sufficient
-                  ? `${compareWeightedFirstPassTrend(completed, firstPass, 28).current.toFixed(0)}%`
+                value: firstPassTrend.sufficient
+                  ? `${firstPassTrend.current.toFixed(0)}%`
                   : '—',
               },
               {
                 label: 'Avg cycle',
-                value: compareWeightedAvgCycleTrend(cycleSum, completedWithCycle, 28).sufficient
-                  ? `${compareWeightedAvgCycleTrend(cycleSum, completedWithCycle, 28).current.toFixed(1)} days`
+                value: avgCycleTrend.sufficient
+                  ? `${avgCycleTrend.current.toFixed(1)} days`
                   : '—',
               },
               {
                 label: 'Backflows',
-                value: compareTrendPeriods(backflows, 'backflows', 28).sufficient
-                  ? String(Math.round(compareTrendPeriods(backflows, 'backflows', 28).current))
+                value: backflowTrend.sufficient
+                  ? String(Math.round(backflowTrend.current))
                   : '—',
               },
             ]

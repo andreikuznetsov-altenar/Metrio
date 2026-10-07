@@ -10,7 +10,11 @@ import type {
   PerformanceReviewTarget,
 } from "../domain/performance";
 import type { PerformanceAudience } from "../domain/performance/reportParams";
-import { createPerformanceDateRange } from "../domain/performance/performanceDateRange";
+import {
+  createPerformanceDateRange,
+  inclusiveRangeDayCount,
+  previousComparableRange,
+} from "../domain/performance/performanceDateRange";
 import { resolvePerformanceReportRanges } from "../domain/performance/reportParams";
 import {
   EMPTY_KPI_SNAPSHOT_FILE,
@@ -377,23 +381,65 @@ function buildKpiHistory(
   reportData: AuditReportData,
 ): KpiSnapshotFile {
   let file: KpiSnapshotFile = EMPTY_KPI_SNAPSHOT_FILE;
-  const end = new Date();
+  const displayRange = {
+    from: reportData.params.dateFrom,
+    to: reportData.params.dateTo,
+    preset: "custom" as const,
+  };
+  const comparisonRange = previousComparableRange(displayRange);
+  const historyDays = inclusiveRangeDayCount(
+    comparisonRange.from,
+    displayRange.to,
+  );
+  const end = new Date(`${displayRange.to}T12:00:00Z`);
   end.setUTCHours(12, 0, 0, 0);
-  for (let day = 56; day >= 0; day -= 1) {
+  for (let day = historyDays - 1; day >= 0; day -= 1) {
     const date = new Date(end);
     date.setUTCDate(end.getUTCDate() - day);
-    const factor = 1 + ((56 - day) % 7) * 0.08;
+    const sequence = historyDays - 1 - day;
+    const factor = 1 + (sequence % 7) * 0.08;
     const dailyReport: AuditReportData = {
       ...reportData,
       teamKpi: testKpi({
-        efficiencyIndex: 64 + ((56 - day) % 5),
+        efficiencyIndex: 64 + (sequence % 5),
         completedCount: Math.round(24 + factor * 3),
         firstPassAcceptedCount: Math.round(22 + factor * 2.5),
-        backflowCount: 1 + ((56 - day) % 3),
-        avgProgressToReviewMs: (3.2 + ((56 - day) % 4) * 0.3) * 24 * 60 * 60 * 1000,
+        backflowCount: 1 + (sequence % 3),
+        avgProgressToReviewMs: (3.2 + (sequence % 4) * 0.3) * 24 * 60 * 60 * 1000,
       }),
     };
     file = recordDailySnapshots(file, teamSnapshot, dailyReport, date);
+    const dateKey = date.toISOString().slice(0, 10);
+    let completed = 0;
+    let firstPass = 0;
+    let backflows = 0;
+    let cycleMsSum = 0;
+    let completedWithCycle = 0;
+    file.personSnapshots
+      .filter((snapshot) => snapshot.date === dateKey)
+      .forEach((snapshot, personIndex) => {
+        const acceptedFirstPass = (sequence + personIndex) % 4 !== 0;
+        const cycleDays = 2 + ((sequence + personIndex) % 4);
+        const backflow = acceptedFirstPass ? 0 : 1;
+        snapshot.completedOnDate = 1;
+        snapshot.firstPassOnDate = acceptedFirstPass ? 1 : 0;
+        snapshot.backflowsOnDate = backflow;
+        snapshot.cycleMsSumOnDate = cycleDays * 24 * 60 * 60 * 1000;
+        snapshot.completedWithCycleOnDate = 1;
+        completed += 1;
+        firstPass += snapshot.firstPassOnDate;
+        backflows += backflow;
+        cycleMsSum += snapshot.cycleMsSumOnDate;
+        completedWithCycle += 1;
+      });
+    const teamDay = file.teamSnapshots.find((snapshot) => snapshot.date === dateKey);
+    if (teamDay) {
+      teamDay.completedOnDate = completed;
+      teamDay.firstPassOnDate = firstPass;
+      teamDay.backflowsOnDate = backflows;
+      teamDay.cycleMsSumOnDate = cycleMsSum;
+      teamDay.completedWithCycleOnDate = completedWithCycle;
+    }
   }
   return file;
 }
@@ -436,7 +482,13 @@ export function buildVisualPerformanceFetchResult(
 ): PerformanceFetchResult {
   void audience;
   void reviewTarget;
-  void dateRangeKey;
+  const displayRange = createPerformanceDateRange(dateRangeKey);
+  const reportRanges = resolvePerformanceReportRanges(
+    displayRange,
+    "team",
+    "team",
+    3,
+  );
 
   const persons = buildTeamPersons();
   const teamSnapshot: TeamSnapshot = {
@@ -460,7 +512,11 @@ export function buildVisualPerformanceFetchResult(
   });
 
   const reportData: AuditReportData = {
-    params,
+    params: {
+      ...params,
+      dateFrom: displayRange.from,
+      dateTo: displayRange.to,
+    },
     grouped: {},
     totalTransitions: 0,
     teamSummaryColumns: [],
@@ -486,13 +542,8 @@ export function buildVisualPerformanceFetchResult(
     reportData,
     historyReportData: reportData,
     kpiSnapshots,
-    reportParams: params,
-    reportRanges: resolvePerformanceReportRanges(
-      createPerformanceDateRange("30d"),
-      "team",
-      "team",
-      3,
-    ),
+    reportParams: reportData.params,
+    reportRanges,
     identityResolution: persons.map((person) => ({
       employeeId: person.id,
       displayName: person.bamboo.displayName,

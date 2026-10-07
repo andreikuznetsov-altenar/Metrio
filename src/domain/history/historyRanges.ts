@@ -1,15 +1,22 @@
-import { subDays, format, parseISO } from 'date-fns';
+import { subDays, subMonths, format, parseISO } from 'date-fns';
 import { getTodayIsoDate } from '../jira/dates';
-import { inclusiveRangeDayCount } from '../performance/performanceDateRange';
 import {
-  DEFAULT_REPORT_WINDOW_DAYS,
-  HISTORICAL_BOOTSTRAP_DAYS,
-  WORK_HISTORY_WINDOW_DAYS,
-} from './constants';
+  inclusiveRangeDayCount,
+  previousComparableRange,
+  type PerformanceDateRange,
+} from '../performance/performanceDateRange';
+import { WORK_HISTORY_WINDOW_DAYS } from './constants';
+
+export interface RequiredComparisonCoverage {
+  displayRange: PerformanceDateRange;
+  comparisonRange: PerformanceDateRange;
+  requiredFetchStart: string;
+  requiredFetchEnd: string;
+}
 
 export function getDefaultReportDateFrom(dateTo: string): string {
   const end = parseISO(dateTo);
-  return format(subDays(end, DEFAULT_REPORT_WINDOW_DAYS - 1), 'yyyy-MM-dd');
+  return format(subMonths(end, 3), 'yyyy-MM-dd');
 }
 
 export function resolveEffectiveReportRange(filters: {
@@ -21,18 +28,43 @@ export function resolveEffectiveReportRange(filters: {
   return { dateFrom, dateTo };
 }
 
-/** Inclusive history span: current reporting window + prior comparison window. */
+/** Canonical display/comparison/fetch coverage for Performance history. */
+export function resolveRequiredComparisonCoverage(
+  displayRange: PerformanceDateRange,
+  now = new Date(),
+): RequiredComparisonCoverage {
+  const comparisonRange = previousComparableRange(displayRange);
+  const workHistoryStart = format(
+    subDays(parseISO(displayRange.to), WORK_HISTORY_WINDOW_DAYS - 1),
+    'yyyy-MM-dd',
+  );
+  const today = format(now, 'yyyy-MM-dd');
+  return {
+    displayRange,
+    comparisonRange,
+    requiredFetchStart:
+      comparisonRange.from < workHistoryStart ? comparisonRange.from : workHistoryStart,
+    requiredFetchEnd: displayRange.to < today ? displayRange.to : today,
+  };
+}
+
+/** Inclusive history span covering the display and equal preceding period. */
 export function requiredHistoryDaySpan(reportDateFrom: string, dateTo: string): number {
-  const current = inclusiveRangeDayCount(reportDateFrom, dateTo);
-  return Math.max(current * 2, WORK_HISTORY_WINDOW_DAYS, HISTORICAL_BOOTSTRAP_DAYS);
+  const coverage = resolveRequiredComparisonCoverage({
+    from: reportDateFrom,
+    to: dateTo,
+    preset: 'custom',
+  });
+  return inclusiveRangeDayCount(coverage.requiredFetchStart, coverage.requiredFetchEnd);
 }
 
 export function getHistoryFetchDateFrom(dateTo: string, reportDateFrom?: string): string {
-  const end = parseISO(dateTo);
-  const spanDays = reportDateFrom
-    ? requiredHistoryDaySpan(reportDateFrom, dateTo)
-    : Math.max(DEFAULT_REPORT_WINDOW_DAYS * 2, WORK_HISTORY_WINDOW_DAYS, HISTORICAL_BOOTSTRAP_DAYS);
-  return format(subDays(end, spanDays - 1), 'yyyy-MM-dd');
+  const from = reportDateFrom || getDefaultReportDateFrom(dateTo);
+  return resolveRequiredComparisonCoverage({
+    from,
+    to: dateTo,
+    preset: 'custom',
+  }).requiredFetchStart;
 }
 
 export function getEarliestFetchDate(reportDateFrom: string, dateTo: string): string {

@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest';
 import type { AuditIssue } from '../jira/types';
 import type { Person } from '../people/types';
 import { enumerateLocalDateKeys, getBootstrapDateRange, buildHistoricalPersonSnapshots } from './historicalFlow';
-import { HISTORICAL_BOOTSTRAP_DAYS } from './constants';
 
 function makeIssue(index: number): AuditIssue {
   const day = (index % 28) + 1;
@@ -61,7 +60,7 @@ function makePerson(id: string, issueCount: number): Person {
 }
 
 describe('historicalFlow perf', () => {
-  it('bootstraps 56 days for 10 users × 100 issues within budget', () => {
+  it('bootstraps the required comparison coverage for 10 users × 100 issues within budget', () => {
     const now = new Date('2026-03-04T12:00:00');
     const reportParams = {
       dateFrom: '2026-01-08',
@@ -72,7 +71,8 @@ describe('historicalFlow perf', () => {
     };
     const { startKey, endKey } = getBootstrapDateRange(reportParams, now);
     const dateKeys = enumerateLocalDateKeys(startKey, endKey);
-    expect(dateKeys.length).toBeGreaterThanOrEqual(HISTORICAL_BOOTSTRAP_DAYS);
+    const displayDateKeys = enumerateLocalDateKeys(reportParams.dateFrom, reportParams.dateTo);
+    expect(dateKeys.length).toBe(displayDateKeys.length * 2);
 
     const persons = Array.from({ length: 10 }, (_, i) => makePerson(String(i + 1), 100));
     const params = {
@@ -91,7 +91,7 @@ describe('historicalFlow perf', () => {
     const elapsed = performance.now() - start;
 
     console.log(
-      `[perf] historical bootstrap 10 users × 100 issues × ${HISTORICAL_BOOTSTRAP_DAYS} days: ${elapsed.toFixed(1)} ms (${snapshotCount} snapshots)`,
+      `[perf] historical bootstrap 10 users × 100 issues × ${dateKeys.length} days: ${elapsed.toFixed(1)} ms (${snapshotCount} snapshots)`,
     );
 
     expect(snapshotCount).toBe(10 * dateKeys.length);

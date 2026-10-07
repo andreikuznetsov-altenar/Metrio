@@ -185,32 +185,37 @@ function buildPersonTrendCards(
   personId: string,
   kpiSnapshots: KpiSnapshotFile,
   trendDays: number,
+  trendAnchor: Date,
 ): TrendCardData[] {
   const completedTrend = compareTrendPeriods(
     personTrendPoints(kpiSnapshots, personId, "completedOnDate"),
     "completed",
     trendDays,
+    trendAnchor,
   );
   const firstPassTrend = compareWeightedFirstPassTrend(
     personTrendPoints(kpiSnapshots, personId, "completedOnDate"),
     personTrendPoints(kpiSnapshots, personId, "firstPassOnDate"),
     trendDays,
+    trendAnchor,
   );
   const avgCycleTrend = compareWeightedAvgCycleTrend(
     personTrendPoints(kpiSnapshots, personId, "cycleMsSumOnDate"),
     personTrendPoints(kpiSnapshots, personId, "completedWithCycleOnDate"),
     trendDays,
+    trendAnchor,
   );
   const backflowTrend = compareTrendPeriods(
     personTrendPoints(kpiSnapshots, personId, "backflowsOnDate"),
     "backflows",
     trendDays,
+    trendAnchor,
   );
   const sparkCompleted = sparklineValuesFromPoints(
-    personSparklinePoints(kpiSnapshots, personId, "completedOnDate"),
+    personSparklinePoints(kpiSnapshots, personId, "completedOnDate", trendDays, trendAnchor),
   );
   const sparkBackflows = sparklineValuesFromPoints(
-    personSparklinePoints(kpiSnapshots, personId, "backflowsOnDate"),
+    personSparklinePoints(kpiSnapshots, personId, "backflowsOnDate", trendDays, trendAnchor),
   );
 
   return [
@@ -328,6 +333,7 @@ export function buildPersonAnalyticsWorkspace(
       ? buildKpiFromIssues(person.issues, {}, params)
       : person.performance;
   const now = new Date();
+  const trendAnchor = new Date(`${displayRange?.to || params.dateTo}T12:00:00`);
   const trendContextLabel = displayRange
     ? comparisonPeriodLabel(displayRange)
     : undefined;
@@ -336,16 +342,19 @@ export function buildPersonAnalyticsWorkspace(
     personTrendPoints(kpiSnapshots, person.id, "completedOnDate"),
     "completed",
     trendDays,
+    trendAnchor,
   );
   const firstPassTrend = compareWeightedFirstPassTrend(
     personTrendPoints(kpiSnapshots, person.id, "completedOnDate"),
     personTrendPoints(kpiSnapshots, person.id, "firstPassOnDate"),
     trendDays,
+    trendAnchor,
   );
   const backflowTrend = compareTrendPeriods(
     personTrendPoints(kpiSnapshots, person.id, "backflowsOnDate"),
     "backflows",
     trendDays,
+    trendAnchor,
   );
 
   const summaryKpis: MetricCardData[] = [
@@ -420,7 +429,12 @@ export function buildPersonAnalyticsWorkspace(
     performanceKpis: summaryKpis,
     cycleTime,
     activeWorkCount,
-    trends: buildPersonTrendCards(person.id, kpiSnapshots, trendDays),
+    trends: buildPersonTrendCards(
+      person.id,
+      kpiSnapshots,
+      trendDays,
+      trendAnchor,
+    ),
     attention,
     workRows,
     problematicWork,

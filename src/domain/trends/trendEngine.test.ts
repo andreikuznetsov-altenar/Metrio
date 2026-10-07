@@ -6,9 +6,20 @@ import {
   TREND_METRICS,
 } from './trendEngine';
 
+function coveredFlowPoints(overrides: Array<{ date: string; value: number }>) {
+  const values = new Map(overrides.map((point) => [point.date, point.value]));
+  const start = new Date('2025-12-27T12:00:00');
+  return Array.from({ length: 56 }, (_, index) => {
+    const date = new Date(start);
+    date.setDate(start.getDate() + index);
+    const key = date.toISOString().slice(0, 10);
+    return { date: key, value: values.get(key) ?? 0 };
+  });
+}
+
 describe('trendEngine', () => {
   it('sums completed counts instead of averaging', () => {
-    const points = [
+    const points = coveredFlowPoints([
       { date: '2026-02-01', value: 2 },
       { date: '2026-02-05', value: 1 },
       { date: '2026-02-10', value: 1 },
@@ -23,7 +34,7 @@ describe('trendEngine', () => {
       { date: '2026-01-15', value: 4 },
       { date: '2026-01-18', value: 4 },
       { date: '2026-01-19', value: 4 },
-    ];
+    ]);
     const now = new Date('2026-02-20T12:00:00');
     const trend = compareTrendPeriods(points, 'completed', 28, now);
     expect(trend.sufficient).toBe(true);

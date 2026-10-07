@@ -310,9 +310,12 @@ export function personSparklinePoints(
   now = new Date(),
 ): { date: string; value: number }[] {
   const cutoff = new Date(now);
-  cutoff.setDate(cutoff.getDate() - days);
+  cutoff.setDate(cutoff.getDate() - Math.max(0, days - 1));
   const cutoffKey = getLocalDateKey(cutoff);
-  return personTrendPoints(file, personId, field).filter((p) => p.date >= cutoffKey);
+  const endKey = getLocalDateKey(now);
+  return personTrendPoints(file, personId, field).filter(
+    (p) => p.date >= cutoffKey && p.date <= endKey,
+  );
 }
 
 export function teamSparklinePoints(
@@ -322,7 +325,10 @@ export function teamSparklinePoints(
   now = new Date(),
 ): { date: string; value: number }[] {
   const cutoff = new Date(now);
-  cutoff.setDate(cutoff.getDate() - days);
+  cutoff.setDate(cutoff.getDate() - Math.max(0, days - 1));
   const cutoffKey = getLocalDateKey(cutoff);
-  return teamTrendPoints(file, field).filter((p) => p.date >= cutoffKey);
+  const endKey = getLocalDateKey(now);
+  return teamTrendPoints(file, field).filter(
+    (p) => p.date >= cutoffKey && p.date <= endKey,
+  );
 }

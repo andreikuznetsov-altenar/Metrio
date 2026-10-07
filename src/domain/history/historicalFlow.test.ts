@@ -10,7 +10,6 @@ import {
   getBootstrapDateRange,
   buildHistoryScopeKey,
 } from './historicalFlow';
-import { HISTORICAL_BOOTSTRAP_DAYS } from './constants';
 
 const params = {
   dateFrom: '2026-01-01',
@@ -50,9 +49,10 @@ describe('historicalFlow', () => {
     };
     const { startKey, endKey } = getBootstrapDateRange(reportParams, now);
     const keys = enumerateLocalDateKeys(startKey, endKey);
+    const displayKeys = enumerateLocalDateKeys(reportParams.dateFrom, reportParams.dateTo);
     expect(startKey < reportParams.dateFrom).toBe(true);
     expect(endKey).toBe('2026-03-04');
-    expect(keys.length).toBeGreaterThan(HISTORICAL_BOOTSTRAP_DAYS);
+    expect(keys.length).toBe(displayKeys.length * 2);
   });
 
   it('assigns completion and backflow to correct local day', () => {

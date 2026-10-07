@@ -1,5 +1,6 @@
 import type { TeamSnapshot } from '../../domain/people/types';
 import type { AuditReportData } from '../../domain/jira/types';
+import { addDays, format, parseISO } from 'date-fns';
 import {
   buildHistoricalPersonSnapshots,
   buildHistoricalTeamSnapshotsFromPersons,
@@ -22,16 +23,41 @@ export interface BootstrapProgress {
 export function needsHistoricalBootstrap(
   file: KpiSnapshotFile,
   scopeKey: string,
+  requiredCoverage?: { startKey: string; endKey: string },
 ): boolean {
   const coverage = file.historicalCoverage;
   if (!coverage) return true;
   if (coverage.scopeKey !== scopeKey) return true;
   if (coverage.bootstrapVersion < HISTORICAL_BOOTSTRAP_VERSION) return true;
-  if (coverage.bootstrapStatus === 'failed') return true;
+  if (coverage.bootstrapStatus !== 'complete') return true;
   if (!coverage.coverageStart || !coverage.coverageEnd) return true;
+  if (
+    requiredCoverage &&
+    (coverage.coverageStart > requiredCoverage.startKey ||
+      coverage.coverageEnd < requiredCoverage.endKey)
+  ) {
+    return true;
+  }
 
-  const hasHistorical = file.personSnapshots.some((s) => s.source === 'historical_jira');
-  if (!hasHistorical) return true;
+  if (requiredCoverage) {
+    const requiredDays = enumerateLocalDateKeys(
+      requiredCoverage.startKey,
+      requiredCoverage.endKey,
+    );
+    const recordedTeamDays = new Set(
+      file.teamSnapshots
+        .filter(
+          (snapshot) =>
+            snapshot.date >= requiredCoverage.startKey &&
+            snapshot.date <= requiredCoverage.endKey,
+        )
+        .map((snapshot) => snapshot.date),
+    );
+    if (requiredDays.some((date) => !recordedTeamDays.has(date))) return true;
+  } else {
+    const hasHistorical = file.personSnapshots.some((s) => s.source === 'historical_jira');
+    if (!hasHistorical) return true;
+  }
 
   return false;
 }
@@ -101,10 +127,44 @@ export function runHistoricalBootstrap(
   const now = options?.now || new Date();
   const next = migrateKpiSnapshotFile(file);
   const params = reportData.params;
-  const { startKey, endKey } = getBootstrapDateRange(params, now);
-  const dateKeys = enumerateLocalDateKeys(startKey, endKey);
+  const requested = getBootstrapDateRange(params, now);
   const scopeKey = buildScopeKeyFromSnapshot(historySnapshot, reportData);
   const scopeType = params.teamScope || 'full';
+  const compatibleCoverage =
+    next.historicalCoverage?.scopeKey === scopeKey &&
+    next.historicalCoverage.bootstrapVersion === HISTORICAL_BOOTSTRAP_VERSION;
+  const existingStart = next.historicalCoverage?.coverageStart;
+  const existingEnd = next.historicalCoverage?.coverageEnd;
+  const canExtendCoverage =
+    compatibleCoverage &&
+    !!existingStart &&
+    !!existingEnd &&
+    requested.startKey <= format(addDays(parseISO(existingEnd), 1), 'yyyy-MM-dd') &&
+    requested.endKey >= format(addDays(parseISO(existingStart), -1), 'yyyy-MM-dd');
+
+  if (!canExtendCoverage) {
+    next.personSnapshots = next.personSnapshots.filter((s) => s.source === 'live_daily');
+    next.teamSnapshots = next.teamSnapshots.filter((s) => s.source === 'live_daily');
+  }
+
+  const unionStart =
+    canExtendCoverage &&
+    existingStart &&
+    existingStart < requested.startKey
+      ? existingStart
+      : requested.startKey;
+  const unionEnd =
+    canExtendCoverage &&
+    existingEnd &&
+    existingEnd > requested.endKey
+      ? existingEnd
+      : requested.endKey;
+  const retentionAnchor = new Date(`${unionEnd}T12:00:00`);
+  const retentionCutoff = getRetentionCutoffKey(retentionAnchor);
+  const coverageStart = unionStart < retentionCutoff ? retentionCutoff : unionStart;
+  const buildStart =
+    requested.startKey < retentionCutoff ? retentionCutoff : requested.startKey;
+  const dateKeys = enumerateLocalDateKeys(buildStart, requested.endKey);
 
   const allPersonSnapshots: ReturnType<typeof buildHistoricalPersonSnapshots> = [];
   const total = historySnapshot.persons.length;
@@ -126,14 +186,13 @@ export function runHistoricalBootstrap(
   );
   upsertHistoricalSnapshots(next, allPersonSnapshots, teamSnapshots);
 
-  const retentionCutoff = getRetentionCutoffKey(now);
   next.personSnapshots = pruneSnapshotsBeforeDate(next.personSnapshots, retentionCutoff);
   next.teamSnapshots = pruneSnapshotsBeforeDate(next.teamSnapshots, retentionCutoff);
 
   next.historicalCoverage = {
     scopeKey,
-    coverageStart: startKey,
-    coverageEnd: endKey,
+    coverageStart,
+    coverageEnd: unionEnd,
     bootstrapAt: now.toISOString(),
     bootstrapVersion: HISTORICAL_BOOTSTRAP_VERSION,
     bootstrapStatus: 'complete',
@@ -167,15 +226,22 @@ export function getHistoryCoverageSummary(file: KpiSnapshotFile): {
 } | null {
   const coverage = file.historicalCoverage;
   if (!coverage?.coverageStart) return null;
+  const coverageStart = coverage.coverageStart;
+  const coverageEnd = coverage.coverageEnd || coverageStart;
 
   const expected = enumerateLocalDateKeys(
-    coverage.coverageStart,
-    coverage.coverageEnd || coverage.coverageStart,
+    coverageStart,
+    coverageEnd,
   ).length;
 
   const flowDays = new Set(
     file.teamSnapshots
-      .filter((s) => s.source === 'historical_jira' || s.source === 'live_daily')
+      .filter(
+        (s) =>
+          (s.source === 'historical_jira' || s.source === 'live_daily') &&
+          s.date >= coverageStart &&
+          s.date <= coverageEnd,
+      )
       .map((s) => s.date),
   ).size;
 

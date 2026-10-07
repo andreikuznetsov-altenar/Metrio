@@ -289,31 +289,39 @@ export function buildPerformanceViewModels(
   const attentionTotalCount = radar.length;
 
   const sparkCompleted = sparklineValues(
-    teamSparklinePoints(kpiSnapshots, "completedOnDate"),
+    teamSparklinePoints(kpiSnapshots, "completedOnDate", trendDays, trendAnchor),
   );
-  const sparkFirstPass = sparklineValues(teamFirstPassRateSparklinePoints(kpiSnapshots));
-  const sparkAvgCycle = sparklineValues(teamAvgCycleDaysSparklinePoints(kpiSnapshots));
+  const sparkFirstPass = sparklineValues(
+    teamFirstPassRateSparklinePoints(kpiSnapshots, trendDays, trendAnchor),
+  );
+  const sparkAvgCycle = sparklineValues(
+    teamAvgCycleDaysSparklinePoints(kpiSnapshots, trendDays, trendAnchor),
+  );
   const sparkBackflows = sparklineValues(
-    teamSparklinePoints(kpiSnapshots, "backflowsOnDate"),
+    teamSparklinePoints(kpiSnapshots, "backflowsOnDate", trendDays, trendAnchor),
   );
 
   const completedChartPoints = teamSparklinePoints(
     kpiSnapshots,
     "completedOnDate",
     Math.max(trendDays, 56),
+    trendAnchor,
   );
   const firstPassChartPoints = teamFirstPassRateSparklinePoints(
     kpiSnapshots,
     Math.max(trendDays, 56),
+    trendAnchor,
   );
   const avgCycleChartPoints = teamAvgCycleDaysSparklinePoints(
     kpiSnapshots,
     Math.max(trendDays, 56),
+    trendAnchor,
   );
   const backflowChartPoints = teamSparklinePoints(
     kpiSnapshots,
     "backflowsOnDate",
     Math.max(trendDays, 56),
+    trendAnchor,
   );
 
   const completedSufficiency = trendSufficiency(

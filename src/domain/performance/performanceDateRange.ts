@@ -184,7 +184,14 @@ export function buildPerformanceDatasetKey(input: {
   });
 }
 
-export const PERFORMANCE_DATE_RANGE_SESSION_KEY = 'metrio.performanceDateRange.v1';
+export const PERFORMANCE_DATE_RANGE_SESSION_KEY = 'metrio.performanceDateRange.v2';
+const LEGACY_PERFORMANCE_DATE_RANGE_SESSION_KEY = 'metrio.performanceDateRange.v1';
+
+function parsedSessionRange(raw: string | null): PerformanceDateRange | null {
+  if (!raw) return null;
+  const parsed = JSON.parse(raw) as PerformanceDateRange;
+  return parsed.from && parsed.to ? parsed : null;
+}
 
 export function readSessionPerformanceDateRange(
   now = new Date(),
@@ -193,11 +200,25 @@ export function readSessionPerformanceDateRange(
     return createPerformanceDateRange('3m', now);
   }
   try {
-    const raw = sessionStorage.getItem(PERFORMANCE_DATE_RANGE_SESSION_KEY);
-    if (!raw) return createPerformanceDateRange('3m', now);
-    const parsed = JSON.parse(raw) as PerformanceDateRange;
-    if (!parsed.from || !parsed.to) return createPerformanceDateRange('3m', now);
-    return parsed;
+    const current = parsedSessionRange(
+      sessionStorage.getItem(PERFORMANCE_DATE_RANGE_SESSION_KEY),
+    );
+    if (current) return current;
+
+    const legacy = parsedSessionRange(
+      sessionStorage.getItem(LEGACY_PERFORMANCE_DATE_RANGE_SESSION_KEY),
+    );
+    // v1 shipped with 30d as its implicit default, so that value cannot be
+    // distinguished from an explicit selection. Other valid selections migrate.
+    const migrated =
+      legacy && legacy.preset !== '30d'
+        ? legacy
+        : createPerformanceDateRange('3m', now);
+    sessionStorage.setItem(
+      PERFORMANCE_DATE_RANGE_SESSION_KEY,
+      JSON.stringify(migrated),
+    );
+    return migrated;
   } catch {
     return createPerformanceDateRange('3m', now);
   }

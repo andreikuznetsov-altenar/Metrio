@@ -21,6 +21,7 @@ import {
   needsHistoricalBootstrap,
   runHistoricalBootstrap,
 } from "../history/historicalBootstrap";
+import { getBootstrapDateRange } from "../../domain/history/historicalFlow";
 import type { ResolvedEmployee } from "../bamboo/orgResolver";
 import { resolveJiraIdentity, toPersonJiraIdentity } from "../../domain/people/identityResolver";
 import { recordDailySnapshots } from "../../domain/snapshots/snapshotEngine";
@@ -334,13 +335,14 @@ export async function fetchPerformanceData(
   let historicalBootstrapRan = false;
   const scopeKey = buildScopeKeyFromSnapshot(
     historyTeamSnapshot,
-    historyReportData,
+    reportData,
   );
-  if (needsHistoricalBootstrap(kpiSnapshots, scopeKey)) {
+  const requiredCoverage = getBootstrapDateRange(reportData.params);
+  if (needsHistoricalBootstrap(kpiSnapshots, scopeKey, requiredCoverage)) {
     kpiSnapshots = runHistoricalBootstrap(
       kpiSnapshots,
       historyTeamSnapshot,
-      historyReportData,
+      reportData,
     );
     historicalBootstrapRan = true;
   }

@@ -3,7 +3,10 @@ import {
   previousCalendarPeriodDateKeys,
 } from '../periods/calendarPeriod';
 import type { PerformanceDateRange } from '../performance/performanceDateRange';
-import { previousComparableRange } from '../performance/performanceDateRange';
+import {
+  inclusiveRangeDayCount,
+  previousComparableRange,
+} from '../performance/performanceDateRange';
 
 export type TrendDirection = 'up' | 'down' | 'flat' | 'unknown';
 
@@ -102,8 +105,6 @@ export interface TrendSufficiency {
   recommended: number;
 }
 
-const MIN_DAYS_FOR_TREND = 7;
-
 export function currentPeriod(points: TrendPoint[], days: number, now = new Date()): TrendPoint[] {
   const keys = new Set(calendarPeriodDateKeys(days, now));
   return points.filter((p) => keys.has(p.date));
@@ -150,12 +151,12 @@ export function trendSufficiencyForDisplayRange(
   const prior = trendPointsInIsoRange(points, previous.from, previous.to);
   const daysRecorded = new Set(current.map((point) => point.date)).size;
   const previousDaysRecorded = new Set(prior.map((point) => point.date)).size;
-  const recommended = calendarPeriodDateKeys(
-    Math.max(1, current.length || 1),
-    new Date(`${displayRange.to}T12:00:00`),
-  ).length;
+  const recommended = Math.max(
+    1,
+    inclusiveRangeDayCount(displayRange.from, displayRange.to),
+  );
   const sufficient =
-    daysRecorded >= MIN_DAYS_FOR_TREND && previousDaysRecorded >= MIN_DAYS_FOR_TREND;
+    daysRecorded >= recommended && previousDaysRecorded >= recommended;
   return {
     sufficient,
     daysRecorded,
@@ -229,8 +230,25 @@ export function trendSufficiency(
   const daysRecorded = new Set(current.map((point) => point.date)).size;
   const previousDays = new Set(previous.map((point) => point.date)).size;
   const sufficient =
-    daysRecorded >= MIN_DAYS_FOR_TREND && previousDays >= MIN_DAYS_FOR_TREND;
+    daysRecorded >= periodDays && previousDays >= periodDays;
   return { sufficient, daysRecorded, previousDaysRecorded: previousDays, recommended: periodDays };
+}
+
+function sampledStateSufficiency(
+  points: TrendPoint[],
+  periodDays: number,
+  now: Date,
+): TrendSufficiency {
+  const current = currentPeriod(points, periodDays, now);
+  const previous = previousPeriod(points, periodDays, now);
+  const daysRecorded = new Set(current.map((point) => point.date)).size;
+  const previousDaysRecorded = new Set(previous.map((point) => point.date)).size;
+  return {
+    sufficient: daysRecorded >= 7 && previousDaysRecorded >= 7,
+    daysRecorded,
+    previousDaysRecorded,
+    recommended: 7,
+  };
 }
 
 export function directionForMetric(
@@ -265,7 +283,10 @@ export function compareTrendWithAggregation(
   now = new Date(),
   options?: { requireSamples?: boolean },
 ): TrendComparison {
-  const sufficiency = trendSufficiency(points, periodDays, now);
+  const sufficiency =
+    descriptor.aggregation === 'average'
+      ? sampledStateSufficiency(points, periodDays, now)
+      : trendSufficiency(points, periodDays, now);
   const currentPoints = currentPeriod(points, periodDays, now);
   const previousPoints = previousPeriod(points, periodDays, now);
 
@@ -308,7 +329,11 @@ export function compareTrendWithAggregation(
     direction,
     label,
     sufficient,
-    sufficiencyMessage: sufficient ? null : sufficiencyMessage(sufficiency),
+    sufficiencyMessage: sufficient
+      ? null
+      : hasCoverage
+        ? 'Not enough relevant samples in both comparison periods'
+        : sufficiencyMessage(sufficiency),
     unknown,
   };
 }
@@ -362,7 +387,11 @@ export function compareWeightedFirstPassTrend(
     direction: sufficient ? directionForMetric('firstPass', delta) : 'unknown',
     label: sufficient && pp !== null ? `${pp > 0 ? '+' : ''}${pp.toFixed(1)} pp` : '—',
     sufficient,
-    sufficiencyMessage: sufficient ? null : sufficiencyMessage(sufficiency),
+    sufficiencyMessage: sufficient
+      ? null
+      : sufficiency.sufficient
+        ? 'Not enough completed samples in both comparison periods'
+        : sufficiencyMessage(sufficiency),
     unknown: !sufficiency.sufficient,
   };
 }
@@ -395,7 +424,11 @@ export function compareWeightedAvgCycleTrend(
     direction: sufficient ? directionForMetric('avgCycle', delta) : 'unknown',
     label: sufficient ? `${delta > 0 ? '+' : ''}${delta.toFixed(1)} days` : '—',
     sufficient,
-    sufficiencyMessage: sufficient ? null : sufficiencyMessage(sufficiency),
+    sufficiencyMessage: sufficient
+      ? null
+      : sufficiency.sufficient
+        ? 'Not enough completed-cycle samples in both comparison periods'
+        : sufficiencyMessage(sufficiency),
     unknown: !sufficiency.sufficient,
   };
 }

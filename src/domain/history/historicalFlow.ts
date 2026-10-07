@@ -12,7 +12,7 @@ import {
 import { isProfileBackflow } from '../workflows/profileCycles';
 import { resolveWorkflowProfile } from '../workflows/resolveWorkflowProfile';
 import type { DailyPersonSnapshot, DailyTeamSnapshot } from '../snapshots/types';
-import { getEarliestFetchDate } from './historyRanges';
+import { resolveRequiredComparisonCoverage } from './historyRanges';
 import { SNAPSHOT_RETENTION_DAYS } from './constants';
 
 export interface DailyFlowFields {
@@ -49,11 +49,15 @@ export function getBootstrapDateRange(
   now = new Date(),
 ): { startKey: string; endKey: string } {
   const endKey = reportParams.dateTo || getLocalDateKey(now);
-  const displayFrom = reportParams.dateFrom;
-  const startKey = displayFrom
-    ? getEarliestFetchDate(displayFrom, endKey)
-    : getEarliestFetchDate('', endKey);
-  return { startKey, endKey };
+  const displayFrom = reportParams.dateFrom || endKey;
+  const coverage = resolveRequiredComparisonCoverage(
+    { from: displayFrom, to: endKey, preset: 'custom' },
+    now,
+  );
+  return {
+    startKey: coverage.requiredFetchStart,
+    endKey: coverage.requiredFetchEnd,
+  };
 }
 
 /**

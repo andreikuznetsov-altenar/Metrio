@@ -505,6 +505,15 @@ test.describe("Metrio visual regression", () => {
     });
   });
 
+  test("performance 6m fixture shows historical trends", async ({ page }) => {
+    await bootMetrio(page, "lead");
+    await page.getByLabel("Date range preset").click();
+    await page.getByRole("option", { name: "Last 6 months" }).click();
+    await expect(page.getByLabel("Date range preset")).toContainText("Last 6 months");
+    await expect(page.getByTestId("trend-mini-chart").first()).toBeVisible();
+    await expect(page.getByText("Not enough history", { exact: true })).toHaveCount(0);
+  });
+
   test("performance insufficient history card", async ({ page }) => {
     await page.addInitScript((fixtureId: string) => {
       localStorage.setItem("metrio-connection-connected", "true");

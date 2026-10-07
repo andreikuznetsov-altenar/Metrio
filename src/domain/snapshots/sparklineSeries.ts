@@ -1,6 +1,5 @@
 import type { KpiSnapshotFile } from "./types";
-import { getLocalDateKey } from "../periods/dateRange";
-import { teamSparklinePoints, teamTrendPoints } from "./snapshotEngine";
+import { teamSparklinePoints } from "./snapshotEngine";
 
 function mergeRateSeries(
   numerator: { date: string; value: number }[],
@@ -43,12 +42,9 @@ export function teamFirstPassRateSparklinePoints(
   days = 56,
   now = new Date(),
 ): { date: string; value: number }[] {
-  const cutoff = new Date(now);
-  cutoff.setDate(cutoff.getDate() - days);
-  const cutoffKey = getLocalDateKey(cutoff);
   const completed = teamSparklinePoints(file, "completedOnDate", days, now);
   const firstPass = teamSparklinePoints(file, "firstPassOnDate", days, now);
-  return mergeRateSeries(firstPass, completed).filter((p) => p.date >= cutoffKey);
+  return mergeRateSeries(firstPass, completed);
 }
 
 /** Daily average cycle (days) for team sparklines. */
@@ -57,20 +53,9 @@ export function teamAvgCycleDaysSparklinePoints(
   days = 56,
   now = new Date(),
 ): { date: string; value: number }[] {
-  const cutoff = new Date(now);
-  cutoff.setDate(cutoff.getDate() - days);
-  const cutoffKey = getLocalDateKey(cutoff);
-  const sumMs = teamTrendPoints(file, "cycleMsSumOnDate");
-  const counts = teamTrendPoints(file, "completedWithCycleOnDate");
-  const cutoffFilter = (p: { date: string }) => p.date >= cutoffKey;
-  const windowDays = 56;
-  const sumWindow = teamSparklinePoints(file, "cycleMsSumOnDate", windowDays, now);
-  const countWindow = teamSparklinePoints(file, "completedWithCycleOnDate", windowDays, now);
-  void sumMs;
-  void counts;
-  return mergeRatioSeries(sumWindow, countWindow, 1 / (24 * 60 * 60 * 1000)).filter(
-    cutoffFilter,
-  );
+  const sumWindow = teamSparklinePoints(file, "cycleMsSumOnDate", days, now);
+  const countWindow = teamSparklinePoints(file, "completedWithCycleOnDate", days, now);
+  return mergeRatioSeries(sumWindow, countWindow, 1 / (24 * 60 * 60 * 1000));
 }
 
 export function sparklineValuesFromPoints(points: { value: number }[]): number[] {

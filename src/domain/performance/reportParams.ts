@@ -1,4 +1,4 @@
-import { getEarliestFetchDate } from "../history/historyRanges";
+import { resolveRequiredComparisonCoverage } from "../history/historyRanges";
 import type { PerformanceReviewTarget } from "../performance";
 import type { PerformanceDateRange } from "./performanceDateRange";
 import { resolveReviewTargetPolicy } from "./reviewTargetPolicy";
@@ -20,6 +20,8 @@ export function reviewTargetToTeamScope(
 export interface PerformanceReportRanges {
   displayDateFrom: string;
   displayDateTo: string;
+  comparisonDateFrom: string;
+  comparisonDateTo: string;
   fetchDateFrom: string;
   fetchDateTo: string;
   teamScope: "direct" | "full";
@@ -33,18 +35,19 @@ export function resolvePerformanceReportRanges(
   configuredTargetReviewDays: number,
   now = new Date(),
 ): PerformanceReportRanges {
-  void now;
   const policy = resolveReviewTargetPolicy(
     reviewTarget,
     configuredTargetReviewDays,
     audience,
   );
-  const fetchDateFrom = getEarliestFetchDate(dateRange.from, dateRange.to);
+  const coverage = resolveRequiredComparisonCoverage(dateRange, now);
   return {
     displayDateFrom: dateRange.from,
     displayDateTo: dateRange.to,
-    fetchDateFrom,
-    fetchDateTo: dateRange.to,
+    comparisonDateFrom: coverage.comparisonRange.from,
+    comparisonDateTo: coverage.comparisonRange.to,
+    fetchDateFrom: coverage.requiredFetchStart,
+    fetchDateTo: coverage.requiredFetchEnd,
     teamScope: policy.teamScope,
     targetReviewDays: policy.targetReviewDays,
   };
