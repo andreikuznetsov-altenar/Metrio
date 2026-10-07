@@ -2,6 +2,8 @@ import {
   calendarPeriodDateKeys,
   previousCalendarPeriodDateKeys,
 } from '../periods/calendarPeriod';
+import type { PerformanceDateRange } from '../performance/performanceDateRange';
+import { previousComparableRange } from '../performance/performanceDateRange';
 
 export type TrendDirection = 'up' | 'down' | 'flat' | 'unknown';
 
@@ -129,6 +131,92 @@ export function percentagePointDelta(current: number, previous: number): number 
   if (previous === 0 && current === 0) return 0;
   if (previous === 0) return null;
   return current - previous;
+}
+
+export function trendPointsInIsoRange(
+  points: TrendPoint[],
+  from: string,
+  to: string,
+): TrendPoint[] {
+  return points.filter((point) => point.date >= from && point.date <= to);
+}
+
+export function trendSufficiencyForDisplayRange(
+  points: TrendPoint[],
+  displayRange: PerformanceDateRange,
+): TrendSufficiency {
+  const previous = previousComparableRange(displayRange);
+  const current = trendPointsInIsoRange(points, displayRange.from, displayRange.to);
+  const prior = trendPointsInIsoRange(points, previous.from, previous.to);
+  const daysRecorded = new Set(current.map((point) => point.date)).size;
+  const previousDaysRecorded = new Set(prior.map((point) => point.date)).size;
+  const recommended = calendarPeriodDateKeys(
+    Math.max(1, current.length || 1),
+    new Date(`${displayRange.to}T12:00:00`),
+  ).length;
+  const sufficient =
+    daysRecorded >= MIN_DAYS_FOR_TREND && previousDaysRecorded >= MIN_DAYS_FOR_TREND;
+  return {
+    sufficient,
+    daysRecorded,
+    previousDaysRecorded,
+    recommended,
+  };
+}
+
+export function compareTrendPeriodsForDisplayRange(
+  points: TrendPoint[],
+  metric: 'completed' | 'firstPass' | 'avgCycle' | 'backflows' | 'problematic',
+  displayRange: PerformanceDateRange,
+): TrendComparison {
+  const previous = previousComparableRange(displayRange);
+  const sufficiency = trendSufficiencyForDisplayRange(points, displayRange);
+  const currentPoints = trendPointsInIsoRange(points, displayRange.from, displayRange.to);
+  const previousPoints = trendPointsInIsoRange(points, previous.from, previous.to);
+  const idMap: Record<string, TrendMetricId> = {
+    completed: 'completed',
+    backflows: 'backflows',
+    firstPass: 'firstPass',
+    avgCycle: 'avgCycle',
+    problematic: 'problematic',
+  };
+  const descriptor = TREND_METRICS[idMap[metric]];
+  const current = aggregatePoints(currentPoints, descriptor.aggregation);
+  const prior = aggregatePoints(previousPoints, descriptor.aggregation);
+  const delta = absoluteDelta(current, prior);
+  const pp = percentagePointDelta(current, prior);
+  const hasSamples =
+    descriptor.aggregation === 'sum' ? true : prior > 0 || current > 0;
+  const sufficient = sufficiency.sufficient && hasSamples;
+  const direction =
+    !sufficient || (prior === 0 && current === 0 && descriptor.aggregation !== 'sum')
+      ? 'unknown'
+      : directionForMetric(descriptor.id, delta);
+
+  let label = '—';
+  if (sufficient) {
+    if (descriptor.id === 'firstPass' && pp !== null) {
+      label = `${pp > 0 ? '+' : ''}${pp.toFixed(1)} pp`;
+    } else if (descriptor.id === 'avgCycle') {
+      label = `${delta > 0 ? '+' : ''}${delta.toFixed(1)} days`;
+    } else if (descriptor.aggregation === 'average') {
+      label = `${delta > 0 ? '+' : ''}${delta.toFixed(1)} daily avg`;
+    } else {
+      label = `${delta > 0 ? '+' : ''}${Math.round(delta)}`;
+    }
+  }
+
+  return {
+    current,
+    previous: prior,
+    absoluteDelta: delta,
+    percentagePointDelta: pp,
+    direction,
+    label,
+    sufficient,
+    sufficiencyMessage: sufficient ? null : sufficiencyMessage(sufficiency),
+    unknown: !sufficiency.sufficient,
+  };
 }
 
 export function trendSufficiency(

@@ -63,7 +63,14 @@ function makePerson(id: string, issueCount: number): Person {
 describe('historicalFlow perf', () => {
   it('bootstraps 56 days for 10 users × 100 issues within budget', () => {
     const now = new Date('2026-03-04T12:00:00');
-    const { startKey, endKey } = getBootstrapDateRange(now);
+    const reportParams = {
+      dateFrom: '2026-01-08',
+      dateTo: '2026-03-04',
+      targetReviewDays: 3,
+      users: [],
+      projects: [],
+    };
+    const { startKey, endKey } = getBootstrapDateRange(reportParams, now);
     const dateKeys = enumerateLocalDateKeys(startKey, endKey);
     expect(dateKeys).toHaveLength(HISTORICAL_BOOTSTRAP_DAYS);
 

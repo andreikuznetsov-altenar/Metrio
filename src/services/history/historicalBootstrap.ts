@@ -100,9 +100,9 @@ export function runHistoricalBootstrap(
 ): KpiSnapshotFile {
   const now = options?.now || new Date();
   const next = migrateKpiSnapshotFile(file);
-  const { startKey, endKey } = getBootstrapDateRange(now);
-  const dateKeys = enumerateLocalDateKeys(startKey, endKey);
   const params = reportData.params;
+  const { startKey, endKey } = getBootstrapDateRange(params, now);
+  const dateKeys = enumerateLocalDateKeys(startKey, endKey);
   const scopeKey = buildScopeKeyFromSnapshot(historySnapshot, reportData);
   const scopeType = params.teamScope || 'full';
 

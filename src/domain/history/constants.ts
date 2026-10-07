@@ -8,10 +8,10 @@ export const HISTORICAL_BOOTSTRAP_DAYS = 56;
 export const WORK_HISTORY_WINDOW_DAYS = 90;
 
 /** Retain aggregate snapshot history (days). */
-export const SNAPSHOT_RETENTION_DAYS = 180;
+export const SNAPSHOT_RETENTION_DAYS = 400;
 
 /** Increment when bootstrap algorithm or output shape changes. */
-export const HISTORICAL_BOOTSTRAP_VERSION = 2;
+export const HISTORICAL_BOOTSTRAP_VERSION = 3;
 
 /** Minimum days with data in each trend comparison window. */
 export const MIN_TREND_COMPARISON_DAYS = 7;

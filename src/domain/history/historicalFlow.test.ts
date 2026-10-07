@@ -41,13 +41,18 @@ function issue(partial: Partial<AuditIssue> & { issueKey: string }): AuditIssue 
 }
 
 describe('historicalFlow', () => {
-  it('enumerates 56 daily buckets for bootstrap range', () => {
+  it('bootstrap range follows report params (not a fixed 56-day cap)', () => {
     const now = new Date('2026-03-04T12:00:00');
-    const { startKey, endKey } = getBootstrapDateRange(now);
+    const reportParams = {
+      ...params,
+      dateFrom: '2025-09-01',
+      dateTo: '2026-03-04',
+    };
+    const { startKey, endKey } = getBootstrapDateRange(reportParams, now);
     const keys = enumerateLocalDateKeys(startKey, endKey);
-    expect(keys).toHaveLength(HISTORICAL_BOOTSTRAP_DAYS);
-    expect(keys[0]).toBe('2026-01-08');
-    expect(keys[keys.length - 1]).toBe('2026-03-04');
+    expect(startKey).toBe('2025-09-01');
+    expect(endKey).toBe('2026-03-04');
+    expect(keys.length).toBeGreaterThan(HISTORICAL_BOOTSTRAP_DAYS);
   });
 
   it('assigns completion and backflow to correct local day', () => {
@@ -117,6 +122,28 @@ describe('historicalFlow', () => {
       issues: [
         issue({
           issueKey: 'X',
+          currentAssigneeCanonical: '1',
+          currentStatus: 'Done',
+          events: [
+            {
+              eventType: 'Status',
+              changedAt: '2026-02-28T10:00:00',
+              changedBy: 'Anna',
+              fromValue: 'Review',
+              toValue: 'Done',
+              timeSincePreviousStatusMs: null,
+              isBackflow: false,
+              isHandoff: false,
+              isReturnToTeam: false,
+              excludeFromEfficiencyBackflow: false,
+            },
+          ],
+        }),
+      ],
+      ownedIssues: [
+        issue({
+          issueKey: 'X',
+          currentAssigneeCanonical: '1',
           currentStatus: 'Done',
           events: [
             {

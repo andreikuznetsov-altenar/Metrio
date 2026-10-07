@@ -2,6 +2,7 @@ import { classifyTaskHealth } from '../task-health/taskHealthEngine';
 import { collectUniqueTeamIssues } from '../jira/uniqueIssues';
 import type { AuditIssue, ReportParams } from '../jira/types';
 import type { Person } from '../people/types';
+import { getOperationalIssues } from '../people/ownedIssues';
 import { getLocalDateKey } from '../periods/dateRange';
 import {
   getIssueCompletionAt,
@@ -40,11 +41,19 @@ export function enumerateLocalDateKeys(startKey: string, endKey: string): string
   return keys;
 }
 
-export function getBootstrapDateRange(now = new Date()): { startKey: string; endKey: string } {
-  const endKey = getLocalDateKey(now);
+export function getBootstrapDateRange(
+  reportParams: ReportParams,
+  now = new Date(),
+): { startKey: string; endKey: string } {
+  const endKey = reportParams.dateTo || getLocalDateKey(now);
+  const startKey = reportParams.dateFrom;
+  if (startKey && endKey && startKey <= endKey) {
+    return { startKey, endKey };
+  }
+  const fallbackEnd = getLocalDateKey(now);
   const start = new Date(now);
   start.setDate(start.getDate() - (HISTORICAL_BOOTSTRAP_DAYS - 1));
-  return { startKey: getLocalDateKey(start), endKey };
+  return { startKey: getLocalDateKey(start), endKey: fallbackEnd };
 }
 
 /**
@@ -107,7 +116,7 @@ export function buildHistoricalPersonSnapshots(
   dateKeys: string[],
   params: ReportParams,
 ): DailyPersonSnapshot[] {
-  const buckets = indexPersonDailyFlow(person.issues, dateKeys, params);
+  const buckets = indexPersonDailyFlow(getOperationalIssues(person), dateKeys, params);
   return dateKeys.map((date) => {
     const flow = buckets.get(date) || EMPTY_DAILY_FLOW;
     return {

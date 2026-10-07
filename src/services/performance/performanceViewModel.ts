@@ -222,25 +222,41 @@ export function buildPerformanceViewModels(
       ? Math.round((teamKpi.firstPassAcceptedCount / teamKpi.completedCount) * 100)
       : 0;
 
+  const trendAnchor = displayRange
+    ? new Date(`${displayRange.to}T12:00:00`)
+    : new Date();
+  const completedTrendPoints = teamTrendPoints(kpiSnapshots, "completedOnDate");
+  const firstPassTrendPoints = teamTrendPoints(kpiSnapshots, "firstPassOnDate");
+  const cycleSumTrendPoints = teamTrendPoints(kpiSnapshots, "cycleMsSumOnDate");
+  const cycleCountTrendPoints = teamTrendPoints(
+    kpiSnapshots,
+    "completedWithCycleOnDate",
+  );
+  const backflowTrendPoints = teamTrendPoints(kpiSnapshots, "backflowsOnDate");
+
   const completedTrend = compareTrendPeriods(
-    teamTrendPoints(kpiSnapshots, "completedOnDate"),
+    completedTrendPoints,
     "completed",
     trendDays,
+    trendAnchor,
   );
   const firstPassTrend = compareWeightedFirstPassTrend(
-    teamTrendPoints(kpiSnapshots, "completedOnDate"),
-    teamTrendPoints(kpiSnapshots, "firstPassOnDate"),
+    completedTrendPoints,
+    firstPassTrendPoints,
     trendDays,
+    trendAnchor,
   );
   const avgCycleTrend = compareWeightedAvgCycleTrend(
-    teamTrendPoints(kpiSnapshots, "cycleMsSumOnDate"),
-    teamTrendPoints(kpiSnapshots, "completedWithCycleOnDate"),
+    cycleSumTrendPoints,
+    cycleCountTrendPoints,
     trendDays,
+    trendAnchor,
   );
   const backflowTrend = compareTrendPeriods(
-    teamTrendPoints(kpiSnapshots, "backflowsOnDate"),
+    backflowTrendPoints,
     "backflows",
     trendDays,
+    trendAnchor,
   );
 
   const summary: MetricCardData[] = [
@@ -301,8 +317,9 @@ export function buildPerformanceViewModels(
   );
 
   const completedSufficiency = trendSufficiency(
-    teamTrendPoints(kpiSnapshots, "completedOnDate"),
+    completedTrendPoints,
     trendDays,
+    trendAnchor,
   );
 
   const teamTrendIssues = flattenTeamKpiIssues(reportData.grouped);
