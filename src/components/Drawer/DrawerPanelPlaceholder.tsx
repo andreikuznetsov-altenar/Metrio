@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { EmptyState } from "../EmptyState/EmptyState";
 
 export interface DrawerPanelPlaceholderProps {
   icon?: ReactNode;
@@ -10,7 +11,7 @@ export interface DrawerPanelPlaceholderProps {
   compact?: boolean;
 }
 
-/** Centered empty state for drawer / side-panel bodies. */
+/** Drawer-scoped empty state (canonical EmptyState + panel padding). */
 export function DrawerPanelPlaceholder({
   icon,
   title,
@@ -21,23 +22,14 @@ export function DrawerPanelPlaceholder({
   compact = false,
 }: DrawerPanelPlaceholderProps) {
   return (
-    <div
-      className={[
-        "metrio-placeholder",
-        "metrio-placeholder--drawer-panel",
-        compact ? "metrio-placeholder--drawer-panel--compact" : "",
-        className,
-      ]
-        .filter(Boolean)
-        .join(" ")}
+    <EmptyState
+      icon={icon}
+      title={title}
+      description={copy}
+      actions={actions}
       role={role}
-    >
-      {icon ? <div className="metrio-placeholder__icon">{icon}</div> : null}
-      <div className="metrio-placeholder__text">
-        <p className="metrio-placeholder__title">{title}</p>
-        {copy ? <p className="metrio-placeholder__copy">{copy}</p> : null}
-      </div>
-      {actions ? <div className="metrio-placeholder__actions">{actions}</div> : null}
-    </div>
+      compact={compact}
+      className={["metrio-empty-state--drawer-panel", className].filter(Boolean).join(" ")}
+    />
   );
 }
