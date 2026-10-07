@@ -15,7 +15,7 @@ import {
 
 const SHOT = { maxDiffPixelRatio: 0.02 };
 const ALIGN_TOLERANCE_PX = 2;
-const DRAWER_MOTION_MS = 240;
+const DRAWER_MOTION_MS = 320;
 
 async function contentLeft(locator: Locator) {
   return locator.evaluate((node) => {
