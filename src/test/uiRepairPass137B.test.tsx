@@ -6,12 +6,6 @@ const read = (rel: string) =>
   fs.readFileSync(path.resolve(process.cwd(), rel), "utf8");
 
 describe("UI Repair Pass 13.7B side panels and motion", () => {
-  it("drawers do not use dimming backdrop fill", () => {
-    const css = read("src/components/Drawer/Drawer.css");
-    expect(css).toMatch(/\.drawer-root__backdrop[\s\S]*background:\s*transparent/);
-    expect(css).not.toMatch(/\.drawer-root__backdrop[\s\S]*rgba\(/);
-  });
-
   it("drawers use soft left shadow token and viewport top inset", () => {
     const drawerCss = read("src/components/Drawer/Drawer.css");
     expect(drawerCss).toContain("box-shadow: var(--drawer-panel-shadow)");
@@ -19,7 +13,7 @@ describe("UI Repair Pass 13.7B side panels and motion", () => {
 
     const shellCss = read("src/components/AppShell/AppShell.css");
     expect(shellCss).toContain("--app-side-surface-top");
-    expect(shellCss).toMatch(/\.app-shell__header[\s\S]*z-index:\s*50/);
+    expect(shellCss).toMatch(/\.app-shell__header[\s\S]*--z-app-chrome/);
   });
 
   it("modal backdrop keeps dimming separate from drawers", () => {

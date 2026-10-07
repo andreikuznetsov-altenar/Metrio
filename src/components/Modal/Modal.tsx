@@ -43,9 +43,13 @@ export function Modal({
   useEffect(() => {
     if (open) {
       setMounted(true);
-      frameRef.current = window.requestAnimationFrame(() => {
-        setVisible(true);
+      setVisible(false);
+      const frame = window.requestAnimationFrame(() => {
+        frameRef.current = window.requestAnimationFrame(() => {
+          setVisible(true);
+        });
       });
+      frameRef.current = frame;
       return () => {
         if (frameRef.current != null) {
           window.cancelAnimationFrame(frameRef.current);
