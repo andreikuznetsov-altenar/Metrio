@@ -56,7 +56,12 @@ export function Modal({
   if (!open) return null;
 
   return (
-    <div className="metrio-modal-root" role="presentation">
+    <div
+      className="metrio-modal-root"
+      role="presentation"
+      onClick={(event) => event.stopPropagation()}
+      onPointerDown={(event) => event.stopPropagation()}
+    >
       <button
         type="button"
         className="metrio-modal-root__backdrop"

@@ -76,7 +76,7 @@
 }
 
 .drawer__header {
-  align-items: center;
+  align-items: flex-start;
 }
 
 .drawer__body .tabs {

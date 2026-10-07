@@ -499,7 +499,17 @@ export function TeamOverviewView({
                     <tr
                       key={item.personId}
                       className="performance-table__clickable-row"
-                      onClick={() => onOpenPerson(item.personId)}
+                      onClick={(event) => {
+                        const target = event.target as HTMLElement;
+                        if (
+                          target.closest(
+                            '[data-testid="grouped-issue-count-link"], [data-testid="grouped-issue-preview"]',
+                          )
+                        ) {
+                          return;
+                        }
+                        onOpenPerson(item.personId);
+                      }}
                       data-testid="team-attention-row"
                     >
                       <td>
