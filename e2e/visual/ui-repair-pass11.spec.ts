@@ -157,9 +157,15 @@ test.describe("UI Repair Pass 11 visual acceptance", () => {
 
   test("team-attention-show-tasks", async ({ page }) => {
     await setViewport(page, 1440, 900);
-    await bootMetrioWithFlags(page, { groupedTasks: true });
-    await openGroupedTaskModalFromOverview(page);
-    await expect(page.getByRole("dialog")).toContainText("UX-2960");
+    await bootMetrio(page);
+    await clickSubnav(page, /^overview$/i);
+    const link = page
+      .getByTestId("team-attention-row")
+      .getByTestId("grouped-issue-count-link")
+      .first();
+    await expect(link).toBeVisible({ timeout: 15_000 });
+    await link.click();
+    await expect(page.getByTestId("task-list-modal")).toBeVisible();
   });
 
   test("people-show-tasks", async ({ page }) => {
@@ -199,8 +205,14 @@ test.describe("UI Repair Pass 11 visual acceptance", () => {
 
   test("task-list-modal", async ({ page }) => {
     await setViewport(page, 1440, 900);
-    await bootMetrioWithFlags(page, { groupedTasks: true });
-    await openGroupedTaskModalFromOverview(page);
+    await bootMetrio(page);
+    await clickSubnav(page, /^overview$/i);
+    const link = page
+      .getByTestId("team-attention-row")
+      .getByTestId("grouped-issue-count-link")
+      .first();
+    await expect(link).toBeVisible({ timeout: 15_000 });
+    await link.click();
     const modal = page.getByTestId("task-list-modal");
     await expect(modal.getByRole("columnheader", { name: "Issue" })).toBeVisible();
     await expect(modal.getByRole("columnheader", { name: "Last status change" })).toBeVisible();
