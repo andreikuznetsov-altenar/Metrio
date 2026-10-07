@@ -409,13 +409,6 @@
   font-weight: 600;
 }
 
-.home-skeleton {
-  min-height: 240px;
-  border-radius: var(--radius-card);
-  background: var(--color-surface-tertiary);
-  opacity: 0.5;
-}
-
 .home-column .action-queue {
   margin-bottom: 0;
 }

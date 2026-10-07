@@ -84,6 +84,7 @@ import { formatTrendPointModalContext } from "../../domain/analytics/trendChartI
 import { navigateAttentionItem } from "../../domain/home/attentionNavigation";
 import type { ExecutiveAttentionItem } from "../../domain/home/executiveDashboardModel";
 import { DashboardBlockingErrorState } from "./dashboard/DashboardBlockingErrorState";
+import { DashboardWorkspaceLoadingState } from "./dashboard/DashboardWorkspaceLoadingState";
 import { DashboardSyncBanner } from "./dashboard/DashboardSyncBanner";
 import "./dashboard/executive-dashboard.css";
 import "./dashboard/executive-dashboard-pass10.css";
@@ -537,11 +538,10 @@ export function HomePage() {
 
   if (effectiveHealth.state === "initial_loading" && !hasUsableDashboardData) {
     return (
-      <div className="home-page" data-testid="home-loading">
+      <>
         <PerformanceStatusBanner />
-        <div className="home-skeleton" aria-busy="true" />
-        <p className="home-empty-state__hint">Loading your workspace…</p>
-      </div>
+        <DashboardWorkspaceLoadingState />
+      </>
     );
   }
 

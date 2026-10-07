@@ -19,6 +19,7 @@ import { TeamRadarView } from "./TeamRadarView";
 import { ManagerGoalsView } from "./ManagerGoalsView";
 import "./goal-detail-drawer.css";
 import { PerformanceStatusBanner } from "./PerformanceStatusBanner";
+import { WorkspaceContentLoadingState } from "../../components/WorkspaceContentLoading/WorkspaceContentLoadingState";
 import {
   PerformanceOverviewSkeleton,
   PerformanceTableSkeleton,
@@ -82,7 +83,19 @@ export function TeamPerformanceOverview({
     openTeamTrendDrilldown(trend, point, source);
   };
 
-  if (visualForceSkeleton || uiState === "initial-loading") {
+  if (uiState === "initial-loading") {
+    return (
+      <div className="performance-dashboard" data-testid="performance-dashboard-loading">
+        <WorkspaceContentLoadingState
+          title="Loading performance data…"
+          body="Fetching team metrics and workload."
+          testId="performance-initial-loading"
+        />
+      </div>
+    );
+  }
+
+  if (visualForceSkeleton) {
     return (
       <div className="performance-dashboard" data-testid="performance-dashboard-skeleton">
         <TeamPerformanceSubnav

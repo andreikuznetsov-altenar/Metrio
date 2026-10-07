@@ -1,17 +1,13 @@
-.workspace-shell {
-  padding: var(--space-6);
+.workspace-shell--error {
   display: flex;
-  flex-direction: column;
-  gap: var(--space-4);
-}
-
-.workspace-shell__message {
-  margin: 0;
-  color: var(--color-text-secondary);
+  flex: 1 1 auto;
+  align-items: center;
+  justify-content: center;
+  min-height: min(28rem, calc(100vh - var(--app-header-height, 56px) - 8rem));
+  padding: var(--space-6) var(--space-5);
+  box-sizing: border-box;
 }
 
 .workspace-shell__actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-2);
+  margin-top: var(--space-3);
 }

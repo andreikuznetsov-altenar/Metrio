@@ -232,6 +232,29 @@ test.describe("UI Repair Pass 13 acceptance", () => {
     await expect(page.getByRole("button", { name: /open performance/i })).toBeVisible();
   });
 
+  test("dashboard-cold-start-loading", async ({ page }) => {
+    await page.clock.install({ time: new Date("2026-10-03T09:30:00+02:00") });
+    await setViewport(page, 1440, 900);
+    await page.addInitScript(
+      ({ ephemeralKeys }: { ephemeralKeys: string[] }) => {
+        for (const key of ephemeralKeys) {
+          localStorage.removeItem(key);
+        }
+        localStorage.setItem("metrio-connection-connected", "true");
+        localStorage.setItem("metrio-dev-fixture", "lead");
+        localStorage.setItem("metrio-theme", "light");
+        localStorage.removeItem("metrio-visual-dashboard-cache");
+        localStorage.setItem("metrio-visual-performance-delay-ms", "600000");
+      },
+      { ephemeralKeys: [...VISUAL_EPHEMERAL_STORAGE_KEYS] },
+    );
+    await page.goto("/");
+    await expect(page.getByTestId("home-loading")).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByTestId("dashboard-workspace-loading")).toBeVisible();
+    await expect(page.locator(".home-skeleton")).toHaveCount(0);
+    await expect(page).toHaveScreenshot("dashboard-cold-start-loading-pass13.png", SHOT);
+  });
+
   test("attention-now-links", async ({ page }) => {
     await setViewport(page, 1440, 900);
     await bootDashboardManager(page);

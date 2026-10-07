@@ -92,8 +92,9 @@ describe("authenticated application", () => {
     renderAuthenticatedApp();
 
     const viewport = screen.getByTestId("authenticated-app");
-    expect(within(viewport).getByTestId("workspace-init-error")).toBeInTheDocument();
-    expect(within(viewport).getByText(/couldn't load your workspace/i)).toBeInTheDocument();
+    const errorPanel = within(viewport).getByTestId("workspace-init-error");
+    expect(errorPanel).toBeInTheDocument();
+    expect(within(errorPanel).getByRole("heading", { name: /couldn't load your workspace/i })).toBeInTheDocument();
     expect(within(viewport).getByRole("button", { name: /retry/i })).toBeInTheDocument();
     expect(within(viewport).getByRole("button", { name: /reconnect/i })).toBeInTheDocument();
     expect(within(viewport).getByTestId("app-shell")).toBeInTheDocument();
