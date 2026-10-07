@@ -7,6 +7,7 @@ import { usePerformanceData } from "../../app/PerformanceDataContext";
 import { useCurrentUser } from "../../app/CurrentUserContext";
 import { useFeedbackSurveyStore } from "../../app/feedbackSurveyStore";
 import { actionOpenLabel, navigateActionTarget } from "../../app/actionNavigation";
+import { navigateOpenTeamWorkloadSection } from "../../domain/home/attentionNavigation";
 import { buildDirectorTeamActions } from "../../domain/actions/buildOrganizationActions";
 import { buildTeamActions } from "../../domain/actions/buildTeamActions";
 import { useOperationalRules } from "../../app/OperationalRulesContext";
@@ -275,7 +276,11 @@ export function TeamOverviewView({
       navigateActionTarget({ kind: "jira", issueKey: rec.issueKey }, { openPerson: onOpenPerson });
       return;
     }
-    if (rec.actionKind === "open_team_workload" || rec.actionKind === "open_performance") {
+    if (rec.actionKind === "open_team_workload") {
+      navigateOpenTeamWorkloadSection();
+      return;
+    }
+    if (rec.actionKind === "open_performance") {
       window.dispatchEvent(
         new CustomEvent("metrio-open-performance-tab", { detail: "overview" }),
       );

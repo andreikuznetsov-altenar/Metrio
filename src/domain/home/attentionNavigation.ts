@@ -42,6 +42,15 @@ export function scrollTargetIdForAction(action: ActionItem): string | null {
   return null;
 }
 
+export function scrollToPerformanceSection(sectionId: string): void {
+  window.setTimeout(() => {
+    document.getElementById(sectionId)?.scrollIntoView({
+      behavior: "smooth",
+      block: "start",
+    });
+  }, 120);
+}
+
 export function navigateAttentionItem(
   target: ActionTarget,
   handlers: ActionNavigationHandlers,
@@ -49,10 +58,12 @@ export function navigateAttentionItem(
 ): void {
   navigateActionTarget(target, handlers);
   if (!scrollTargetId) return;
-  window.setTimeout(() => {
-    document.getElementById(scrollTargetId)?.scrollIntoView({
-      behavior: "smooth",
-      block: "start",
-    });
-  }, 120);
+  scrollToPerformanceSection(scrollTargetId);
+}
+
+export function navigateOpenTeamWorkloadSection(): void {
+  window.dispatchEvent(
+    new CustomEvent("metrio-open-performance-tab", { detail: "overview" }),
+  );
+  scrollToPerformanceSection(PERFORMANCE_SCROLL_TARGETS.teamWorkload);
 }

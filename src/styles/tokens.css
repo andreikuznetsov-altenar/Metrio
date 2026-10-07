@@ -104,6 +104,16 @@
 
   /* Switch thumb — light in both themes */
   --color-switch-thumb: #ffffff;
+
+  /* Team Brief donut segments */
+  --team-donut-color-1: #4f7cff;
+  --team-donut-color-2: #0d9488;
+  --team-donut-color-3: #d97706;
+  --team-donut-color-4: #9333ea;
+  --team-donut-color-5: #db2777;
+  --team-donut-color-6: #2563eb;
+  --team-donut-color-7: #65a30d;
+  --team-donut-color-8: #ea580c;
 }
 
 [data-theme="light"] {
@@ -173,6 +183,15 @@
   --connection-status-offline-border: color-mix(in srgb, var(--color-danger) 42%, var(--color-border));
   --connection-status-offline-text: color-mix(in srgb, var(--color-danger) 78%, var(--color-text-primary));
   --connection-status-offline-dot: var(--color-danger);
+
+  --team-donut-color-1: #6b9bff;
+  --team-donut-color-2: #2dd4bf;
+  --team-donut-color-3: #fbbf24;
+  --team-donut-color-4: #c084fc;
+  --team-donut-color-5: #f472b6;
+  --team-donut-color-6: #60a5fa;
+  --team-donut-color-7: #86efac;
+  --team-donut-color-8: #fb923c;
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -50,3 +50,57 @@ export function teamWorkloadDonutMetricLabel(workload: WorkloadRow[]): string {
     ? "Share of estimated monthly capacity load"
     : "Share of active work (insufficient capacity history)";
 }
+
+/** Distinct segment colors — stable per person, theme-aware via tokens. */
+export const TEAM_WORKLOAD_DONUT_COLORS = [
+  "var(--team-donut-color-1)",
+  "var(--team-donut-color-2)",
+  "var(--team-donut-color-3)",
+  "var(--team-donut-color-4)",
+  "var(--team-donut-color-5)",
+  "var(--team-donut-color-6)",
+  "var(--team-donut-color-7)",
+  "var(--team-donut-color-8)",
+] as const;
+
+function hashPersonId(personId: string): number {
+  let hash = 0;
+  for (let i = 0; i < personId.length; i += 1) {
+    hash = (hash * 31 + personId.charCodeAt(i)) >>> 0;
+  }
+  return hash;
+}
+
+export function teamWorkloadDonutColorForPerson(
+  personId: string,
+  usedIndices: Set<number> = new Set(),
+): string {
+  const palette = TEAM_WORKLOAD_DONUT_COLORS;
+  let index = hashPersonId(personId) % palette.length;
+  let guard = 0;
+  while (usedIndices.has(index) && guard < palette.length) {
+    index = (index + 1) % palette.length;
+    guard += 1;
+  }
+  usedIndices.add(index);
+  return palette[index];
+}
+
+/** Largest workload share wins; ties use canonical team workload row order. */
+export function selectDefaultTeamWorkloadDonutPersonId(
+  workload: WorkloadRow[],
+): string | null {
+  if (!workload.length) return null;
+  let bestId: string | null = null;
+  let bestWeight = -1;
+  let bestOrder = Number.POSITIVE_INFINITY;
+  workload.forEach((row, order) => {
+    const weight = workloadDonutWeight(row);
+    if (weight > bestWeight || (weight === bestWeight && order < bestOrder)) {
+      bestWeight = weight;
+      bestOrder = order;
+      bestId = row.personId;
+    }
+  });
+  return bestId;
+}

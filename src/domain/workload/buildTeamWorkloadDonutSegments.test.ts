@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
   buildTeamWorkloadDonutSegments,
+  selectDefaultTeamWorkloadDonutPersonId,
+  teamWorkloadDonutColorForPerson,
   teamWorkloadDonutMetricLabel,
   workloadDonutSupportingMetric,
   workloadDonutWeight,
@@ -37,5 +39,32 @@ describe("buildTeamWorkloadDonutSegments", () => {
     const row = base({ activeWork: 5, capacityDataState: "insufficient_history" });
     expect(workloadDonutWeight(row)).toBe(5);
     expect(teamWorkloadDonutMetricLabel([row])).toContain("active work");
+  });
+
+  it("picks default person by largest share with team-order tie-break", () => {
+    const rows = [
+      base({ personId: "a", activeWork: 2, capacityDataState: "insufficient_history" }),
+      base({
+        personId: "b",
+        activeWork: 5,
+        capacityDataState: "measured",
+        capacityLoadPercent: 40,
+      }),
+      base({
+        personId: "c",
+        activeWork: 1,
+        capacityDataState: "measured",
+        capacityLoadPercent: 40,
+      }),
+    ];
+    expect(selectDefaultTeamWorkloadDonutPersonId(rows)).toBe("b");
+  });
+
+  it("assigns distinct stable colors per person", () => {
+    const used = new Set<number>();
+    const c1 = teamWorkloadDonutColorForPerson("person-a", used);
+    const c2 = teamWorkloadDonutColorForPerson("person-b", used);
+    expect(c1).not.toBe(c2);
+    expect(c1).toContain("--team-donut-color-");
   });
 });

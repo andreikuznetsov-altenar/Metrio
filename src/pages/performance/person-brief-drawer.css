@@ -74,9 +74,28 @@
   margin: 0;
 }
 
+.person-brief__performance {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.person-brief__kpi-grid {
+  gap: var(--space-2);
+}
+
+.person-brief__kpi-grid .performance-metric-card {
+  min-height: 88px;
+  height: 100%;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
+  box-shadow: none;
+}
+
 .performance-metrics.performance-metrics--brief {
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  margin-bottom: var(--space-3);
+  margin-bottom: 0;
 }
 
 @media (max-width: 720px) {

@@ -126,11 +126,14 @@ export function PersonBriefDrawerPanel({
       {brief.newStarter ? (
         <p className="person-brief__note">{brief.newStarter.limitedHistoryNote}</p>
       ) : null}
-      <section className="person-brief__section-card">
+      <section
+        className="person-brief__section person-brief__performance"
+        data-testid="person-brief-recent-performance"
+      >
         <h3 className="person-brief__section-title">Recent performance</h3>
         <PersonAnalyticsMetricGrid
           metrics={brief.performanceKpis}
-          className="performance-metrics performance-metrics--brief"
+          className="performance-metrics performance-metrics--brief person-brief__kpi-grid"
         />
         <PersonCycleTimeCard segments={brief.cycleTime} />
       </section>

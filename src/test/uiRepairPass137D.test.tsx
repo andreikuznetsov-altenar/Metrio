@@ -25,12 +25,11 @@ describe("UI Repair Pass 13.7D attention and team brief", () => {
     expect(source).not.toMatch(/keys\.map\(\(issueKey/);
   });
 
-  it("Team Brief workload stacks donut above table", () => {
+  it("Team Brief workload uses donut layout with shared segment builder", () => {
     const css = read("src/components/charts/team-workload-donut.css");
-    expect(css).toContain(".team-workload-donut__chart-wrap");
-    expect(css).not.toContain(".team-workload-donut__layout");
+    expect(css).toContain(".team-workload-donut__layout");
     const component = read("src/components/charts/TeamWorkloadDonut.tsx");
-    expect(component).toContain("team-brief-workload-table");
+    expect(component).toContain("buildTeamWorkloadDonutSegments");
     expect(component).toContain("PieChart");
   });
 });

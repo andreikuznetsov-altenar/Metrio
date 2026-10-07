@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
 import type { WorkloadRow } from "../../domain/performance";
@@ -10,20 +10,22 @@ vi.mock("recharts", () => ({
   ),
   Pie: ({
     children,
+    onClick,
     onMouseEnter,
   }: {
     children: ReactNode;
+    onClick?: (_: unknown, index: number) => void;
     onMouseEnter?: (_: unknown, index: number) => void;
   }) => (
     <div
       data-testid="team-workload-pie"
+      onClick={() => onClick?.(null, 1)}
       onMouseEnter={() => onMouseEnter?.(null, 0)}
     >
       {children}
     </div>
   ),
   Cell: () => <div data-testid="team-workload-pie-cell" />,
-  Tooltip: () => null,
 }));
 
 const workload: WorkloadRow[] = [
@@ -43,22 +45,49 @@ const workload: WorkloadRow[] = [
     activeWork: 2,
     atRisk: 0,
     workload: "Normal",
-    availability: "Available",
+    availability: "Away",
     capacityDataState: "insufficient_history",
   },
 ];
 
 describe("TeamWorkloadDonut", () => {
-  it("renders centered chart and workload table with sync hooks", () => {
+  it("shows horizontal detail panel without visible table", () => {
     render(<TeamWorkloadDonut workload={workload} />);
     expect(screen.getByTestId("team-brief-workload-donut")).toBeTruthy();
-    expect(screen.getByTestId("team-workload-pie-chart")).toBeTruthy();
-    expect(screen.getByTestId("team-brief-workload-table")).toBeTruthy();
+    expect(screen.getByTestId("team-brief-workload-detail")).toBeTruthy();
+    expect(screen.queryByTestId("team-brief-workload-table")).toBeNull();
     expect(screen.getByText("Ada")).toBeTruthy();
-    expect(screen.getByText("Not enough history")).toBeTruthy();
-    const row = screen.getByText("Ada").closest("tr");
-    expect(row).toBeTruthy();
-    fireEvent.mouseEnter(screen.getByTestId("team-workload-pie"));
-    expect(row?.className).toContain("team-workload-donut__row--active");
+    expect(screen.getByText("Workload")).toBeTruthy();
+    expect(screen.queryByRole("status")).toBeNull();
+  });
+
+  it("selects largest segment by default and updates on click", () => {
+    const { container } = render(<TeamWorkloadDonut workload={workload} />);
+    const root = container.querySelector('[data-testid="team-brief-workload-donut"]')!;
+    const detail = within(root as HTMLElement).getByTestId("team-brief-workload-detail");
+    expect(detail).toHaveTextContent("Ada");
+    expect(detail).toHaveTextContent("60% capacity");
+
+    fireEvent.click(within(root as HTMLElement).getByTestId("team-workload-pie"));
+    expect(detail).toHaveTextContent("Ben");
+  });
+
+  it("does not change center label on hover", () => {
+    const { container } = render(<TeamWorkloadDonut workload={workload} />);
+    const root = container.querySelector('[data-testid="team-brief-workload-donut"]')!;
+    fireEvent.mouseEnter(within(root as HTMLElement).getByTestId("team-workload-pie"));
+    expect(within(root as HTMLElement).getByText("Workload")).toBeTruthy();
+    const detail = within(root as HTMLElement).getByTestId("team-brief-workload-detail");
+    expect(detail).toHaveTextContent("Ada");
+  });
+
+  it("exposes keyboard-accessible member selectors", () => {
+    const { container } = render(<TeamWorkloadDonut workload={workload} />);
+    const root = container.querySelector('[data-testid="team-brief-workload-donut"]')!;
+    const option = within(root as HTMLElement).getByRole("button", { name: /Ben:/i });
+    fireEvent.click(option);
+    expect(within(root as HTMLElement).getByTestId("team-brief-workload-detail")).toHaveTextContent(
+      "Ben",
+    );
   });
 });
