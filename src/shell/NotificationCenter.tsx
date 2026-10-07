@@ -48,6 +48,7 @@ import {
 } from "../platform/inboxReadSync";
 import type { SettingsSection } from "../pages/settings/types";
 import type { OrgFeatureAccess } from "../domain/organization/orgFeatureAccess";
+import { EmptyState } from "../components/EmptyState/EmptyState";
 import "./notification-center.css";
 
 const SOURCE_FILTER_OPTIONS: { value: InboxSourceFilterId; label: string }[] = [
@@ -277,7 +278,7 @@ export function NotificationCenter({
             onChange={setSourceFilter}
           />
         </div>
-        <div className="notification-center__main metrio-scroll metrio-scroll--side-panel">
+        <div className="notification-center__main metrio-scroll">
         {confirmClear ? (
           <div className="notification-center__confirm" role="alertdialog" aria-label="Clear notifications">
             <p className="notification-center__confirm-text">
@@ -308,37 +309,28 @@ export function NotificationCenter({
         ) : null}
 
         {loadError ? (
-          <div
-            className="metrio-placeholder metrio-placeholder--drawer-panel notification-center__error"
+          <EmptyState
+            className="metrio-empty-state--drawer-panel notification-center__error"
             role="alert"
-          >
-            <CircleAlert className="metrio-placeholder__icon" size={24} strokeWidth={1.75} aria-hidden />
-            <div className="metrio-placeholder__text">
-              <p className="metrio-placeholder__title">Couldn&apos;t load notification history.</p>
-            </div>
-            <div className="metrio-placeholder__actions">
+            icon={<CircleAlert size={24} strokeWidth={1.75} aria-hidden />}
+            title="Couldn't load notification history."
+            actions={
               <Button type="button" variant="secondary" onClick={refresh}>
                 Retry
               </Button>
-            </div>
-          </div>
+            }
+          />
         ) : filtered.length === 0 ? (
-          <div
-            className="metrio-placeholder metrio-placeholder--drawer-panel notification-center__empty"
-            role="status"
-          >
-            <CircleAlert className="metrio-placeholder__icon" size={24} strokeWidth={1.75} aria-hidden />
-            <div className="metrio-placeholder__text">
-              <p className="metrio-placeholder__title">
-                {emptyNotificationsMessage(sourceFilter)}
-              </p>
-              {sourceFilter === "all" ? (
-                <p className="metrio-placeholder__copy">
-                  Important workload, task, and availability changes will appear here.
-                </p>
-              ) : null}
-            </div>
-          </div>
+          <EmptyState
+            className="metrio-empty-state--drawer-panel notification-center__empty"
+            icon={<CircleAlert size={24} strokeWidth={1.75} aria-hidden />}
+            title={emptyNotificationsMessage(sourceFilter)}
+            description={
+              sourceFilter === "all"
+                ? "Important workload, task, and availability changes will appear here."
+                : undefined
+            }
+          />
         ) : (
           <div className="notification-center__groups">
             {grouped.map((group) => (

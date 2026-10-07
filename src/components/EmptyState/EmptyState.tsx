@@ -1,72 +1,48 @@
-import type { LucideIcon } from "lucide-react";
 import type { ReactNode } from "react";
-import { Button } from "../Button/Button";
-import type { ButtonVariant } from "../Button/Button";
-import "./EmptyState.css";
-
-export interface EmptyStateAction {
-  label: string;
-  onClick: () => void;
-  variant?: ButtonVariant;
-  disabled?: boolean;
-}
+import "./empty-state.css";
 
 export interface EmptyStateProps {
-  icon?: LucideIcon;
+  icon?: ReactNode;
   title: string;
-  description?: ReactNode;
-  primary?: EmptyStateAction;
-  secondary?: EmptyStateAction;
-  testId?: string;
+  description?: string;
+  actions?: ReactNode;
+  role?: "status" | "alert";
+  className?: string;
   compact?: boolean;
+  testId?: string;
 }
 
+/** Canonical centered empty state: icon → title (8px) → description. */
 export function EmptyState({
-  icon: Icon,
+  icon,
   title,
   description,
-  primary,
-  secondary,
-  testId,
+  actions,
+  role = "status",
+  className,
   compact = false,
+  testId,
 }: EmptyStateProps) {
   return (
     <div
-      className={compact ? "empty-state empty-state--compact" : "empty-state"}
+      className={[
+        "metrio-empty-state",
+        compact ? "metrio-empty-state--compact" : "",
+        className,
+      ]
+        .filter(Boolean)
+        .join(" ")}
+      role={role}
       data-testid={testId}
-      role="status"
     >
-      <div className="empty-state__card">
-        {Icon ? <Icon className="empty-state__icon" size={24} strokeWidth={1.6} aria-hidden /> : null}
-        <div className="empty-state__text">
-          <h3 className="empty-state__title">{title}</h3>
-          {description ? <p className="empty-state__description">{description}</p> : null}
-        </div>
-        {primary || secondary ? (
-          <div className="button-group empty-state__actions">
-            {primary ? (
-              <Button
-                type="button"
-                variant={primary.variant ?? "primary"}
-                disabled={primary.disabled}
-                onClick={primary.onClick}
-              >
-                {primary.label}
-              </Button>
-            ) : null}
-            {secondary ? (
-              <Button
-                type="button"
-                variant={secondary.variant ?? "secondary"}
-                disabled={secondary.disabled}
-                onClick={secondary.onClick}
-              >
-                {secondary.label}
-              </Button>
-            ) : null}
-          </div>
+      {icon ? <div className="metrio-empty-state__icon">{icon}</div> : null}
+      <div className="metrio-empty-state__text">
+        <p className="metrio-empty-state__title">{title}</p>
+        {description ? (
+          <p className="metrio-empty-state__description">{description}</p>
         ) : null}
       </div>
+      {actions ? <div className="metrio-empty-state__actions">{actions}</div> : null}
     </div>
   );
 }

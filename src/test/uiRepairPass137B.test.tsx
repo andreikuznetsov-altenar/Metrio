@@ -29,15 +29,16 @@ describe("UI Repair Pass 13.7B side panels and motion", () => {
 
   it("notification scroll region uses stable side-panel scrollbar", () => {
     const source = read("src/shell/NotificationCenter.tsx");
-    expect(source).toContain("metrio-scroll--side-panel");
+    expect(source).toContain("metrio-scroll");
     const css = read("src/styles/ui-interaction-system.css");
-    expect(css).toContain("--side-panel-scrollbar-size");
-    expect(css).toContain("--side-panel-scrollbar-inset");
+    expect(css).toContain("--metrio-scrollbar-size");
+    expect(css).toContain("scrollbar-gutter: auto");
   });
 
   it("drawer panel placeholder component exists for side-panel empties", () => {
     const source = read("src/components/Drawer/DrawerPanelPlaceholder.tsx");
-    expect(source).toContain("metrio-placeholder--drawer-panel");
+    expect(source).toContain("EmptyState");
+    expect(source).toContain("metrio-empty-state--drawer-panel");
   });
 
   it("drawer motion uses open/close durations without transition all", () => {

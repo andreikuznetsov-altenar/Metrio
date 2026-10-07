@@ -2,6 +2,7 @@ import { Badge } from "../../../components/Badge/Badge";
 import { Button } from "../../../components/Button/Button";
 import { GroupedIssuePreview } from "../../../components/GroupedIssuePreview/GroupedIssuePreview";
 import type { ExecutiveAttentionItem } from "../../../domain/home/executiveDashboardModel";
+import { shouldAppendAttentionSubjectTitle } from "../../../domain/home/attentionSubjectDisplay";
 import { buildJiraIssueBrowseUrl } from "../../../platform/jiraIssueUrl";
 import { openExternalUrl } from "../../../platform/openExternal";
 
@@ -96,7 +97,7 @@ export function DashboardAttentionNow({
                             modalTitle={item.title}
                             onOpenIssue={openJira}
                           />
-                          {item.title ? (
+                          {shouldAppendAttentionSubjectTitle(item.title, keys) ? (
                             <span className="executive-attention-now__subject-title">
                               {keys.length === 1 ? " — " : " · "}
                               {item.title}
