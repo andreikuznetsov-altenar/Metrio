@@ -126,13 +126,23 @@
   margin: 0 6px;
 }
 
-.analytics-issue-row__jira {
-  width: var(--control-height-compact);
-  height: var(--control-height-compact);
+/*
+ * Canonical icon-btn geometry for Backflows/analytics Jira action.
+ * Must beat .entity-link { display: inline } so the SVG centers in the square.
+ */
+a.entity-link.icon-btn.analytics-issue-row__jira {
   flex-shrink: 0;
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  width: var(--control-height-compact);
+  height: var(--control-height-compact);
+  padding: 0;
+  line-height: 0;
+  font-size: inherit;
+  font-weight: inherit;
+  letter-spacing: normal;
+  text-decoration: none;
   border: 1px solid color-mix(in srgb, var(--color-border) 80%, transparent);
   border-radius: var(--radius-control);
   background: transparent;
@@ -144,10 +154,24 @@
     border-color var(--motion-hover) var(--ease-standard);
 }
 
-.analytics-issue-row__jira:hover {
+a.entity-link.icon-btn.analytics-issue-row__jira:hover,
+a.entity-link.icon-btn.analytics-issue-row__jira:focus-visible {
   background: var(--color-surface-secondary);
   color: var(--color-text-primary);
   border-color: var(--color-border);
+  text-decoration: none;
+  /* Hover/focus must not translate the icon. */
+  transform: none;
+  top: auto;
+  left: auto;
+}
+
+a.entity-link.icon-btn.analytics-issue-row__jira svg {
+  display: block;
+  flex: 0 0 auto;
+  width: 16px;
+  height: 16px;
+  line-height: 0;
 }
 
 .analytics-issue-row__expand {
@@ -175,7 +199,7 @@
 
 @media (prefers-reduced-motion: reduce) {
   .analytics-issue-row__person,
-  .analytics-issue-row__jira {
+  a.entity-link.icon-btn.analytics-issue-row__jira {
     transition-duration: 0ms;
   }
 }

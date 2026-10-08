@@ -5,6 +5,7 @@ import { Tooltip } from "../../components/Tooltip/Tooltip";
 import type { AnalyticsEvidenceIssue } from "../../domain/analytics/analyticsEvidenceTypes";
 import { formatPerformanceDateDisplay } from "../../domain/performance/performanceDateRange";
 import { JiraIssueLink } from "../../components/JiraIssueLink/JiraIssueLink";
+import "../../components/IconButton/IconButton.css";
 import {
   displayPersonName,
   formatCycleDurationShort,
@@ -129,10 +130,12 @@ export function AnalyticsIssueRow({
           <Tooltip content="Open in Jira">
             <JiraIssueLink
               issueKey={issue.issueKey}
-              className="analytics-issue-row__jira"
+              mono={false}
+              className="icon-btn icon-btn--compact analytics-issue-row__jira"
               aria-label={`Open ${issue.issueKey} in Jira`}
+              data-testid="analytics-issue-jira-action"
             >
-              <ExternalLink size={15} strokeWidth={1.75} aria-hidden />
+              <ExternalLink size={16} strokeWidth={1.75} aria-hidden />
             </JiraIssueLink>
           </Tooltip>
         )}
