@@ -1,6 +1,7 @@
 import { useState } from "react";
 import type { ActionItem } from "../../../domain/actions/actionTypes";
 import type { ExecutiveActionTab } from "../../../domain/home/executiveDashboardModel";
+import { Tabs } from "../../../components/Tabs/Tabs";
 import { DashboardQueuePanel } from "./DashboardQueuePanel";
 
 export function DashboardActionTabs({
@@ -19,41 +20,36 @@ export function DashboardActionTabs({
   onOpenJiraIssue?: (issueKey: string, url?: string) => void;
 }) {
   const [activeId, setActiveId] = useState(tabs[0]?.id ?? "");
-  const active = tabs.find((tab) => tab.id === activeId) ?? tabs[0];
-  if (!active) return null;
+  if (!tabs.length) return null;
 
   return (
-    <div className="executive-dashboard__span-12" data-testid="dashboard-action-tabs">
-      <div className="executive-action-tabs__bar" role="tablist" aria-label="Dashboard actions">
-        {tabs.map((tab) => (
-          <button
-            key={tab.id}
-            type="button"
-            role="tab"
-            aria-selected={tab.id === active.id}
-            className={
-              tab.id === active.id
-                ? "executive-action-tabs__tab executive-action-tabs__tab--active"
-                : "executive-action-tabs__tab"
-            }
-            onClick={() => setActiveId(tab.id)}
-          >
-            {tab.label}
-          </button>
-        ))}
-      </div>
-      <DashboardQueuePanel
-        title={active.label}
-        workColumnLabel="Work"
-        items={active.items}
-        emptyMessage={active.emptyMessage}
-        onOpen={onOpenAction}
-        openLabel={actionOpenLabel}
-        testId={`dashboard-tab-${active.id}`}
-        footerAction={footerByTab?.[active.id]}
-        teamPersons={teamPersons}
-        onOpenJiraIssue={onOpenJiraIssue}
-        sortable={active.id === "focus"}
+    <div
+      className="executive-dashboard__span-12 dashboard-section"
+      data-testid="dashboard-action-tabs"
+    >
+      <Tabs
+        value={activeId}
+        onValueChange={setActiveId}
+        items={tabs.map((tab) => ({
+          value: tab.id,
+          label: tab.label,
+          content: (
+            <DashboardQueuePanel
+              title={tab.label}
+              hideTitle
+              workColumnLabel="Work"
+              items={tab.items}
+              emptyMessage={tab.emptyMessage}
+              onOpen={onOpenAction}
+              openLabel={actionOpenLabel}
+              testId={`dashboard-tab-${tab.id}`}
+              footerAction={footerByTab?.[tab.id]}
+              teamPersons={teamPersons}
+              onOpenJiraIssue={onOpenJiraIssue}
+              sortable={tab.id === "focus"}
+            />
+          ),
+        }))}
       />
     </div>
   );

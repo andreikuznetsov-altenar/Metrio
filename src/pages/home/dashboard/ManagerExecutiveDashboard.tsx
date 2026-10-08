@@ -37,6 +37,7 @@ import { DashboardMetricsPair } from "./DashboardMetricsPair";
 import { DashboardLowerThreeCards } from "./DashboardLowerThreeCards";
 import { DashboardDeliveryRiskCard } from "./DashboardDeliveryRiskCard";
 import { navigateProductRecommendation } from "../../../app/productRecommendationNavigation";
+import { backflowIssueKeysFromRiskRows } from "../../../domain/recommendations/backflowIssueKeys";
 
 const QUEUE_PREVIEW = 5;
 type GoalsHomeSummary = ReturnType<typeof summarizeGoalsForHome>;
@@ -53,6 +54,8 @@ export interface ManagerExecutiveDashboardProps {
   team: HomeTeamWorkspace;
   teamSnapshot: TeamPerformanceSnapshot | null;
   deliveryRiskCount: number;
+  /** Delivery-risk rows used to attach exact backflow issueKeys to recommendations. */
+  deliveryRiskRows?: Array<{ issueKey: string; riskReason: string }>;
   trends: TrendCardData[];
   onOpenAction: (item: ActionItem) => void;
   actionOpenLabel: (item: ActionItem) => string;
@@ -85,6 +88,7 @@ export function ManagerExecutiveDashboard({
   team,
   teamSnapshot,
   deliveryRiskCount,
+  deliveryRiskRows = [],
   trends,
   onOpenAction,
   actionOpenLabel,
@@ -140,6 +144,7 @@ export function ManagerExecutiveDashboard({
       focus: personal.focus,
       attentionItems: executiveModel.attentionItems,
       awayNextWeek: team.awayNextWeek,
+      backflowIssueKeys: backflowIssueKeysFromRiskRows(deliveryRiskRows),
       maxItems: 3,
     });
 
@@ -167,6 +172,11 @@ export function ManagerExecutiveDashboard({
       </div>
       <DashboardScopeHealthSummary scopeLabel={executiveModel.scopeLabel} summary={executiveModel.scopeHealth} />
       <DashboardKpiStrip cards={executiveModel.kpis} />
+      <DashboardRecommendations
+        items={recommendations}
+        onAction={onRecommendationAction}
+        surface="dashboard"
+      />
       <DashboardPrimaryTrend
         trends={executiveModel.trends}
         spanClass={executiveModel.trendSpanClass}
@@ -196,10 +206,6 @@ export function ManagerExecutiveDashboard({
             onClick: onOpenTeamOverview,
           },
         }}
-      />
-      <DashboardRecommendations
-        items={recommendations}
-        onAction={onRecommendationAction}
       />
       <DashboardMetricsPair>
         <DashboardTeamCapacityVisual workload={executiveModel.teamWorkload} />

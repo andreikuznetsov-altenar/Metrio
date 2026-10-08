@@ -10,6 +10,7 @@ export function PerformanceRecommendations({
   teamWorkload,
   teamActions,
   awayNextWeek,
+  backflowIssueKeys,
   onAction,
 }: {
   deliverySummary: {
@@ -21,6 +22,7 @@ export function PerformanceRecommendations({
   teamWorkload: WorkloadRow[];
   teamActions: ActionItem[];
   awayNextWeek?: number;
+  backflowIssueKeys?: string[];
   onAction: (item: ProductRecommendation) => void;
 }) {
   const items = buildProductRecommendations({
@@ -32,12 +34,17 @@ export function PerformanceRecommendations({
     focus: [],
     attentionItems: [],
     awayNextWeek,
+    backflowIssueKeys,
     maxItems: 5,
   });
 
   return (
     <div className="performance-section" data-testid="performance-recommendations">
-      <DashboardRecommendations items={items} onAction={onAction} />
+      <DashboardRecommendations
+        items={items}
+        onAction={onAction}
+        surface="performance"
+      />
     </div>
   );
 }

@@ -31,6 +31,8 @@ const PREVIEW_COUNT = 5;
 
 export interface DashboardQueuePanelProps {
   title: string;
+  /** When true, section uses aria-label only (canonical Tabs already title the block). */
+  hideTitle?: boolean;
   workColumnLabel: string;
   items: ActionItem[];
   emptyMessage: string;
@@ -46,6 +48,7 @@ export interface DashboardQueuePanelProps {
 
 export function DashboardQueuePanel({
   title,
+  hideTitle = false,
   workColumnLabel,
   items,
   emptyMessage,
@@ -181,7 +184,7 @@ export function DashboardQueuePanel({
       aria-label={title}
       data-testid={testId}
     >
-      <h2 className="dashboard-section__title">{title}</h2>
+      {hideTitle ? null : <h2 className="dashboard-section__title">{title}</h2>}
       {sourceItems.length === 0 ? (
         <p className="executive-secondary-line" role="status">{emptyMessage}</p>
       ) : (

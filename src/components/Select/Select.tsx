@@ -88,7 +88,7 @@ export function Select({
           sideOffset={4}
           collisionPadding={8}
         >
-          <SelectPrimitive.Viewport className="select-content__viewport">
+          <SelectPrimitive.Viewport className="select-content__viewport metrio-scroll metrio-scroll--hidden-thumb">
             {options.map((option) => (
               <SelectPrimitive.Item
                 key={option.value}

@@ -76,7 +76,7 @@
 }
 
 .select-content {
-  z-index: 60;
+  z-index: var(--z-popover, 115);
   min-width: var(--radix-select-trigger-width);
   overflow: hidden;
   border-radius: var(--radius-control);

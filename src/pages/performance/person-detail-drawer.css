@@ -110,8 +110,39 @@
   align-self: flex-start;
 }
 
-.person-drawer-view[hidden] {
-  display: none;
+.person-drawer-views {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-areas: "stack";
+  min-width: 0;
+}
+
+.person-drawer-view {
+  grid-area: stack;
+  min-width: 0;
+  transition:
+    opacity var(--motion-tab) var(--ease-standard),
+    visibility var(--motion-tab) var(--ease-standard);
+}
+
+.person-drawer-view--active {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  z-index: 1;
+}
+
+.person-drawer-view--inactive {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  z-index: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .person-drawer-view {
+    transition-duration: 0ms;
+  }
 }
 
 .drawer__body .tabs {

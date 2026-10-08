@@ -118,6 +118,13 @@ export function DirectorExecutiveDashboard({
       </div>
       <DashboardScopeHealthSummary scopeLabel={model.scopeLabel} summary={model.scopeHealth} />
       <DashboardKpiStrip cards={model.kpis} />
+      {branchRecommendations.length > 0 ? (
+        <DashboardRecommendations
+          items={branchRecommendations}
+          onAction={onRecommendationAction}
+          surface="dashboard"
+        />
+      ) : null}
       <DashboardPrimaryTrend
         trends={model.trends}
         spanClass={model.trendSpanClass}
@@ -141,12 +148,6 @@ export function DirectorExecutiveDashboard({
         organization={organization}
         onOpenDirectorView={onOpenDirectorView}
       />
-      {branchRecommendations.length > 0 ? (
-        <DashboardRecommendations
-          items={branchRecommendations}
-          onAction={onRecommendationAction}
-        />
-      ) : null}
       <DashboardTeamCapacityVisual workload={model.teamWorkload} />
       <DashboardDeliveryVisual summary={model.deliverySummary} />
       <DashboardActionTabs

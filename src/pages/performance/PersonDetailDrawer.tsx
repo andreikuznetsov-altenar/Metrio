@@ -124,13 +124,17 @@ export function PersonDetailDrawer({
   useEffect(() => {
     if (open) {
       setHistoryVisibleCount(HISTORY_PAGE_SIZE);
+      if (showBriefAction) {
+        // Prefetch Brief so Profile→Brief uses the same mounted crossfade as Brief→Profile.
+        setBriefMounted(true);
+      }
     } else if (activeViewProp === undefined) {
       setInternalView("profile");
       setBriefMounted(false);
       scrollByView.current = { profile: 0, brief: 0 };
       previousViewRef.current = "profile";
     }
-  }, [open, historyPeriod, historyFilter, activeViewProp]);
+  }, [open, historyPeriod, historyFilter, activeViewProp, showBriefAction]);
 
   useEffect(() => {
     scrollByView.current = { profile: 0, brief: 0 };
@@ -138,10 +142,10 @@ export function PersonDetailDrawer({
     if (activeViewProp === undefined) {
       setInternalView("profile");
       setBriefMounted(false);
-    } else {
-      setBriefMounted(activeViewProp === "brief");
+    } else if (showBriefAction) {
+      setBriefMounted(true);
     }
-  }, [personId, activeViewProp]);
+  }, [personId, activeViewProp, showBriefAction]);
 
   useEffect(() => {
     if (activeView === "brief" && showBriefAction) {
@@ -551,30 +555,40 @@ export function PersonDetailDrawer({
         ) : null
       }
     >
-      <div
-        className="person-drawer-view"
-        data-person-drawer-view="profile"
-        hidden={briefActive}
-      >
-        <Tabs
-          items={tabs}
-          value={activeTab}
-          onValueChange={(value) => onTabChange?.(value as PersonDrawerTab)}
-        />
-      </div>
-      {showBriefAction && briefMounted ? (
+      <div className="person-drawer-views" data-testid="person-drawer-views">
         <div
-          className="person-drawer-view"
-          data-person-drawer-view="brief"
-          data-testid="person-brief-drawer"
-          hidden={!briefActive}
+          className={
+            briefActive
+              ? "person-drawer-view person-drawer-view--inactive"
+              : "person-drawer-view person-drawer-view--active"
+          }
+          data-person-drawer-view="profile"
+          aria-hidden={briefActive}
         >
-          <PersonBriefDrawerPanel
-            personId={personId}
-            prepForOneOnOne={prepForOneOnOne}
+          <Tabs
+            items={tabs}
+            value={activeTab}
+            onValueChange={(value) => onTabChange?.(value as PersonDrawerTab)}
           />
         </div>
-      ) : null}
+        {showBriefAction && briefMounted ? (
+          <div
+            className={
+              briefActive
+                ? "person-drawer-view person-drawer-view--active"
+                : "person-drawer-view person-drawer-view--inactive"
+            }
+            data-person-drawer-view="brief"
+            data-testid="person-brief-drawer"
+            aria-hidden={!briefActive}
+          >
+            <PersonBriefDrawerPanel
+              personId={personId}
+              prepForOneOnOne={prepForOneOnOne}
+            />
+          </div>
+        ) : null}
+      </div>
     </DrawerStack>
   );
 }

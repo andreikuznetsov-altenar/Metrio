@@ -85,7 +85,9 @@ describe("PersonDetailDrawer header", () => {
     expect(buttons[buttons.length - 1]).toHaveAccessibleName(/Close drawer/i);
     expect(screen.getByText("Sam Dev")).toBeTruthy();
     expect(
-      document.querySelector('[data-person-drawer-view="profile"]:not([hidden])'),
+      document.querySelector(
+        '[data-person-drawer-view="profile"].person-drawer-view--active',
+      ),
     ).toBeTruthy();
   });
 

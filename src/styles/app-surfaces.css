@@ -1,6 +1,7 @@
 /**
  * Stacking (low → high): app content → app chrome → floating (global refresh) →
- * drawer scrim → drawer → modal scrim → modal → tooltip → toast.
+ * drawer scrim → drawer → drawer-owned popover/select → modal scrim → modal →
+ * tooltip → toast.
  * Drawer/modal scrims cover the Metrio app shell (header + content), not the native titlebar.
  */
 
@@ -10,6 +11,7 @@
   --z-app-floating: 105;
   --z-drawer-scrim: 110;
   --z-drawer-panel: 111;
+  --z-popover: 115;
   --z-modal-scrim: 120;
   --z-modal-panel: 121;
   --z-tooltip: 130;

@@ -11,7 +11,9 @@ export type RecommendationActionKind =
   | "open_jira"
   | "view_person"
   | "open_team_workload"
-  | "open_performance";
+  | "open_performance"
+  | "review_issues"
+  | "open_history_reports";
 
 export interface ProductRecommendation {
   id: string;
@@ -22,6 +24,8 @@ export interface ProductRecommendation {
   actionKind: RecommendationActionKind;
   personId?: string;
   issueKey?: string;
+  /** Exact issue set for TaskListModal drilldowns (e.g. backflow rows). */
+  issueKeys?: string[];
   priority: number;
 }
 
@@ -35,6 +39,8 @@ export interface BuildRecommendationsInput {
   attentionItems: ExecutiveAttentionItem[];
   awayNextWeek?: number;
   teamsNeedingAttention?: number;
+  /** Issue keys that contribute to deliverySummary.backflowSignals when known. */
+  backflowIssueKeys?: string[];
   maxItems: number;
 }
 
@@ -61,6 +67,7 @@ export function buildProductRecommendations(
     attentionItems,
     awayNextWeek = 0,
     teamsNeedingAttention = 0,
+    backflowIssueKeys = [],
     maxItems,
   } = input;
 
@@ -177,6 +184,9 @@ export function buildProductRecommendations(
   }
 
   if (deliverySummary.backflowSignals > 0 && role !== "employee") {
+    const uniqueBackflowKeys = Array.from(
+      new Set(backflowIssueKeys.filter(Boolean)),
+    );
     pushUnique(out, seen, {
       id: "backflow-review",
       severity: "watch",
@@ -185,6 +195,7 @@ export function buildProductRecommendations(
         "Review why work returned from review/QA and identify the recurring cause.",
       actionLabel: "Open Performance",
       actionKind: "open_performance",
+      issueKeys: uniqueBackflowKeys.length > 0 ? uniqueBackflowKeys : undefined,
       priority: 7,
     });
   }

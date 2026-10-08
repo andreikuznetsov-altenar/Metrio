@@ -84,10 +84,14 @@ describe("PASS 14.12 unified person drawer", () => {
     stubContexts();
     render(<PersonDetailDrawer personId="914" open onClose={vi.fn()} />);
     expect(
-      document.querySelector('[data-person-drawer-view="profile"]:not([hidden])'),
+      document.querySelector(
+        '[data-person-drawer-view="profile"].person-drawer-view--active',
+      ),
     ).toBeTruthy();
     expect(
-      document.querySelector('[data-person-drawer-view="brief"]:not([hidden])'),
+      document.querySelector(
+        '[data-person-drawer-view="brief"].person-drawer-view--active',
+      ),
     ).toBeNull();
   });
 
@@ -124,7 +128,9 @@ describe("PASS 14.12 unified person drawer", () => {
     expect(afterBrief.getAttribute("data-drawer-phase")).toBe(phase);
     expect(afterBrief.getAttribute("data-drawer-panel")).toBe("primary");
     expect(
-      document.querySelector('[data-person-drawer-view="brief"]:not([hidden])'),
+      document.querySelector(
+        '[data-person-drawer-view="brief"].person-drawer-view--active',
+      ),
     ).toBeTruthy();
     expect(screen.getByTestId("person-brief-drawer")).toBeTruthy();
 
@@ -140,6 +146,11 @@ describe("PASS 14.12 unified person drawer", () => {
       />,
     );
     expect(screen.getByTestId("person-detail-drawer")).toBe(root);
+    expect(
+      document.querySelector(
+        '[data-person-drawer-view="profile"].person-drawer-view--active',
+      ),
+    ).toBeTruthy();
   });
 
   it("E: Brief loading placeholder stays inside the same drawer", async () => {
@@ -177,7 +188,9 @@ describe("PASS 14.12 unified person drawer", () => {
       />,
     );
     expect(
-      document.querySelector('[data-person-drawer-view="brief"]:not([hidden])'),
+      document.querySelector(
+        '[data-person-drawer-view="brief"].person-drawer-view--active',
+      ),
     ).toBeTruthy();
 
     rerender(
@@ -190,7 +203,9 @@ describe("PASS 14.12 unified person drawer", () => {
       />,
     );
     expect(
-      document.querySelector('[data-person-drawer-view="profile"]:not([hidden])'),
+      document.querySelector(
+        '[data-person-drawer-view="profile"].person-drawer-view--active',
+      ),
     ).toBeTruthy();
   });
 
@@ -208,7 +223,9 @@ describe("PASS 14.12 unified person drawer", () => {
     expect(screen.getByTestId("person-detail-drawer")).toBeTruthy();
     expect(screen.getByTestId("person-brief-drawer")).toBeTruthy();
     expect(
-      document.querySelector('[data-person-drawer-view="brief"]:not([hidden])'),
+      document.querySelector(
+        '[data-person-drawer-view="brief"].person-drawer-view--active',
+      ),
     ).toBeTruthy();
   });
 

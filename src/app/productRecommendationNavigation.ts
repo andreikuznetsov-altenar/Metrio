@@ -5,6 +5,8 @@ export interface ProductRecommendationNavigationHandlers {
   openPerson: (personId: string) => void;
   openJira: (issueKey: string) => void;
   openTeamWorkload?: () => void;
+  /** Preferred Performance drilldown when issueKeys are known. */
+  openIssueList?: (issueKeys: string[], title: string) => void;
 }
 
 export function navigateProductRecommendation(
@@ -30,6 +32,17 @@ export function navigateProductRecommendation(
       return;
     case "open_team_workload":
       handlers.openTeamWorkload?.();
+      return;
+    case "review_issues":
+      if (recommendation.issueKeys?.length) {
+        handlers.openIssueList?.(
+          recommendation.issueKeys,
+          recommendation.title,
+        );
+      }
+      return;
+    case "open_history_reports":
+      navigatePerformanceView("history-reports");
       return;
     default:
       return;

@@ -48,6 +48,10 @@ import { SortableTableHeader } from "../../components/Table/SortableTableHeader"
 import { useTableSort } from "../../components/Table/useTableSort";
 import { PerformanceRecommendations } from "./PerformanceRecommendations";
 import type { ProductRecommendation } from "../../domain/recommendations/buildProductRecommendations";
+import { backflowIssueKeysFromRiskRows } from "../../domain/recommendations/backflowIssueKeys";
+import { TaskListModal } from "../../components/TaskListModal/TaskListModal";
+import { buildTaskListModalRowsFromIssueKeys } from "../../domain/actions/buildTaskListModalRows";
+import { useOptionalPerformanceIssueCatalog } from "../../app/PerformanceIssueCatalogContext";
 
 const ATTENTION_OVERVIEW_COLUMNS = [
   { id: "person", type: "person" as const },
@@ -125,8 +129,13 @@ export function TeamOverviewView({
   );
   const { rules: operationalRules } = useOperationalRules();
   const { data: performanceData } = usePerformanceData();
+  const issueCatalog = useOptionalPerformanceIssueCatalog();
   const teamPersons = performanceData?.teamSnapshot.persons ?? [];
   const [jiraBaseUrl, setJiraBaseUrl] = useState("");
+  const [issueListModal, setIssueListModal] = useState<{
+    title: string;
+    issueKeys: string[];
+  } | null>(null);
 
   useEffect(() => {
     void loadPreferences().then((prefs) => {
@@ -258,6 +267,24 @@ export function TeamOverviewView({
     [secondary.deliveryRisk, snapshot.summary],
   );
 
+  const backflowIssueKeys = useMemo(
+    () => backflowIssueKeysFromRiskRows(secondary.deliveryRisk),
+    [secondary.deliveryRisk],
+  );
+
+  const issueListRows = useMemo(
+    () =>
+      issueListModal
+        ? buildTaskListModalRowsFromIssueKeys(
+            issueListModal.issueKeys,
+            teamPersons,
+            jiraBaseUrl,
+            issueCatalog,
+          )
+        : [],
+    [issueListModal, teamPersons, jiraBaseUrl, issueCatalog],
+  );
+
   const onPerformanceRecommendation = (rec: ProductRecommendation) => {
     navigateProductRecommendation(rec, {
       openPerson: onOpenPerson,
@@ -267,6 +294,8 @@ export function TeamOverviewView({
           { openPerson: onOpenPerson },
         ),
       openTeamWorkload: navigateOpenTeamWorkloadSection,
+      openIssueList: (issueKeys, title) =>
+        setIssueListModal({ issueKeys, title }),
     });
   };
 
@@ -291,6 +320,7 @@ export function TeamOverviewView({
             deliveryRiskCount={secondary.deliveryRisk.length}
             teamWorkload={snapshot.workload}
             teamActions={teamActions}
+            backflowIssueKeys={backflowIssueKeys}
             onAction={onPerformanceRecommendation}
           />
       <section aria-label="Summary metrics">
@@ -748,6 +778,15 @@ export function TeamOverviewView({
           </div>
         </section>
       ) : null}
+      <TaskListModal
+        open={Boolean(issueListModal)}
+        onClose={() => setIssueListModal(null)}
+        title={issueListModal?.title ?? "Tasks"}
+        rows={issueListRows}
+        onOpenIssue={(_issueKey, url) => {
+          if (url) void openExternalUrl(url);
+        }}
+      />
     </>
   );
 }

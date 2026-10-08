@@ -683,6 +683,7 @@ export function HomePage() {
               team={team}
               teamSnapshot={effectiveTeamSnapshot}
               deliveryRiskCount={deliveryRisk.length}
+              deliveryRiskRows={deliveryRisk}
               trends={performanceTrends}
               onOpenAction={handleAction}
               actionOpenLabel={actionOpenLabel}
