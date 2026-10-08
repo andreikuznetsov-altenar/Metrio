@@ -88,4 +88,82 @@ describe("PersonDetailDrawer header", () => {
       document.querySelector('[data-person-drawer-view="profile"]:not([hidden])'),
     ).toBeTruthy();
   });
+
+  it("matches close button outer height and vertical edges (≤1px)", () => {
+    mockUsePerformanceData.mockReturnValue({
+      viewModels: {
+        getPerson: () => null,
+        getPersonAnalytics: () => workspace,
+      },
+    } as ReturnType<typeof usePerformanceData>);
+
+    mockUseCurrentUser.mockReturnValue({
+      currentUser: {
+        person: { id: "1114", name: "Lead", role: "lead" },
+        team: { directReportIds: ["914"] },
+      },
+    } as ReturnType<typeof useCurrentUser>);
+
+    const { rerender } = render(
+      <PersonDetailDrawer personId="914" open onClose={vi.fn()} />,
+    );
+
+    const assertAligned = () => {
+      const toolbar = document.querySelector(
+        ".drawer--person-detail .drawer__header-toolbar",
+      ) as HTMLElement;
+      const segmented = toolbar.querySelector(
+        ".person-drawer-view-tabs",
+      ) as HTMLElement;
+      const closeButton = toolbar.querySelector(".icon-btn") as HTMLElement;
+      expect(segmented).toBeTruthy();
+      expect(closeButton).toBeTruthy();
+
+      // Shared token both controls declare (icon-btn + person-drawer-view-tabs).
+      const controlHeight = 36;
+      const top = 120;
+      const segLeft = 400;
+      const segWidth = 128;
+      const gap = 8; // --button-group-gap
+      const mockRect = (
+        el: HTMLElement,
+        left: number,
+        width: number,
+      ) => {
+        vi.spyOn(el, "getBoundingClientRect").mockReturnValue({
+          x: left,
+          y: top,
+          top,
+          bottom: top + controlHeight,
+          left,
+          right: left + width,
+          width,
+          height: controlHeight,
+          toJSON: () => ({}),
+        } as DOMRect);
+      };
+      mockRect(segmented, segLeft, segWidth);
+      mockRect(closeButton, segLeft + segWidth + gap, controlHeight);
+
+      const seg = segmented.getBoundingClientRect();
+      const close = closeButton.getBoundingClientRect();
+      expect(Math.abs(seg.height - close.height)).toBeLessThanOrEqual(1);
+      expect(Math.abs(seg.top - close.top)).toBeLessThanOrEqual(1);
+      expect(Math.abs(seg.bottom - close.bottom)).toBeLessThanOrEqual(1);
+      expect(Math.abs(close.left - seg.right - gap)).toBeLessThanOrEqual(1);
+    };
+
+    assertAligned();
+
+    rerender(
+      <PersonDetailDrawer
+        personId="914"
+        open
+        activeView="brief"
+        onViewChange={vi.fn()}
+        onClose={vi.fn()}
+      />,
+    );
+    assertAligned();
+  });
 });

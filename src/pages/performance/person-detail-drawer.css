@@ -79,21 +79,35 @@
   align-items: flex-start;
 }
 
+/* Outer height matches drawer close .icon-btn (var(--control-height)). */
 .drawer--person-detail .person-drawer-view-tabs {
   flex-shrink: 0;
-  min-height: calc(var(--control-height) - 4px);
-  padding: 2px;
+  box-sizing: border-box;
+  height: var(--control-height);
+  min-height: var(--control-height);
+  padding: 3px;
+  align-items: stretch;
+  align-self: flex-start;
 }
 
 .drawer--person-detail .person-drawer-view-tabs .segmented-control__option {
-  min-height: calc(var(--control-height) - 10px);
+  min-height: 0;
+  align-self: stretch;
   padding: 0 var(--space-2);
   font-size: 12px;
 }
 
 .drawer--person-detail .person-drawer-view-tabs .segmented-control__indicator {
-  top: 2px;
-  bottom: 2px;
+  top: 3px;
+  bottom: 3px;
+}
+
+.drawer--person-detail .drawer__header-toolbar {
+  align-items: flex-start;
+}
+
+.drawer--person-detail .drawer__header-toolbar .icon-btn {
+  align-self: flex-start;
 }
 
 .person-drawer-view[hidden] {
