@@ -59,6 +59,8 @@ import { useConnectionGate } from "./ConnectionContext";
 import { logoutSession } from "./logoutSession";
 import { clearTrayUserContext } from "../platform/trayActionCenter";
 import { usePerformanceData } from "./PerformanceDataContext";
+import { registerAppNavigation } from "./appNavigation";
+import { peekPendingTeamPerformanceView } from "./performanceViewPersistence";
 import { PerformanceDataWithRules } from "./PerformanceDataWithRules";
 import {
   PerformanceExportProvider,
@@ -215,8 +217,10 @@ function AppLayoutShell({
     performanceStatus === "ready" ||
     performanceStatus === "partial" ||
     performanceStatus === "refreshing" ||
+    (performanceStatus === "loading" && Boolean(data || viewModels)) ||
     (performanceStatus === "error" && Boolean(data)) ||
-    Boolean(viewModels);
+    Boolean(viewModels) ||
+    Boolean(peekPendingTeamPerformanceView());
   const performanceNavEnabled = reportingNavReady;
   const performanceExport = usePerformanceExport();
   const workGraph = useWorkGraph();
@@ -315,14 +319,33 @@ function AppLayoutShell({
   }, []);
 
   useEffect(() => {
+    registerAppNavigation({
+      openPerformanceRoute: () => {
+        setSettingsOpen(false);
+        setActiveRoute("performance");
+      },
+      openRoute: (route) => {
+        if (route === "feedback" && !feedbackEnabled) {
+          return;
+        }
+        setSettingsOpen(false);
+        setActiveRoute(route);
+      },
+    });
+    return () => registerAppNavigation(null);
+  }, [feedbackEnabled, setActiveRoute, setSettingsOpen]);
+
+  useEffect(() => {
     const onRoute = (event: Event) => {
       const route = (event as CustomEvent<AppRoute>).detail;
       if (route === "home" || route === "performance" || route === "feedback") {
-        if (
-          (route === "performance" || route === "feedback") &&
-          !performanceNavEnabled
-        ) {
+        if (route === "feedback" && !performanceNavEnabled) {
           return;
+        }
+        if (route === "performance" && !performanceNavEnabled) {
+          if (!peekPendingTeamPerformanceView()) {
+            return;
+          }
         }
         if (route === "feedback" && !feedbackEnabled) {
           return;
@@ -511,12 +534,24 @@ function AppLayoutShell({
       initialSection={settingsSection}
       onReconnect={() => void onReconnect()}
     />
-  ) : activeRoute === "home" ? (
-    <HomePage />
-  ) : activeRoute === "performance" ? (
-    <PerformancePage reviewTarget={reviewTarget} />
   ) : (
-    <FeedbackPage />
+    <div className="app-route-stack" data-testid="app-route-stack">
+      <div
+        className="app-route-layer"
+        hidden={activeRoute !== "home"}
+        data-testid="route-layer-home"
+      >
+        <HomePage />
+      </div>
+      <div
+        className="app-route-layer"
+        hidden={activeRoute !== "performance"}
+        data-testid="route-layer-performance"
+      >
+        <PerformancePage reviewTarget={reviewTarget} />
+      </div>
+      {activeRoute === "feedback" ? <FeedbackPage /> : null}
+    </div>
   );
 
   const teamBriefPersonsById = useMemo(() => {

@@ -168,7 +168,8 @@ export function PerformanceDataProvider({
     showLoadingOverlay &&
     enabled &&
     (status === "loading" || status === "refreshing") &&
-    !(revalidatingFromCache && viewModels != null);
+    viewModels == null &&
+    !revalidatingFromCache;
   const contentOverlayVisible = useMinimumVisibleDuration(
     contentLoadingActive,
     PERFORMANCE_OVERLAY_MIN_MS,

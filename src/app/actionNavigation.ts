@@ -2,6 +2,10 @@ import type { ActionItem, ActionTarget } from "../domain/actions/actionTypes";
 import { openExternalUrl } from "../platform/openExternal";
 
 import type { TeamPerformanceView } from "../domain/performance";
+import {
+  applyTeamPerformanceViewIfMounted,
+  getAppNavigationBridge,
+} from "./appNavigation";
 import { setPendingTeamPerformanceView } from "./performanceViewPersistence";
 
 export function dispatchPerformanceTab(
@@ -15,6 +19,14 @@ export function dispatchPerformanceTab(
 /** Navigate to Performance and activate a team subnav tab after the route mounts. */
 export function navigatePerformanceView(view: TeamPerformanceView): void {
   setPendingTeamPerformanceView(view);
+  const bridge = getAppNavigationBridge();
+  if (bridge) {
+    bridge.openPerformanceRoute();
+    if (!applyTeamPerformanceViewIfMounted(view)) {
+      dispatchPerformanceTab(view);
+    }
+    return;
+  }
   dispatchAppRoute("performance");
   dispatchPerformanceTab(view);
 }

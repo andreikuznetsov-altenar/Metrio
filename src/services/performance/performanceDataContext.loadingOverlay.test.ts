@@ -17,7 +17,6 @@ import { EMPTY_KPI_SNAPSHOT_FILE } from "../../domain/snapshots/snapshotEngine";
 import { testKpi } from "../../domain/testFixtures";
 import type { TeamSnapshot } from "../../domain/people/types";
 import type { AuditReportData } from "../../domain/jira/types";
-import { PERFORMANCE_OVERLAY_MIN_MS } from "../../app/performanceLoadGuard";
 import { clearDashboardCacheForTests } from "../../platform/dashboard/dashboardCache";
 
 vi.mock("../performance/performanceDataService", () => ({
@@ -203,7 +202,7 @@ describe("PerformanceDataContext loading overlay", () => {
     ],
     ["3m preset", { dateRange: createPerformanceDateRange("3m") }],
     ["review target", { reviewTarget: "sprint" as const }],
-  ] as const)("shows overlay when %s changes", async (_label, change) => {
+  ] as const)("refetches without blocking overlay when %s changes", async (_label, change) => {
     const initialRange = createPerformanceDateRange("30d");
     const initialTarget: PerformanceReviewTarget = "team";
 
@@ -220,8 +219,9 @@ describe("PerformanceDataContext loading overlay", () => {
     rerender();
 
     await waitFor(() => {
-      expect(result.current.contentLoadingActive).toBe(true);
+      expect(result.current.status).toBe("refreshing");
     });
+    expect(result.current.contentLoadingActive).toBe(false);
     expect(result.current.viewModels).toBe(previousVm);
 
     await act(async () => {
@@ -230,7 +230,7 @@ describe("PerformanceDataContext loading overlay", () => {
     await waitFor(() => expect(result.current.status).toBe("ready"));
   });
 
-  it("shows overlay on refresh and keeps prior viewModels", async () => {
+  it("refreshes in the background without overlay when viewModels exist", async () => {
     const { result } = renderHook(() => usePerformanceData(), {
       wrapper: providerWrapper(createPerformanceDateRange("30d"), "team"),
     });
@@ -243,8 +243,9 @@ describe("PerformanceDataContext loading overlay", () => {
     });
 
     await waitFor(() => {
-      expect(result.current.contentLoadingActive).toBe(true);
+      expect(result.current.status).toBe("refreshing");
     });
+    expect(result.current.contentLoadingActive).toBe(false);
     expect(result.current.viewModels).toBe(previousVm);
 
     await act(async () => {
@@ -253,7 +254,7 @@ describe("PerformanceDataContext loading overlay", () => {
     await waitFor(() => expect(result.current.status).toBe("ready"));
   });
 
-  it("disables controls while loading and after success clears active state", async () => {
+  it("keeps controls enabled during background refresh with cached viewModels", async () => {
     const { result } = renderHook(() => usePerformanceData(), {
       wrapper: providerWrapper(createPerformanceDateRange("30d"), "team"),
     });
@@ -265,14 +266,16 @@ describe("PerformanceDataContext loading overlay", () => {
     });
 
     await waitFor(() => {
-      expect(result.current.performanceControlsDisabled).toBe(true);
+      expect(result.current.status).toBe("refreshing");
     });
+    expect(result.current.performanceControlsDisabled).toBe(false);
 
     await act(async () => {
       resolveRefresh("done");
     });
     await waitFor(() => {
       expect(result.current.contentLoadingActive).toBe(false);
+      expect(result.current.status).toBe("ready");
     });
   });
 
@@ -349,41 +352,24 @@ describe("PerformanceDataContext loading overlay", () => {
     }
   });
 
-  it("keeps overlay visible for minimum duration after refresh completes", async () => {
+  it("does not re-show overlay after background refresh completes", async () => {
     const { result } = renderHook(() => usePerformanceData(), {
       wrapper: providerWrapper(createPerformanceDateRange("30d"), "team"),
     });
     await waitReady(result);
+    const resolveRefresh = await deferNextFetch();
 
-    vi.useFakeTimers();
-    try {
-      let resolveRefresh!: (value: PerformanceFetchResult) => void;
-      mockFetch.mockImplementation(
-        () =>
-          new Promise((r) => {
-            resolveRefresh = r;
-          }),
-      );
+    act(() => {
+      void result.current.refresh();
+    });
 
-      await act(async () => {
-        void result.current.refresh();
-      });
+    await waitFor(() => expect(result.current.status).toBe("refreshing"));
+    expect(result.current.contentOverlayVisible).toBe(false);
 
-      await act(async () => {
-        resolveRefresh(resultWithMarker("fast"));
-        await Promise.resolve();
-      });
-
-      expect(result.current.contentLoadingActive).toBe(false);
-      expect(result.current.contentOverlayVisible).toBe(true);
-
-      await act(async () => {
-        vi.advanceTimersByTime(PERFORMANCE_OVERLAY_MIN_MS);
-      });
-
-      expect(result.current.contentOverlayVisible).toBe(false);
-    } finally {
-      vi.useRealTimers();
-    }
+    await act(async () => {
+      resolveRefresh("after-refresh");
+    });
+    await waitFor(() => expect(result.current.status).toBe("ready"));
+    expect(result.current.contentOverlayVisible).toBe(false);
   });
 });

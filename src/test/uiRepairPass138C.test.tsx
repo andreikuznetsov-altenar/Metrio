@@ -23,7 +23,7 @@ describe("UI Repair Pass 13.8C tray popover rewrite", () => {
     expect(panel).toContain("tray-popover__surface");
 
     const css = read("src/tray/tray-popover.css");
-    expect(css).toContain("--tray-popover-radius: 8px");
+    expect(css).toContain("--tray-popover-radius: 20px");
     expect(css).not.toMatch(/\.tray-popover::before/);
     expect(css).not.toContain(".tray-popover-shell");
   });
@@ -35,13 +35,12 @@ describe("UI Repair Pass 13.8C tray popover rewrite", () => {
     expect(css).toMatch(/\.tray-popover__surface[\s\S]*padding:/);
   });
 
-  it("anchors visible surface 4px from the icon and insets the host only for shadow", () => {
+  it("anchors visible surface near the icon without top host bleed", () => {
     const rust = read("src-tauri/src/tray_popover.rs");
     expect(rust).toContain("TRAY_POPOVER_GAP");
-    expect(rust).toContain("TRAY_HOST_SHADOW_INSET");
-    expect(rust).toContain("visible_surface_y - TRAY_HOST_SHADOW_INSET");
+    expect(rust).not.toContain("TRAY_HOST_SHADOW_INSET");
     const geometry = read("src/tray/trayPopoverGeometry.ts");
     expect(geometry).toContain("TRAY_POPOVER_GAP_PX");
-    expect(geometry).toContain("TRAY_HOST_SHADOW_INSET_PX");
+    expect(geometry).toContain("TRAY_HOST_SHADOW_BLEED_X_PX");
   });
 });

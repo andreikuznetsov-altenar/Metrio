@@ -17,6 +17,6 @@ describe("pending Performance view", () => {
     setPendingTeamPerformanceView("overview");
     expect(readIntendedTeamPerformanceView()).toBe("overview");
     expect(consumePendingTeamPerformanceView()).toBe("overview");
-    expect(sessionStorage.getItem("metrio.performance.teamView.v1")).toBe("overview");
+    expect(sessionStorage.getItem("metrio.performance.teamView.v1")).toBe("radar");
   });
 });

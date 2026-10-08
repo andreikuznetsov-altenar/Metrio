@@ -40,7 +40,6 @@ let pendingTeamPerformanceView: TeamPerformanceView | null = null;
 
 export function setPendingTeamPerformanceView(view: TeamPerformanceView): void {
   pendingTeamPerformanceView = view;
-  writePersistedTeamPerformanceView(view);
 }
 
 export function peekPendingTeamPerformanceView(): TeamPerformanceView | null {

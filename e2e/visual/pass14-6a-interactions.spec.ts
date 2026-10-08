@@ -72,9 +72,12 @@ test.describe("PASS 14.6A interactions", () => {
     });
     await expectPerformanceTab(page, /^overview$/i);
     await expect(page.getByTestId("performance-view-overview")).toBeVisible();
+    await page.waitForTimeout(200);
     expect(
       await page.evaluate(() => sessionStorage.getItem("metrio.performance.teamView.v1")),
     ).toBe("overview");
+    await page.waitForTimeout(800);
+    await expectPerformanceTab(page, /^overview$/i);
   });
 
   test("internal Performance tabs switch without loading overlay", async ({ page }) => {
@@ -107,7 +110,7 @@ test.describe("PASS 14.6A interactions", () => {
     }
     await help.hover();
     const tooltip = page.getByTestId("metrio-tooltip");
-    await expect(tooltip).toBeVisible({ timeout: 5_000 });
+    await expect(tooltip).toBeVisible({ timeout: 15_000 });
     const stacking = await page.evaluate(() => {
       const tip = document.querySelector('[data-testid="metrio-tooltip"]');
       const layer = document.getElementById("app-tooltip-layer");

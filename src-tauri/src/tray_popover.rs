@@ -8,8 +8,7 @@ use tauri::{
 // Keep in sync with src/tray/trayPopoverGeometry.ts (TRAY_POPOVER_GAP_PX)
 const POPOVER_FALLBACK_WIDTH: f64 = 312.0;
 const POPOVER_FALLBACK_HEIGHT: f64 = 360.0;
-const TRAY_POPOVER_GAP: f64 = 4.0;
-const TRAY_HOST_SHADOW_INSET: f64 = 16.0;
+const TRAY_POPOVER_GAP: f64 = 3.0;
 
 struct TrayAnchor {
     center_x: f64,
@@ -78,8 +77,7 @@ fn host_position_for_anchor(
     monitor_height: f64,
 ) -> LogicalPosition<f64> {
     let visible_surface_y = anchor.tray_bottom_y + TRAY_POPOVER_GAP;
-    let host_y = visible_surface_y - TRAY_HOST_SHADOW_INSET;
-    let y = clamp_host_y(host_y, host_height, monitor_y, monitor_height);
+    let y = clamp_host_y(visible_surface_y, host_height, monitor_y, monitor_height);
     let x = clamp_host_x(anchor.center_x, monitor_x, monitor_width, host_width);
     LogicalPosition { x, y }
 }
@@ -229,14 +227,13 @@ mod tests {
     use super::*;
 
     #[test]
-    fn popover_surface_is_four_px_below_tray_bottom() {
+    fn popover_surface_is_three_px_below_tray_bottom() {
         let anchor = TrayAnchor {
             center_x: 100.0,
             tray_bottom_y: 30.0,
         };
         let pos = host_position_for_anchor(&anchor, 300.0, 320.0, 0.0, 0.0, 1920.0, 1080.0);
-        let visible_surface_y = pos.y + TRAY_HOST_SHADOW_INSET;
-        assert_eq!(visible_surface_y - anchor.tray_bottom_y, TRAY_POPOVER_GAP);
+        assert_eq!(pos.y - anchor.tray_bottom_y, TRAY_POPOVER_GAP);
     }
 
     #[test]
@@ -251,16 +248,12 @@ mod tests {
     }
 
     #[test]
-    fn host_top_is_inset_so_visible_surface_stays_four_px_below_tray() {
+    fn host_top_aligns_with_visible_surface_without_top_bleed() {
         let anchor = TrayAnchor {
             center_x: 200.0,
             tray_bottom_y: 40.0,
         };
         let pos = host_position_for_anchor(&anchor, 280.0, 300.0, 0.0, 0.0, 1920.0, 1080.0);
-        assert_eq!(
-            pos.y,
-            anchor.tray_bottom_y + TRAY_POPOVER_GAP - TRAY_HOST_SHADOW_INSET
-        );
-        assert_eq!(pos.y + TRAY_HOST_SHADOW_INSET, anchor.tray_bottom_y + TRAY_POPOVER_GAP);
+        assert_eq!(pos.y, anchor.tray_bottom_y + TRAY_POPOVER_GAP);
     }
 }

@@ -1,4 +1,5 @@
-import { useEffect, useLayoutEffect, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useState, startTransition } from "react";
+import { registerTeamPerformanceViewHandler } from "../../app/appNavigation";
 import type { TeamPerformanceView } from "../../domain/performance";
 import type { PerformanceReviewTarget } from "../../domain/performance";
 import { usePerformanceData } from "../../app/PerformanceDataContext";
@@ -52,6 +53,14 @@ export function TeamPerformanceOverview({
     onOpenPerson(personId, tab);
   };
 
+  const selectTeamView = useCallback((view: TeamPerformanceView) => {
+    markPerformanceTabSwitch(view);
+    startTransition(() => {
+      setActiveView(view);
+    });
+    queueMicrotask(() => writePersistedTeamPerformanceView(view));
+  }, []);
+
   const visualForceSkeleton =
     import.meta.env.VITE_VISUAL_FIXTURE === "1" &&
     typeof window !== "undefined" &&
@@ -64,21 +73,27 @@ export function TeamPerformanceOverview({
   useLayoutEffect(() => {
     const pending = consumePendingTeamPerformanceView();
     if (pending) {
+      markPerformanceTabSwitch(pending);
       setActiveView(pending);
+      queueMicrotask(() => writePersistedTeamPerformanceView(pending));
     }
   }, []);
+
+  useEffect(() => {
+    registerTeamPerformanceViewHandler(selectTeamView);
+    return () => registerTeamPerformanceViewHandler(null);
+  }, [selectTeamView]);
 
   useEffect(() => {
     const handler = (event: Event) => {
       const tab = (event as CustomEvent<TeamPerformanceView>).detail;
       if (tab) {
-        writePersistedTeamPerformanceView(tab);
-        setActiveView(tab);
+        selectTeamView(tab);
       }
     };
     window.addEventListener("metrio-open-performance-tab", handler);
     return () => window.removeEventListener("metrio-open-performance-tab", handler);
-  }, []);
+  }, [selectTeamView]);
 
   void reviewTarget;
 
@@ -111,10 +126,7 @@ export function TeamPerformanceOverview({
       <div className="performance-dashboard" data-testid="performance-dashboard-skeleton">
         <TeamPerformanceSubnav
           activeView={activeView}
-          onChange={(view) => {
-            writePersistedTeamPerformanceView(view);
-            setActiveView(view);
-          }}
+          onChange={selectTeamView}
         />
         {activeView === "overview" ? <PerformanceOverviewSkeleton /> : null}
         {activeView === "people" ? <PerformanceTableSkeleton rows={6} columns={5} /> : null}
@@ -153,11 +165,7 @@ export function TeamPerformanceOverview({
       <PerformanceStatusBanner />
       <TeamPerformanceSubnav
         activeView={activeView}
-        onChange={(view) => {
-          markPerformanceTabSwitch(view);
-          writePersistedTeamPerformanceView(view);
-          setActiveView(view);
-        }}
+        onChange={selectTeamView}
       />
 
       {mountedViews.includes("overview") ? (
@@ -166,11 +174,7 @@ export function TeamPerformanceOverview({
             snapshot={snapshot}
             secondary={secondary}
             onOpenPerson={handleOpenPerson}
-            onViewAllRadar={() => {
-              markPerformanceTabSwitch("radar");
-              writePersistedTeamPerformanceView("radar");
-              setActiveView("radar");
-            }}
+            onViewAllRadar={() => selectTeamView("radar")}
             onOpenMetricDrilldown={openMetricDrilldown}
             onOpenTrendDrilldown={openTrendDrilldown}
           />
