@@ -280,6 +280,11 @@ export function TeamOverviewView({
             emptyMessage="No high-priority team actions right now."
             onOpen={handleAction}
             openLabel={actionOpenLabel}
+            teamPersons={teamPersons}
+            jiraBaseUrl={jiraBaseUrl}
+            onOpenJiraIssue={(_issueKey, url) => {
+              if (url) void openExternalUrl(url);
+            }}
           />
           <PerformanceRecommendations
             deliverySummary={deliverySummary}

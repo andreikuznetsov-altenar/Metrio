@@ -6,7 +6,14 @@ import {
   type DashboardQueueRow,
 } from "../../domain/actions/buildDashboardQueueRows";
 import type { ActionItem } from "../../domain/actions/actionTypes";
+import {
+  queueTaskCountExtraContext,
+  shouldLinkQueueTaskCount,
+  uniqueIssueKeysForAction,
+} from "../../domain/actions/dashboardQueueTaskCount";
+import type { Person } from "../../domain/people/types";
 import { badgeVariantForAttentionLabel } from "../../platform/attentionSemanticBadge";
+import { GroupedIssuePreview } from "../GroupedIssuePreview/GroupedIssuePreview";
 import { PerformanceTableColgroup } from "./PerformanceTableColgroup";
 import { METRIO_TABLE_CLASS, MetrioTableWrap } from "./MetrioTable";
 import { TableWorkLead } from "./TableWorkLead";
@@ -15,6 +22,49 @@ import { SortableTableHeader } from "./SortableTableHeader";
 import type { TableSortState } from "./tableSort";
 
 const QUEUE_COLGROUP = ["person", "reason", "issues", "action"] as const;
+
+function QueueContextCell({
+  row,
+  jiraBaseUrl,
+  teamPersons,
+  onOpenJiraIssue,
+}: {
+  row: DashboardQueueRow;
+  jiraBaseUrl: string;
+  teamPersons: Person[];
+  onOpenJiraIssue?: (issueKey: string, url?: string) => void;
+}) {
+  const title = row.contextLines.join(" · ");
+  if (!shouldLinkQueueTaskCount(row.item, row.contextLines)) {
+    return (
+      <span className="performance-table__clamp" title={title}>
+        {row.contextLines.length ? title : "—"}
+      </span>
+    );
+  }
+
+  const extra = queueTaskCountExtraContext(row.contextLines);
+  return (
+    <span
+      className="performance-table__clamp performance-table__context-with-count"
+      title={title}
+    >
+      <GroupedIssuePreview
+        issueKeys={uniqueIssueKeysForAction(row.item)}
+        jiraBaseUrl={jiraBaseUrl}
+        persons={teamPersons}
+        modalTitle={row.subject}
+        onOpenIssue={onOpenJiraIssue}
+      />
+      {extra.length ? (
+        <span className="performance-table__context-extra">
+          {" · "}
+          {extra.join(" · ")}
+        </span>
+      ) : null}
+    </span>
+  );
+}
 
 export interface DashboardActionQueueTableProps {
   workColumnLabel: string;
@@ -27,6 +77,8 @@ export interface DashboardActionQueueTableProps {
   jiraBaseUrl?: string;
   /** When false, headers are plain text with no sort affordance. */
   sortable?: boolean;
+  teamPersons?: Person[];
+  onOpenJiraIssue?: (issueKey: string, url?: string) => void;
 }
 
 export function DashboardActionQueueTable({
@@ -39,6 +91,8 @@ export function DashboardActionQueueTable({
   onToggleSort,
   jiraBaseUrl = "",
   sortable = true,
+  teamPersons = [],
+  onOpenJiraIssue,
 }: DashboardActionQueueTableProps) {
   const renderWorkLabel = (row: DashboardQueueRow) => (
     <JiraIssueText text={row.subject} jiraBaseUrl={jiraBaseUrl} />
@@ -126,10 +180,13 @@ export function DashboardActionQueueTable({
                   ))}
                 </div>
               </td>
-              <td>
-                <span className="performance-table__clamp" title={row.contextLines.join(" · ")}>
-                  {row.contextLines.length ? row.contextLines.join(" · ") : "—"}
-                </span>
+              <td data-testid="dashboard-action-context-cell">
+                <QueueContextCell
+                  row={row}
+                  jiraBaseUrl={jiraBaseUrl}
+                  teamPersons={teamPersons}
+                  onOpenJiraIssue={onOpenJiraIssue}
+                />
               </td>
               <td className="performance-table__action" data-testid="dashboard-action-cta-cell">
                 <Button

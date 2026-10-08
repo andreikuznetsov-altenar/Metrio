@@ -27,12 +27,12 @@ export function DashboardRecommendations({
 
   return (
     <section
-      className="executive-dashboard__span-12 executive-panel"
+      className="executive-dashboard__span-12 dashboard-section"
       aria-label="Recommendations"
       data-testid="dashboard-recommendations"
     >
-      <div className="executive-panel__title-row">
-        <h2 className="executive-panel__title">Recommendations</h2>
+      <div className="dashboard-section__title-row">
+        <h2 className="dashboard-section__title">Recommendations</h2>
         <span className="executive-recommendations__count">{items.length}</span>
       </div>
       <ul

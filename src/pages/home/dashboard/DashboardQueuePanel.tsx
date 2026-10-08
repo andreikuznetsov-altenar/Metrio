@@ -177,11 +177,11 @@ export function DashboardQueuePanel({
 
   return (
     <section
-      className="executive-panel executive-panel--flush action-queue--dashboard"
+      className="dashboard-section action-queue--dashboard"
       aria-label={title}
       data-testid={testId}
     >
-      <h2 className="executive-panel__title">{title}</h2>
+      <h2 className="dashboard-section__title">{title}</h2>
       {sourceItems.length === 0 ? (
         <p className="executive-secondary-line" role="status">{emptyMessage}</p>
       ) : (
@@ -196,6 +196,8 @@ export function DashboardQueuePanel({
             onToggleSort={sortable ? toggleSort : () => undefined}
             jiraBaseUrl={jiraBaseUrl}
             sortable={sortable}
+            teamPersons={teamPersons}
+            onOpenJiraIssue={onOpenJiraIssue}
           />
         </>
       )}
