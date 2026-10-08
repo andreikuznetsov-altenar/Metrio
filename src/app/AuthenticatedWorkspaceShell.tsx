@@ -37,7 +37,7 @@ export function AuthenticatedWorkspaceShell({
         />
       }
     >
-      <ScrollArea>
+      <ScrollArea className="metrio-scroll--primary">
         {isLoading ? (
           <WorkspaceContentLoadingState
             title="Loading your workspace…"

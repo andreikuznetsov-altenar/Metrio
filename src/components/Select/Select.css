@@ -39,13 +39,9 @@
   border-color: color-mix(in srgb, var(--color-border) 70%, var(--color-text-tertiary));
 }
 
-.select-trigger:focus:not(:focus-visible) {
-  outline: none;
-  box-shadow: none;
-}
-
-.select-trigger[data-state="open"] {
-  border-color: var(--color-focus-border);
+/* Active/focus/open border: canonical rule in ui-interaction-system.css */
+.select-trigger:focus,
+.select-trigger:focus-visible {
   outline: none;
   box-shadow: none;
 }

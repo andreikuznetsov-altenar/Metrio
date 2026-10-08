@@ -23,7 +23,6 @@ import { SettingsPage } from "../pages/settings/SettingsPage";
 import type { SettingsSection } from "../pages/settings/types";
 import { MetrioAppHeader } from "../shell/MetrioAppHeader";
 import { CommandPalette } from "../shell/CommandPalette";
-import { PersonBriefDrawer } from "../pages/performance/PersonBriefDrawer";
 import {
   PersonNavigationProvider,
   usePersonNavigation,
@@ -270,13 +269,6 @@ function AppLayoutShell({
     setSettingsSection("company-app");
   }, [setSettingsOpen, setSettingsSection]);
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
-  const [personBriefPersonId, setPersonBriefPersonId] = useState<string | null>(
-    null,
-  );
-  const [personBriefPeriod, setPersonBriefPeriod] = useState<
-    import("../domain/performance").DateRangeKey | undefined
-  >(undefined);
-  const [personBriefPrepOneOnOne, setPersonBriefPrepOneOnOne] = useState(false);
   const [projectCockpitKey, setProjectCockpitKey] = useState<string | null>(
     null,
   );
@@ -312,25 +304,6 @@ function AppLayoutShell({
     void loadPreferences().then((prefs) => {
       setPaletteJiraBaseUrl(resolveJiraBaseUrl(prefs));
     });
-  }, []);
-
-  useEffect(() => {
-    const onBrief = (event: Event) => {
-      const detail = (
-        event as CustomEvent<{
-          personId: string;
-          periodPreset?: import("../domain/performance").DateRangeKey;
-          prepForOneOnOne?: boolean;
-        }>
-      ).detail;
-      if (detail?.personId) {
-        setPersonBriefPersonId(detail.personId);
-        setPersonBriefPeriod(detail.periodPreset);
-        setPersonBriefPrepOneOnOne(Boolean(detail.prepForOneOnOne));
-      }
-    };
-    window.addEventListener("metrio-open-person-brief", onBrief);
-    return () => window.removeEventListener("metrio-open-person-brief", onBrief);
   }, []);
 
   useEffect(() => {
@@ -463,15 +436,11 @@ function AppLayoutShell({
       prepareNextOneOnOne: () => {
         const next = readCalendarCache()?.oneOnOnes[0];
         if (next?.otherPersonId) {
-          window.dispatchEvent(
-            new CustomEvent("metrio-open-person-brief", {
-              detail: {
-                personId: next.otherPersonId,
-                prepForOneOnOne: true,
-                periodPreset: "30d",
-              },
-            }),
-          );
+          openPerson(next.otherPersonId, "overview", {
+            view: "brief",
+            prepForOneOnOne: true,
+            periodPreset: "30d",
+          });
           return;
         }
         setActiveRoute("home");
@@ -609,7 +578,7 @@ function AppLayoutShell({
         }
         pageToolbar={pageToolbar}
       >
-        <ScrollArea>{mainContent}</ScrollArea>
+        <ScrollArea className="metrio-scroll--primary">{mainContent}</ScrollArea>
       </AppShell>
       <NotificationCenter
         open={notificationsOpen}
@@ -632,17 +601,6 @@ function AppLayoutShell({
           feedbackEnabled,
           surveyManagementEnabled: orgFeatureAccess.canViewSurveyManagement,
         }}
-      />
-      <PersonBriefDrawer
-        personId={personBriefPersonId}
-        open={personBriefPersonId != null}
-        onClose={() => {
-          setPersonBriefPersonId(null);
-          setPersonBriefPeriod(undefined);
-          setPersonBriefPrepOneOnOne(false);
-        }}
-        initialPeriodPreset={personBriefPeriod}
-        prepForOneOnOne={personBriefPrepOneOnOne}
       />
       <ProjectCockpitDrawer
         projectKey={projectCockpitKey}

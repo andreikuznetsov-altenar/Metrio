@@ -56,7 +56,7 @@ const workspace: PersonAnalyticsWorkspace = {
 describe("PersonDetailDrawer header", () => {
   afterEach(() => cleanup());
 
-  it("places Brief before Close in the drawer header toolbar", () => {
+  it("places Profile/Brief tabs before Close in the drawer header toolbar", () => {
     mockUsePerformanceData.mockReturnValue({
       viewModels: {
         getPerson: () => null,
@@ -77,9 +77,15 @@ describe("PersonDetailDrawer header", () => {
 
     const toolbar = document.querySelector(".drawer--person-detail .drawer__header-toolbar");
     expect(toolbar).toBeTruthy();
+    const tabs = toolbar!.querySelector(".person-drawer-view-tabs");
+    expect(tabs).toBeTruthy();
+    expect(tabs).toHaveTextContent("Profile");
+    expect(tabs).toHaveTextContent("Brief");
     const buttons = toolbar!.querySelectorAll("button");
-    expect(buttons[0]).toHaveTextContent("Brief");
     expect(buttons[buttons.length - 1]).toHaveAccessibleName(/Close drawer/i);
     expect(screen.getByText("Sam Dev")).toBeTruthy();
+    expect(
+      document.querySelector('[data-person-drawer-view="profile"]:not([hidden])'),
+    ).toBeTruthy();
   });
 });

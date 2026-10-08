@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { Button } from "../../components/Button/Button";
 import { DrawerPanelPlaceholder } from "../../components/Drawer/DrawerPanelPlaceholder";
 import { DrawerStack } from "../../components/Drawer/DrawerStack";
@@ -14,6 +14,7 @@ import { ManagerNewStarterContext } from "../onboarding/ManagerNewStarterContext
 import {
   useOptionalPerformanceAnalytics,
   type PersonDrawerTab,
+  type PersonDrawerView,
 } from "../../app/performanceAnalyticsContext";
 import { PersonBriefDrawerPanel } from "./PersonBriefDrawer";
 import type { WorkHistoryRow } from "../../domain/performance";
@@ -47,6 +48,10 @@ export interface PersonDetailDrawerProps {
   open: boolean;
   activeTab?: PersonDrawerTab;
   onTabChange?: (tab: PersonDrawerTab) => void;
+  /** Profile | Brief — same drawer shell, content only. */
+  activeView?: PersonDrawerView;
+  onViewChange?: (view: PersonDrawerView) => void;
+  prepForOneOnOne?: boolean;
   onClose: () => void;
   onClosed?: () => void;
 }
@@ -77,6 +82,9 @@ export function PersonDetailDrawer({
   open,
   activeTab = "overview",
   onTabChange,
+  activeView: activeViewProp,
+  onViewChange,
+  prepForOneOnOne = false,
   onClose,
   onClosed,
 }: PersonDetailDrawerProps) {
@@ -102,15 +110,58 @@ export function PersonDetailDrawer({
   const [historyFilter, setHistoryFilter] = useState<HistoryFilter>("all");
   const [historyVisibleCount, setHistoryVisibleCount] = useState(HISTORY_PAGE_SIZE);
   const [jiraBaseUrl, setJiraBaseUrl] = useState("");
-  const [briefOpen, setBriefOpen] = useState(false);
+  const [internalView, setInternalView] = useState<PersonDrawerView>("profile");
+  const [briefMounted, setBriefMounted] = useState(false);
+  const activeView = activeViewProp ?? internalView;
+  const setActiveView = (view: PersonDrawerView) => {
+    if (!showBriefAction && view === "brief") return;
+    onViewChange?.(view);
+    if (activeViewProp === undefined) setInternalView(view);
+  };
+  const scrollByView = useRef({ profile: 0, brief: 0 });
+  const previousViewRef = useRef<PersonDrawerView>(activeView);
 
   useEffect(() => {
     if (open) {
       setHistoryVisibleCount(HISTORY_PAGE_SIZE);
-    } else {
-      setBriefOpen(false);
+    } else if (activeViewProp === undefined) {
+      setInternalView("profile");
+      setBriefMounted(false);
+      scrollByView.current = { profile: 0, brief: 0 };
+      previousViewRef.current = "profile";
     }
-  }, [open, personId, historyPeriod, historyFilter]);
+  }, [open, historyPeriod, historyFilter, activeViewProp]);
+
+  useEffect(() => {
+    scrollByView.current = { profile: 0, brief: 0 };
+    previousViewRef.current = activeViewProp ?? "profile";
+    if (activeViewProp === undefined) {
+      setInternalView("profile");
+      setBriefMounted(false);
+    } else {
+      setBriefMounted(activeViewProp === "brief");
+    }
+  }, [personId, activeViewProp]);
+
+  useEffect(() => {
+    if (activeView === "brief" && showBriefAction) {
+      setBriefMounted(true);
+    }
+  }, [activeView, showBriefAction]);
+
+  useLayoutEffect(() => {
+    const root = document.querySelector(
+      '[data-testid="person-detail-drawer"]',
+    );
+    const body = root?.querySelector(".drawer__body") as HTMLElement | null;
+    if (!body) return;
+    const previous = previousViewRef.current;
+    if (previous !== activeView) {
+      scrollByView.current[previous] = body.scrollTop;
+      body.scrollTop = scrollByView.current[activeView] ?? 0;
+      previousViewRef.current = activeView;
+    }
+  }, [activeView]);
 
   useEffect(() => {
     void loadPreferences().then((prefs) => {
@@ -459,63 +510,71 @@ export function PersonDetailDrawer({
   const displayName = workspace.personName || person?.bamboo.displayName || "—";
   const jobTitle = workspace.role || person?.bamboo.jobTitle || "—";
 
+  const briefActive = activeView === "brief" && showBriefAction;
+
   return (
     <DrawerStack
       open={open}
-      activePanel={briefOpen ? "secondary" : "primary"}
+      activePanel="primary"
       onClose={onClose}
       onClosed={onClosed}
-      onBack={() => setBriefOpen(false)}
       ariaLabel={
-        briefOpen
+        briefActive
           ? `1:1 brief for ${displayName}`
           : `Person detail for ${displayName}`
       }
       size="person"
       className="drawer--person-detail"
-      testId={briefOpen ? "person-brief-drawer" : "person-detail-drawer"}
+      testId="person-detail-drawer"
       header={
-        briefOpen ? (
-          <PersonIdentityHeader
-            personId={personId}
-            displayName={displayName}
-            jobTitle={jobTitle}
-            person={person}
-            availabilityLabel={workspace.availability}
-            workloadLabel={workspace.workload}
-          />
-        ) : (
-          <PersonIdentityHeader
-            personId={personId}
-            displayName={displayName}
-            jobTitle={jobTitle}
-            person={person}
-            availabilityLabel={workspace.availability}
-            workloadLabel={workspace.workload}
-          />
-        )
+        <PersonIdentityHeader
+          personId={personId}
+          displayName={displayName}
+          jobTitle={jobTitle}
+          person={person}
+          availabilityLabel={workspace.availability}
+          workloadLabel={workspace.workload}
+        />
       }
       headerActions={
-        !briefOpen && showBriefAction ? (
-          <Button
-            type="button"
-            variant="secondary"
-            onClick={() => setBriefOpen(true)}
-          >
-            Brief
-          </Button>
+        showBriefAction ? (
+          <SegmentedControl
+            ariaLabel="Person drawer view"
+            className="person-drawer-view-tabs"
+            options={[
+              { value: "profile", label: "Profile" },
+              { value: "brief", label: "Brief" },
+            ]}
+            value={briefActive ? "brief" : "profile"}
+            onChange={setActiveView}
+          />
         ) : null
       }
     >
-      {briefOpen ? (
-        <PersonBriefDrawerPanel personId={personId} />
-      ) : (
+      <div
+        className="person-drawer-view"
+        data-person-drawer-view="profile"
+        hidden={briefActive}
+      >
         <Tabs
           items={tabs}
           value={activeTab}
           onValueChange={(value) => onTabChange?.(value as PersonDrawerTab)}
         />
-      )}
+      </div>
+      {showBriefAction && briefMounted ? (
+        <div
+          className="person-drawer-view"
+          data-person-drawer-view="brief"
+          data-testid="person-brief-drawer"
+          hidden={!briefActive}
+        >
+          <PersonBriefDrawerPanel
+            personId={personId}
+            prepForOneOnOne={prepForOneOnOne}
+          />
+        </div>
+      ) : null}
     </DrawerStack>
   );
 }

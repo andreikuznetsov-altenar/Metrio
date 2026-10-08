@@ -49,10 +49,10 @@ describe("UI Repair Pass 13.8A global primitives", () => {
     expect(source).toContain("shouldAppendAttentionSubjectTitle");
   });
 
-  it("tabular modal table wrap uses overlay scroll without stable gutter", () => {
+  it("tabular modal table wrap uses secondary hidden-thumb scroll without stable gutter", () => {
     const css = read("src/components/Modal/tabular-modal.css");
     expect(css).toContain("scrollbar-gutter: auto");
     const modal = read("src/components/TaskListModal/TaskListModal.tsx");
-    expect(modal).toContain("metrio-scroll--overlay");
+    expect(modal).toContain("metrio-scroll--hidden-thumb");
   });
 });

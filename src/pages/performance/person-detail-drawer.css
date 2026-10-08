@@ -79,6 +79,27 @@
   align-items: flex-start;
 }
 
+.drawer--person-detail .person-drawer-view-tabs {
+  flex-shrink: 0;
+  min-height: calc(var(--control-height) - 4px);
+  padding: 2px;
+}
+
+.drawer--person-detail .person-drawer-view-tabs .segmented-control__option {
+  min-height: calc(var(--control-height) - 10px);
+  padding: 0 var(--space-2);
+  font-size: 12px;
+}
+
+.drawer--person-detail .person-drawer-view-tabs .segmented-control__indicator {
+  top: 2px;
+  bottom: 2px;
+}
+
+.person-drawer-view[hidden] {
+  display: none;
+}
+
 .drawer__body .tabs {
   gap: var(--space-3);
 }

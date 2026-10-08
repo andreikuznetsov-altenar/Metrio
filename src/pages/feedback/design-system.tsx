@@ -93,7 +93,13 @@ export function MetrioScrollArea({
   children: ReactNode;
   className?: string;
 }) {
-  return <ScrollArea className={className}>{children}</ScrollArea>;
+  return (
+    <ScrollArea
+      className={["metrio-scroll--primary", className].filter(Boolean).join(" ")}
+    >
+      {children}
+    </ScrollArea>
+  );
 }
 
 export function Section({

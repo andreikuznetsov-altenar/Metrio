@@ -279,7 +279,7 @@ export function NotificationCenter({
             onChange={setSourceFilter}
           />
         </div>
-        <div className="notification-center__main metrio-scroll">
+        <div className="notification-center__main metrio-scroll metrio-scroll--hidden-thumb">
         {confirmClear ? (
           <div className="notification-center__confirm" role="alertdialog" aria-label="Clear notifications">
             <p className="notification-center__confirm-text">

@@ -104,7 +104,9 @@ export function Drawer({
             </IconButton>
           </div>
         </div>
-        <div className="drawer__body metrio-scroll">{children}</div>
+        <div className="drawer__body metrio-scroll metrio-scroll--hidden-thumb">
+          {children}
+        </div>
       </aside>
     </div>,
   );

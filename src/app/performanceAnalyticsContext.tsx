@@ -19,19 +19,23 @@ import {
 } from "../pages/performance/analyticsDrilldownModel";
 
 export type PersonDrawerTab = "overview" | "work" | "history";
+export type PersonDrawerView = "profile" | "brief";
 
 export interface OpenPersonDrawerOptions {
   personId: string;
   tab?: PersonDrawerTab;
+  view?: PersonDrawerView;
 }
 
 export interface PerformanceAnalyticsContextValue {
   personId: string | null;
   personTab: PersonDrawerTab;
+  personDrawerView: PersonDrawerView;
   personDrawerOpen: boolean;
   openPersonDrawer: (options: OpenPersonDrawerOptions) => void;
   closePersonDrawer: () => void;
   clearPersonDrawer: () => void;
+  setPersonDrawerView: (view: PersonDrawerView) => void;
   drilldownOpen: boolean;
   drilldownRequest: AnalyticsDrilldownRequest | null;
   drilldownEvidence: ReturnType<typeof useAnalyticsEvidence>;
@@ -108,6 +112,8 @@ export function PerformanceAnalyticsProvider({
   const { data } = usePerformanceData();
   const [personId, setPersonId] = useState<string | null>(null);
   const [personTab, setPersonTab] = useState<PersonDrawerTab>("overview");
+  const [personDrawerView, setPersonDrawerView] =
+    useState<PersonDrawerView>("profile");
   const [personDrawerOpen, setPersonDrawerOpen] = useState(false);
   const [drilldownOpen, setDrilldownOpen] = useState(false);
   const [drilldownRequest, setDrilldownRequest] =
@@ -133,10 +139,15 @@ export function PerformanceAnalyticsProvider({
   ]);
 
   const openPersonDrawer = useCallback(
-    ({ personId: nextPersonId, tab = "overview" }: OpenPersonDrawerOptions) => {
+    ({
+      personId: nextPersonId,
+      tab = "overview",
+      view = "profile",
+    }: OpenPersonDrawerOptions) => {
       if (!canOpenPerson(nextPersonId)) return;
       setPersonId(nextPersonId);
       setPersonTab(tab);
+      setPersonDrawerView(view);
       setPersonDrawerOpen(true);
     },
     [canOpenPerson],
@@ -149,6 +160,7 @@ export function PerformanceAnalyticsProvider({
   const clearPersonDrawer = useCallback(() => {
     setPersonId(null);
     setPersonTab("overview");
+    setPersonDrawerView("profile");
   }, []);
 
   const openDrilldown = useCallback(
@@ -255,10 +267,12 @@ export function PerformanceAnalyticsProvider({
     (): PerformanceAnalyticsContextValue => ({
       personId,
       personTab,
+      personDrawerView,
       personDrawerOpen,
       openPersonDrawer,
       closePersonDrawer,
       clearPersonDrawer,
+      setPersonDrawerView,
       drilldownOpen,
       drilldownRequest,
       drilldownEvidence,
@@ -274,6 +288,7 @@ export function PerformanceAnalyticsProvider({
     [
       personId,
       personTab,
+      personDrawerView,
       personDrawerOpen,
       openPersonDrawer,
       closePersonDrawer,
@@ -315,6 +330,7 @@ export function dispatchOpenPersonBrief(detail: {
   periodPreset?: import("../domain/performance").DateRangeKey;
   prepForOneOnOne?: boolean;
 }): void {
-  dispatchClosePersonDrawer();
-  window.dispatchEvent(new CustomEvent("metrio-open-person-brief", { detail }));
+  window.dispatchEvent(
+    new CustomEvent("metrio-open-person-brief", { detail }),
+  );
 }

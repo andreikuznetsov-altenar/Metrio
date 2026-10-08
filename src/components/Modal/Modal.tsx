@@ -130,7 +130,9 @@ export function Modal({
             <CloseIcon />
           </IconButton>
         </header>
-        <div className="metrio-modal__body metrio-scroll">{children}</div>
+        <div className="metrio-modal__body metrio-scroll metrio-scroll--hidden-thumb">
+          {children}
+        </div>
       </div>
     </div>,
   );

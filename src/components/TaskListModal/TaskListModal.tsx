@@ -31,7 +31,7 @@ export function TaskListModal({
             className="metrio-empty-state--modal"
           />
         ) : (
-          <MetrioTableWrap className="metrio-scroll metrio-scroll--overlay">
+          <MetrioTableWrap className="metrio-scroll metrio-scroll--hidden-thumb">
             <table className={`${METRIO_TABLE_CLASS} performance-table--task-list`}>
               <PerformanceTableColgroup
                 columns={["issueKey", "title", "date", "date", "status"]}

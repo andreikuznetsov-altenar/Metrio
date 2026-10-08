@@ -166,7 +166,10 @@ export function CommandPalette({
         {remoteHint ? (
           <p className="command-palette__hint" role="status">{remoteHint}</p>
         ) : null}
-        <div className="command-palette__list" role="listbox">
+        <div
+          className="command-palette__list metrio-scroll metrio-scroll--hidden-thumb"
+          role="listbox"
+        >
           {flatResults.length === 0 ? (
             <p className="command-palette__empty">No matches</p>
           ) : (

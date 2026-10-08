@@ -21,17 +21,15 @@
   padding-inline: calc(var(--space-3) - 1px);
 }
 
+/*
+ * Canonical selector / date-picker active state.
+ * One blue control border for focus-visible and open — never outline + ring.
+ */
 .select-trigger:focus-visible,
-.metrio-date-picker__trigger:focus-visible,
-.metrio-date-picker__input:focus-visible {
-  outline: none;
-  box-shadow: none;
-  border-color: var(--color-focus-border);
-  border-width: 1px;
-}
-
 .select-trigger[data-state="open"],
-.metrio-date-picker__trigger[data-state="open"] {
+.metrio-date-picker__trigger:focus-visible,
+.metrio-date-picker__trigger[data-state="open"],
+.metrio-date-picker__input:focus-visible {
   outline: none;
   box-shadow: none;
   border-color: var(--color-focus-border);
@@ -87,8 +85,32 @@
   text-decoration: none;
 }
 
-/* —— Shared overlay scrollbars (4px thumb, 4px inset, no layout gutter) —— */
-.metrio-scroll {
+/*
+ * Shared scroll utilities.
+ * SECONDARY (default .metrio-scroll / --hidden-thumb): scrollable, invisible thumb, no width shift.
+ * PRIMARY (.metrio-scroll--primary): visible Metrio overlay scrollbar on main screens only.
+ */
+.metrio-scroll,
+.metrio-scroll--hidden-thumb,
+.metrio-scroll--overlay,
+.metrio-scroll--side-panel {
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scroll-behavior: smooth;
+  scrollbar-gutter: auto;
+  scrollbar-width: none;
+}
+
+.metrio-scroll::-webkit-scrollbar,
+.metrio-scroll--hidden-thumb::-webkit-scrollbar,
+.metrio-scroll--overlay::-webkit-scrollbar,
+.metrio-scroll--side-panel::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+}
+
+.metrio-scroll--primary {
   overflow-x: hidden;
   overflow-y: auto;
   overscroll-behavior: contain;
@@ -98,21 +120,16 @@
   scrollbar-color: var(--scrollbar-thumb) transparent;
 }
 
-.metrio-scroll--overlay,
-.metrio-scroll--side-panel {
-  scrollbar-gutter: auto;
-}
-
-.metrio-scroll::-webkit-scrollbar {
+.metrio-scroll--primary::-webkit-scrollbar {
   width: calc(var(--metrio-scrollbar-inset, 4px) + var(--metrio-scrollbar-size, 4px));
   height: calc(var(--metrio-scrollbar-inset, 4px) + var(--metrio-scrollbar-size, 4px));
 }
 
-.metrio-scroll::-webkit-scrollbar-track {
+.metrio-scroll--primary::-webkit-scrollbar-track {
   background: transparent;
 }
 
-.metrio-scroll::-webkit-scrollbar-thumb {
+.metrio-scroll--primary::-webkit-scrollbar-thumb {
   background: var(--scrollbar-thumb);
   border-right: var(--metrio-scrollbar-inset, 4px) solid transparent;
   background-clip: padding-box;
@@ -121,8 +138,8 @@
   transition: background var(--motion-hover) var(--transition-easing);
 }
 
-.metrio-scroll:hover::-webkit-scrollbar-thumb,
-.metrio-scroll:focus-within::-webkit-scrollbar-thumb {
+.metrio-scroll--primary:hover::-webkit-scrollbar-thumb,
+.metrio-scroll--primary:focus-within::-webkit-scrollbar-thumb {
   background: var(--scrollbar-thumb-hover);
   background-clip: padding-box;
 }
@@ -161,11 +178,15 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .metrio-scroll {
+  .metrio-scroll,
+  .metrio-scroll--primary,
+  .metrio-scroll--hidden-thumb,
+  .metrio-scroll--overlay,
+  .metrio-scroll--side-panel {
     scroll-behavior: auto;
   }
 
-  .metrio-scroll::-webkit-scrollbar-thumb {
+  .metrio-scroll--primary::-webkit-scrollbar-thumb {
     transition: none;
   }
 }

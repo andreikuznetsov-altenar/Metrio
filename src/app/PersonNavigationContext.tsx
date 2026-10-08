@@ -10,13 +10,24 @@ import {
 } from "react";
 import { canOpenPersonDetail } from "../domain/personAccess";
 import { PersonDetailDrawer } from "../pages/performance/PersonDetailDrawer";
-import type { PersonDrawerTab } from "./performanceAnalyticsContext";
+import type {
+  PersonDrawerTab,
+  PersonDrawerView,
+} from "./performanceAnalyticsContext";
 import { useCurrentUser } from "./CurrentUserContext";
 import { usePerformanceData } from "./PerformanceDataContext";
+import type { DateRangeKey } from "../domain/performance";
+
+export type OpenPersonOptions = {
+  view?: PersonDrawerView;
+  periodPreset?: DateRangeKey;
+  prepForOneOnOne?: boolean;
+};
 
 export type OpenPerson = (
   personId: string,
   tab?: PersonDrawerTab,
+  options?: OpenPersonOptions,
 ) => void;
 
 interface PersonNavigationValue {
@@ -34,10 +45,12 @@ export function PersonNavigationProvider({ children }: { children: ReactNode }) 
   const routeHandlerRef = useRef<OpenPerson | null>(null);
   const [personId, setPersonId] = useState<string | null>(null);
   const [tab, setTab] = useState<PersonDrawerTab>("overview");
+  const [view, setView] = useState<PersonDrawerView>("profile");
+  const [prepForOneOnOne, setPrepForOneOnOne] = useState(false);
   const [open, setOpen] = useState(false);
 
   const openPerson = useCallback<OpenPerson>(
-    (nextPersonId, nextTab = "overview") => {
+    (nextPersonId, nextTab = "overview", options) => {
       if (
         performanceControlsDisabled ||
         !canOpenPersonDetail(currentUser, nextPersonId)
@@ -45,11 +58,13 @@ export function PersonNavigationProvider({ children }: { children: ReactNode }) 
         return;
       }
       if (routeHandlerRef.current) {
-        routeHandlerRef.current(nextPersonId, nextTab);
+        routeHandlerRef.current(nextPersonId, nextTab, options);
         return;
       }
       setPersonId(nextPersonId);
       setTab(nextTab);
+      setView(options?.view ?? "profile");
+      setPrepForOneOnOne(Boolean(options?.prepForOneOnOne));
       setOpen(true);
     },
     [currentUser, performanceControlsDisabled],
@@ -70,20 +85,54 @@ export function PersonNavigationProvider({ children }: { children: ReactNode }) 
   useEffect(() => {
     const handler = (event: Event) => {
       const detail = (
-        event as CustomEvent<string | { personId: string; tab?: PersonDrawerTab }>
+        event as CustomEvent<
+          | string
+          | {
+              personId: string;
+              tab?: PersonDrawerTab;
+              view?: PersonDrawerView;
+              periodPreset?: DateRangeKey;
+              prepForOneOnOne?: boolean;
+            }
+        >
       ).detail;
       let nextId: string | null = null;
       let nextTab: PersonDrawerTab = "overview";
+      let options: OpenPersonOptions | undefined;
       if (typeof detail === "string" && detail) {
         nextId = detail;
       } else if (detail && typeof detail === "object" && detail.personId) {
         nextId = detail.personId;
         nextTab = detail.tab ?? "overview";
+        options = {
+          view: detail.view ?? "profile",
+          periodPreset: detail.periodPreset,
+          prepForOneOnOne: detail.prepForOneOnOne,
+        };
       }
-      if (nextId) openPerson(nextId, nextTab);
+      if (nextId) openPerson(nextId, nextTab, options);
+    };
+    const onBrief = (event: Event) => {
+      const detail = (
+        event as CustomEvent<{
+          personId: string;
+          periodPreset?: DateRangeKey;
+          prepForOneOnOne?: boolean;
+        }>
+      ).detail;
+      if (!detail?.personId) return;
+      openPerson(detail.personId, "overview", {
+        view: "brief",
+        periodPreset: detail.periodPreset,
+        prepForOneOnOne: detail.prepForOneOnOne,
+      });
     };
     window.addEventListener("metrio-open-person", handler);
-    return () => window.removeEventListener("metrio-open-person", handler);
+    window.addEventListener("metrio-open-person-brief", onBrief);
+    return () => {
+      window.removeEventListener("metrio-open-person", handler);
+      window.removeEventListener("metrio-open-person-brief", onBrief);
+    };
   }, [openPerson]);
 
   const value = useMemo(
@@ -100,10 +149,15 @@ export function PersonNavigationProvider({ children }: { children: ReactNode }) 
           open={open}
           activeTab={tab}
           onTabChange={setTab}
+          activeView={view}
+          onViewChange={setView}
+          prepForOneOnOne={prepForOneOnOne}
           onClose={() => setOpen(false)}
           onClosed={() => {
             setPersonId(null);
             setTab("overview");
+            setView("profile");
+            setPrepForOneOnOne(false);
           }}
         />
       ) : null}

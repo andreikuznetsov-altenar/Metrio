@@ -7,6 +7,13 @@ export interface ScrollAreaProps {
 }
 
 export function ScrollArea({ children, className }: ScrollAreaProps) {
-  const classes = ["ui-scroll-area", className].filter(Boolean).join(" ");
+  const classes = [
+    "ui-scroll-area",
+    "metrio-scroll",
+    "metrio-scroll--hidden-thumb",
+    className,
+  ]
+    .filter(Boolean)
+    .join(" ");
   return <div className={classes}>{children}</div>;
 }

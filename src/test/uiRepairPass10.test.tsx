@@ -19,16 +19,20 @@ describe("UI Repair Pass 10", () => {
   });
 
   it("select and date picker expose open accent border rules", async () => {
-    const selectCss = await readFile(
-      resolve(import.meta.dirname, "../components/Select/Select.css"),
-      "utf8",
-    );
     const interactionCss = await readFile(
       resolve(import.meta.dirname, "../styles/ui-interaction-system.css"),
       "utf8",
     );
-    expect(selectCss).toContain('[data-state="open"]');
-    expect(interactionCss).toContain(".metrio-date-picker__trigger[data-state=\"open\"]");
+    expect(interactionCss).toContain('.select-trigger[data-state="open"]');
+    expect(interactionCss).toContain(
+      '.metrio-date-picker__trigger[data-state="open"]',
+    );
+    expect(interactionCss).toMatch(
+      /\.select-trigger:focus-visible[\s\S]*border-color:\s*var\(--color-focus-border\)/,
+    );
+    expect(interactionCss).toMatch(
+      /\.metrio-date-picker__trigger:focus-visible[\s\S]*border-color:\s*var\(--color-focus-border\)/,
+    );
   });
 
   it("attention signals table shares colgroup column contract", async () => {

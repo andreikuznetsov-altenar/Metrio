@@ -133,7 +133,9 @@ export function DrawerStack({
             </IconButton>
           </div>
         </div>
-        <div className="drawer__body metrio-scroll">{children}</div>
+        <div className="drawer__body metrio-scroll metrio-scroll--hidden-thumb">
+          {children}
+        </div>
       </aside>
     </div>,
   );

@@ -104,7 +104,7 @@
 
 .command-palette__list {
   flex: 1;
-  overflow: auto;
+  min-height: 0;
   padding: var(--space-2) 0;
 }
 

@@ -60,13 +60,13 @@ describe("person experience pass 4B", () => {
     ).toBe("On leave");
   });
 
-  it("dispatchOpenPersonBrief closes person drawer before opening brief", () => {
+  it("dispatchOpenPersonBrief opens brief in the same person drawer without closing first", () => {
     const closeHandler = vi.fn();
     const briefHandler = vi.fn();
     window.addEventListener(PERSON_DRAWER_CLOSE_EVENT, closeHandler);
     window.addEventListener("metrio-open-person-brief", briefHandler);
     dispatchOpenPersonBrief({ personId: "person-01", prepForOneOnOne: true });
-    expect(closeHandler).toHaveBeenCalledTimes(1);
+    expect(closeHandler).not.toHaveBeenCalled();
     expect(briefHandler).toHaveBeenCalledTimes(1);
     const briefDetail = (briefHandler.mock.calls[0]?.[0] as CustomEvent).detail;
     expect(briefDetail).toEqual({ personId: "person-01", prepForOneOnOne: true });

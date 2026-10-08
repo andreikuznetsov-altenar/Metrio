@@ -51,10 +51,12 @@ function PerformancePageBody({ reviewTarget }: PerformancePageProps) {
   const {
     personId,
     personTab,
+    personDrawerView,
     personDrawerOpen,
     openPersonDrawer,
     closePersonDrawer,
     clearPersonDrawer,
+    setPersonDrawerView,
     drilldownOpen,
     drilldownEvidence,
     closeDrilldown,
@@ -72,9 +74,17 @@ function PerformancePageBody({ reviewTarget }: PerformancePageProps) {
   void asEmployeeReviewTarget(reviewTarget);
 
   const handleOpenPerson = useCallback(
-    (nextPersonId: string, tab?: PersonDrawerTab) => {
+    (
+      nextPersonId: string,
+      tab?: PersonDrawerTab,
+      options?: { view?: "profile" | "brief"; prepForOneOnOne?: boolean },
+    ) => {
       if (performanceControlsDisabled) return;
-      openPersonDrawer({ personId: nextPersonId, tab });
+      openPersonDrawer({
+        personId: nextPersonId,
+        tab,
+        view: options?.view ?? "profile",
+      });
     },
     [openPersonDrawer, performanceControlsDisabled],
   );
@@ -121,7 +131,11 @@ function PerformancePageBody({ reviewTarget }: PerformancePageProps) {
           personId={personId}
           open={personDrawerOpen}
           activeTab={personTab}
-          onTabChange={(tab) => openPersonDrawer({ personId, tab })}
+          onTabChange={(tab) =>
+            openPersonDrawer({ personId, tab, view: personDrawerView })
+          }
+          activeView={personDrawerView}
+          onViewChange={setPersonDrawerView}
           onClose={closePersonDrawer}
           onClosed={clearPersonDrawer}
         />
