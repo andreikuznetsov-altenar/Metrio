@@ -87,11 +87,10 @@ function PerformancePageBody({ reviewTarget }: PerformancePageProps) {
   useEffect(() => {
     const onClosePerson = () => {
       closePersonDrawer();
-      clearPersonDrawer();
     };
     window.addEventListener(PERSON_DRAWER_CLOSE_EVENT, onClosePerson);
     return () => window.removeEventListener(PERSON_DRAWER_CLOSE_EVENT, onClosePerson);
-  }, [closePersonDrawer, clearPersonDrawer]);
+  }, [closePersonDrawer]);
 
   const content = (
     <PerformanceRoleRouter

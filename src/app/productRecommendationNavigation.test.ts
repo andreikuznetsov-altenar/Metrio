@@ -1,7 +1,12 @@
 // @vitest-environment jsdom
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import type { ProductRecommendation } from "../domain/recommendations/buildProductRecommendations";
 import { navigateProductRecommendation } from "./productRecommendationNavigation";
+import { getAppNavigationState, resetAppNavigationStateForTests } from "./navigationStore";
+
+afterEach(() => {
+  resetAppNavigationStateForTests();
+});
 
 function recommendation(
   actionKind: ProductRecommendation["actionKind"],
@@ -20,27 +25,6 @@ function recommendation(
 }
 
 describe("product recommendation interaction matrix", () => {
-  const capturePerformanceRoute = (action: () => void) => {
-    const routes: string[] = [];
-    const tabs: string[] = [];
-    const onRoute = (event: Event) =>
-      routes.push((event as CustomEvent<string>).detail);
-    const onTab = (event: Event) =>
-      tabs.push((event as CustomEvent<string>).detail);
-    window.addEventListener("metrio-navigate-route", onRoute);
-    window.addEventListener("metrio-open-performance-tab", onTab);
-    vi.useFakeTimers();
-    try {
-      action();
-      vi.runAllTimers();
-    } finally {
-      window.removeEventListener("metrio-navigate-route", onRoute);
-      window.removeEventListener("metrio-open-performance-tab", onTab);
-      vi.useRealTimers();
-    }
-    return { routes, tabs };
-  };
-
   it("routes View person to the canonical person handler", () => {
     const openPerson = vi.fn();
     navigateProductRecommendation(
@@ -51,25 +35,25 @@ describe("product recommendation interaction matrix", () => {
   });
 
   it("routes Open Performance to Performance Overview", () => {
-    const events = capturePerformanceRoute(() =>
-      navigateProductRecommendation(recommendation("open_performance"), {
-        openPerson: vi.fn(),
-        openJira: vi.fn(),
-      }),
-    );
-    expect(events.routes).toEqual(["performance"]);
-    expect(events.tabs).toEqual(["overview"]);
+    navigateProductRecommendation(recommendation("open_performance"), {
+      openPerson: vi.fn(),
+      openJira: vi.fn(),
+    });
+    expect(getAppNavigationState()).toEqual({
+      route: "performance",
+      performanceView: "overview",
+    });
   });
 
   it("routes Open Delivery Risk to the delivery-risk view", () => {
-    const events = capturePerformanceRoute(() =>
-      navigateProductRecommendation(recommendation("open_delivery_risk"), {
-        openPerson: vi.fn(),
-        openJira: vi.fn(),
-      }),
-    );
-    expect(events.routes).toEqual(["performance"]);
-    expect(events.tabs).toEqual(["delivery-risk"]);
+    navigateProductRecommendation(recommendation("open_delivery_risk"), {
+      openPerson: vi.fn(),
+      openJira: vi.fn(),
+    });
+    expect(getAppNavigationState()).toEqual({
+      route: "performance",
+      performanceView: "delivery-risk",
+    });
   });
 
   it("routes Open Jira to the configured Jira handler", () => {

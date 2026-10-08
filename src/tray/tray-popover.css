@@ -9,17 +9,18 @@
   --tray-popover-row-hover-radius: 8px;
   --tray-popover-surface: var(--color-surface, #fff);
   --tray-popover-border: rgba(0, 0, 0, 0.08);
-  --tray-popover-shadow: 0 8px 24px rgba(0, 0, 0, 0.16);
-  --tray-host-shadow-bleed-x: 12px;
-  --tray-host-shadow-bleed-bottom: 14px;
+  --tray-popover-shadow: 0 4px 12px rgba(0, 0, 0, 0.11);
+  --tray-host-shadow-bleed-top: 12px;
+  --tray-host-shadow-bleed-x: 16px;
+  --tray-host-shadow-bleed-bottom: 20px;
 }
 
-/** Visible surface sits flush under the menu bar; shadow bleeds only on sides/bottom. */
+/** Host padding holds the shadow. Visible surface stays at the top padding edge. */
 .tray-popover {
   position: relative;
   width: calc(var(--tray-popover-width) + (2 * var(--tray-host-shadow-bleed-x)));
   margin: 0 auto;
-  padding: 0 var(--tray-host-shadow-bleed-x) var(--tray-host-shadow-bleed-bottom);
+  padding: var(--tray-host-shadow-bleed-top) var(--tray-host-shadow-bleed-x) var(--tray-host-shadow-bleed-bottom);
   box-sizing: border-box;
   box-shadow: none;
   filter: none;

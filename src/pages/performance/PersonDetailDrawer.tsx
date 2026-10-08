@@ -441,7 +441,19 @@ export function PersonDetailDrawer({
   ]);
 
   if (!workspace) {
-    return null;
+    return (
+      <DrawerStack
+        open={open}
+        activePanel="primary"
+        onClose={onClose}
+        onClosed={onClosed}
+        ariaLabel="Person"
+        size="person"
+        testId="person-detail-drawer"
+      >
+        <DrawerPanelPlaceholder role="status" title="Loading person…" />
+      </DrawerStack>
+    );
   }
 
   const displayName = workspace.personName || person?.bamboo.displayName || "—";

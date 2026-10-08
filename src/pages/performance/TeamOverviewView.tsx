@@ -272,22 +272,22 @@ export function TeamOverviewView({
 
   return (
     <>
-      <ActionQueueSection
-        variant="dashboard"
-        title={actionTitle}
-        workColumnLabel="Work"
-        items={teamActions}
-        emptyMessage="No high-priority team actions right now."
-        onOpen={handleAction}
-        openLabel={actionOpenLabel}
-      />
-      <PerformanceRecommendations
-        deliverySummary={deliverySummary}
-        deliveryRiskCount={secondary.deliveryRisk.length}
-        teamWorkload={snapshot.workload}
-        teamActions={teamActions}
-        onAction={onPerformanceRecommendation}
-      />
+          <ActionQueueSection
+            variant="dashboard"
+            title={actionTitle}
+            workColumnLabel="Work"
+            items={teamActions}
+            emptyMessage="No high-priority team actions right now."
+            onOpen={handleAction}
+            openLabel={actionOpenLabel}
+          />
+          <PerformanceRecommendations
+            deliverySummary={deliverySummary}
+            deliveryRiskCount={secondary.deliveryRisk.length}
+            teamWorkload={snapshot.workload}
+            teamActions={teamActions}
+            onAction={onPerformanceRecommendation}
+          />
       <section aria-label="Summary metrics">
         <div className="performance-metrics">
           {summaryMetrics.map((metric, metricIndex) => {

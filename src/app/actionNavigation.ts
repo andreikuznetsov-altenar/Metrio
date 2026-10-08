@@ -2,33 +2,11 @@ import type { ActionItem, ActionTarget } from "../domain/actions/actionTypes";
 import { openExternalUrl } from "../platform/openExternal";
 
 import type { TeamPerformanceView } from "../domain/performance";
-import {
-  applyTeamPerformanceViewIfMounted,
-  getAppNavigationBridge,
-} from "./appNavigation";
-import { setPendingTeamPerformanceView } from "./performanceViewPersistence";
+import { appNavigate } from "./navigationStore";
 
-export function dispatchPerformanceTab(
-  view: TeamPerformanceView,
-) {
-  window.dispatchEvent(
-    new CustomEvent("metrio-open-performance-tab", { detail: view }),
-  );
-}
-
-/** Navigate to Performance and activate a team subnav tab after the route mounts. */
+/** Open Performance with one atomic route + team view update. */
 export function navigatePerformanceView(view: TeamPerformanceView): void {
-  setPendingTeamPerformanceView(view);
-  const bridge = getAppNavigationBridge();
-  if (bridge) {
-    bridge.openPerformanceRoute();
-    if (!applyTeamPerformanceViewIfMounted(view)) {
-      dispatchPerformanceTab(view);
-    }
-    return;
-  }
-  dispatchAppRoute("performance");
-  dispatchPerformanceTab(view);
+  appNavigate({ route: "performance", performanceView: view });
 }
 
 export function dispatchFeedbackTab(tab: "survey" | "delivery" | "results" | "history") {
@@ -36,7 +14,7 @@ export function dispatchFeedbackTab(tab: "survey" | "delivery" | "results" | "hi
 }
 
 export function dispatchAppRoute(route: "home" | "performance" | "feedback") {
-  window.dispatchEvent(new CustomEvent("metrio-navigate-route", { detail: route }));
+  appNavigate({ route });
 }
 
 export function dispatchOpenHome() {

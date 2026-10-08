@@ -1,5 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
-import type { TeamPerformanceView } from "../domain/performance";
+import { afterEach, describe, expect, it } from "vitest";
 import {
   collectCtaRoutingEvents,
   navigateOpenDeliveryRisk,
@@ -7,45 +6,24 @@ import {
   navigateOpenTeamBrief,
   navigateOpenTeamOverview,
 } from "./ctaRouting";
+import { getAppNavigationState, resetAppNavigationStateForTests } from "./navigationStore";
 
-function captureDeferredTabNavigation(action: () => void): {
-  routes: string[];
-  tabs: TeamPerformanceView[];
-} {
-  const routes: string[] = [];
-  const tabs: TeamPerformanceView[] = [];
-  const onRoute = (event: Event) => {
-    routes.push((event as CustomEvent<string>).detail);
-  };
-  const onTab = (event: Event) => {
-    tabs.push((event as CustomEvent<TeamPerformanceView>).detail);
-  };
-  window.addEventListener("metrio-navigate-route", onRoute);
-  window.addEventListener("metrio-open-performance-tab", onTab);
-  vi.useFakeTimers();
-  try {
-    action();
-    vi.runAllTimers();
-  } finally {
-    window.removeEventListener("metrio-navigate-route", onRoute);
-    window.removeEventListener("metrio-open-performance-tab", onTab);
-    vi.useRealTimers();
-  }
-  return { routes, tabs };
-}
+afterEach(() => {
+  resetAppNavigationStateForTests();
+});
 
 describe("CTA routing contract", () => {
   it("Open goals (team) routes to Performance goals tab", () => {
-    const { routes, tabs } = captureDeferredTabNavigation(() =>
-      navigateOpenGoals({ teamView: true }),
-    );
-    expect(routes).toEqual(["performance"]);
-    expect(tabs).toEqual(["goals"]);
+    navigateOpenGoals({ teamView: true });
+    expect(getAppNavigationState()).toEqual({
+      route: "performance",
+      performanceView: "goals",
+    });
   });
 
   it("Open goals (employee) routes to employee goals view", () => {
     const events = collectCtaRoutingEvents(() => navigateOpenGoals({ teamView: false }));
-    expect(events[0]).toEqual({ type: "metrio-navigate-route", route: "performance" });
+    expect(getAppNavigationState().route).toBe("performance");
     expect(events).toContainEqual({
       type: "metrio-open-employee-view",
       view: "goals",
@@ -53,15 +31,19 @@ describe("CTA routing contract", () => {
   });
 
   it("Open Delivery Risk routes to delivery-risk tab", () => {
-    const { routes, tabs } = captureDeferredTabNavigation(() => navigateOpenDeliveryRisk());
-    expect(routes).toEqual(["performance"]);
-    expect(tabs).toEqual(["delivery-risk"]);
+    navigateOpenDeliveryRisk();
+    expect(getAppNavigationState()).toEqual({
+      route: "performance",
+      performanceView: "delivery-risk",
+    });
   });
 
   it("Open team overview routes to overview tab", () => {
-    const { routes, tabs } = captureDeferredTabNavigation(() => navigateOpenTeamOverview());
-    expect(routes).toEqual(["performance"]);
-    expect(tabs).toEqual(["overview"]);
+    navigateOpenTeamOverview();
+    expect(getAppNavigationState()).toEqual({
+      route: "performance",
+      performanceView: "overview",
+    });
   });
 
   it("Open team brief routes to person brief drawer", () => {

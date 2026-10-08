@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import { AppShell } from "../components/AppShell/AppShell";
 import { bootLog } from "./bootDiagnostics";
 import { ScrollArea } from "../components/ScrollArea/ScrollArea";
@@ -59,20 +59,34 @@ import { useConnectionGate } from "./ConnectionContext";
 import { logoutSession } from "./logoutSession";
 import { clearTrayUserContext } from "../platform/trayActionCenter";
 import { usePerformanceData } from "./PerformanceDataContext";
-import { registerAppNavigation } from "./appNavigation";
-import { peekPendingTeamPerformanceView } from "./performanceViewPersistence";
+import {
+  appNavigate,
+  getAppNavigationState,
+  subscribeAppNavigation,
+} from "./navigationStore";
 import { PerformanceDataWithRules } from "./PerformanceDataWithRules";
 import {
   PerformanceExportProvider,
   usePerformanceExport,
 } from "./PerformanceExportContext";
 
+const MemoHomePage = memo(HomePage);
+const MemoPerformancePage = memo(PerformancePage);
+const MemoFeedbackPage = memo(FeedbackPage);
+
 function defaultReviewTarget(role: string): PerformanceReviewTarget {
   return role === "employee" ? "personal" : "team";
 }
 
 export function AppLayout() {
-  const [activeRoute, setActiveRoute] = useState<AppRoute>("home");
+  const activeRoute = useSyncExternalStore(
+    subscribeAppNavigation,
+    () => getAppNavigationState().route,
+    () => getAppNavigationState().route,
+  );
+  const setActiveRoute = useCallback((route: AppRoute) => {
+    appNavigate({ route });
+  }, []);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [settingsSection, setSettingsSection] =
     useState<SettingsSection>("preferences");
@@ -87,6 +101,19 @@ export function AppLayout() {
   const [reviewTarget, setReviewTarget] = useState<PerformanceReviewTarget>(
     () => defaultReviewTarget(currentUser.person.role),
   );
+
+  useEffect(() => {
+    let route = getAppNavigationState().route;
+    return subscribeAppNavigation(() => {
+      const next = getAppNavigationState().route;
+      if (next === route) {
+        return;
+      }
+      route = next;
+      setSettingsOpen(false);
+    });
+  }, []);
+
 
   useEffect(() => {
     setReviewTarget(defaultReviewTarget(currentUser.person.role));
@@ -142,10 +169,9 @@ export function AppLayout() {
                   activeRoute === "performance" && !settingsOpen
                 }
                 homeActive={activeRoute === "home" && !settingsOpen}
-                showTeamPerformance={
-                  activeRoute === "performance" &&
-                  !settingsOpen &&
-                  showTeamPerformanceToolbar
+                performanceToolbarCapable={
+                  showTeamPerformanceToolbar ||
+                  currentUser.person.role === "employee"
                 }
                 showEmployeePerformance={
                   activeRoute === "performance" &&
@@ -177,7 +203,7 @@ interface AppLayoutShellProps {
   setReviewTarget: (value: PerformanceReviewTarget) => void;
   performanceDataEnabled: boolean;
   homeActive: boolean;
-  showTeamPerformance: boolean;
+  performanceToolbarCapable: boolean;
   showEmployeePerformance: boolean;
 }
 
@@ -194,9 +220,24 @@ function AppLayoutShell({
   setReviewTarget,
   performanceDataEnabled,
   homeActive,
-  showTeamPerformance,
+  performanceToolbarCapable,
   showEmployeePerformance,
 }: AppLayoutShellProps) {
+  const [paintedRoute, setPaintedRoute] = useState(activeRoute);
+  useEffect(() => {
+    let cancelled = false;
+    let secondFrame = 0;
+    const firstFrame = requestAnimationFrame(() => {
+      secondFrame = requestAnimationFrame(() => {
+        if (!cancelled) setPaintedRoute(activeRoute);
+      });
+    });
+    return () => {
+      cancelled = true;
+      cancelAnimationFrame(firstFrame);
+      cancelAnimationFrame(secondFrame);
+    };
+  }, [activeRoute]);
   const companyConfig = useOptionalCompanyConfig();
   const { currentUser } = useCurrentUser();
   const feedbackFeatureOn = isFeedbackEnabled(companyConfig?.effective.features);
@@ -219,8 +260,7 @@ function AppLayoutShell({
     performanceStatus === "refreshing" ||
     (performanceStatus === "loading" && Boolean(data || viewModels)) ||
     (performanceStatus === "error" && Boolean(data)) ||
-    Boolean(viewModels) ||
-    Boolean(peekPendingTeamPerformanceView());
+    Boolean(viewModels);
   const performanceNavEnabled = reportingNavReady;
   const performanceExport = usePerformanceExport();
   const workGraph = useWorkGraph();
@@ -319,23 +359,6 @@ function AppLayoutShell({
   }, []);
 
   useEffect(() => {
-    registerAppNavigation({
-      openPerformanceRoute: () => {
-        setSettingsOpen(false);
-        setActiveRoute("performance");
-      },
-      openRoute: (route) => {
-        if (route === "feedback" && !feedbackEnabled) {
-          return;
-        }
-        setSettingsOpen(false);
-        setActiveRoute(route);
-      },
-    });
-    return () => registerAppNavigation(null);
-  }, [feedbackEnabled, setActiveRoute, setSettingsOpen]);
-
-  useEffect(() => {
     const onRoute = (event: Event) => {
       const route = (event as CustomEvent<AppRoute>).detail;
       if (route === "home" || route === "performance" || route === "feedback") {
@@ -343,9 +366,7 @@ function AppLayoutShell({
           return;
         }
         if (route === "performance" && !performanceNavEnabled) {
-          if (!peekPendingTeamPerformanceView()) {
-            return;
-          }
+          return;
         }
         if (route === "feedback" && !feedbackEnabled) {
           return;
@@ -388,7 +409,9 @@ function AppLayoutShell({
   }, [feedbackEnabled, activeRoute, setActiveRoute]);
 
   const showPerformanceToolbar =
-    showTeamPerformance || showEmployeePerformance;
+    paintedRoute === "performance" &&
+    !settingsOpen &&
+    performanceToolbarCapable;
 
   const onRefresh = useCallback(() => {
     if (performanceDataEnabled || homeActive) {
@@ -536,21 +559,17 @@ function AppLayoutShell({
     />
   ) : (
     <div className="app-route-stack" data-testid="app-route-stack">
-      <div
-        className="app-route-layer"
-        hidden={activeRoute !== "home"}
-        data-testid="route-layer-home"
-      >
-        <HomePage />
-      </div>
-      <div
-        className="app-route-layer"
-        hidden={activeRoute !== "performance"}
-        data-testid="route-layer-performance"
-      >
-        <PerformancePage reviewTarget={reviewTarget} />
-      </div>
-      {activeRoute === "feedback" ? <FeedbackPage /> : null}
+      {paintedRoute === "home" ? (
+        <div className="app-route-layer" data-testid="route-layer-home">
+          <MemoHomePage />
+        </div>
+      ) : null}
+      {paintedRoute === "performance" ? (
+        <div className="app-route-layer" data-testid="route-layer-performance">
+          <MemoPerformancePage reviewTarget={reviewTarget} />
+        </div>
+      ) : null}
+      {paintedRoute === "feedback" ? <MemoFeedbackPage /> : null}
     </div>
   );
 

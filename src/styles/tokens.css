@@ -52,7 +52,7 @@
   /* Shared Radar Action button width — fits "Review workload" without compression */
   --radar-action-button-width: 10.5rem;
   --refresh-status-shadow: 0 -2px 12px rgba(15, 17, 21, 0.08);
-  --tray-popover-shadow: 0 8px 24px rgba(0, 0, 0, 0.16);
+  --tray-popover-shadow: 0 4px 12px rgba(0, 0, 0, 0.11);
   --space-3: 12px;
   --space-4: 16px;
   --space-5: 20px;
@@ -68,9 +68,9 @@
   --motion-control: 140ms;
   --motion-popover: 160ms;
   --motion-modal: 180ms;
-  --motion-drawer: 310ms;
-  --motion-drawer-open: 300ms;
-  --motion-drawer-close: 320ms;
+  --motion-drawer: 400ms;
+  --motion-drawer-open: 400ms;
+  --motion-drawer-close: 400ms;
   --motion-backdrop: 220ms;
   --motion-tab: 200ms;
   --transition-easing: cubic-bezier(0.4, 0, 0.2, 1);
@@ -204,5 +204,7 @@
     --motion-control: 0ms;
     --motion-popover: 0ms;
     --motion-drawer: 0ms;
+    --motion-drawer-open: 0ms;
+    --motion-drawer-close: 0ms;
   }
 }

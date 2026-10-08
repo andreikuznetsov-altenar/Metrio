@@ -36,26 +36,6 @@ export function writePersistedTeamPerformanceView(view: TeamPerformanceView): vo
   sessionStorage.setItem(TEAM_VIEW_KEY, view);
 }
 
-let pendingTeamPerformanceView: TeamPerformanceView | null = null;
-
-export function setPendingTeamPerformanceView(view: TeamPerformanceView): void {
-  pendingTeamPerformanceView = view;
-}
-
-export function peekPendingTeamPerformanceView(): TeamPerformanceView | null {
-  return pendingTeamPerformanceView;
-}
-
-export function consumePendingTeamPerformanceView(): TeamPerformanceView | null {
-  const next = pendingTeamPerformanceView;
-  pendingTeamPerformanceView = null;
-  return next;
-}
-
-export function readIntendedTeamPerformanceView(): TeamPerformanceView {
-  return pendingTeamPerformanceView ?? readPersistedTeamPerformanceView();
-}
-
 export function readPersistedEmployeePerformanceView(): EmployeePerformanceView {
   if (typeof sessionStorage === "undefined") return "overview";
   const raw = sessionStorage.getItem(EMPLOYEE_VIEW_KEY);

@@ -35,12 +35,14 @@ describe("UI Repair Pass 13.8C tray popover rewrite", () => {
     expect(css).toMatch(/\.tray-popover__surface[\s\S]*padding:/);
   });
 
-  it("anchors visible surface near the icon without top host bleed", () => {
+  it("anchors visible surface near the icon and reserves top host bleed for shadow", () => {
     const rust = read("src-tauri/src/tray_popover.rs");
     expect(rust).toContain("TRAY_POPOVER_GAP");
+    expect(rust).toContain("TRAY_HOST_SHADOW_BLEED_TOP");
     expect(rust).not.toContain("TRAY_HOST_SHADOW_INSET");
     const geometry = read("src/tray/trayPopoverGeometry.ts");
     expect(geometry).toContain("TRAY_POPOVER_GAP_PX");
+    expect(geometry).toContain("TRAY_HOST_SHADOW_BLEED_TOP_PX");
     expect(geometry).toContain("TRAY_HOST_SHADOW_BLEED_X_PX");
   });
 });

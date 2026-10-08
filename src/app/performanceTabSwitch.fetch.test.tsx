@@ -10,7 +10,6 @@ import {
 import { createPerformanceDateRange } from "../domain/performance/performanceDateRange";
 import { performanceDataLifecycleEmptyResult } from "../test/helpers/performanceDataLifecycleEmptyResult";
 import { clearDashboardCacheForTests } from "../platform/dashboard/dashboardCache";
-import { setPendingTeamPerformanceView } from "./performanceViewPersistence";
 
 vi.mock("../services/performance/performanceDataService", () => ({
   fetchPerformanceData: vi.fn(),
@@ -71,7 +70,6 @@ describe("internal Performance tab switch does not fetch", () => {
     mockFetch.mockReset();
     mockFetch.mockResolvedValue(performanceDataLifecycleEmptyResult());
     clearDashboardCacheForTests();
-    setPendingTeamPerformanceView("overview");
   });
 
   it("keeps fetch count unchanged across Overview → Radar → Delivery Risk → Overview", async () => {

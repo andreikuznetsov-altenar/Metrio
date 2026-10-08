@@ -1,6 +1,6 @@
 import type { ActionItem, ActionTarget } from "../actions/actionTypes";
 import type { ActionNavigationHandlers } from "../../app/actionNavigation";
-import { navigateActionTarget } from "../../app/actionNavigation";
+import { navigateActionTarget, navigatePerformanceView } from "../../app/actionNavigation";
 
 export const PERFORMANCE_SCROLL_TARGETS = {
   teamAttention: "performance-section-team-attention",
@@ -62,8 +62,6 @@ export function navigateAttentionItem(
 }
 
 export function navigateOpenTeamWorkloadSection(): void {
-  window.dispatchEvent(
-    new CustomEvent("metrio-open-performance-tab", { detail: "overview" }),
-  );
+  navigatePerformanceView("overview");
   scrollToPerformanceSection(PERFORMANCE_SCROLL_TARGETS.teamWorkload);
 }

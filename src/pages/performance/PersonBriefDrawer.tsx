@@ -1,5 +1,5 @@
 import { FileText } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Button } from "../../components/Button/Button";
 import { Drawer } from "../../components/Drawer/Drawer";
 import { DrawerPanelPlaceholder } from "../../components/Drawer/DrawerPanelPlaceholder";
@@ -11,6 +11,7 @@ import { useFeedbackSurveyStore } from "../../app/feedbackSurveyStore";
 import { useWorkGraph } from "../../app/WorkGraphContext";
 import { canOpenPersonBrief } from "../../domain/personAccess";
 import type { DateRangeKey } from "../../domain/performance";
+import type { WorkKnowledgeLink } from "../../domain/workGraph/workGraphTypes";
 import { formatPersonBriefPlainText } from "../../domain/personBrief/formatPersonBriefText";
 import { buildPersonBriefPdfPayload } from "../../domain/personBrief/personBriefPdf";
 import { usePersonBriefModel } from "../../hooks/usePersonBriefModel";
@@ -27,6 +28,8 @@ import "./person-identity-header.css";
 import "./person-work-card.css";
 import "./performance-dashboard.css";
 import "./person-detail-drawer.css";
+
+const CLOSED_KNOWLEDGE_LINKS: WorkKnowledgeLink[] = [];
 
 const PERIOD_OPTIONS: { value: DateRangeKey; label: string }[] = [
   { value: "7d", label: "Last 7 days" },
@@ -55,24 +58,28 @@ export function PersonBriefDrawerPanel({
     });
   }, [personId]);
 
-  if (!canOpenPersonBrief(currentUser, personId)) {
-    return null;
-  }
-
-  const knowledgeLinks = [
-    ...graph.knowledgeByIssue.values(),
-    ...graph.knowledgeByProject.values(),
-  ].flat();
+  const allowed = canOpenPersonBrief(currentUser, personId);
+  const knowledgeLinks = useMemo(() => {
+    if (!allowed) return CLOSED_KNOWLEDGE_LINKS;
+    return [
+      ...graph.knowledgeByIssue.values(),
+      ...graph.knowledgeByProject.values(),
+    ].flat();
+  }, [allowed, graph.knowledgeByIssue, graph.knowledgeByProject]);
 
   const brief = usePersonBriefModel({
     personId,
     periodPreset,
-    data,
+    data: allowed ? data : null,
     selfPersonId: currentUser.person.id,
     surveyData,
     knowledgeLinks,
     jiraBaseUrl,
   });
+
+  if (!allowed) {
+    return null;
+  }
 
   void prepForOneOnOne;
 
@@ -217,16 +224,20 @@ export function PersonBriefDrawer({
 
   const allowed =
     personId != null && canOpenPersonBrief(currentUser, personId);
+  const briefActive = open && allowed;
 
-  const knowledgeLinks = [
-    ...graph.knowledgeByIssue.values(),
-    ...graph.knowledgeByProject.values(),
-  ].flat();
+  const knowledgeLinks = useMemo(() => {
+    if (!briefActive) return CLOSED_KNOWLEDGE_LINKS;
+    return [
+      ...graph.knowledgeByIssue.values(),
+      ...graph.knowledgeByProject.values(),
+    ].flat();
+  }, [briefActive, graph.knowledgeByIssue, graph.knowledgeByProject]);
 
   const brief = usePersonBriefModel({
     personId: personId ?? "",
     periodPreset,
-    data,
+    data: briefActive ? data : null,
     selfPersonId: currentUser.person.id,
     surveyData,
     knowledgeLinks,

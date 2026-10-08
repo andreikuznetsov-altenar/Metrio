@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { getAppNavigationState, resetAppNavigationStateForTests } from "../../app/navigationStore";
 import {
   navigateOpenTeamWorkloadSection,
   PERFORMANCE_SCROLL_TARGETS,
@@ -11,23 +12,24 @@ describe("navigateOpenTeamWorkloadSection", () => {
 
   it("opens overview and scrolls to team workload", () => {
     vi.useFakeTimers();
-    const tabHandler = vi.fn();
+    resetAppNavigationStateForTests({ route: "home", performanceView: "radar" });
     const section = document.createElement("section");
     section.id = PERFORMANCE_SCROLL_TARGETS.teamWorkload;
     const scrollIntoView = vi.fn();
     section.scrollIntoView = scrollIntoView;
     document.body.appendChild(section);
 
-    window.addEventListener("metrio-open-performance-tab", tabHandler);
     navigateOpenTeamWorkloadSection();
 
-    expect(tabHandler).toHaveBeenCalledTimes(1);
-    expect((tabHandler.mock.calls[0][0] as CustomEvent).detail).toBe("overview");
+    expect(getAppNavigationState()).toEqual({
+      route: "performance",
+      performanceView: "overview",
+    });
 
     vi.advanceTimersByTime(150);
     expect(scrollIntoView).toHaveBeenCalled();
 
-    window.removeEventListener("metrio-open-performance-tab", tabHandler);
     section.remove();
+    resetAppNavigationStateForTests();
   });
 });

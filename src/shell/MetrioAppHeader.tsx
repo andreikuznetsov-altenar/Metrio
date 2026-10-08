@@ -69,6 +69,7 @@ export function MetrioAppHeader({
                 aria-current={active ? "page" : undefined}
                 aria-disabled={disabled || undefined}
                 disabled={disabled}
+                data-app-route={item.route}
                 tabIndex={disabled ? -1 : undefined}
                 onClick={() => {
                   if (disabled) return;

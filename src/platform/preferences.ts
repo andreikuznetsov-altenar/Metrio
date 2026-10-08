@@ -361,8 +361,14 @@ export function readVisualPreferencesSync(): AppPreferences | null {
 
 export async function loadPreferencesOutcome(): Promise<PreferencesLoadOutcome> {
   if (isVisualFixtureBuild()) {
+    const raw =
+      typeof window !== "undefined"
+        ? window.localStorage.getItem(VISUAL_PREFS_STORAGE_KEY)
+        : null;
     const prefs = readVisualPreferencesSync() ?? DEFAULT_PREFERENCES;
-    return { ok: true, prefs, source: "default" };
+    // Stored visual prefs are a real session for packaged QA. An empty key
+    // stays "default" so production bootstrap still treats it as unsigned-in.
+    return { ok: true, prefs, source: raw ? "file" : "default" };
   }
 
   try {

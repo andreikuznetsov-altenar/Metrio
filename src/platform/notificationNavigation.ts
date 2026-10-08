@@ -9,6 +9,7 @@ import { resolveJiraBaseUrl } from "../config/product";
 import { bambooEmployeePortalUrl } from "../config/bambooPortal";
 import { acknowledgeTrayJiraIssue } from "./trayActionCenter";
 import { openDigest } from "./digestNavigation";
+import { dispatchAppRoute, navigatePerformanceView } from "../app/actionNavigation";
 
 export async function openNotificationTarget(
   target: NotificationTarget | undefined,
@@ -41,9 +42,7 @@ export async function openNotificationTarget(
   }
 
   if (target.kind === "performance") {
-    window.dispatchEvent(
-      new CustomEvent("metrio-open-performance-tab", { detail: target.tab }),
-    );
+    navigatePerformanceView(target.tab);
     return;
   }
 
@@ -54,17 +53,13 @@ export async function openNotificationTarget(
         ? resolveSafeFeedbackNotificationTab(target.tab, access)
         : target.tab;
     if (safeTab == null) {
-      window.dispatchEvent(
-        new CustomEvent("metrio-navigate-route", { detail: "home" }),
-      );
+      dispatchAppRoute("home");
       return;
     }
     window.dispatchEvent(
       new CustomEvent("metrio-open-feedback-tab", { detail: safeTab }),
     );
-    window.dispatchEvent(
-      new CustomEvent("metrio-navigate-route", { detail: "feedback" }),
-    );
+    dispatchAppRoute("feedback");
     return;
   }
 
@@ -74,26 +69,17 @@ export async function openNotificationTarget(
   }
 
   if (target.kind === "home") {
-    window.dispatchEvent(
-      new CustomEvent("metrio-navigate-route", { detail: "home" }),
-    );
+    dispatchAppRoute("home");
     return;
   }
 
   if (target.kind === "digest") {
-    window.dispatchEvent(
-      new CustomEvent("metrio-navigate-route", { detail: "home" }),
-    );
+    dispatchAppRoute("home");
     openDigest(target.digestKind);
     return;
   }
 
   if (target.kind === "goal") {
-    window.dispatchEvent(
-      new CustomEvent("metrio-navigate-route", { detail: "performance" }),
-    );
-    window.dispatchEvent(
-      new CustomEvent("metrio-open-performance-tab", { detail: "goals" }),
-    );
+    navigatePerformanceView("goals");
   }
 }

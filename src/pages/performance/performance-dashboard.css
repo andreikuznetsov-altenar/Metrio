@@ -8,6 +8,20 @@
 
 .performance-dashboard [data-testid^="performance-view-"][hidden] {
   display: none !important;
+  pointer-events: none !important;
+}
+
+.performance-section-stack,
+.performance-dashboard [data-testid^="performance-view-"]:not([hidden]) {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+  min-width: 0;
+}
+
+.performance-section-stack > .action-queue,
+.performance-dashboard [data-testid^="performance-view-"] > .action-queue {
+  margin-bottom: 0;
 }
 
 .performance-subnav {

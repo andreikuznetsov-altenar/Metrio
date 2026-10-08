@@ -58,7 +58,10 @@ function runKeyframes(
     fill: "forwards",
   });
   return {
-    cancel: () => animation.cancel(),
+    cancel: () => {
+      commitAnimationStyles(animation);
+      animation.cancel();
+    },
     finished: animation.finished
       .then(() => {
         commitAnimationStyles(animation);
@@ -72,13 +75,14 @@ export function playDrawerEnterMotion(
   backdrop: HTMLElement,
 ): DrawerMotionRun {
   const duration = readMotionDrawerOpenMs();
+  panel.style.opacity = "1";
   const panelFrom = readPanelTransform(panel);
   const backdropFrom = readOpacity(backdrop);
   const panelRun = runKeyframes(
     panel,
     [
-      { transform: panelFrom, opacity: readOpacity(panel) },
-      { transform: "translate3d(0, 0, 0)", opacity: 1 },
+      { transform: panelFrom },
+      { transform: "translate3d(0, 0, 0)" },
     ],
     duration,
   );
@@ -101,13 +105,14 @@ export function playDrawerExitMotion(
   backdrop: HTMLElement,
 ): DrawerMotionRun {
   const duration = readMotionDrawerCloseMs();
+  panel.style.opacity = "1";
   const panelFrom = readPanelTransform(panel);
   const backdropFrom = readOpacity(backdrop);
   const panelRun = runKeyframes(
     panel,
     [
-      { transform: panelFrom, opacity: readOpacity(panel) },
-      { transform: "translate3d(100%, 0, 0)", opacity: 0 },
+      { transform: panelFrom },
+      { transform: "translate3d(100%, 0, 0)" },
     ],
     duration,
   );

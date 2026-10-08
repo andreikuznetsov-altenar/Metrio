@@ -25,11 +25,16 @@ export function useDrawerSurfaceLifecycle(
   const [phase, setPhase] = useState<DrawerSurfacePhase>(open ? "entering" : "closed");
   const runGenRef = useRef(0);
   const openRef = useRef(open);
+  const onClosedRef = useRef(onClosed);
   const activeMotionRef = useRef<DrawerMotionRun | null>(null);
 
   useEffect(() => {
     openRef.current = open;
   }, [open]);
+
+  useEffect(() => {
+    onClosedRef.current = onClosed;
+  }, [onClosed]);
 
   useEffect(() => {
     logDrawerMotionDev(open ? "open-requested" : "close-requested", {});
@@ -44,9 +49,9 @@ export function useDrawerSurfaceLifecycle(
     cancelMotion();
     setMounted(false);
     setPhase("closed");
-    onClosed?.();
+    onClosedRef.current?.();
     logDrawerMotionDev("unmounted", {});
-  }, [cancelMotion, onClosed]);
+  }, [cancelMotion]);
 
   useEffect(() => {
     if (open) {
@@ -87,6 +92,10 @@ export function useDrawerSurfaceLifecycle(
 
     if (open) {
       setPhase("entering");
+      panel.style.opacity = "1";
+      if (!panel.style.transform) {
+        panel.style.transform = "translate3d(100%, 0, 0)";
+      }
       void panel.getBoundingClientRect();
       logDrawerMotionDev("animation-started", { kind: "enter" });
       const motion = playDrawerEnterMotion(panel, backdrop);

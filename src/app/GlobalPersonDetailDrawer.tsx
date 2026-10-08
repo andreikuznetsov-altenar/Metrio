@@ -24,7 +24,6 @@ export function GlobalPersonDetailDrawer({ activeRoute }: GlobalPersonDetailDraw
   useEffect(() => {
     if (activeRoute === "performance") {
       setOpen(false);
-      setPersonId(null);
     }
   }, [activeRoute]);
 

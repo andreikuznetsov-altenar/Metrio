@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import "../pages/performance/performance-dashboard.css";
 
 export interface PageSubnavItem<T extends string> {
@@ -22,7 +22,7 @@ export function PageSubnav<T extends string>({
   const navRef = useRef<HTMLElement>(null);
   const [indicator, setIndicator] = useState({ left: 0, width: 0 });
 
-  useLayoutEffect(() => {
+  useEffect(() => {
     const nav = navRef.current;
     if (!nav) return;
     const active = nav.querySelector<HTMLElement>(".performance-subnav__link.is-active");

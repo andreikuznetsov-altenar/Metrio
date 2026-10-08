@@ -180,6 +180,9 @@
 
 .executive-recommendations__cta {
   margin-top: auto;
+  position: relative;
+  z-index: 1;
+  pointer-events: auto;
 }
 
 .executive-recommendations__item .ui-button {

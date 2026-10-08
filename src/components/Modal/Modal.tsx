@@ -43,18 +43,24 @@ export function Modal({
 
   useEffect(() => {
     if (open) {
+      let cancelled = false;
+      let outerFrame = 0;
+      let innerFrame = 0;
       setMounted(true);
       setVisible(false);
-      const frame = window.requestAnimationFrame(() => {
-        frameRef.current = window.requestAnimationFrame(() => {
-          setVisible(true);
+      outerFrame = window.requestAnimationFrame(() => {
+        innerFrame = window.requestAnimationFrame(() => {
+          frameRef.current = null;
+          if (!cancelled) setVisible(true);
         });
+        frameRef.current = innerFrame;
       });
-      frameRef.current = frame;
+      frameRef.current = outerFrame;
       return () => {
-        if (frameRef.current != null) {
-          window.cancelAnimationFrame(frameRef.current);
-        }
+        cancelled = true;
+        window.cancelAnimationFrame(outerFrame);
+        window.cancelAnimationFrame(innerFrame);
+        frameRef.current = null;
       };
     }
     setVisible(false);

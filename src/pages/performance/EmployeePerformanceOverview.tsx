@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { markPerformanceTabSwitch, useKeepMountedView } from "./useKeepMountedView";
+import { markPerformanceTabSwitch, usePaintedSelection } from "./useKeepMountedView";
 import { usePerformanceData } from "../../app/PerformanceDataContext";
 import { useOptionalPerformanceAnalytics } from "../../app/performanceAnalyticsContext";
 import { usePersonNavigation } from "../../app/PersonNavigationContext";
@@ -60,7 +60,7 @@ export function EmployeePerformanceOverview({ personId }: EmployeePerformanceOve
   const [activeView, setActiveView] = useState<EmployeePerformanceView>(
     () => readPersistedEmployeePerformanceView(),
   );
-  const mountedViews = useKeepMountedView(activeView);
+  const paintedView = usePaintedSelection(activeView);
   const { viewModels, status, data } = usePerformanceData();
   const analytics = useOptionalPerformanceAnalytics();
   const { openPerson } = usePersonNavigation();
@@ -195,10 +195,9 @@ export function EmployeePerformanceOverview({ personId }: EmployeePerformanceOve
         }}
       />
 
-      {mountedViews.includes("overview") ? (
+      {paintedView === "overview" ? (
         <section
           aria-label="Performance overview"
-          hidden={activeView !== "overview"}
           data-testid="performance-view-overview"
         >
           <p className="performance-employee-context">{workspace.contextLine}</p>
@@ -271,20 +270,20 @@ export function EmployeePerformanceOverview({ personId }: EmployeePerformanceOve
         </section>
       ) : null}
 
-      {mountedViews.includes("my-week") ? (
-        <div hidden={activeView !== "my-week"} data-testid="performance-view-my-week">
+      {paintedView === "my-week" ? (
+        <div data-testid="performance-view-my-week">
           <EmployeeMyWeekView myWeek={snapshot.myWeek} />
         </div>
       ) : null}
 
-      {mountedViews.includes("goals") ? (
-        <div hidden={activeView !== "goals"} data-testid="performance-view-goals">
+      {paintedView === "goals" ? (
+        <div data-testid="performance-view-goals">
           <EmployeeGoalsView personId={personId} />
         </div>
       ) : null}
 
-      {mountedViews.includes("trends") ? (
-        <div hidden={activeView !== "trends"} data-testid="performance-view-trends">
+      {paintedView === "trends" ? (
+        <div data-testid="performance-view-trends">
           <EmployeeTrendsView
             trends={snapshot.trends}
             personId={workspace.personId}
@@ -293,8 +292,8 @@ export function EmployeePerformanceOverview({ personId }: EmployeePerformanceOve
         </div>
       ) : null}
 
-      {mountedViews.includes("work-history") ? (
-        <div hidden={activeView !== "work-history"} data-testid="performance-view-work-history">
+      {paintedView === "work-history" ? (
+        <div data-testid="performance-view-work-history">
           <EmployeeWorkHistoryView
             personId={workspace.personId}
             personName={workspace.personName}

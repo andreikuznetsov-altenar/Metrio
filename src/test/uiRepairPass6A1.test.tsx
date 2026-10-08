@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { ChartTooltip } from "../pages/performance/TrendMiniChart";
@@ -52,8 +52,21 @@ const trend: TrendCardData = {
   ],
 };
 
+async function flushPaintFrames(): Promise<void> {
+  await act(async () => {
+    await new Promise<void>((resolve) => {
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => resolve());
+      });
+    });
+  });
+}
+
 describe("UI repair pass 6A.1 — trend tooltip and interaction", () => {
-  afterEach(() => cleanup());
+  afterEach(async () => {
+    await flushPaintFrames();
+    cleanup();
+  });
 
   it("ChartTooltip omits click hint when not interactive", () => {
     render(
@@ -103,6 +116,11 @@ describe("UI repair pass 6A.1 — trend tooltip and interaction", () => {
 });
 
 describe("UI repair pass 6A.1 — attention signals table", () => {
+  afterEach(async () => {
+    await flushPaintFrames();
+    cleanup();
+  });
+
   const groups: GroupedAttentionSignal[] = [
     {
       label: "Long review",

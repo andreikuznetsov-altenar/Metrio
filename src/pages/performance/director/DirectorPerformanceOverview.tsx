@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { markPerformanceTabSwitch, useKeepMountedView } from "../useKeepMountedView";
+import { markPerformanceTabSwitch, usePaintedSelection } from "../useKeepMountedView";
 import { usePerformanceData } from "../../../app/PerformanceDataContext";
 import { useCurrentUser } from "../../../app/CurrentUserContext";
 import { useFeedbackSurveyStore } from "../../../app/feedbackSurveyStore";
@@ -40,7 +40,7 @@ export function DirectorPerformanceOverview({
   const [activeView, setActiveView] = useState<DirectorPerformanceView>(
     () => readPersistedDirectorPerformanceView(),
   );
-  const mountedViews = useKeepMountedView(activeView);
+  const paintedView = usePaintedSelection(activeView);
   const [selectedTeamId, setSelectedTeamId] = useState<string | undefined>();
   const [deliveryTeamId, setDeliveryTeamId] = useState<string | undefined>();
   const [deliveryFilter, setDeliveryFilter] = useState<"review" | "all">("all");
@@ -172,8 +172,8 @@ export function DirectorPerformanceOverview({
         }}
       />
 
-      {mountedViews.includes("overview") ? (
-        <div hidden={activeView !== "overview"} data-testid="performance-view-overview">
+      {paintedView === "overview" ? (
+        <div data-testid="performance-view-overview">
           <DirectorOverviewView
             model={model}
             onOpenSignal={openSignal}
@@ -186,8 +186,8 @@ export function DirectorPerformanceOverview({
         </div>
       ) : null}
 
-      {mountedViews.includes("people") ? (
-        <div hidden={activeView !== "people"} data-testid="performance-view-people">
+      {paintedView === "people" ? (
+        <div data-testid="performance-view-people">
           {leadershipBranchRows.length > 0 ? (
             <LeadershipBranchesPerformanceView
               rows={leadershipBranchRows}
@@ -202,8 +202,8 @@ export function DirectorPerformanceOverview({
         </div>
       ) : null}
 
-      {mountedViews.includes("teams") ? (
-        <div hidden={activeView !== "teams"} data-testid="performance-view-teams">
+      {paintedView === "teams" ? (
+        <div data-testid="performance-view-teams">
           {leadershipBranchRows.length > 0 ? (
             <LeadershipBranchesPerformanceView
               rows={leadershipBranchRows}
@@ -222,14 +222,14 @@ export function DirectorPerformanceOverview({
         </div>
       ) : null}
 
-      {mountedViews.includes("signals") ? (
-        <div hidden={activeView !== "signals"} data-testid="performance-view-signals">
+      {paintedView === "signals" ? (
+        <div data-testid="performance-view-signals">
           <DirectorSignalsView signals={model.signals} onOpen={openSignal} />
         </div>
       ) : null}
 
-      {mountedViews.includes("delivery") ? (
-        <div hidden={activeView !== "delivery"} data-testid="performance-view-delivery">
+      {paintedView === "delivery" ? (
+        <div data-testid="performance-view-delivery">
           <DirectorDeliveryView
             deliveryRisk={deliveryRows}
             teamFilterLabel={deliveryFilterLabel}
