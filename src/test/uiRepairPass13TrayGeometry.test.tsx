@@ -31,17 +31,18 @@ describe("UI13 tray popover final geometry", () => {
     expect(docCss).not.toMatch(/body\s*\{[\s\S]*padding:/);
   });
 
-  it("anchors visible surface ~3px from tray while the host includes top bleed", () => {
+  it("anchors visible surface 0–2px under menu bar while host includes top bleed", () => {
     const rust = read("src-tauri/src/tray_popover.rs");
     const geometry = read("src/tray/trayPopoverGeometry.ts");
     expect(rust).toContain("TRAY_POPOVER_GAP");
-    expect(rust).toContain("tray_bottom_y + TRAY_POPOVER_GAP");
+    expect(rust).toContain("visible_surface_top_y");
     expect(rust).toContain("TRAY_HOST_SHADOW_BLEED_TOP");
-    expect(rust).toContain("visible_surface_y - TRAY_HOST_SHADOW_BLEED_TOP");
+    expect(rust).toContain("host_top_y_from_visible_surface");
+    expect(rust).toContain("NSPopUpMenuWindowLevel");
     expect(rust).not.toContain("TRAY_HOST_SHADOW_INSET");
     expect(rust).toContain(".shadow(false)");
     expect(rust).toContain("WindowEvent::Focused");
-    expect(geometry).toContain("TRAY_POPOVER_GAP_PX = 3");
+    expect(geometry).toContain("TRAY_POPOVER_GAP_PX = 1");
     expect(geometry).toContain("TRAY_HOST_SHADOW_BLEED_TOP_PX = 12");
     expect(geometry).toContain("trayHostWindowYFromVisibleSurface");
   });

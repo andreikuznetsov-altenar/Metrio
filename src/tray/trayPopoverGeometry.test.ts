@@ -14,14 +14,18 @@ import {
   visiblePopoverCenterX,
 } from "./trayPopoverGeometry";
 
-const anchor = { left: 900, top: 4, width: 22, height: 22 };
+/** Status-item bottom equals menu-bar bottom on macOS menu-bar trays. */
+const menuBarBottom = 37;
+const anchor = { left: 900, top: menuBarBottom - 22, width: 22, height: 22 };
 
 describe("trayPopoverGeometry", () => {
-  it("places visible surface ~3px below tray anchor bottom", () => {
-    expect(trayVisibleSurfaceTopY(anchor)).toBe(
-      anchor.top + anchor.height + TRAY_POPOVER_GAP_PX,
-    );
-    expect(TRAY_POPOVER_GAP_PX).toBe(3);
+  it("places visible surface 0–2px below menu bar / tray icon bottom", () => {
+    const visibleTop = trayVisibleSurfaceTopY(anchor);
+    const gap = visibleTop - menuBarBottom;
+    expect(gap).toBeGreaterThanOrEqual(0);
+    expect(gap).toBeLessThanOrEqual(2);
+    expect(gap).toBe(TRAY_POPOVER_GAP_PX);
+    expect(TRAY_POPOVER_GAP_PX).toBe(1);
   });
 
   it("raises the host by top bleed so the visible surface does not move down", () => {
@@ -29,6 +33,7 @@ describe("trayPopoverGeometry", () => {
     const { y, visibleSurfaceTopY } = trayHostWindowPosition(anchor, 288, 0, 1920);
     expect(visibleSurfaceTopY).toBe(visibleTop);
     expect(y).toBe(visibleTop - TRAY_HOST_SHADOW_BLEED_TOP_PX);
+    expect(y).toBeLessThan(menuBarBottom);
     expect(trayHostWindowYFromVisibleSurface(visibleTop) + TRAY_HOST_SHADOW_BLEED_TOP_PX).toBe(
       visibleTop,
     );

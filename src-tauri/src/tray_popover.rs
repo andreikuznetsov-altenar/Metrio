@@ -2,14 +2,15 @@ use std::sync::Mutex;
 use std::time::Instant;
 
 use tauri::{
-    AppHandle, Emitter, LogicalPosition, LogicalSize, Manager, PhysicalPosition, Position, Rect,
-    Size, WebviewUrl, WebviewWindowBuilder, WindowEvent,
+    AppHandle, Emitter, LogicalPosition, LogicalSize, Manager, Monitor, PhysicalPosition, Position,
+    Rect, Size, WebviewUrl, WebviewWindowBuilder, WindowEvent,
 };
 
 // Keep in sync with src/tray/trayPopoverGeometry.ts (TRAY_POPOVER_GAP_PX)
 const POPOVER_FALLBACK_WIDTH: f64 = 312.0;
 const POPOVER_FALLBACK_HEIGHT: f64 = 360.0;
-const TRAY_POPOVER_GAP: f64 = 3.0;
+/// Visible white surface sits this many logical px below the tray icon / menu-bar bottom.
+const TRAY_POPOVER_GAP: f64 = 1.0;
 const TRAY_HOST_SHADOW_BLEED_TOP: f64 = 12.0;
 /// Ignore the blur that can arrive with the opening click. Not a UI delay.
 const OPEN_BLUR_GRACE_MS: u128 = 100;
@@ -18,6 +19,7 @@ const TOGGLE_REOPEN_SUPPRESS_MS: u128 = 150;
 
 struct TrayAnchor {
     center_x: f64,
+    /// Logical Y of the tray icon / status-item bottom (== menu-bar bottom for menu-bar trays).
     tray_bottom_y: f64,
 }
 
@@ -63,6 +65,16 @@ pub fn tray_toggle_action(visible: bool, millis_since_blur_hide: Option<u128>) -
     TrayToggleAction::Show
 }
 
+/// Visible white card top edge in screen logical coordinates.
+pub fn visible_surface_top_y(tray_bottom_y: f64) -> f64 {
+    tray_bottom_y + TRAY_POPOVER_GAP
+}
+
+/// Transparent host origin so top shadow bleed sits above the visible card.
+pub fn host_top_y_from_visible_surface(visible_surface_top_y: f64) -> f64 {
+    visible_surface_top_y - TRAY_HOST_SHADOW_BLEED_TOP
+}
+
 pub fn ensure_tray_popover(app: &AppHandle) -> Result<tauri::WebviewWindow, String> {
     if let Some(window) = app.get_webview_window("tray-popover") {
         return Ok(window);
@@ -83,6 +95,7 @@ pub fn ensure_tray_popover(app: &AppHandle) -> Result<tauri::WebviewWindow, Stri
     .inner_size(POPOVER_FALLBACK_WIDTH, POPOVER_FALLBACK_HEIGHT)
     .build()
     .map_err(|e| e.to_string())?;
+    configure_macos_tray_popover_window(&window);
     let focus_app = app.clone();
     window.on_window_event(move |event| {
         if let WindowEvent::Focused(focused) = event {
@@ -91,6 +104,35 @@ pub fn ensure_tray_popover(app: &AppHandle) -> Result<tauri::WebviewWindow, Stri
     });
     Ok(window)
 }
+
+/// Raise above the menu bar so the transparent top bleed can occupy menu-bar Y without
+/// macOS clamping the host down (which would turn bleed into a visible gap).
+#[cfg(target_os = "macos")]
+fn configure_macos_tray_popover_window(window: &tauri::WebviewWindow) {
+    use objc2::runtime::AnyObject;
+    use objc2_app_kit::{NSPopUpMenuWindowLevel, NSWindow, NSWindowCollectionBehavior};
+
+    let Ok(ptr) = window.ns_window() else {
+        return;
+    };
+    if ptr.is_null() {
+        return;
+    }
+    unsafe {
+        let ns_window = &*(ptr as *const AnyObject as *const NSWindow);
+        ns_window.setLevel(NSPopUpMenuWindowLevel);
+        ns_window.setHasShadow(false);
+        ns_window.setCollectionBehavior(
+            NSWindowCollectionBehavior::CanJoinAllSpaces
+                | NSWindowCollectionBehavior::FullScreenAuxiliary
+                | NSWindowCollectionBehavior::Transient
+                | NSWindowCollectionBehavior::IgnoresCycle,
+        );
+    }
+}
+
+#[cfg(not(target_os = "macos"))]
+fn configure_macos_tray_popover_window(_window: &tauri::WebviewWindow) {}
 
 fn handle_tray_popover_focus(app: &AppHandle, focused: bool) {
     let mut focus = match TRAY_FOCUS.lock() {
@@ -133,7 +175,9 @@ fn clamp_host_x(center_x: f64, monitor_x: f64, monitor_width: f64, host_width: f
 }
 
 fn clamp_host_y(desired_y: f64, host_height: f64, monitor_y: f64, monitor_height: f64) -> f64 {
-    let min_y = monitor_y;
+    // Allow host to sit above the menu-bar bottom (negative relative to content area)
+    // so top shadow bleed is transparent over the menu bar, not empty desktop gap.
+    let min_y = monitor_y - TRAY_HOST_SHADOW_BLEED_TOP;
     let max_y = monitor_y + monitor_height - host_height;
     desired_y.clamp(min_y, max_y.max(min_y))
 }
@@ -147,11 +191,23 @@ fn host_position_for_anchor(
     monitor_width: f64,
     monitor_height: f64,
 ) -> LogicalPosition<f64> {
-    let visible_surface_y = anchor.tray_bottom_y + TRAY_POPOVER_GAP;
-    let host_y = visible_surface_y - TRAY_HOST_SHADOW_BLEED_TOP;
+    let visible_surface_y = visible_surface_top_y(anchor.tray_bottom_y);
+    let host_y = host_top_y_from_visible_surface(visible_surface_y);
     let y = clamp_host_y(host_y, host_height, monitor_y, monitor_height);
     let x = clamp_host_x(anchor.center_x, monitor_x, monitor_width, host_width);
     LogicalPosition { x, y }
+}
+
+fn monitor_for_tray_point(app: &AppHandle, physical_x: f64, physical_y: f64) -> Option<Monitor> {
+    app.monitor_from_point(physical_x, physical_y)
+        .ok()
+        .flatten()
+        .or_else(|| app.primary_monitor().ok().flatten())
+        .or_else(|| {
+            app.available_monitors()
+                .ok()
+                .and_then(|m| m.into_iter().next())
+        })
 }
 
 fn reposition_under_tray(app: &AppHandle, window: &tauri::WebviewWindow) -> Result<(), String> {
@@ -162,11 +218,15 @@ fn reposition_under_tray(app: &AppHandle, window: &tauri::WebviewWindow) -> Resu
         return Ok(());
     };
 
-    let monitor = app.primary_monitor().ok().flatten().or_else(|| {
-        app.available_monitors()
-            .ok()
-            .and_then(|m| m.into_iter().next())
-    });
+    // Prefer the screen that contains the tray center (logical → approximate physical via primary scale).
+    let probe = app
+        .primary_monitor()
+        .ok()
+        .flatten()
+        .map(|m| m.scale_factor())
+        .unwrap_or(1.0);
+    let monitor = monitor_for_tray_point(app, anchor.center_x * probe, anchor.tray_bottom_y * probe)
+        .or_else(|| app.primary_monitor().ok().flatten());
     let Some(monitor) = monitor else {
         return Ok(());
     };
@@ -180,6 +240,7 @@ fn reposition_under_tray(app: &AppHandle, window: &tauri::WebviewWindow) -> Resu
         .outer_size()
         .map_err(|e| e.to_string())?
         .to_logical::<f64>(scale);
+    configure_macos_tray_popover_window(window);
     let position = host_position_for_anchor(
         anchor,
         host_size.width,
@@ -234,14 +295,18 @@ pub fn toggle_tray_popover(app: &AppHandle, tray_rect: Option<Rect>) -> Result<(
         TrayToggleAction::Show => {}
     }
 
-    let monitor = app.primary_monitor().ok().flatten().or_else(|| {
-        app.available_monitors()
-            .ok()
-            .and_then(|m| m.into_iter().next())
-    });
+    match tray_rect {
+        Some(rect) => {
+            // Tray-icon rect is physical; resolve the monitor that contains the icon first.
+            let physical = rect.position.to_physical::<f64>(1.0);
+            let Some(monitor) = monitor_for_tray_point(app, physical.x, physical.y) else {
+                window
+                    .set_position(Position::Physical(PhysicalPosition { x: 0, y: 28 }))
+                    .map_err(|e| e.to_string())?;
+                window.show().map_err(|e| e.to_string())?;
+                return Ok(());
+            };
 
-    match (monitor, tray_rect) {
-        (Some(monitor), Some(rect)) => {
             let scale = monitor.scale_factor();
             let size = monitor.size();
             let pos = monitor.position();
@@ -261,6 +326,7 @@ pub fn toggle_tray_popover(app: &AppHandle, tray_rect: Option<Rect>) -> Result<(
                 .outer_size()
                 .map_err(|e| e.to_string())?
                 .to_logical::<f64>(scale);
+            configure_macos_tray_popover_window(&window);
             let position = host_position_for_anchor(
                 &TrayAnchor {
                     center_x: tray_center_x,
@@ -277,26 +343,30 @@ pub fn toggle_tray_popover(app: &AppHandle, tray_rect: Option<Rect>) -> Result<(
                 .set_position(Position::Logical(position))
                 .map_err(|e| e.to_string())?;
         }
-        (Some(monitor), None) => {
+        None => {
             if let Ok(mut anchor) = TRAY_ANCHOR.lock() {
                 *anchor = None;
             }
-            let scale = monitor.scale_factor();
-            let size = monitor.size();
-            let width = popover_width();
-            let x = (size.width as f64 / scale) - width - 12.0;
-            let y = 28.0;
-            window
-                .set_position(Position::Logical(LogicalPosition { x, y }))
-                .map_err(|e| e.to_string())?;
-        }
-        (None, _) => {
-            if let Ok(mut anchor) = TRAY_ANCHOR.lock() {
-                *anchor = None;
+            let monitor = app.primary_monitor().ok().flatten().or_else(|| {
+                app.available_monitors()
+                    .ok()
+                    .and_then(|m| m.into_iter().next())
+            });
+            if let Some(monitor) = monitor {
+                let scale = monitor.scale_factor();
+                let size = monitor.size();
+                let width = popover_width();
+                let x = (size.width as f64 / scale) - width - 12.0;
+                // Fallback: approximate menu-bar height without tray rect.
+                let y = host_top_y_from_visible_surface(visible_surface_top_y(28.0));
+                window
+                    .set_position(Position::Logical(LogicalPosition { x, y }))
+                    .map_err(|e| e.to_string())?;
+            } else {
+                window
+                    .set_position(Position::Physical(PhysicalPosition { x: 0, y: 28 }))
+                    .map_err(|e| e.to_string())?;
             }
-            window
-                .set_position(Position::Physical(PhysicalPosition { x: 0, y: 28 }))
-                .map_err(|e| e.to_string())?;
         }
     }
 
@@ -325,14 +395,56 @@ mod tests {
     use super::*;
 
     #[test]
-    fn popover_surface_is_three_px_below_tray_bottom() {
+    fn visible_surface_gap_from_menu_bar_is_zero_to_two_px() {
+        let menu_bar_bottom = 37.0;
         let anchor = TrayAnchor {
             center_x: 100.0,
-            tray_bottom_y: 30.0,
+            tray_bottom_y: menu_bar_bottom,
         };
         let pos = host_position_for_anchor(&anchor, 300.0, 320.0, 0.0, 0.0, 1920.0, 1080.0);
         let visible_top = pos.y + TRAY_HOST_SHADOW_BLEED_TOP;
-        assert_eq!(visible_top - anchor.tray_bottom_y, TRAY_POPOVER_GAP);
+        let gap = visible_top - menu_bar_bottom;
+        assert!(gap >= 0.0, "gap {gap} must not overlap the menu bar");
+        assert!(
+            gap <= 2.0,
+            "gap {gap} must be <= 2px (got visible_top={visible_top})"
+        );
+        assert_eq!(gap, TRAY_POPOVER_GAP);
+    }
+
+    #[test]
+    fn host_top_equals_visible_surface_minus_top_bleed() {
+        let menu_bar_bottom = 37.0;
+        let visible_top = visible_surface_top_y(menu_bar_bottom);
+        let host_top = host_top_y_from_visible_surface(visible_top);
+        assert_eq!(host_top, visible_top - TRAY_HOST_SHADOW_BLEED_TOP);
+
+        let anchor = TrayAnchor {
+            center_x: 200.0,
+            tray_bottom_y: menu_bar_bottom,
+        };
+        let pos = host_position_for_anchor(&anchor, 280.0, 300.0, 0.0, 0.0, 1920.0, 1080.0);
+        assert_eq!(pos.y, host_top);
+        assert!(pos.y < visible_top);
+    }
+
+    #[test]
+    fn clamp_must_not_turn_top_bleed_into_desktop_gap() {
+        // Regression: if host were forced to menuBarBottom, visible card would sit
+        // menuBarBottom + bleed (= 12px gap). Desired host is above the menu bar.
+        let menu_bar_bottom = 37.0;
+        let anchor = TrayAnchor {
+            center_x: 100.0,
+            tray_bottom_y: menu_bar_bottom,
+        };
+        let pos = host_position_for_anchor(&anchor, 300.0, 320.0, 0.0, 0.0, 1920.0, 1080.0);
+        assert!(
+            pos.y < menu_bar_bottom,
+            "host must extend into menu-bar Y for transparent bleed (host={})",
+            pos.y
+        );
+        let visible_top = pos.y + TRAY_HOST_SHADOW_BLEED_TOP;
+        assert!((visible_top - menu_bar_bottom).abs() <= 2.0);
     }
 
     #[test]
@@ -344,18 +456,6 @@ mod tests {
         let width = 312.0;
         let pos = host_position_for_anchor(&anchor, width, 320.0, 0.0, 0.0, 1920.0, 1080.0);
         assert_eq!(pos.x + width / 2.0, anchor.center_x);
-    }
-
-    #[test]
-    fn host_top_includes_shadow_bleed_without_lowering_the_surface() {
-        let anchor = TrayAnchor {
-            center_x: 200.0,
-            tray_bottom_y: 40.0,
-        };
-        let pos = host_position_for_anchor(&anchor, 280.0, 300.0, 0.0, 0.0, 1920.0, 1080.0);
-        let visible_top = anchor.tray_bottom_y + TRAY_POPOVER_GAP;
-        assert_eq!(pos.y, visible_top - TRAY_HOST_SHADOW_BLEED_TOP);
-        assert!(pos.y < visible_top);
     }
 
     #[test]

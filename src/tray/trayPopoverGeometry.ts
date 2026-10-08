@@ -1,9 +1,9 @@
-/** Keep in sync with tray_popover.rs (TRAY_POPOVER_GAP). */
-export const TRAY_POPOVER_GAP_PX = 3;
+/** Keep in sync with tray_popover.rs (TRAY_POPOVER_GAP). Visible card under menu bar: 0–2px. */
+export const TRAY_POPOVER_GAP_PX = 1;
 /** @deprecated Use TRAY_POPOVER_GAP_PX. */
 export const TRAY_ARROW_TIP_GAP_PX = TRAY_POPOVER_GAP_PX;
 
-/** Transparent host room for `0 4px 12px` shadow. Does not move the visible surface. */
+/** Transparent host room for `0 4px 12px` shadow. Host moves up; surface does not. */
 export const TRAY_HOST_SHADOW_BLEED_TOP_PX = 12;
 export const TRAY_HOST_SHADOW_BLEED_X_PX = 16;
 export const TRAY_HOST_SHADOW_BLEED_BOTTOM_PX = 20;
