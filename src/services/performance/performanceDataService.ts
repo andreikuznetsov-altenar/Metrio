@@ -250,15 +250,43 @@ export async function fetchPerformanceData(
   const knownKeys = new Set(issues.map(issueKeyFromRaw).filter(Boolean));
   const linkedKeys = collectLinkedIssueKeys(issues).filter((k) => !knownKeys.has(k));
   if (linkedKeys.length) {
-    const linkedIssues = await jira.fetchIssuesByKeys(linkedKeys.slice(0, 200));
-    issues = [...issues, ...linkedIssues];
-    for (const issue of linkedIssues) {
-      const key = issueKeyFromRaw(issue);
-      if (key) knownKeys.add(key);
+    try {
+      const linkedIssues = await jira.fetchIssuesByKeys(linkedKeys.slice(0, 200));
+      issues = [...issues, ...linkedIssues];
+      for (const issue of linkedIssues) {
+        const key = issueKeyFromRaw(issue);
+        if (key) knownKeys.add(key);
+      }
+    } catch (error) {
+      // OPTIONAL enrichment — dependency links; core issue set remains usable.
+      partialWarnings.push("linked_issues_unavailable");
+      void writeLog(
+        "warn",
+        "app",
+        "performance_jira_enrichment",
+        `Linked issue fetch failed code=${
+          error instanceof Error ? error.name : "unknown"
+        }`,
+      );
     }
   }
   const issueKeys = issues.map(issueKeyFromRaw).filter(Boolean);
-  const changelogByIssue = await jira.fetchAllChangelogsBatch(issueKeys);
+  const changelogBatch = await jira.fetchAllChangelogsBatch(issueKeys);
+  const changelogByIssue = changelogBatch.changelogs;
+  if (changelogBatch.partialFailures.length > 0) {
+    partialWarnings.push(
+      `jira_changelog_partial count=${changelogBatch.partialFailures.length}`,
+    );
+    void writeLog(
+      "warn",
+      "app",
+      "performance_jira_changelog",
+      `Changelog enrichment partial failures=${changelogBatch.partialFailures.length} sample=${changelogBatch.partialFailures
+        .slice(0, 5)
+        .map((f) => `${f.issueKey}:${f.code}${f.status != null ? `@${f.status}` : ""}`)
+        .join(",")}`,
+    );
+  }
 
   const historyReportData = await buildEnhancedJiraAuditReport({
     issues,

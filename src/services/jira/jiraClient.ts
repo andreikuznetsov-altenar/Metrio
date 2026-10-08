@@ -13,6 +13,32 @@ interface ChangelogBatchItem {
   error?: { code: string; message: string; status?: number };
 }
 
+export interface JiraChangelogPartialFailure {
+  issueKey: string;
+  code: string;
+  status?: number;
+  message: string;
+}
+
+export interface JiraChangelogBatchResult {
+  changelogs: Map<string, unknown[]>;
+  /** Per-issue enrichment failures that did not abort the batch. */
+  partialFailures: JiraChangelogPartialFailure[];
+}
+
+const CHANGELOG_AUTH_CODES = new Set([
+  'jira_auth_invalid',
+  'credential_missing',
+  'keychain_error',
+]);
+
+function isChangelogAuthFailure(failure: JiraChangelogPartialFailure): boolean {
+  return (
+    CHANGELOG_AUTH_CODES.has(failure.code) ||
+    failure.status === 401
+  );
+}
+
 import { incrementApiRequest } from '../../platform/observability/observabilityStore';
 
 async function invokeJira<T>(command: string, args: Record<string, unknown>): Promise<T> {
@@ -124,6 +150,11 @@ export class JiraClient {
     return allValues;
   }
 
+  /**
+   * Fetch changelogs for many issues.
+   * Per-issue transport/timeout/404 failures are OPTIONAL enrichment — they do not
+   * reject the batch. Systemic auth failures (401/credential) across a chunk escalate.
+   */
   async fetchAllChangelogsBatch(
     issueKeys: string[],
     concurrency = 4,
@@ -132,8 +163,9 @@ export class JiraClient {
       shouldAbort?: () => boolean;
       chunkSize?: number;
     },
-  ): Promise<Map<string, unknown[]>> {
+  ): Promise<JiraChangelogBatchResult> {
     const map = new Map<string, unknown[]>();
+    const partialFailures: JiraChangelogPartialFailure[] = [];
     const chunkSize = options?.chunkSize ?? Math.max(concurrency * 4, 20);
     const total = issueKeys.length;
 
@@ -152,23 +184,41 @@ export class JiraClient {
         },
       });
 
+      const authFailures: JiraChangelogPartialFailure[] = [];
       for (const item of result) {
         if (item.error) {
-          const err = parseInvokeError({
-            code: item.error.code,
-            message: item.error.message,
+          const failure: JiraChangelogPartialFailure = {
+            issueKey: item.issue_key,
+            code: item.error.code || 'unknown',
             status: item.error.status,
-          });
-          Object.assign(err, { issueKey: item.issue_key });
-          throw err;
+            message: item.error.message || 'Changelog fetch failed',
+          };
+          if (isChangelogAuthFailure(failure)) {
+            authFailures.push(failure);
+          }
+          // Keep an empty changelog so report builders do not re-fetch and throw.
+          map.set(item.issue_key, []);
+          partialFailures.push(failure);
+          continue;
         }
         map.set(item.issue_key, Array.isArray(item.values) ? item.values : []);
+      }
+
+      // If every issue in the chunk failed auth, the session/token is unusable — CORE failure.
+      if (chunk.length > 0 && authFailures.length === chunk.length) {
+        const err = parseInvokeError({
+          code: authFailures[0]?.code || 'jira_auth_invalid',
+          message: authFailures[0]?.message || 'Jira authentication failed',
+          status: authFailures[0]?.status,
+        });
+        Object.assign(err, { issueKey: authFailures[0]?.issueKey });
+        throw err;
       }
 
       options?.onProgress?.(Math.min(offset + chunk.length, total), total);
     }
 
-    return map;
+    return { changelogs: map, partialFailures };
   }
 
   async searchIssues(

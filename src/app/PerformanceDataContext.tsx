@@ -44,6 +44,8 @@ import {
   noteRefreshFailed,
   recordIntegrationRefresh,
 } from "../platform/observability/observabilityStore";
+import { classifyJiraRefreshFailure } from "../platform/jiraRefreshErrors";
+import { writeLog } from "../platform/logger";
 import {
   installKpiReconciliationDevTools,
   registerKpiReconciliationDataSource,
@@ -218,10 +220,17 @@ export function PerformanceDataProvider({
       const requestId = ++requestSeqRef.current;
       const hasData = dataRef.current != null;
       const showOverlay = mode !== "silent";
+      const cycleStartedAt = Date.now();
       if (showOverlay) {
         setStatus(hasData ? "refreshing" : "loading");
       }
       setErrorMessage(null);
+      void writeLog(
+        "info",
+        "app",
+        "performance_refresh_cycle",
+        `start mode=${mode} requestId=${requestId} hasCache=${hasData}`,
+      );
 
       try {
         const next = await fetchPerformanceData(
@@ -251,6 +260,12 @@ export function PerformanceDataProvider({
         setRefreshFailedWithUsableCache(false);
         setRevalidatingFromCache(false);
         setErrorMessage(null);
+        void writeLog(
+          "info",
+          "app",
+          "performance_refresh_cycle",
+          `success mode=${mode} requestId=${requestId} durationMs=${Date.now() - cycleStartedAt} partialWarnings=${next.partialWarnings.length}`,
+        );
         const cacheIdentity: DashboardCacheIdentity = {
           selfPersonId,
           role: userRole,
@@ -266,12 +281,27 @@ export function PerformanceDataProvider({
           identity: cacheIdentity,
           fetchResult: next,
         }).catch(() => undefined);
-        await applyPerformanceRefreshSideEffects(next, {
-          selfPersonId,
-          role: userRole,
-          viewModels: models,
-          currentUser: currentUserCtx?.currentUser ?? null,
-        });
+        // Side effects (tray/notifications) are OPTIONAL relative to CORE workspace data.
+        // A tray/write failure must not mark a successful core refresh as failed.
+        try {
+          await applyPerformanceRefreshSideEffects(next, {
+            selfPersonId,
+            role: userRole,
+            viewModels: models,
+            currentUser: currentUserCtx?.currentUser ?? null,
+          });
+        } catch (sideEffectError) {
+          void writeLog(
+            "warn",
+            "app",
+            "performance_refresh_side_effects",
+            `Post-refresh side effects failed after successful core snapshot: ${
+              sideEffectError instanceof Error
+                ? sideEffectError.message
+                : String(sideEffectError)
+            }`,
+          );
+        }
       } catch (error) {
         if (!isLatestPerformanceRequest(requestId, requestSeqRef.current)) {
           return;
@@ -279,20 +309,44 @@ export function PerformanceDataProvider({
         const message = errorMessageFromError(error);
         noteRefreshFailed();
         const category = categorizeError(error);
-        if (/jira/i.test(message)) {
-          recordIntegrationRefresh("jira", "Jira", "failed", 0, category);
+        const jiraFailure = classifyJiraRefreshFailure(error, Boolean(dataRef.current));
+        const bambooOnly = /bamboo/i.test(message) && !/jira/i.test(message);
+        void writeLog(
+          "warn",
+          "app",
+          "performance_refresh_failed",
+          `CORE refresh failed mode=${mode} requestId=${requestId} durationMs=${Date.now() - cycleStartedAt} kind=${jiraFailure.kind} code=${jiraFailure.code ?? "n/a"} category=${category}${
+            jiraFailure.issueKey ? ` issueKey=${jiraFailure.issueKey}` : ""
+          } detail=${jiraFailure.logDetail}`,
+        );
+        if (!bambooOnly) {
+          recordIntegrationRefresh(
+            "jira",
+            "Jira",
+            "failed",
+            0,
+            category,
+            jiraFailure.kind === "credential" || jiraFailure.kind === "access"
+              ? jiraFailure.userMessage
+              : jiraFailure.logDetail,
+          );
         }
         if (/bamboo/i.test(message)) {
           recordIntegrationRefresh("bamboo", "BambooHR", "failed", 0, category);
         }
-        setErrorMessage(message);
+        setErrorMessage(
+          !bambooOnly &&
+            (jiraFailure.kind === "credential" || jiraFailure.kind === "access")
+            ? jiraFailure.userMessage
+            : message,
+        );
         if (dataRef.current) {
           setStale(true);
           setRefreshFailedWithUsableCache(true);
           setRevalidatingFromCache(true);
           setStatus("partial");
           await markPerformanceIntegrationsStale({
-            jira: /jira/i.test(message),
+            jira: !bambooOnly,
             bamboo: /bamboo/i.test(message),
           });
         } else {

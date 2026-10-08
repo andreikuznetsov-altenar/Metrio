@@ -124,6 +124,7 @@ export function GlobalRefreshStatusPanel() {
         type="button"
         variant="secondary"
         data-testid="global-refresh-status-retry"
+        disabled={data.refreshing || data.status === "loading"}
         onClick={() => void data.refresh()}
       >
         Retry
