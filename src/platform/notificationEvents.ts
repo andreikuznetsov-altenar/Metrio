@@ -83,7 +83,15 @@ export function listNotificationEventsOrThrow(): NotificationEvent[] {
 }
 
 export function countUnreadNotificationEvents(): number {
-  return listNotificationEvents().filter((event) => !event.readAt).length;
+  return listNotificationEvents().filter((event) => {
+    if (event.readAt) return false;
+    // Live-state integration incidents: ignore resolved / restored leftovers.
+    if (event.type === "integration_problem") {
+      if (event.resolvedAt) return false;
+      if (event.dedupeKey?.endsWith(":restored")) return false;
+    }
+    return true;
+  }).length;
 }
 
 export interface RecordNotificationEventInput {
@@ -91,6 +99,7 @@ export interface RecordNotificationEventInput {
   title: string;
   message: string;
   createdAt?: string;
+  readAt?: string;
   personId?: string;
   personName?: string;
   issueKey?: string;
@@ -111,6 +120,7 @@ function buildEventFromInput(
     id: id ?? `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
     type,
     createdAt: input.createdAt ?? new Date().toISOString(),
+    readAt: input.readAt,
     title: input.title,
     message: input.message,
     personId: input.personId,
@@ -209,6 +219,18 @@ export function resolveNotificationByDedupeKey(
       : event,
   );
   writeEvents(events);
+}
+
+/** Hard-delete notifications matching any of the dedupe keys (live-state recovery). */
+export function removeNotificationEventsByDedupeKeys(dedupeKeys: string[]): void {
+  if (dedupeKeys.length === 0) return;
+  const drop = new Set(dedupeKeys);
+  const events = listNotificationEvents();
+  const next = events.filter(
+    (event) => !event.dedupeKey || !drop.has(event.dedupeKey),
+  );
+  if (next.length === events.length) return;
+  writeEvents(next);
 }
 
 export function syncTrayBambooInboxActions(

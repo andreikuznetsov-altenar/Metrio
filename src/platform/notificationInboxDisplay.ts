@@ -1,4 +1,5 @@
 import { enrichInboxEvent, inboxSourceForType } from "../domain/inbox/actionInboxModel";
+import { isActiveIntegrationProblemNotification } from "./integrationProblemNotifications";
 import type { NotificationEvent, InboxSourceFilterId } from "./notificationTypes";
 import { isToday, isYesterday, parseISO } from "date-fns";
 
@@ -34,6 +35,7 @@ export function filterNotificationsBySource(
   sourceFilter: InboxSourceFilterId,
 ): NotificationEvent[] {
   return events.filter((event) => {
+    if (!isActiveIntegrationProblemNotification(event)) return false;
     const item = enrichInboxEvent(event);
     const source = item.source ?? inboxSourceForType(item.type);
     return sourceFilter === "all" || source === sourceFilter;

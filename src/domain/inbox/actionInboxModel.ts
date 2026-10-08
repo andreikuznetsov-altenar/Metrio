@@ -68,13 +68,14 @@ export function inboxActionRequiredForType(type: NotificationEventType): boolean
 
 export function enrichInboxEvent(event: NotificationEvent): ActionInboxItem {
   const type = event.type;
-  const restored =
+  const inactiveIntegration =
     type === "integration_problem" &&
-    Boolean(event.dedupeKey?.endsWith(":restored"));
+    (Boolean(event.resolvedAt) ||
+      Boolean(event.dedupeKey?.endsWith(":restored")));
   const baseActionRequired =
     event.actionRequired ?? inboxActionRequiredForType(type);
   const actionRequired =
-    event.resolvedAt || restored ? false : baseActionRequired;
+    event.resolvedAt || inactiveIntegration ? false : baseActionRequired;
   return {
     ...event,
     source: event.source ?? inboxSourceForType(type),

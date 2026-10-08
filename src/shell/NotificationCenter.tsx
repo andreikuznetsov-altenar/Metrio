@@ -38,6 +38,7 @@ import {
   groupNotificationsForInbox,
 } from "../platform/notificationInboxDisplay";
 import {
+  countUnreadNotificationEvents,
   listNotificationEventsOrThrow,
   NOTIFICATION_EVENTS_CHANGED,
 } from "../platform/notificationEvents";
@@ -122,8 +123,8 @@ export function NotificationCenter({
   const [menuOpen, setMenuOpen] = useState(false);
 
   const syncUnread = useCallback(
-    (next: NotificationEvent[]) => {
-      onUnreadChange?.(next.filter((event) => !event.readAt).length);
+    (_next: NotificationEvent[]) => {
+      onUnreadChange?.(countUnreadNotificationEvents());
     },
     [onUnreadChange],
   );
@@ -180,7 +181,7 @@ export function NotificationCenter({
     [filtered],
   );
 
-  const unreadCount = events.filter((event) => !event.readAt).length;
+  const unreadCount = countUnreadNotificationEvents();
   const hasNotifications = events.length > 0;
 
   const handleActivate = async (event: NotificationEvent) => {

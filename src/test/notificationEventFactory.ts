@@ -77,7 +77,7 @@ export function buildIntegrationEvent(
     title: "Jira connection problem",
     message: "Jira data could not be refreshed.",
     target: { kind: "settings", section: "connections" },
-    dedupeKey: "integration:jira:unhealthy",
+    dedupeKey: "integration_problem:jira",
     ...overrides,
   });
 }

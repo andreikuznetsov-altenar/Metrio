@@ -22,13 +22,13 @@ describe("notificationEvents", () => {
       type: "integration_problem",
       title: "Jira connection problem",
       message: "First",
-      dedupeKey: "integration:jira:unhealthy",
+      dedupeKey: "integration_problem:jira",
     });
     recordNotificationEvent({
       type: "integration_problem",
       title: "Jira connection problem",
       message: "Updated",
-      dedupeKey: "integration:jira:unhealthy",
+      dedupeKey: "integration_problem:jira",
     });
     expect(listNotificationEvents()).toHaveLength(1);
     expect(listNotificationEvents()[0].message).toBe("Updated");

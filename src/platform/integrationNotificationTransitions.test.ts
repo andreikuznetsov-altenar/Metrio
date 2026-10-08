@@ -5,7 +5,7 @@ import {
   clearNotificationEventsForTests,
   listNotificationEvents,
 } from "./notificationEvents";
-import { inboxMatchesFilter } from "./notificationTypes";
+import { integrationProblemDedupeKey } from "./integrationProblemNotifications";
 
 vi.mock("./notificationNativeDispatch", () => ({
   dispatchNativeNotification: vi.fn(async () => true),
@@ -23,6 +23,9 @@ describe("integrationNotificationTransitions", () => {
     });
     expect(listNotificationEvents()).toHaveLength(1);
     expect(listNotificationEvents()[0]?.type).toBe("integration_problem");
+    expect(listNotificationEvents()[0]?.dedupeKey).toBe(
+      integrationProblemDedupeKey("jira"),
+    );
     expect(next.notificationState.integrationHealth?.jira).toBe("unhealthy");
   });
 
@@ -34,27 +37,11 @@ describe("integrationNotificationTransitions", () => {
     expect(listNotificationEvents()).toHaveLength(1);
   });
 
-  it("creates restored event after unhealthy to healthy transition", () => {
+  it("removes the problem card on recovery without a restored notification", () => {
     const unhealthy = processIntegrationNotificationTransitions(DEFAULT_PREFERENCES, {
       jiraStale: true,
     });
     processIntegrationNotificationTransitions(unhealthy, { jiraStale: false });
-    expect(listNotificationEvents()).toHaveLength(2);
-    expect(listNotificationEvents()[0]?.title).toBe("Connection restored");
-  });
-
-  it("hides resolved connection problem from actions filter", () => {
-    const unhealthy = processIntegrationNotificationTransitions(DEFAULT_PREFERENCES, {
-      jiraStale: true,
-    });
-    const events = listNotificationEvents();
-    const problem = events.find((e) => e.dedupeKey?.endsWith(":unhealthy"));
-    expect(problem).toBeTruthy();
-    processIntegrationNotificationTransitions(unhealthy, { jiraStale: false });
-    const resolvedProblem = listNotificationEvents().find(
-      (e) => e.dedupeKey === problem?.dedupeKey,
-    );
-    expect(resolvedProblem?.resolvedAt).toBeTruthy();
-    expect(inboxMatchesFilter(resolvedProblem!, "actions")).toBe(false);
+    expect(listNotificationEvents()).toHaveLength(0);
   });
 });

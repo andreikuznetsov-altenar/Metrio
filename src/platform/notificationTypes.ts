@@ -107,10 +107,10 @@ export function inboxMatchesFilter(
 ): boolean {
   const item = enrichInboxEvent(event);
   if (item.resolvedAt && filter === "actions") return false;
+  // Live-state integration incidents: never show resolved / restored leftovers.
   if (
-    item.resolvedAt &&
     item.type === "integration_problem" &&
-    item.dedupeKey?.endsWith(":unhealthy")
+    (item.resolvedAt || item.dedupeKey?.endsWith(":restored"))
   ) {
     return false;
   }
