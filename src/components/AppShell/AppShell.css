@@ -105,6 +105,6 @@
   pointer-events: auto;
 }
 
-.app-modal-layer:has(.metrio-modal-root) {
+.app-modal-layer:has(.metrio-modal-root--open) {
   pointer-events: auto;
 }

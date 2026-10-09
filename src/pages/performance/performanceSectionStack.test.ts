@@ -26,5 +26,8 @@ describe("route layer pointer contract", () => {
     expect(css).toContain(".app-route-layer[hidden]");
     expect(css).toMatch(/\.app-route-layer\[hidden\][\s\S]*pointer-events: none !important/);
     expect(css).toMatch(/\.app-route-layer \{[\s\S]*pointer-events: auto/);
+    expect(css).toMatch(
+      /\.app-modal-layer:has\(\.metrio-modal-root--open\)[\s\S]*pointer-events: auto/,
+    );
   });
 });

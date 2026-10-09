@@ -6,6 +6,11 @@
   align-items: center;
   justify-content: center;
   padding: var(--space-4);
+  /* Exit animation keeps the root mounted briefly; must not block the app underneath. */
+  pointer-events: none;
+}
+
+.metrio-modal-root--open {
   pointer-events: auto;
 }
 
