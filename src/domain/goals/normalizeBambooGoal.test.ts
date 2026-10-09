@@ -54,4 +54,25 @@ describe("normalizeBambooGoal", () => {
   it("returns null without id/title", () => {
     expect(normalizeBambooGoal({ id: "1" }, "1")).toBeNull();
   });
+
+  it("uses startDate then createdDate for setDate", () => {
+    const withStart = normalizeBambooGoal(
+      { id: "1", title: "G", startDate: "2026-05-10", dueDate: "2026-06-01" },
+      "5",
+    );
+    expect(withStart?.setDate).toBe("2026-05-10");
+    expect(withStart?.startDateIsExplicit).toBe(true);
+
+    const withCreated = normalizeBambooGoal(
+      {
+        id: "2",
+        title: "G2",
+        createdDate: "2026-03-01",
+        dueDate: "2026-06-01",
+      },
+      "5",
+    );
+    expect(withCreated?.setDate).toBe("2026-03-01");
+    expect(withCreated?.startDateIsExplicit).toBe(false);
+  });
 });

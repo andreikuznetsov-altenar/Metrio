@@ -27,6 +27,41 @@ function asNumber(value: unknown): number | undefined {
   return undefined;
 }
 
+function isoDateFromDateTime(value: string | undefined): string | null {
+  if (!value) return null;
+  const trimmed = value.trim();
+  if (/^\d{4}-\d{2}-\d{2}/.test(trimmed)) {
+    return trimmed.slice(0, 10);
+  }
+  const d = new Date(trimmed);
+  if (Number.isNaN(d.getTime())) return null;
+  const y = d.getUTCFullYear();
+  const m = String(d.getUTCMonth() + 1).padStart(2, "0");
+  const day = String(d.getUTCDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
+function resolveGoalSetDate(row: Record<string, unknown>): {
+  setDate: string | null;
+  startDateIsExplicit: boolean;
+} {
+  const startDate = asString(row.startDate);
+  if (startDate) {
+    return { setDate: startDate.slice(0, 10), startDateIsExplicit: true };
+  }
+  const createdDate = asString(row.createdDate);
+  if (createdDate) {
+    return { setDate: createdDate.slice(0, 10), startDateIsExplicit: false };
+  }
+  const fromDateTime =
+    isoDateFromDateTime(asString(row.createdDateTime)) ??
+    isoDateFromDateTime(asString(row.createdAt));
+  if (fromDateTime) {
+    return { setDate: fromDateTime, startDateIsExplicit: false };
+  }
+  return { setDate: null, startDateIsExplicit: false };
+}
+
 function asStringIds(value: unknown): string[] {
   if (!Array.isArray(value)) return [];
   return value
@@ -104,12 +139,16 @@ export function normalizeBambooGoal(
     ? (row.actions.filter((a) => asRecord(a)) as BambooGoalAction[])
     : undefined;
 
+  const { setDate, startDateIsExplicit } = resolveGoalSetDate(row);
+
   return {
     id,
     employeeId: asString(row.employeeId) ?? employeeId,
     title,
     description: asString(row.description),
     dueDate: asString(row.dueDate) ?? null,
+    setDate,
+    startDateIsExplicit,
     percentComplete: Math.max(0, Math.min(100, percentComplete)),
     completionDate: asString(row.completionDate) ?? null,
     status: normalizeStatus(row.status),

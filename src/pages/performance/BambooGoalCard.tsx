@@ -1,20 +1,10 @@
 import { ExternalLink } from "lucide-react";
+import { Badge } from "../../components/Badge/Badge";
 import { Button } from "../../components/Button/Button";
 import type { BambooGoal } from "../../domain/goals/bambooGoalTypes";
+import { formatGoalCardDateLine } from "../../domain/goals/goalDatePresentation";
+import { resolveGoalPresentationStatus } from "../../domain/goals/goalPresentationHealth";
 import { milestoneSummary } from "../../domain/goals/normalizeBambooGoal";
-
-function formatStatus(goal: BambooGoal): string {
-  switch (goal.status) {
-    case "in_progress":
-      return "In progress";
-    case "completed":
-      return "Completed";
-    case "closed":
-      return "Closed";
-    default:
-      return goal.rawStatus || "Unknown";
-  }
-}
 
 export function BambooGoalCard({
   goal,
@@ -28,14 +18,33 @@ export function BambooGoalCard({
   onRequestDelete: () => void;
 }) {
   const milestones = milestoneSummary(goal);
+  const presentation = resolveGoalPresentationStatus(goal);
+  const dateLine = formatGoalCardDateLine(goal);
   return (
-    <article className="goal-card" data-testid="bamboo-goal-card" data-goal-id={goal.id}>
-      <h3 className="goal-card__title">{goal.title}</h3>
-      <p className="goal-card__meta">
-        {goal.percentComplete}% · {goal.dueDate ? `Due ${goal.dueDate}` : "No due date"} ·{" "}
-        {formatStatus(goal)}
-      </p>
-      {milestones ? <p className="goal-card__facts">{milestones}</p> : null}
+    <article
+      className="goal-card goal-card--bamboo"
+      data-testid="bamboo-goal-card"
+      data-goal-id={goal.id}
+    >
+      <div className="goal-card__main">
+        <div className="goal-card__content">
+          <h3 className="goal-card__title">{goal.title}</h3>
+          <p className="goal-card__dates" data-testid="bamboo-goal-card-dates">
+            {dateLine}
+          </p>
+          <div className="goal-card__status-row">
+            <Badge variant={presentation.badgeVariant}>{presentation.label}</Badge>
+          </div>
+          {milestones ? <p className="goal-card__facts">{milestones}</p> : null}
+        </div>
+        <div
+          className="goal-card__progress"
+          data-testid="bamboo-goal-card-percent"
+          aria-label={`${goal.percentComplete} percent complete`}
+        >
+          {goal.percentComplete}%
+        </div>
+      </div>
       <div className="goal-card__actions">
         <Button
           type="button"
@@ -56,7 +65,8 @@ export function BambooGoalCard({
         </Button>
         <Button
           type="button"
-          variant="danger"
+          variant="ghost"
+          className="goal-card__delete"
           onClick={onRequestDelete}
           data-testid="bamboo-goal-delete"
         >

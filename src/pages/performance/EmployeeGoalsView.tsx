@@ -1,5 +1,7 @@
 import { useMemo, useState } from "react";
+import { Target } from "lucide-react";
 import { Button } from "../../components/Button/Button";
+import { EmptyState } from "../../components/EmptyState/EmptyState";
 import { Modal } from "../../components/Modal/Modal";
 import { SegmentedControl } from "../../components/SegmentedControl/SegmentedControl";
 import { useToast } from "../../components/Toast/ToastContext";
@@ -15,7 +17,7 @@ import {
   BambooPermissionError,
 } from "../../services/bamboo/bambooClient";
 import { removeBambooGoalSidecar } from "../../services/goals/bambooGoalSidecar";
-import { BambooCreateGoalForm } from "./BambooCreateGoalForm";
+import { BambooCreateGoalDrawer } from "./BambooCreateGoalDrawer";
 import { BambooGoalCard } from "./BambooGoalCard";
 import { BambooGoalDetailDrawer } from "./BambooGoalDetailDrawer";
 import "./goal-detail-drawer.css";
@@ -29,12 +31,33 @@ const TAB_TO_FILTER: Record<GoalsTab, BambooGoalStatusFilter> = {
   closed: "status-closed",
 };
 
+const EMPTY_COPY: Record<
+  GoalsTab,
+  { title: string; description: string; testId: string }
+> = {
+  active: {
+    title: "No active goals",
+    description: "Active goals from BambooHR will appear here.",
+    testId: "bamboo-goals-empty-active",
+  },
+  completed: {
+    title: "No completed goals",
+    description: "Completed goals from BambooHR will appear here.",
+    testId: "bamboo-goals-empty-completed",
+  },
+  closed: {
+    title: "No closed goals",
+    description: "Closed goals from BambooHR will appear here.",
+    testId: "bamboo-goals-empty-closed",
+  },
+};
+
 export function EmployeeGoalsView({ personId }: { personId: string }) {
   const toast = useToast();
   const { currentUser } = useCurrentUser();
   const { data } = usePerformanceData();
   const [tab, setTab] = useState<GoalsTab>("active");
-  const [creating, setCreating] = useState(false);
+  const [createOpen, setCreateOpen] = useState(false);
   const [selected, setSelected] = useState<BambooGoal | null>(null);
   const [pendingDelete, setPendingDelete] = useState<BambooGoal | null>(null);
   const [deleteBusy, setDeleteBusy] = useState(false);
@@ -133,6 +156,8 @@ export function EmployeeGoalsView({ personId }: { personId: string }) {
     );
   }
 
+  const emptyCopy = EMPTY_COPY[tab];
+
   return (
     <div className="employee-goals" data-testid="employee-goals">
       <div className="goals-view__toolbar">
@@ -148,7 +173,7 @@ export function EmployeeGoalsView({ personId }: { personId: string }) {
         />
         <Button
           type="button"
-          onClick={() => setCreating(true)}
+          onClick={() => setCreateOpen(true)}
           data-testid="bamboo-create-goal-open"
         >
           Create goal
@@ -161,16 +186,15 @@ export function EmployeeGoalsView({ personId }: { personId: string }) {
         </p>
       ) : null}
 
-      {creating ? (
-        <BambooCreateGoalForm
-          ownerEmployeeId={bambooEmployeeId}
-          onCancel={() => setCreating(false)}
-          onCreated={() => {
-            setCreating(false);
-            void onWriteSuccess();
-          }}
-        />
-      ) : null}
+      <BambooCreateGoalDrawer
+        open={createOpen}
+        ownerEmployeeId={bambooEmployeeId}
+        onClose={() => setCreateOpen(false)}
+        onCreated={() => {
+          toast.success("Goal created in BambooHR");
+          void onWriteSuccess();
+        }}
+      />
 
       {state === "loading" ? (
         <div
@@ -189,9 +213,14 @@ export function EmployeeGoalsView({ personId }: { personId: string }) {
       ) : null}
 
       {state === "empty" ? (
-        <p className="performance-inline-empty" role="status">
-          No {tab} goals in BambooHR
-        </p>
+        <div className="employee-goals__empty">
+          <EmptyState
+            icon={<Target size={28} strokeWidth={1.5} aria-hidden />}
+            title={emptyCopy.title}
+            description={emptyCopy.description}
+            testId={emptyCopy.testId}
+          />
+        </div>
       ) : null}
 
       {state === "error" && goals.length === 0 ? (

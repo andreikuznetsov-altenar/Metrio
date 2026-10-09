@@ -13,6 +13,123 @@
   gap: var(--space-2);
 }
 
+.goal-card--bamboo {
+  background: var(--color-surface-elevated);
+  box-shadow: 0 1px 2px color-mix(in srgb, var(--color-shadow) 6%, transparent);
+}
+
+.goal-card__main {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+
+.goal-card__content {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.goal-card__dates {
+  margin: 0;
+  font-size: 13px;
+  color: var(--color-text-secondary);
+  line-height: 1.4;
+}
+
+.goal-card__status-row {
+  margin-top: var(--space-1);
+}
+
+.goal-card__progress {
+  flex-shrink: 0;
+  font-size: 28px;
+  font-weight: 600;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text-primary);
+}
+
+.goal-card__delete {
+  color: var(--color-danger);
+}
+
+.employee-goals__empty {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 280px;
+  padding: var(--space-6) 0;
+}
+
+.bamboo-create-goal-drawer__footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-2);
+  width: 100%;
+}
+
+.bamboo-goal-form--drawer {
+  margin: 0;
+}
+
+.bamboo-goal-form__title-due-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  align-items: flex-end;
+}
+
+.bamboo-goal-form__title-due-row > .field {
+  flex: 1 1 14rem;
+  min-width: 12rem;
+}
+
+.bamboo-goal-form__title-due-row > .metrio-date-picker {
+  flex: 0 1 10rem;
+  min-width: 9rem;
+}
+
+.bamboo-goal-form__switch-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.bamboo-goal-form__milestones {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.bamboo-goal-form__milestone-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.bamboo-goal-form__milestone-index {
+  width: 1.25rem;
+  text-align: center;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text-tertiary);
+  flex-shrink: 0;
+}
+
+.bamboo-goal-form__milestone-row > .field {
+  flex: 1;
+  min-width: 0;
+}
+
+.bamboo-goal-form__add-milestone {
+  align-self: flex-start;
+}
+
 .goal-card__actions,
 .bamboo-goal-detail__toolbar,
 .person-profile-goal__actions {

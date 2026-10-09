@@ -37,6 +37,10 @@ export interface BambooGoal {
   title: string;
   description?: string;
   dueDate?: string | null;
+  /** Bamboo startDate when provided; otherwise createdDate / createdDateTime date part. */
+  setDate?: string | null;
+  /** True when setDate came from Bamboo startDate (not created timestamp). */
+  startDateIsExplicit?: boolean;
   percentComplete: number;
   completionDate?: string | null;
   status: BambooGoalStatus;

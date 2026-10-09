@@ -13,6 +13,9 @@ export interface MetrioDatePickerProps {
   value: string;
   disabled?: boolean;
   onChange: (isoDate: string) => void;
+  /** Prefer top in short drawers so the calendar is not clipped. */
+  popoverSide?: "top" | "bottom";
+  testId?: string;
 }
 
 function DatePickerChevron({ orientation, className, ...props }: ChevronProps) {
@@ -34,6 +37,8 @@ export function MetrioDatePicker({
   value,
   disabled,
   onChange,
+  popoverSide = "bottom",
+  testId,
 }: MetrioDatePickerProps) {
   const [open, setOpen] = useState(false);
   const selected = useMemo(() => parseIsoDateOnly(value), [value]);
@@ -51,6 +56,7 @@ export function MetrioDatePicker({
             data-state={open ? "open" : "closed"}
             aria-label={`${label} date, ${display}`}
             disabled={disabled}
+            data-testid={testId}
           >
             <CalendarDays
               size={16}
@@ -65,10 +71,10 @@ export function MetrioDatePicker({
       <Popover.Portal>
         <Popover.Content
           className="metrio-date-picker__popover"
-          side="bottom"
+          side={popoverSide}
           align="start"
           sideOffset={6}
-          collisionPadding={8}
+          collisionPadding={16}
         >
           <DayPicker
             mode="single"
