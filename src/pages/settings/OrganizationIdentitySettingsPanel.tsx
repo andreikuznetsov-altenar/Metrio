@@ -1,23 +1,77 @@
-import { useMemo } from "react";
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type KeyboardEvent,
+} from "react";
 import { useCurrentUser } from "../../app/CurrentUserContext";
+import { usePersonNavigation } from "../../app/PersonNavigationContext";
+import { usePerformanceData } from "../../app/PerformanceDataContext";
 import { PersonAvatar } from "../../components/PersonAvatar/PersonAvatar";
 import { EntityLink } from "../../components/EntityLink/EntityLink";
-import type { AppPreferences } from "../../platform/preferences";
+import { canOpenPersonDetail } from "../../domain/personAccess";
+import { getWorkEmail, type AppPreferences } from "../../platform/preferences";
+import { BambooClient } from "../../services/bamboo/bambooClient";
+import { detectTeam } from "../../services/bamboo/teamDetection";
+import type { OrgResolutionResult } from "../../services/bamboo/orgResolver";
 import { resolveOrgRole } from "../../domain/organization/orgRole";
 import {
   hasSupervisorReference,
   metrioWorkspaceLabel,
+  NO_BAMBOO_MANAGER_COPY,
   resolveManagerEmployee,
   splitDepartmentLabel,
 } from "./organizationIdentityModel";
 
 export function OrganizationIdentitySettingsPanel({
   prefs,
+  onPrefsUpdated,
 }: {
   prefs: AppPreferences;
+  onPrefsUpdated?: (next: AppPreferences) => void;
 }) {
   const { currentUser } = useCurrentUser();
-  const org = prefs.teamDetection?.ok ? prefs.teamDetection : null;
+  const { openPerson } = usePersonNavigation();
+  const { data: performanceData } = usePerformanceData();
+  const enrichAttempted = useRef(false);
+  const [orgOverride, setOrgOverride] = useState<OrgResolutionResult | null>(
+    null,
+  );
+
+  const orgFromPrefs = prefs.teamDetection?.ok ? prefs.teamDetection : null;
+  const org = orgOverride?.ok ? orgOverride : orgFromPrefs;
+
+  useEffect(() => {
+    if (enrichAttempted.current) return;
+    if (!orgFromPrefs?.ok || !orgFromPrefs.employee) return;
+    if (orgFromPrefs.manager?.id) return;
+    const subdomain = prefs.bambooSubdomain?.trim();
+    const workEmail = getWorkEmail(prefs);
+    if (!subdomain || !workEmail) return;
+
+    enrichAttempted.current = true;
+    let cancelled = false;
+
+    void (async () => {
+      try {
+        const client = new BambooClient({ subdomain });
+        const next = await detectTeam(client, workEmail);
+        if (cancelled) return;
+        // Temporary Bamboo failure: keep cached teamDetection (manager/photo).
+        if (!next.ok) return;
+
+        setOrgOverride(next);
+        onPrefsUpdated?.({ ...prefs, teamDetection: next });
+      } catch {
+        // Preserve existing cached manager / identity on outage.
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [orgFromPrefs, prefs, onPrefsUpdated]);
 
   const employee = org?.employee;
   const orgRoleState = useMemo(
@@ -30,6 +84,22 @@ export function OrganizationIdentitySettingsPanel({
   const supervisorKnownButMissing = org
     ? hasSupervisorReference(org) && !manager
     : false;
+
+  const managerMetrioPersonId = useMemo(() => {
+    if (!manager?.id || !performanceData?.teamSnapshot?.persons) {
+      return null;
+    }
+    const match = performanceData.teamSnapshot.persons.find(
+      (person) =>
+        person.id === manager.id || person.bamboo?.id === manager.id,
+    );
+    return match?.id ?? null;
+  }, [manager, performanceData?.teamSnapshot?.persons]);
+
+  const managerOpenable = Boolean(
+    managerMetrioPersonId &&
+      canOpenPersonDetail(currentUser, managerMetrioPersonId),
+  );
 
   if (!org?.ok || !employee) {
     return (
@@ -98,7 +168,32 @@ export function OrganizationIdentitySettingsPanel({
           Manager
         </h4>
         {manager ? (
-          <div className="settings-identity-manager__card">
+          <div
+            className={
+              managerOpenable
+                ? "settings-identity-manager__card settings-identity-manager__card--interactive"
+                : "settings-identity-manager__card"
+            }
+            data-testid="organization-manager-card"
+            {...(managerOpenable
+              ? {
+                  role: "button",
+                  tabIndex: 0,
+                  onClick: () =>
+                    openPerson(managerMetrioPersonId!, "overview", {
+                      view: "profile",
+                    }),
+                  onKeyDown: (event: KeyboardEvent) => {
+                    if (event.key === "Enter" || event.key === " ") {
+                      event.preventDefault();
+                      openPerson(managerMetrioPersonId!, "overview", {
+                        view: "profile",
+                      });
+                    }
+                  },
+                }
+              : {})}
+          >
             <PersonAvatar
               personId={manager.id}
               displayName={manager.displayName}
@@ -113,22 +208,27 @@ export function OrganizationIdentitySettingsPanel({
                 </p>
               ) : null}
               {manager.workEmail?.trim() ? (
-                <EntityLink
-                  href={`mailto:${manager.workEmail.trim()}`}
-                  className="settings-identity-manager__contact"
+                <span
+                  onClick={(event) => event.stopPropagation()}
+                  onKeyDown={(event) => event.stopPropagation()}
                 >
-                  {manager.workEmail.trim()}
-                </EntityLink>
+                  <EntityLink
+                    href={`mailto:${manager.workEmail.trim()}`}
+                    className="settings-identity-manager__contact"
+                  >
+                    {manager.workEmail.trim()}
+                  </EntityLink>
+                </span>
               ) : null}
             </div>
           </div>
         ) : supervisorKnownButMissing ? (
           <p className="settings-field__hint">
-            Manager is not available in the current organization roster.
+            Manager is listed in BambooHR but could not be resolved.
           </p>
         ) : (
           <p className="settings-field__hint" data-testid="organization-no-manager">
-            No manager in the current organization hierarchy
+            {NO_BAMBOO_MANAGER_COPY}
           </p>
         )}
       </section>

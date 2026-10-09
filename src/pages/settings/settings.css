@@ -598,6 +598,17 @@
   min-width: 0;
 }
 
+.settings-identity-manager__card--interactive {
+  cursor: pointer;
+  border-radius: var(--radius-md, 8px);
+  padding: var(--space-2);
+  margin: calc(-1 * var(--space-2));
+}
+
+.settings-identity-manager__card--interactive:hover {
+  background: var(--color-surface-muted, rgba(0, 0, 0, 0.04));
+}
+
 .settings-identity-manager__text {
   display: flex;
   flex-direction: column;

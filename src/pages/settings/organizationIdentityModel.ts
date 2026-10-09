@@ -45,6 +45,9 @@ function rosterEmployees(org: OrgResolutionResult): ResolvedEmployee[] {
   if (org.employee) {
     add(org.employee);
   }
+  if (org.manager) {
+    add(org.manager);
+  }
   for (const employee of org.directReports) {
     add(employee);
   }
@@ -54,9 +57,17 @@ function rosterEmployees(org: OrgResolutionResult): ResolvedEmployee[] {
   return [...byId.values()];
 }
 
+/**
+ * Person Profile MANAGER: Bamboo HR upstream manager.
+ * Prefers `org.manager` from Bamboo resolution; falls back to supervisor id/email lookup.
+ */
 export function resolveManagerEmployee(
   org: OrgResolutionResult,
 ): ResolvedEmployee | null {
+  if (org.manager?.id) {
+    return org.manager;
+  }
+
   const self = org.employee;
   if (!self) {
     return null;
@@ -77,16 +88,18 @@ export function resolveManagerEmployee(
       return byEmail;
     }
   }
-  if (!self.supervisorId && !self.supervisorEmail?.trim()) {
-    return null;
-  }
   return null;
 }
 
 export function hasSupervisorReference(org: OrgResolutionResult): boolean {
+  if (org.manager?.id) {
+    return true;
+  }
   const self = org.employee;
   if (!self) {
     return false;
   }
   return Boolean(self.supervisorId?.trim() || self.supervisorEmail?.trim());
 }
+
+export const NO_BAMBOO_MANAGER_COPY = "No manager is listed in BambooHR";

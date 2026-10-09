@@ -23,6 +23,8 @@ export interface OrgResolutionResult {
   ok: boolean;
   mode: TeamMode;
   employee?: ResolvedEmployee;
+  /** Bamboo HR upstream manager (identity only; not team-hierarchy membership). */
+  manager?: ResolvedEmployee;
   directReports: ResolvedEmployee[];
   fullTeam: ResolvedEmployee[];
   missingFields: string[];
@@ -277,6 +279,113 @@ function appendBambooDiagnostics(
   diagnostics.push(`ambiguous supervisor names: ${input.ambiguousSupervisorNames}`);
 }
 
+/**
+ * Resolve the Bamboo HR upstream manager from the full employee catalog.
+ * Uses supervisorEId / supervisorEmail when present, otherwise directory `supervisor` name.
+ * Does not require the manager to be in the current Metrio team hierarchy slice.
+ */
+export function resolveBambooUpstreamManager(
+  employee: ResolvedEmployee,
+  roster: BambooEmployeeRecord[],
+): ResolvedEmployee | null {
+  if (!employee?.id) return null;
+
+  if (employee.supervisorId?.trim()) {
+    const byId = roster.find(
+      (row) => String(row.id) === String(employee.supervisorId) && isActive(row.status),
+    );
+    if (byId && String(byId.id) !== String(employee.id)) {
+      return toResolved(byId);
+    }
+  }
+
+  const supervisorEmail = employee.supervisorEmail?.trim().toLowerCase();
+  if (supervisorEmail) {
+    const byEmail = roster.find(
+      (row) => resolveEmail(row).toLowerCase() === supervisorEmail && isActive(row.status),
+    );
+    if (byEmail && String(byEmail.id) !== String(employee.id)) {
+      return toResolved(byEmail);
+    }
+  }
+
+  const selfRow = roster.find((row) => String(row.id) === String(employee.id));
+  const supervisorName = selfRow?.supervisor?.trim();
+  if (!supervisorName) return null;
+
+  const nameIndex = buildActiveNameIndex(roster);
+  const ambiguous = getAmbiguousNormalizedNames(nameIndex);
+  const normalized = normalizePersonName(supervisorName);
+  if (!normalized || ambiguous.has(normalized)) return null;
+
+  const matches = nameIndex.get(normalized) || [];
+  if (matches.length !== 1) return null;
+  const managerRow = matches[0];
+  if (String(managerRow.id) === String(employee.id)) return null;
+  return toResolved(managerRow);
+}
+
+function enrichEmployeeSupervisorLink(
+  employee: ResolvedEmployee,
+  manager: ResolvedEmployee,
+): ResolvedEmployee {
+  if (
+    employee.supervisorId === manager.id &&
+    (employee.supervisorEmail || !manager.workEmail)
+  ) {
+    return employee;
+  }
+  return {
+    ...employee,
+    supervisorId: employee.supervisorId || manager.id,
+    supervisorEmail: employee.supervisorEmail || manager.workEmail || undefined,
+  };
+}
+
+function withBambooManager(
+  result: OrgResolutionResult,
+  roster: BambooEmployeeRecord[],
+): OrgResolutionResult {
+  if (!result.ok || !result.employee) return result;
+  const manager = resolveBambooUpstreamManager(result.employee, roster);
+  if (!manager) {
+    return { ...result, manager: undefined };
+  }
+  return {
+    ...result,
+    employee: enrichEmployeeSupervisorLink(result.employee, manager),
+    manager,
+  };
+}
+
+function unionRosterById(
+  primary: BambooEmployeeRecord[],
+  extra: BambooEmployeeRecord[],
+): BambooEmployeeRecord[] {
+  const byId = new Map<string, BambooEmployeeRecord>();
+  for (const row of primary) {
+    const id = String(row.id || '');
+    if (id) byId.set(id, row);
+  }
+  for (const row of extra) {
+    const id = String(row.id || '');
+    if (!id) continue;
+    const existing = byId.get(id);
+    if (!existing) {
+      byId.set(id, row);
+      continue;
+    }
+    byId.set(id, {
+      ...existing,
+      ...row,
+      supervisor: row.supervisor?.trim() || existing.supervisor,
+      supervisorEId: row.supervisorEId ?? existing.supervisorEId,
+      supervisorEmail: row.supervisorEmail ?? existing.supervisorEmail,
+    });
+  }
+  return [...byId.values()];
+}
+
 async function loadEmployeeRoster(
   client: BambooClient,
   diagnostics: string[],
@@ -440,33 +549,34 @@ export async function resolveOrganization(
       ambiguousSupervisorNames: 0,
     });
 
-    if (directReports.length > 0) {
-      return {
-        ok: true,
-        mode: 'team',
-        employee,
-        directReports,
-        fullTeam,
-        missingFields,
-        restrictedFields,
-        diagnostics,
-        reportingSource,
-        ambiguousSupervisorNames: 0,
-      };
-    }
-
-    return {
-      ok: true,
-      mode: 'personal',
+    let managerLookupRoster = roster;
+    const preliminary = {
+      ok: true as const,
+      mode: (directReports.length > 0 ? 'team' : 'personal') as TeamMode,
       employee,
-      directReports: [],
-      fullTeam: [],
+      directReports: directReports.length > 0 ? directReports : [],
+      fullTeam: directReports.length > 0 ? fullTeam : [],
       missingFields,
       restrictedFields,
       diagnostics,
       reportingSource,
       ambiguousSupervisorNames: 0,
     };
+    if (!resolveBambooUpstreamManager(employee, managerLookupRoster)) {
+      try {
+        const directory = await client.getDirectory();
+        directoryCount = directory.length;
+        diagnostics.push(
+          `Loaded ${directory.length} employees from company directory for upstream manager resolution.`,
+        );
+        managerLookupRoster = unionRosterById(roster, directory);
+      } catch (e) {
+        diagnostics.push(
+          `Upstream manager directory lookup failed: ${e instanceof Error ? e.message : String(e)}`,
+        );
+      }
+    }
+    return withBambooManager(preliminary, managerLookupRoster);
   }
 
   let mergedRoster = roster;
@@ -566,32 +676,38 @@ export async function resolveOrganization(
   });
 
   if (directReports.length > 0) {
-    return {
+    return withBambooManager(
+      {
+        ok: true,
+        mode: 'team',
+        employee,
+        directReports,
+        fullTeam,
+        missingFields,
+        restrictedFields,
+        diagnostics,
+        reportingSource,
+        ambiguousSupervisorNames,
+      },
+      mergedRoster,
+    );
+  }
+
+  return withBambooManager(
+    {
       ok: true,
-      mode: 'team',
+      mode: 'personal',
       employee,
-      directReports,
-      fullTeam,
+      directReports: [],
+      fullTeam: [],
       missingFields,
       restrictedFields,
       diagnostics,
       reportingSource,
       ambiguousSupervisorNames,
-    };
-  }
-
-  return {
-    ok: true,
-    mode: 'personal',
-    employee,
-    directReports: [],
-    fullTeam: [],
-    missingFields,
-    restrictedFields,
-    diagnostics,
-    reportingSource,
-    ambiguousSupervisorNames,
-  };
+    },
+    mergedRoster,
+  );
 }
 
 export { normalizePersonName, parseListEmployeesPage };

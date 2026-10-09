@@ -45,6 +45,14 @@ vi.mock("../../app/PerformanceDataContext", () => ({
   usePerformanceData: () => ({ data: null }),
 }));
 
+vi.mock("../../app/PersonNavigationContext", () => ({
+  usePersonNavigation: () => ({ openPerson: vi.fn() }),
+}));
+
+vi.mock("../../services/bamboo/teamDetection", () => ({
+  detectTeam: vi.fn(async () => ({ ok: false })),
+}));
+
 vi.mock("../../app/feedbackSurveyStore", () => ({
   useFeedbackSurveyStore: (selector: (s: { data: null }) => unknown) =>
     selector({ data: null }),
@@ -127,8 +135,33 @@ describe("UI13 settings cleanup", () => {
       ...DEFAULT_PREFERENCES,
       teamDetection,
     });
-    expect(screen.getByText("person-sam")).toBeInTheDocument();
+    expect(screen.getByText("Sam Lead")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /person-sam@fixture\.test/i })).toBeInTheDocument();
+  });
+
+  it("shows upstream Bamboo manager outside operational team roster", () => {
+    const teamDetection = buildOrgRoleTeamDetection("ic");
+    renderCompanySettings({
+      ...DEFAULT_PREFERENCES,
+      teamDetection: {
+        ...teamDetection,
+        manager: {
+          id: "133",
+          displayName: "Albert Urbanovich",
+          firstName: "Albert",
+          lastName: "Urbanovich",
+          workEmail: "albert@fixture.test",
+          jobTitle: "Director of UX Design",
+          status: "Active",
+        },
+      },
+    });
+    expect(screen.getByTestId("organization-manager-card")).toBeInTheDocument();
+    expect(screen.getByText("Albert Urbanovich")).toBeInTheDocument();
+    expect(screen.getByText("Director of UX Design")).toBeInTheDocument();
+    expect(
+      screen.queryByText(/not available in the current organization roster/i),
+    ).toBeNull();
   });
 
   it("renders caches card without support tools", () => {

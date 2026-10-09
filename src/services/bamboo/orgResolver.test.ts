@@ -6,8 +6,10 @@ import {
   getDirectReportsBySupervisorName,
   hasDirectorySupervisorData,
   mergeDirectoryIntoRoster,
+  resolveBambooUpstreamManager,
   resolveOrganization,
 } from './orgResolver';
+import type { ResolvedEmployee } from './orgResolver';
 import type { BambooClient, BambooEmployeeRecord } from './bambooClient';
 
 function mockClient(
@@ -255,6 +257,95 @@ describe('resolveOrganization', () => {
     );
     expect(result.mode).toBe('team');
     expect(result.diagnostics.some((d) => d.includes('directory'))).toBe(true);
+  });
+});
+
+describe('resolveBambooUpstreamManager', () => {
+  const roster: BambooEmployeeRecord[] = [
+    {
+      id: '470',
+      displayName: 'Andrei Kuznetsov',
+      workEmail: 'andrei@altenar.com',
+      supervisor: 'Albert Urbanovich',
+      status: 'Active',
+    },
+    {
+      id: '133',
+      displayName: 'Albert Urbanovich',
+      workEmail: 'albert@altenar.com',
+      jobTitle: 'Director of UX Design',
+      status: 'Active',
+    },
+  ];
+
+  function employee(partial: Partial<ResolvedEmployee> & { id: string }): ResolvedEmployee {
+    return {
+      displayName: partial.displayName ?? 'Employee',
+      firstName: partial.firstName ?? '',
+      lastName: partial.lastName ?? '',
+      workEmail: partial.workEmail ?? '',
+      jobTitle: partial.jobTitle ?? '',
+      status: partial.status ?? 'Active',
+      ...partial,
+    };
+  }
+
+  it('A. resolves manager from supervisor employee id', () => {
+    const self = employee({ id: '470', supervisorId: '133', displayName: 'Andrei' });
+    const resolved = resolveBambooUpstreamManager(self, roster);
+    expect(resolved?.id).toBe('133');
+  });
+
+  it('B. resolves manager from supervisor email', () => {
+    const self = employee({
+      id: '470',
+      supervisorEmail: 'albert@altenar.com',
+      displayName: 'Andrei',
+    });
+    const resolved = resolveBambooUpstreamManager(self, roster);
+    expect(resolved?.id).toBe('133');
+  });
+
+  it('C. resolves manager from Bamboo supervisor display name only', () => {
+    const self = employee({ id: '470', displayName: 'Andrei Kuznetsov' });
+    const resolved = resolveBambooUpstreamManager(self, roster);
+    expect(resolved?.displayName).toBe('Albert Urbanovich');
+    expect(resolved?.jobTitle).toBe('Director of UX Design');
+  });
+
+  it('D. upstream manager is not required in operational team slice', async () => {
+    const icRoster = [
+      {
+        id: '470',
+        displayName: 'Andrei Kuznetsov',
+        workEmail: 'andrei@altenar.com',
+        supervisor: 'Albert Urbanovich',
+        status: 'Active',
+      },
+      {
+        id: '133',
+        displayName: 'Albert Urbanovich',
+        workEmail: 'albert@altenar.com',
+        jobTitle: 'Director of UX Design',
+        status: 'Active',
+      },
+    ];
+    const result = await resolveOrganization(
+      mockClient(icRoster, { directory: icRoster }),
+      'andrei@altenar.com',
+    );
+    expect(result.ok).toBe(true);
+    expect(result.manager?.id).toBe('133');
+    expect(result.fullTeam.some((person) => person.id === '133')).toBe(false);
+    expect(result.directReports.some((person) => person.id === '133')).toBe(false);
+  });
+
+  it('H. returns null when Bamboo has no supervisor relation', () => {
+    const solo = employee({ id: '99', displayName: 'Solo IC' });
+    const resolved = resolveBambooUpstreamManager(solo, [
+      { id: '99', displayName: 'Solo IC', workEmail: 'solo@co.com', status: 'Active' },
+    ]);
+    expect(resolved).toBeNull();
   });
 });
 

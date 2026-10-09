@@ -38,7 +38,12 @@ export function CompanyAppSettingsPanel({
 
       <section className="settings-card">
         <h3 className="settings-card__title">Organization</h3>
-        <OrganizationIdentitySettingsPanel prefs={prefs} />
+        <OrganizationIdentitySettingsPanel
+          prefs={prefs}
+          onPrefsUpdated={(next) => {
+            void onPersist(next, "");
+          }}
+        />
       </section>
 
       <section className="settings-card">
