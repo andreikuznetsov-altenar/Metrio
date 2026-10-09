@@ -47,6 +47,94 @@
 
 .goals-view__toolbar {
   margin-bottom: var(--space-4);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.person-profile-goals {
+  margin-top: var(--space-4);
+}
+
+.person-profile-goals__stale {
+  margin: 0 0 var(--space-2);
+  font-size: 12px;
+  color: var(--color-text-tertiary);
+}
+
+.person-profile-goals__list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.person-profile-goal {
+  padding: var(--space-3);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-card);
+  background: var(--color-surface);
+}
+
+.person-profile-goal__title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.person-profile-goal__meta,
+.person-profile-goal__milestones {
+  margin-top: var(--space-1);
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+}
+
+.bamboo-goal-form,
+.bamboo-goal-detail {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin: var(--space-3) 0;
+}
+
+.bamboo-goal-form__field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  font-size: 13px;
+}
+
+.bamboo-goal-form__field input,
+.bamboo-goal-form__field textarea,
+.bamboo-goal-form__field select {
+  font: inherit;
+  padding: var(--space-2);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-control);
+  background: var(--color-surface);
+  color: var(--color-text-primary);
+}
+
+.bamboo-goal-form__hint {
+  margin: 0;
+  font-size: 12px;
+  color: var(--color-text-tertiary);
+}
+
+.bamboo-goal-form__error {
+  margin: 0;
+  color: var(--color-danger, #b42318);
+  font-size: 13px;
+}
+
+.bamboo-goal-form__actions {
+  display: flex;
+  gap: var(--space-2);
+  justify-content: flex-end;
 }
 
 .goals-list {

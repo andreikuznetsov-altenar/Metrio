@@ -1,4 +1,5 @@
 import type {
+  BambooGoalSidecarRecord,
   Goal,
   GoalManualProgress,
   GoalProgressMode,
@@ -90,16 +91,51 @@ export function normalizeGoal(raw: Partial<Goal>): Goal | null {
   };
 }
 
+function normalizeSidecar(raw: unknown): BambooGoalSidecarRecord | null {
+  if (!raw || typeof raw !== "object") return null;
+  const row = raw as Partial<BambooGoalSidecarRecord>;
+  const bambooEmployeeId = String(row.bambooEmployeeId ?? "").trim();
+  const bambooGoalId = String(row.bambooGoalId ?? "").trim();
+  if (!bambooEmployeeId || !bambooGoalId) return null;
+  return {
+    bambooEmployeeId,
+    bambooGoalId,
+    linkedJiraIssueKeys: Array.isArray(row.linkedJiraIssueKeys)
+      ? row.linkedJiraIssueKeys.map(String)
+      : [],
+    linkedJiraProjectKeys: Array.isArray(row.linkedJiraProjectKeys)
+      ? row.linkedJiraProjectKeys.map(String)
+      : [],
+    linkedConfluencePageIds: Array.isArray(row.linkedConfluencePageIds)
+      ? row.linkedConfluencePageIds.map(String)
+      : [],
+    updatedAt: row.updatedAt ? String(row.updatedAt) : new Date().toISOString(),
+  };
+}
+
 export function normalizeGoalsFile(raw: Partial<GoalsDataFile>): GoalsDataFile {
   const goals = (raw.goals ?? [])
     .map((g) => normalizeGoal(g as Partial<Goal>))
     .filter((g): g is Goal => g != null);
   const history = Array.isArray(raw.history) ? raw.history : [];
+  const bambooSidecars = Array.isArray(raw.bambooSidecars)
+    ? raw.bambooSidecars
+        .map(normalizeSidecar)
+        .filter((s): s is BambooGoalSidecarRecord => s != null)
+    : [];
   return {
     schemaVersion: raw.schemaVersion ?? GOALS_DATA_SCHEMA_VERSION,
     goals,
     history,
+    bambooSidecars,
   };
+}
+
+export function countLegacyMetrioOnlyGoals(goals: Goal[]): number {
+  return goals.filter((g) => {
+    const bambooId = (g as Goal & { bambooGoalId?: string }).bambooGoalId;
+    return !bambooId;
+  }).length;
 }
 
 export function createGoalId(): string {

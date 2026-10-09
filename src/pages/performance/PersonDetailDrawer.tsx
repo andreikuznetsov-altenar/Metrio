@@ -29,6 +29,7 @@ import { loadPreferences } from "../../platform/preferences";
 import { PersonWorkRow } from "./PersonWorkRow";
 import { PersonIdentityHeader } from "./PersonIdentityHeader";
 import { PersonPerformanceMetrics } from "./PersonPerformanceMetrics";
+import { PersonProfileGoalsSection } from "./PersonProfileGoalsSection";
 import { TrendInsufficientHistory, TrendMiniChart } from "./TrendMiniChart";
 import { TrendValue } from "./TrendValue";
 import { readDashboardVisualQueryFlag } from "../../fixtures/dashboardVisualOverrides";
@@ -40,6 +41,7 @@ import "./person-detail-drawer.css";
 import "./person-identity-header.css";
 import "./person-work-card.css";
 import "./performance-dashboard.css";
+import "./performance-skeletons.css";
 
 const HISTORY_PAGE_SIZE = 15;
 
@@ -355,6 +357,11 @@ export function PersonDetailDrawer({
               />
             ) : null}
 
+            <PersonProfileGoalsSection
+              bambooEmployeeId={person?.bamboo?.id}
+              enabled={open}
+            />
+
             <h3 className="person-detail-drawer__section-title">Attention signals</h3>
             {groupedAttention.length === 0 ? (
               <DrawerPanelPlaceholder
@@ -490,6 +497,7 @@ export function PersonDetailDrawer({
     historyVisibleCount,
     isDirectReport,
     managerOnboarding,
+    open,
     person,
     visibleHistoryRows,
     workspace,

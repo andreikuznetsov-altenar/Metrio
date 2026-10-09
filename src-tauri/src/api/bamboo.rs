@@ -26,29 +26,67 @@ fn bamboo_auth_header(token: &str) -> String {
     format!("Basic {}", base64::engine::general_purpose::STANDARD.encode(raw))
 }
 
-fn bamboo_base_url(subdomain: &str) -> String {
+const BAMBOO_API_VERSIONS: &[&str] = &["v1", "v1_1", "v1_2"];
+
+fn bamboo_base_url_version(subdomain: &str, version: &str) -> String {
     format!(
-        "https://api.bamboohr.com/api/gateway.php/{}/v1",
-        urlencoding::encode(subdomain.trim())
+        "https://api.bamboohr.com/api/gateway.php/{}/{}",
+        urlencoding::encode(subdomain.trim()),
+        version
     )
+}
+
+fn normalize_bamboo_api_version(version: Option<&str>) -> Result<&'static str, ApiError> {
+    let raw = version.unwrap_or("v1").trim();
+    BAMBOO_API_VERSIONS
+        .iter()
+        .copied()
+        .find(|v| *v == raw)
+        .ok_or_else(|| {
+            ApiError::new(
+                "bamboo_config_error",
+                format!("Unsupported Bamboo API version: {raw}"),
+            )
+        })
 }
 
 /// Only allow relative Bamboo paths or absolute URLs on the expected gateway host.
 pub fn validate_bamboo_request_url(subdomain: &str, path: &str) -> Result<String, ApiError> {
+    validate_bamboo_request_url_version(subdomain, "v1", path)
+}
+
+pub fn validate_bamboo_request_url_version(
+    subdomain: &str,
+    version: &str,
+    path: &str,
+) -> Result<String, ApiError> {
     let trimmed_subdomain = subdomain.trim();
     if trimmed_subdomain.is_empty() {
         return Err(ApiError::new("bamboo_config_error", "Bamboo subdomain is required"));
     }
+    let api_version = normalize_bamboo_api_version(Some(version))?;
 
     if path.starts_with("http://") || path.starts_with("https://") {
-        let expected_prefix = format!(
-            "https://api.bamboohr.com/api/gateway.php/{}/v1",
+        let gateway_root = format!(
+            "https://api.bamboohr.com/api/gateway.php/{}",
             urlencoding::encode(trimmed_subdomain)
         );
-        if !path.starts_with(&expected_prefix) {
+        if !path.starts_with(&gateway_root) {
             return Err(ApiError::new(
                 "bamboo_security_error",
                 "Rejected unexpected Bamboo pagination URL host",
+            )
+            .with_url(path.to_string()));
+        }
+        let allowed = BAMBOO_API_VERSIONS.iter().any(|v| {
+            path.starts_with(&format!("{gateway_root}/{v}/"))
+                || path.starts_with(&format!("{gateway_root}/{v}?"))
+                || path == format!("{gateway_root}/{v}")
+        });
+        if !allowed {
+            return Err(ApiError::new(
+                "bamboo_security_error",
+                "Rejected unexpected Bamboo API version in URL",
             )
             .with_url(path.to_string()));
         }
@@ -62,18 +100,50 @@ pub fn validate_bamboo_request_url(subdomain: &str, path: &str) -> Result<String
         ));
     }
 
-    Ok(format!("{}{}", bamboo_base_url(trimmed_subdomain), path))
+    Ok(format!(
+        "{}{}",
+        bamboo_base_url_version(trimmed_subdomain, api_version),
+        path
+    ))
 }
 
 async fn bamboo_request(config: &BambooConfig, path: &str) -> Result<Value, ApiError> {
+    bamboo_request_with(config, "v1", "GET", path, None).await
+}
+
+async fn bamboo_request_with(
+    config: &BambooConfig,
+    version: &str,
+    method: &str,
+    path: &str,
+    body: Option<&Value>,
+) -> Result<Value, ApiError> {
     let token = read_secret(BAMBOO_TOKEN_KEY).map_err(|e| ApiError::new(e.code, e.message))?;
-    let normalized = validate_bamboo_request_url(&config.subdomain, path)?;
+    let normalized = validate_bamboo_request_url_version(&config.subdomain, version, path)?;
     let client = http_client().map_err(|e| ApiError::new("client_error", e))?;
 
-    let response = client
-        .get(&normalized)
+    let mut request = match method {
+        "GET" => client.get(&normalized),
+        "POST" => client.post(&normalized),
+        "PUT" => client.put(&normalized),
+        "DELETE" => client.delete(&normalized),
+        other => {
+            return Err(ApiError::new(
+                "bamboo_config_error",
+                format!("Unsupported Bamboo HTTP method: {other}"),
+            ));
+        }
+    };
+    request = request
         .header(AUTHORIZATION, bamboo_auth_header(&token))
-        .header("Accept", "application/json")
+        .header("Accept", "application/json");
+    if let Some(payload) = body {
+        request = request
+            .header("Content-Type", "application/json")
+            .json(payload);
+    }
+
+    let response = request
         .send()
         .await
         .map_err(|e| ApiError::new("network_error", e.to_string()).with_url(normalized.clone()))?;
@@ -331,6 +401,245 @@ pub async fn bamboo_get_employee_photo(
     })
 }
 
+fn goals_employee_path(employee_id: &str, suffix: &str) -> String {
+    format!(
+        "/performance/employees/{}{}",
+        urlencoding::encode(employee_id.trim()),
+        suffix
+    )
+}
+
+fn normalize_goals_filter(filter: Option<&str>) -> &'static str {
+    match filter.unwrap_or("status-inProgress") {
+        "status-completed" => "status-completed",
+        "status-closed" => "status-closed",
+        "status-all" => "status-all",
+        _ => "status-inProgress",
+    }
+}
+
+#[derive(Debug, Deserialize)]
+pub struct BambooGoalsListParams {
+    pub employee_id: String,
+    #[serde(default)]
+    pub filter: Option<String>,
+}
+
+#[tauri::command]
+pub async fn bamboo_list_goals(
+    config: BambooConfig,
+    params: BambooGoalsListParams,
+) -> Result<Value, ApiError> {
+    let filter = normalize_goals_filter(params.filter.as_deref());
+    // Prefer Goals Aggregate v1_2 for list reads — includes milestone-based goals.
+    let path = format!(
+        "{}?filter={}",
+        goals_employee_path(&params.employee_id, "/goals/aggregate"),
+        urlencoding::encode(filter)
+    );
+    bamboo_request_with(&config, "v1_2", "GET", &path, None).await
+}
+
+#[derive(Debug, Deserialize)]
+pub struct BambooGoalsEmployeeParams {
+    pub employee_id: String,
+}
+
+#[tauri::command]
+pub async fn bamboo_can_create_goals(
+    config: BambooConfig,
+    params: BambooGoalsEmployeeParams,
+) -> Result<Value, ApiError> {
+    bamboo_request_with(
+        &config,
+        "v1",
+        "GET",
+        &goals_employee_path(&params.employee_id, "/goals/canCreateGoals"),
+        None,
+    )
+    .await
+}
+
+#[derive(Debug, Deserialize)]
+pub struct BambooGoalIdParams {
+    pub employee_id: String,
+    pub goal_id: String,
+}
+
+#[tauri::command]
+pub async fn bamboo_get_goal_aggregate(
+    config: BambooConfig,
+    params: BambooGoalIdParams,
+) -> Result<Value, ApiError> {
+    // Singular goal aggregate: GET .../goals/{goalId}/aggregate
+    bamboo_request_with(
+        &config,
+        "v1",
+        "GET",
+        &goals_employee_path(
+            &params.employee_id,
+            &format!(
+                "/goals/{}/aggregate",
+                urlencoding::encode(params.goal_id.trim())
+            ),
+        ),
+        None,
+    )
+    .await
+}
+
+#[derive(Debug, Deserialize)]
+pub struct BambooCreateGoalParams {
+    pub employee_id: String,
+    pub body: Value,
+}
+
+#[tauri::command]
+pub async fn bamboo_create_goal(
+    config: BambooConfig,
+    params: BambooCreateGoalParams,
+) -> Result<Value, ApiError> {
+    bamboo_request_with(
+        &config,
+        "v1",
+        "POST",
+        &goals_employee_path(&params.employee_id, "/goals"),
+        Some(&params.body),
+    )
+    .await
+}
+
+#[derive(Debug, Deserialize)]
+pub struct BambooUpdateGoalParams {
+    pub employee_id: String,
+    pub goal_id: String,
+    pub body: Value,
+}
+
+#[tauri::command]
+pub async fn bamboo_update_goal(
+    config: BambooConfig,
+    params: BambooUpdateGoalParams,
+) -> Result<Value, ApiError> {
+    bamboo_request_with(
+        &config,
+        "v1_1",
+        "PUT",
+        &goals_employee_path(
+            &params.employee_id,
+            &format!(
+                "/goals/{}",
+                urlencoding::encode(params.goal_id.trim())
+            ),
+        ),
+        Some(&params.body),
+    )
+    .await
+}
+
+#[tauri::command]
+pub async fn bamboo_update_goal_progress(
+    config: BambooConfig,
+    params: BambooUpdateGoalParams,
+) -> Result<Value, ApiError> {
+    bamboo_request_with(
+        &config,
+        "v1",
+        "PUT",
+        &goals_employee_path(
+            &params.employee_id,
+            &format!(
+                "/goals/{}/progress",
+                urlencoding::encode(params.goal_id.trim())
+            ),
+        ),
+        Some(&params.body),
+    )
+    .await
+}
+
+#[derive(Debug, Deserialize)]
+pub struct BambooUpdateMilestoneProgressParams {
+    pub employee_id: String,
+    pub goal_id: String,
+    pub milestone_id: String,
+    pub body: Value,
+}
+
+#[tauri::command]
+pub async fn bamboo_update_goal_milestone_progress(
+    config: BambooConfig,
+    params: BambooUpdateMilestoneProgressParams,
+) -> Result<Value, ApiError> {
+    bamboo_request_with(
+        &config,
+        "v1",
+        "PUT",
+        &goals_employee_path(
+            &params.employee_id,
+            &format!(
+                "/goals/{}/milestones/{}",
+                urlencoding::encode(params.goal_id.trim()),
+                urlencoding::encode(params.milestone_id.trim())
+            ),
+        ),
+        Some(&params.body),
+    )
+    .await
+}
+
+#[tauri::command]
+pub async fn bamboo_goal_share_options(
+    config: BambooConfig,
+    params: BambooGoalsEmployeeParams,
+) -> Result<Value, ApiError> {
+    bamboo_request_with(
+        &config,
+        "v1",
+        "GET",
+        &goals_employee_path(&params.employee_id, "/goals/shareOptions"),
+        None,
+    )
+    .await
+}
+
+#[tauri::command]
+pub async fn bamboo_goal_alignment_options(
+    config: BambooConfig,
+    params: BambooGoalsEmployeeParams,
+) -> Result<Value, ApiError> {
+    bamboo_request_with(
+        &config,
+        "v1",
+        "GET",
+        &goals_employee_path(&params.employee_id, "/goals/alignmentOptions"),
+        None,
+    )
+    .await
+}
+
+/// Optional delete for QA cleanup only when Bamboo permits.
+#[tauri::command]
+pub async fn bamboo_delete_goal(
+    config: BambooConfig,
+    params: BambooGoalIdParams,
+) -> Result<Value, ApiError> {
+    bamboo_request_with(
+        &config,
+        "v1",
+        "DELETE",
+        &goals_employee_path(
+            &params.employee_id,
+            &format!(
+                "/goals/{}",
+                urlencoding::encode(params.goal_id.trim())
+            ),
+        ),
+        None,
+    )
+    .await
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -361,6 +670,17 @@ mod tests {
         )
         .expect("expected host");
         assert!(url.contains("cursor=abc"));
+    }
+
+    #[test]
+    fn allows_versioned_relative_goals_paths() {
+        let url = validate_bamboo_request_url_version(
+            "acme",
+            "v1_2",
+            "/performance/employees/42/goals/7",
+        )
+        .expect("v1_2 path");
+        assert!(url.contains("/acme/v1_2/performance/employees/42/goals/7"));
     }
 
     #[test]

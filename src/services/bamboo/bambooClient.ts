@@ -1,5 +1,25 @@
 import { invoke } from '@tauri-apps/api/core';
-import { parseInvokeError } from '../../platform/apiTypes';
+import type {
+  BambooCreateGoalInput,
+  BambooGoal,
+  BambooGoalAlignmentOption,
+  BambooGoalShareOption,
+  BambooGoalStatusFilter,
+  BambooUpdateGoalInput,
+} from '../../domain/goals/bambooGoalTypes';
+import {
+  buildCreateGoalBody,
+  buildSimpleProgressBody,
+  buildUpdateGoalBody,
+} from '../../domain/goals/bambooGoalPayloads';
+import {
+  normalizeAlignmentOptions,
+  normalizeBambooGoal,
+  normalizeBambooGoalList,
+  normalizeShareOptions,
+  parseCanCreateGoals,
+} from '../../domain/goals/normalizeBambooGoal';
+import { ApiError, parseInvokeError } from '../../platform/apiTypes';
 import { mergeListEmployeesPages, parseListEmployeesPage } from './listEmployees';
 
 export interface BambooClientConfig {
@@ -26,11 +46,22 @@ export interface BambooEmployeeRecord {
   _restrictedFields?: string[];
 }
 
+export class BambooPermissionError extends ApiError {
+  constructor(message = 'Goals aren\'t available with your BambooHR access.') {
+    super({ code: 'bamboo_forbidden', message, status: 403 });
+    this.name = 'BambooPermissionError';
+  }
+}
+
 async function invokeBamboo<T>(command: string, args: Record<string, unknown>): Promise<T> {
   try {
     return await invoke<T>(command, args);
   } catch (e) {
-    throw parseInvokeError(e);
+    const err = parseInvokeError(e);
+    if (err.status === 403) {
+      throw new BambooPermissionError(err.message || undefined);
+    }
+    throw err;
   }
 }
 
@@ -124,6 +155,121 @@ export class BambooClient {
       end,
     });
     return Array.isArray(result) ? result : [];
+  }
+
+  async listGoals(
+    employeeId: string,
+    filter: BambooGoalStatusFilter = 'status-inProgress',
+  ): Promise<BambooGoal[]> {
+    const result = await invokeBamboo<unknown>('bamboo_list_goals', {
+      config: this.nativeConfig,
+      params: { employee_id: employeeId, filter },
+    });
+    return normalizeBambooGoalList(result, employeeId);
+  }
+
+  async canCreateGoals(employeeId: string): Promise<boolean> {
+    const result = await invokeBamboo<unknown>('bamboo_can_create_goals', {
+      config: this.nativeConfig,
+      params: { employee_id: employeeId },
+    });
+    return parseCanCreateGoals(result);
+  }
+
+  async getGoalAggregate(employeeId: string, goalId: string): Promise<BambooGoal | null> {
+    const result = await invokeBamboo<unknown>('bamboo_get_goal_aggregate', {
+      config: this.nativeConfig,
+      params: { employee_id: employeeId, goal_id: goalId },
+    });
+    const root =
+      result && typeof result === 'object' && !Array.isArray(result)
+        ? (result as Record<string, unknown>)
+        : null;
+    const payload = root?.goal ?? result;
+    return normalizeBambooGoal(payload, employeeId);
+  }
+
+  async createGoal(employeeId: string, input: BambooCreateGoalInput): Promise<BambooGoal | null> {
+    const body = buildCreateGoalBody(employeeId, input);
+    const result = await invokeBamboo<unknown>('bamboo_create_goal', {
+      config: this.nativeConfig,
+      params: { employee_id: employeeId, body },
+    });
+    const root =
+      result && typeof result === 'object' && !Array.isArray(result)
+        ? (result as Record<string, unknown>)
+        : null;
+    return normalizeBambooGoal(root?.goal ?? result, employeeId);
+  }
+
+  async updateGoal(
+    employeeId: string,
+    goalId: string,
+    input: BambooUpdateGoalInput,
+  ): Promise<BambooGoal | null> {
+    const body = buildUpdateGoalBody(employeeId, input);
+    const result = await invokeBamboo<unknown>('bamboo_update_goal', {
+      config: this.nativeConfig,
+      params: { employee_id: employeeId, goal_id: goalId, body },
+    });
+    const root =
+      result && typeof result === 'object' && !Array.isArray(result)
+        ? (result as Record<string, unknown>)
+        : null;
+    return normalizeBambooGoal(root?.goal ?? result, employeeId);
+  }
+
+  async updateGoalProgress(
+    employeeId: string,
+    goalId: string,
+    percentComplete: number,
+    completionDate?: string | null,
+  ): Promise<unknown> {
+    const body = buildSimpleProgressBody(percentComplete, completionDate);
+    return invokeBamboo('bamboo_update_goal_progress', {
+      config: this.nativeConfig,
+      params: { employee_id: employeeId, goal_id: goalId, body },
+    });
+  }
+
+  async updateMilestoneProgress(
+    employeeId: string,
+    goalId: string,
+    milestoneId: string,
+    body: Record<string, unknown>,
+  ): Promise<unknown> {
+    return invokeBamboo('bamboo_update_goal_milestone_progress', {
+      config: this.nativeConfig,
+      params: {
+        employee_id: employeeId,
+        goal_id: goalId,
+        milestone_id: milestoneId,
+        body,
+      },
+    });
+  }
+
+  async getGoalShareOptions(employeeId: string): Promise<BambooGoalShareOption[]> {
+    const result = await invokeBamboo<unknown>('bamboo_goal_share_options', {
+      config: this.nativeConfig,
+      params: { employee_id: employeeId },
+    });
+    return normalizeShareOptions(result);
+  }
+
+  async getGoalAlignmentOptions(employeeId: string): Promise<BambooGoalAlignmentOption[]> {
+    const result = await invokeBamboo<unknown>('bamboo_goal_alignment_options', {
+      config: this.nativeConfig,
+      params: { employee_id: employeeId },
+    });
+    return normalizeAlignmentOptions(result);
+  }
+
+  async deleteGoal(employeeId: string, goalId: string): Promise<void> {
+    await invokeBamboo('bamboo_delete_goal', {
+      config: this.nativeConfig,
+      params: { employee_id: employeeId, goal_id: goalId },
+    });
   }
 }
 

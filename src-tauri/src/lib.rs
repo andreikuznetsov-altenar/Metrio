@@ -11,8 +11,11 @@ use api::credentials::{
 };
 use api::local_credentials::{delete_secret, init_store_path, set_secret};
 use api::bamboo::{
-    bamboo_get_directory, bamboo_get_employee, bamboo_get_employee_photo, bamboo_get_whos_out, bamboo_list_employees,
-    bamboo_list_employees_all, bamboo_test_connection,
+    bamboo_can_create_goals, bamboo_create_goal, bamboo_delete_goal, bamboo_get_directory,
+    bamboo_get_employee, bamboo_get_employee_photo, bamboo_get_goal_aggregate, bamboo_get_whos_out,
+    bamboo_goal_alignment_options, bamboo_goal_share_options, bamboo_list_employees,
+    bamboo_list_employees_all, bamboo_list_goals, bamboo_test_connection, bamboo_update_goal,
+    bamboo_update_goal_milestone_progress, bamboo_update_goal_progress,
 };
 use std::time::Duration;
 use api::confluence::{confluence_search_pages, confluence_test_connection};
@@ -598,6 +601,16 @@ pub fn run() {
             bamboo_get_employee,
             bamboo_get_whos_out,
             bamboo_get_employee_photo,
+            bamboo_list_goals,
+            bamboo_can_create_goals,
+            bamboo_get_goal_aggregate,
+            bamboo_create_goal,
+            bamboo_update_goal,
+            bamboo_update_goal_progress,
+            bamboo_update_goal_milestone_progress,
+            bamboo_goal_share_options,
+            bamboo_goal_alignment_options,
+            bamboo_delete_goal,
             apps_script_connect,
             apps_script_disconnect,
             apps_script_get_status,
