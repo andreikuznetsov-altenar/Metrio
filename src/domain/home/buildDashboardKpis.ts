@@ -6,6 +6,8 @@ import {
   employeeCapacityKpi,
   teamCapacityKpiFromRows,
 } from "../workload/capacityPresentation";
+import { getEfficiencyStatus } from "../jira/kpi";
+import { performanceHelp } from "../performance/performanceHelp";
 import type { ScopeHealthSummary } from "./executiveDashboardModel";
 
 export interface DashboardKpiCard {
@@ -32,6 +34,31 @@ function scopeBadge(scopeHealth: ScopeHealthSummary): DashboardKpiCard["badge"] 
     return { label: "Watch", variant: "warning" };
   }
   return { label: "Critical", variant: "danger" };
+}
+
+/** Map canonical efficiency status labels to KPI badge variants. */
+export function efficiencyStatusBadge(
+  status: string | undefined,
+  statusVariant?: BadgeVariant,
+): DashboardKpiCard["badge"] | undefined {
+  if (!status) return undefined;
+  if (statusVariant) {
+    return { label: status, variant: statusVariant };
+  }
+  if (status === "Excellent" || status === "Healthy") {
+    return { label: status, variant: "success" };
+  }
+  if (status === "Watch") {
+    return { label: status, variant: "warning" };
+  }
+  return { label: status, variant: "danger" };
+}
+
+function parseEfficiencyPercent(value: string | undefined): number | null {
+  if (!value || value === "—") return null;
+  const match = value.trim().match(/^(\d+(?:\.\d+)?)\s*%?$/);
+  if (!match) return null;
+  return Number(match[1]);
 }
 
 function capacityKpiFromWorkload(workload: WorkloadRow[]): DashboardKpiCard {
@@ -77,20 +104,48 @@ export function buildEmployeeDashboardKpis(input: {
   return cards;
 }
 
-/** Manager KPI strip from team health and delivery aggregates. */
+/**
+ * Manager KPI strip.
+ * TEAM HEALTH reuses the canonical team Efficiency metric (same source as Performance).
+ * Delivery-risk counts stay on the Delivery risk card — never populate Team health.
+ */
 export function buildManagerDashboardKpis(input: {
-  scopeHealth: ScopeHealthSummary;
+  /** Canonical team Efficiency card from team performance summary. */
+  teamEfficiency: Pick<MetricCardData, "value" | "status" | "statusVariant"> | null;
   firstPassRate: string;
   deliveryRiskCount: number;
   teamWorkload: WorkloadRow[];
 }): DashboardKpiCard[] {
+  const efficiencyValue = input.teamEfficiency?.value ?? "—";
+  const score = parseEfficiencyPercent(efficiencyValue);
+  const status =
+    input.teamEfficiency?.status ??
+    (score != null ? getEfficiencyStatus(score) : undefined);
+  const badge = efficiencyStatusBadge(status, input.teamEfficiency?.statusVariant);
+
+  // Packaged/runtime QA: localStorage.setItem("metrio-team-health-debug","1")
+  if (typeof window !== "undefined" && window.localStorage?.getItem("metrio-team-health-debug") === "1") {
+    const entry = {
+      t: performance.now(),
+      component: "buildManagerDashboardKpis",
+      model: "ManagerExecutiveModel.kpis[team-health]",
+      value: efficiencyValue,
+      badge: badge?.label ?? null,
+      sourceField: "teamSnapshot.summary[Efficiency] | performanceSnapshot.metrics[Efficiency]",
+      deliveryRiskCountIgnored: input.deliveryRiskCount,
+    };
+    const bucket = (window as unknown as { __metrioTeamHealth?: unknown[] }).__metrioTeamHealth;
+    if (Array.isArray(bucket)) bucket.push(entry);
+    else (window as unknown as { __metrioTeamHealth: unknown[] }).__metrioTeamHealth = [entry];
+  }
+
   return [
     {
       id: "team-health",
       label: "Team health",
-      value: input.scopeHealth.line.split("·")[0]?.trim() ?? "—",
-      badge: scopeBadge(input.scopeHealth),
-      tooltip: input.scopeHealth.tooltip,
+      value: efficiencyValue,
+      badge,
+      tooltip: performanceHelp.efficiency,
     },
     {
       id: "first-pass",

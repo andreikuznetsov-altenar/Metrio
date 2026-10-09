@@ -16,7 +16,7 @@ import {
 } from "./buildDashboardKpis";
 import type { PersonAvailability } from "../people/types";
 import type { ActionItem, ActionTarget } from "../actions/actionTypes";
-import type { TrendCardData } from "../performance";
+import type { MetricCardData, TrendCardData } from "../performance";
 import {
   resolveAttentionViewTarget,
   scrollTargetIdForAction,
@@ -324,7 +324,10 @@ export function buildManagerExecutiveModel(input: {
   performanceSnapshot: HomePerformanceSnapshot;
   focus: ActionItem[];
   teamActions: ActionItem[];
-  teamSnapshot: { summary: { label: string; value: string }[]; workload: WorkloadRow[] } | null;
+  teamSnapshot: {
+    summary: Pick<MetricCardData, "label" | "value" | "status" | "statusVariant">[];
+    workload: WorkloadRow[];
+  } | null;
   deliveryRiskCount: number;
   deliverySummary: HomeDeliverySummary;
   trends: TrendCardData[];
@@ -344,8 +347,15 @@ export function buildManagerExecutiveModel(input: {
     deliverySummary: input.deliverySummary,
     role: "manager",
   });
+  const summary = input.teamSnapshot?.summary ?? [];
+  const teamEfficiency =
+    summary.find((m) => m.label === "Efficiency") ??
+    (() => {
+      const value = metricValue(input.performanceSnapshot.metrics, "Efficiency");
+      return value ? { label: "Efficiency", value } : null;
+    })();
   const firstPass =
-    input.teamSnapshot?.summary.find((m) => m.label === "First pass")?.value ??
+    summary.find((m) => m.label === "First pass")?.value ??
     metricValue(input.performanceSnapshot.metrics, "First pass") ??
     "—";
 
@@ -354,7 +364,7 @@ export function buildManagerExecutiveModel(input: {
     scopeLabel: "Team",
     scopeHealth,
     kpis: buildManagerDashboardKpis({
-      scopeHealth,
+      teamEfficiency,
       firstPassRate: firstPass,
       deliveryRiskCount: input.deliveryRiskCount,
       teamWorkload,
