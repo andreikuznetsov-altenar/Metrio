@@ -18,7 +18,7 @@ import { PerformanceTableColgroup } from "./PerformanceTableColgroup";
 import { METRIO_TABLE_CLASS, MetrioTableWrap } from "./MetrioTable";
 import { TableWorkLead } from "./TableWorkLead";
 import { JiraIssueText } from "../JiraIssueLink/JiraIssueText";
-import { SortableTableHeader } from "./SortableTableHeader";
+import { TableHeaderCell } from "./TableHeaderCell";
 import type { TableSortState } from "./tableSort";
 
 const QUEUE_COLGROUP = ["person", "reason", "issues", "action"] as const;
@@ -117,27 +117,19 @@ export function DashboardActionQueueTable({
         <PerformanceTableColgroup columns={[...QUEUE_COLGROUP]} />
         <thead>
           <tr>
-            {headerColumns.map((col) =>
-              !sortable || col.id === "action" ? (
-                <th
-                  key={col.id}
-                  scope="col"
-                  className={col.id === "action" ? "performance-table__action" : undefined}
-                >
-                  <span className="performance-table__sort-label">{col.label}</span>
-                </th>
-              ) : (
-                <SortableTableHeader
-                  key={col.id}
-                  columnId={col.id}
-                  label={
-                    col.id === "work" ? <TableWorkLead label={col.label} /> : col.label
-                  }
-                  sort={sort}
-                  onToggle={onToggleSort}
-                />
-              ),
-            )}
+            {headerColumns.map((col) => (
+              <TableHeaderCell
+                key={col.id}
+                columnId={col.id}
+                label={
+                  col.id === "work" ? <TableWorkLead label={col.label} /> : col.label
+                }
+                sortable={sortable && col.id !== "action"}
+                sort={sort}
+                onToggle={onToggleSort}
+                className={col.id === "action" ? "performance-table__action" : undefined}
+              />
+            ))}
           </tr>
         </thead>
         <tbody>
