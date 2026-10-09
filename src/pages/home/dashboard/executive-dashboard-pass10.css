@@ -145,6 +145,12 @@
   margin-top: var(--space-3);
 }
 
+.executive-recommendations__nav-row {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: var(--space-2);
+}
+
 .executive-recommendations__nav {
   display: inline-flex;
   align-items: center;

@@ -98,10 +98,13 @@ export function DashboardRecommendations({
       data-recommendation-surface={surface}
       data-recommendation-carousel={useCarousel ? "true" : "false"}
     >
-      <div className="dashboard-section__title-row">
-        <h2 className="dashboard-section__title">Recommendations</h2>
-        {useCarousel ? (
-          <div className="executive-recommendations__nav" role="group" aria-label="Recommendation pages">
+      {useCarousel ? (
+        <div
+          className="executive-recommendations__nav-row"
+          role="group"
+          aria-label="Recommendation pages"
+        >
+          <div className="executive-recommendations__nav">
             <IconButton
               label="Previous recommendations"
               size="compact"
@@ -121,8 +124,8 @@ export function DashboardRecommendations({
               <ChevronRight size={16} strokeWidth={1.75} aria-hidden />
             </IconButton>
           </div>
-        ) : null}
-      </div>
+        </div>
+      ) : null}
       <ul
         ref={railRef}
         className={

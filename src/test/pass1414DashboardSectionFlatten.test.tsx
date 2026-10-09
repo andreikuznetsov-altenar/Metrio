@@ -37,7 +37,7 @@ describe("PASS 14.14 dashboard section flattening", () => {
     expect(actionQueue).not.toMatch(/home-card action-queue action-queue--dashboard/);
   });
 
-  it("Recommendations keeps title and inner cards without outer panel or numeric count", () => {
+  it("Recommendations omits visible title and keeps inner cards without outer panel or numeric count", () => {
     const item: ProductRecommendation = {
       id: "backflow-review",
       severity: "watch",
@@ -53,7 +53,8 @@ describe("PASS 14.14 dashboard section flattening", () => {
     const section = screen.getByTestId("dashboard-recommendations");
     expect(section.className).toContain("dashboard-section");
     expect(section.className).not.toContain("executive-panel");
-    expect(within(section).getByRole("heading", { name: "Recommendations" })).toBeTruthy();
+    expect(within(section).queryByRole("heading", { name: "Recommendations" })).toBeNull();
+    expect(section).toHaveAttribute("aria-label", "Recommendations");
     expect(container.querySelector(".executive-recommendations__count")).toBeNull();
     expect(container.querySelector(".executive-recommendations__item")).toBeTruthy();
     expect(screen.getByRole("button", { name: "Open Performance" })).toBeTruthy();

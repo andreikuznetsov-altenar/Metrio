@@ -48,7 +48,7 @@ afterEach(() => {
 });
 
 describe("PASS 14.20A recommendations header + carousel", () => {
-  it("uses canonical section title and removes numeric count", () => {
+  it("omits visible section title and removes numeric count", () => {
     render(
       <DashboardRecommendations
         items={[rec("a")]}
@@ -57,9 +57,10 @@ describe("PASS 14.20A recommendations header + carousel", () => {
       />,
     );
     const section = screen.getByTestId("dashboard-recommendations");
-    expect(within(section).getByRole("heading", { name: "Recommendations" })).toBeTruthy();
+    expect(within(section).queryByRole("heading", { name: "Recommendations" })).toBeNull();
     expect(section.querySelector(".executive-recommendations__count")).toBeNull();
-    expect(section.querySelector(".dashboard-section__title")).toBeTruthy();
+    expect(section.querySelector(".dashboard-section__title")).toBeNull();
+    expect(section).toHaveAttribute("aria-label", "Recommendations");
   });
 
   it("keeps a normal grid when count <= 3", () => {
