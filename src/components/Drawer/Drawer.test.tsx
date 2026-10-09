@@ -45,7 +45,7 @@ describe("Drawer", () => {
       </Drawer>,
     );
     const root = ensureAppDrawerLayer().querySelector(".drawer-root");
-    expect(root).toHaveAttribute("data-drawer-phase", "entering");
+    expect(root).toHaveAttribute("data-drawer-phase", "mounted-enter");
     await flushDrawerAnimations();
     expect(root).toHaveAttribute("data-drawer-phase", "open");
   });

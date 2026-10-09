@@ -5,6 +5,7 @@ import { Drawer } from "./Drawer";
 import {
   ensureAppDrawerLayer,
   flushDrawerAnimations,
+  flushDrawerOpenFrames,
   installDrawerMotionMock,
   readDrawerPanelTranslateX,
   setDrawerMotionProgress,
@@ -30,6 +31,7 @@ describe("Drawer motion timeline", () => {
       </Drawer>,
     );
     const panel = screen.getByRole("dialog");
+    await flushDrawerOpenFrames();
     const samples: number[] = [];
     for (const ms of SAMPLES_MS) {
       await setDrawerMotionProgress(ms / 320);
@@ -51,6 +53,7 @@ describe("Drawer motion timeline", () => {
         Body
       </Drawer>,
     );
+    await flushDrawerOpenFrames();
     await flushDrawerAnimations();
     const panel = screen.getByRole("dialog");
     expect(readDrawerPanelTranslateX(panel)).toBeLessThan(1);

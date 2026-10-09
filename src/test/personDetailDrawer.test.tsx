@@ -1,7 +1,12 @@
 import { cleanup, render, screen } from "@testing-library/react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { PersonDetailDrawer } from "../pages/performance/PersonDetailDrawer";
 import type { PersonAnalyticsWorkspace } from "../domain/analytics/personAnalyticsWorkspace";
+import {
+  ensureAppDrawerLayer,
+  flushDrawerAnimations,
+  installDrawerMotionMock,
+} from "../components/Drawer/drawerTestUtils";
 
 vi.mock("../app/PerformanceDataContext", () => ({
   usePerformanceData: vi.fn(),
@@ -52,6 +57,57 @@ const workspace: PersonAnalyticsWorkspace = {
   historyWeek: [],
   historyQuarter: [],
 };
+
+describe("PersonDetailDrawer shell lifecycle", () => {
+  beforeEach(() => {
+    installDrawerMotionMock();
+    ensureAppDrawerLayer();
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+    cleanup();
+    document.getElementById("app-drawer-layer")?.remove();
+  });
+
+  it("keeps one shell across uncached loading → cached content", async () => {
+    mockUseCurrentUser.mockReturnValue({
+      currentUser: {
+        person: { id: "1114", name: "Lead", role: "lead" },
+        team: { directReportIds: ["914"] },
+      },
+    } as ReturnType<typeof useCurrentUser>);
+
+    mockUsePerformanceData.mockReturnValue({
+      viewModels: {
+        getPerson: () => null,
+        getPersonAnalytics: () => null,
+      },
+      data: { teamSnapshot: { persons: [] } },
+    } as unknown as ReturnType<typeof usePerformanceData>);
+
+    const { rerender } = render(
+      <PersonDetailDrawer personId="914" open onClose={vi.fn()} />,
+    );
+    await flushDrawerAnimations();
+    const root = screen.getByTestId("person-detail-drawer");
+    expect(root.textContent).toMatch(/Loading person/i);
+    expect(root.getAttribute("data-drawer-phase")).toBe("open");
+
+    mockUsePerformanceData.mockReturnValue({
+      viewModels: {
+        getPerson: () => null,
+        getPersonAnalytics: () => workspace,
+      },
+      data: { teamSnapshot: { persons: [] } },
+    } as unknown as ReturnType<typeof usePerformanceData>);
+
+    rerender(<PersonDetailDrawer personId="914" open onClose={vi.fn()} />);
+    expect(screen.getByTestId("person-detail-drawer")).toBe(root);
+    expect(screen.getByText("Sam Dev")).toBeTruthy();
+    expect(root.getAttribute("data-drawer-phase")).toBe("open");
+  });
+});
 
 describe("PersonDetailDrawer header", () => {
   afterEach(() => cleanup());

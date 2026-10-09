@@ -154,6 +154,9 @@ export async function flushDrawerCloseFrames() {
 }
 
 export async function flushDrawerAnimations() {
+  // Enter waits for two paint frames before WAAPI starts; drain those first
+  // so finish callbacks exist for a freshly mounted open drawer.
+  await flushDrawerOpenFrames();
   await act(async () => {
     while (motionFinishQueue.length > 0) {
       const finish = motionFinishQueue.shift();

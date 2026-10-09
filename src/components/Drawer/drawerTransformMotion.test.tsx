@@ -5,6 +5,7 @@ import { Drawer } from "./Drawer";
 import {
   ensureAppDrawerLayer,
   flushDrawerAnimations,
+  flushDrawerOpenFrames,
   installDrawerMotionMock,
   readDrawerPanelTranslateX,
 } from "./drawerTestUtils";
@@ -29,9 +30,9 @@ describe("Drawer transform motion (WAAPI)", () => {
     );
     const panel = screen.getByRole("dialog");
     expect(readDrawerPanelTranslateX(panel)).toBeGreaterThanOrEqual(100);
+    expect(document.querySelector("[data-drawer-phase='mounted-enter']")).toBeTruthy();
 
-    await flushDrawerAnimations();
-    expect(readDrawerPanelTranslateX(panel)).toBeLessThan(1);
+    await flushDrawerOpenFrames();
     expect(animate).toHaveBeenCalled();
     const panelCalls = animate.mock.calls.filter((call) => call[0]?.[0]?.transform);
     expect(String(panelCalls[0]?.[0]?.[0]?.transform)).toContain("100%");
@@ -39,6 +40,9 @@ describe("Drawer transform motion (WAAPI)", () => {
     expect(panelCalls[0]?.[0]?.[1]?.opacity).toBeUndefined();
     expect(panelCalls[0]?.[1]?.duration).toBe(400);
     expect(panelCalls[0]?.[1]?.easing).toBe("cubic-bezier(0.22, 1, 0.36, 1)");
+
+    await flushDrawerAnimations();
+    expect(readDrawerPanelTranslateX(panel)).toBeLessThan(1);
   });
 
   it("animates off-screen while closing before unmount", async () => {
@@ -66,7 +70,7 @@ describe("Drawer transform motion (WAAPI)", () => {
     expect(screen.queryByRole("dialog")).toBeNull();
   });
 
-  it("does not restart enter motion when onClosed identity changes", () => {
+  it("does not restart enter motion when onClosed identity changes", async () => {
     ensureAppDrawerLayer();
     const animate = HTMLElement.prototype.animate as ReturnType<typeof installDrawerMotionMock>;
     const { rerender } = render(
@@ -74,6 +78,7 @@ describe("Drawer transform motion (WAAPI)", () => {
         Body
       </Drawer>,
     );
+    await flushDrawerOpenFrames();
     const calls = animate.mock.calls.length;
     rerender(
       <Drawer open onClose={vi.fn()} onClosed={() => undefined} ariaLabel="Motion drawer">
@@ -90,6 +95,7 @@ describe("Drawer transform motion (WAAPI)", () => {
         Body
       </Drawer>,
     );
+    await flushDrawerOpenFrames();
     await flushDrawerAnimations();
     rerender(
       <Drawer open={false} onClose={vi.fn()} ariaLabel="Motion drawer">
@@ -102,6 +108,7 @@ describe("Drawer transform motion (WAAPI)", () => {
         Body
       </Drawer>,
     );
+    await flushDrawerOpenFrames();
     await flushDrawerAnimations();
     expect(screen.getByRole("dialog")).toBeInTheDocument();
     expect(screen.getByText("Body")).toBeInTheDocument();

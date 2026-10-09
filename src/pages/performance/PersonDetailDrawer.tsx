@@ -503,26 +503,10 @@ export function PersonDetailDrawer({
     workspace,
   ]);
 
-  if (!workspace) {
-    return (
-      <DrawerStack
-        open={open}
-        activePanel="primary"
-        onClose={onClose}
-        onClosed={onClosed}
-        ariaLabel="Person"
-        size="person"
-        testId="person-detail-drawer"
-      >
-        <DrawerPanelPlaceholder role="status" title="Loading person…" />
-      </DrawerStack>
-    );
-  }
-
-  const displayName = workspace.personName || person?.bamboo.displayName || "—";
-  const jobTitle = workspace.role || person?.bamboo.jobTitle || "—";
-
-  const briefActive = activeView === "brief" && showBriefAction;
+  const displayName =
+    workspace?.personName || person?.bamboo.displayName || "Person";
+  const jobTitle = workspace?.role || person?.bamboo.jobTitle || "—";
+  const briefActive = Boolean(workspace && activeView === "brief" && showBriefAction);
 
   return (
     <DrawerStack
@@ -531,25 +515,29 @@ export function PersonDetailDrawer({
       onClose={onClose}
       onClosed={onClosed}
       ariaLabel={
-        briefActive
-          ? `1:1 brief for ${displayName}`
-          : `Person detail for ${displayName}`
+        !workspace
+          ? "Person"
+          : briefActive
+            ? `1:1 brief for ${displayName}`
+            : `Person detail for ${displayName}`
       }
       size="person"
       className="drawer--person-detail"
       testId="person-detail-drawer"
       header={
-        <PersonIdentityHeader
-          personId={personId}
-          displayName={displayName}
-          jobTitle={jobTitle}
-          person={person}
-          availabilityLabel={workspace.availability}
-          workloadLabel={workspace.workload}
-        />
+        workspace ? (
+          <PersonIdentityHeader
+            personId={personId}
+            displayName={displayName}
+            jobTitle={jobTitle}
+            person={person}
+            availabilityLabel={workspace.availability}
+            workloadLabel={workspace.workload}
+          />
+        ) : undefined
       }
       headerActions={
-        showBriefAction ? (
+        workspace && showBriefAction ? (
           <SegmentedControl
             ariaLabel="Person drawer view"
             className="person-drawer-view-tabs"
@@ -563,40 +551,44 @@ export function PersonDetailDrawer({
         ) : null
       }
     >
-      <div className="person-drawer-views" data-testid="person-drawer-views">
-        <div
-          className={
-            briefActive
-              ? "person-drawer-view person-drawer-view--inactive"
-              : "person-drawer-view person-drawer-view--active"
-          }
-          data-person-drawer-view="profile"
-          aria-hidden={briefActive}
-        >
-          <Tabs
-            items={tabs}
-            value={activeTab}
-            onValueChange={(value) => onTabChange?.(value as PersonDrawerTab)}
-          />
-        </div>
-        {showBriefAction && briefMounted ? (
+      {!workspace ? (
+        <DrawerPanelPlaceholder role="status" title="Loading person…" />
+      ) : (
+        <div className="person-drawer-views" data-testid="person-drawer-views">
           <div
             className={
               briefActive
-                ? "person-drawer-view person-drawer-view--active"
-                : "person-drawer-view person-drawer-view--inactive"
+                ? "person-drawer-view person-drawer-view--inactive"
+                : "person-drawer-view person-drawer-view--active"
             }
-            data-person-drawer-view="brief"
-            data-testid="person-brief-drawer"
-            aria-hidden={!briefActive}
+            data-person-drawer-view="profile"
+            aria-hidden={briefActive}
           >
-            <PersonBriefDrawerPanel
-              personId={personId}
-              prepForOneOnOne={prepForOneOnOne}
+            <Tabs
+              items={tabs}
+              value={activeTab}
+              onValueChange={(value) => onTabChange?.(value as PersonDrawerTab)}
             />
           </div>
-        ) : null}
-      </div>
+          {showBriefAction && briefMounted ? (
+            <div
+              className={
+                briefActive
+                  ? "person-drawer-view person-drawer-view--active"
+                  : "person-drawer-view person-drawer-view--inactive"
+              }
+              data-person-drawer-view="brief"
+              data-testid="person-brief-drawer"
+              aria-hidden={!briefActive}
+            >
+              <PersonBriefDrawerPanel
+                personId={personId}
+                prepForOneOnOne={prepForOneOnOne}
+              />
+            </div>
+          ) : null}
+        </div>
+      )}
     </DrawerStack>
   );
 }

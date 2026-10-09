@@ -1,12 +1,18 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type RefObject } from "react";
 import {
+  DRAWER_OFFSCREEN_TRANSFORM,
   logDrawerMotionDev,
   playDrawerEnterMotion,
   playDrawerExitMotion,
   type DrawerMotionRun,
 } from "./drawerPanelMotion";
 
-export type DrawerSurfacePhase = "closed" | "entering" | "open" | "exiting";
+export type DrawerSurfacePhase =
+  | "closed"
+  | "mounted-enter"
+  | "entering"
+  | "open"
+  | "exiting";
 
 export interface DrawerSurfaceLifecycle {
   mounted: boolean;
@@ -15,18 +21,45 @@ export interface DrawerSurfaceLifecycle {
   backdropRef: RefObject<HTMLButtonElement | null>;
 }
 
+function schedulePaintThen(run: () => void): { cancel: () => void } {
+  let cancelled = false;
+  let raf2 = 0;
+  const raf1 = window.requestAnimationFrame(() => {
+    raf2 = window.requestAnimationFrame(() => {
+      if (!cancelled) run();
+    });
+  });
+  return {
+    cancel: () => {
+      cancelled = true;
+      window.cancelAnimationFrame(raf1);
+      if (raf2) window.cancelAnimationFrame(raf2);
+    },
+  };
+}
+
+/**
+ * Canonical drawer shell lifecycle (data-independent):
+ * closed → mounted-enter (offscreen paint) → entering → open → exiting → closed
+ */
 export function useDrawerSurfaceLifecycle(
   open: boolean,
   onClosed?: () => void,
 ): DrawerSurfaceLifecycle {
   const panelRef = useRef<HTMLElement | null>(null);
   const backdropRef = useRef<HTMLButtonElement | null>(null);
+  // When first rendered already open (PersonDetailDrawer mounts with open=true),
+  // start in mounted-enter so the first paint is offscreen — never open.
   const [mounted, setMounted] = useState(open);
-  const [phase, setPhase] = useState<DrawerSurfacePhase>(open ? "entering" : "closed");
+  const [phase, setPhase] = useState<DrawerSurfacePhase>(
+    open ? "mounted-enter" : "closed",
+  );
   const runGenRef = useRef(0);
   const openRef = useRef(open);
   const onClosedRef = useRef(onClosed);
   const activeMotionRef = useRef<DrawerMotionRun | null>(null);
+  const paintWaitRef = useRef<{ cancel: () => void } | null>(null);
+  const phaseRef = useRef(phase);
 
   useEffect(() => {
     openRef.current = open;
@@ -37,8 +70,17 @@ export function useDrawerSurfaceLifecycle(
   }, [onClosed]);
 
   useEffect(() => {
+    phaseRef.current = phase;
+  }, [phase]);
+
+  useEffect(() => {
     logDrawerMotionDev(open ? "open-requested" : "close-requested", {});
   }, [open]);
+
+  const cancelPaintWait = useCallback(() => {
+    paintWaitRef.current?.cancel();
+    paintWaitRef.current = null;
+  }, []);
 
   const cancelMotion = useCallback(() => {
     activeMotionRef.current?.cancel();
@@ -46,12 +88,13 @@ export function useDrawerSurfaceLifecycle(
   }, []);
 
   const completeClose = useCallback(() => {
+    cancelPaintWait();
     cancelMotion();
     setMounted(false);
     setPhase("closed");
     onClosedRef.current?.();
     logDrawerMotionDev("unmounted", {});
-  }, [cancelMotion]);
+  }, [cancelMotion, cancelPaintWait]);
 
   useEffect(() => {
     if (open) {
@@ -75,6 +118,7 @@ export function useDrawerSurfaceLifecycle(
 
     const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     if (reducedMotion) {
+      cancelPaintWait();
       cancelMotion();
       if (open) {
         setPhase("open");
@@ -88,23 +132,68 @@ export function useDrawerSurfaceLifecycle(
     }
 
     const generation = ++runGenRef.current;
+    cancelPaintWait();
     cancelMotion();
 
     if (open) {
-      setPhase("entering");
-      panel.style.opacity = "1";
-      if (!panel.style.transform) {
-        panel.style.transform = "translate3d(100%, 0, 0)";
+      const interruptingExit = phaseRef.current === "exiting";
+
+      if (interruptingExit) {
+        // Resume toward open from the current mid-exit transform — no snap.
+        setPhase("entering");
+        logDrawerMotionDev("animation-started", {
+          kind: "enter",
+          mode: "interrupt-exit",
+        });
+        const motion = playDrawerEnterMotion(panel, backdrop, {
+          fromTransform: panel.style.transform || undefined,
+          fromBackdropOpacity: Number(backdrop.style.opacity || 0),
+        });
+        activeMotionRef.current = motion;
+        void motion.finished.then(() => {
+          if (runGenRef.current !== generation) return;
+          if (!openRef.current) return;
+          setPhase("open");
+          logDrawerMotionDev("animation-finished", { kind: "enter" });
+        });
+        return () => {
+          runGenRef.current += 1;
+          cancelPaintWait();
+          cancelMotion();
+        };
       }
+
+      // FRAME A — mount/pin offscreen. Must paint before enter keyframes.
+      setPhase("mounted-enter");
+      panel.style.transform = DRAWER_OFFSCREEN_TRANSFORM;
+      panel.style.opacity = "1";
+      backdrop.style.opacity = "0";
       void panel.getBoundingClientRect();
-      logDrawerMotionDev("animation-started", { kind: "enter" });
-      const motion = playDrawerEnterMotion(panel, backdrop);
-      activeMotionRef.current = motion;
-      void motion.finished.then(() => {
+      logDrawerMotionDev("mounted-enter", {
+        transform: panel.style.transform,
+      });
+
+      paintWaitRef.current = schedulePaintThen(() => {
         if (runGenRef.current !== generation) return;
         if (!openRef.current) return;
-        setPhase("open");
-        logDrawerMotionDev("animation-finished", { kind: "enter" });
+        // FRAME B — only now start WAAPI from explicit offscreen.
+        setPhase("entering");
+        logDrawerMotionDev("animation-started", {
+          kind: "enter",
+          mode: "fresh",
+          transform: DRAWER_OFFSCREEN_TRANSFORM,
+        });
+        const motion = playDrawerEnterMotion(panel, backdrop, {
+          fromTransform: DRAWER_OFFSCREEN_TRANSFORM,
+          fromBackdropOpacity: 0,
+        });
+        activeMotionRef.current = motion;
+        void motion.finished.then(() => {
+          if (runGenRef.current !== generation) return;
+          if (!openRef.current) return;
+          setPhase("open");
+          logDrawerMotionDev("animation-finished", { kind: "enter" });
+        });
       });
     } else {
       setPhase("exiting");
@@ -121,9 +210,10 @@ export function useDrawerSurfaceLifecycle(
 
     return () => {
       runGenRef.current += 1;
+      cancelPaintWait();
       cancelMotion();
     };
-  }, [cancelMotion, completeClose, mounted, open]);
+  }, [cancelMotion, cancelPaintWait, completeClose, mounted, open]);
 
   return { mounted, phase, panelRef, backdropRef };
 }

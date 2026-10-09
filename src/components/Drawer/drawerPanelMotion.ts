@@ -5,17 +5,25 @@ import {
 
 const DRAWER_EASING = "cubic-bezier(0.22, 1, 0.36, 1)";
 
+export const DRAWER_OFFSCREEN_TRANSFORM = "translate3d(100%, 0, 0)";
+export const DRAWER_OPEN_TRANSFORM = "translate3d(0, 0, 0)";
+
 export type DrawerMotionRun = {
   cancel: () => void;
   finished: Promise<void>;
 };
 
 function readPanelTransform(panel: HTMLElement): string {
+  const inline = panel.style.transform?.trim();
+  if (inline) {
+    return inline;
+  }
   const transform = getComputedStyle(panel).transform;
   if (transform && transform !== "none") {
     return transform;
   }
-  return "translate3d(0, 0, 0)";
+  // Unresolved layout must not be treated as open.
+  return DRAWER_OFFSCREEN_TRANSFORM;
 }
 
 function readOpacity(el: HTMLElement): number {
@@ -70,20 +78,56 @@ function runKeyframes(
   };
 }
 
+function sampleEnterTransforms(panel: HTMLElement, durationMs: number): { cancel: () => void } {
+  if (typeof window === "undefined") return { cancel: () => undefined };
+  if (window.localStorage.getItem("metrio-drawer-motion-debug") !== "1") {
+    return { cancel: () => undefined };
+  }
+  const marks = [0, 80, 160, 240, 320, 400];
+  const timers: number[] = [];
+  const t0 = performance.now();
+  for (const ms of marks) {
+    const id = window.setTimeout(() => {
+      const inline = panel.style.transform;
+      let matrixX: string | null = null;
+      try {
+        const computed = getComputedStyle(panel).transform;
+        if (computed && computed !== "none") matrixX = computed;
+      } catch {
+        /* ignore */
+      }
+      logDrawerMotionDev("transform-sample", {
+        atMs: Math.round(performance.now() - t0),
+        markMs: ms,
+        durationMs,
+        inline,
+        computed: matrixX,
+      });
+    }, ms);
+    timers.push(id);
+  }
+  return {
+    cancel: () => {
+      for (const id of timers) window.clearTimeout(id);
+    },
+  };
+}
+
 export function playDrawerEnterMotion(
   panel: HTMLElement,
   backdrop: HTMLElement,
+  options?: { fromTransform?: string; fromBackdropOpacity?: number },
 ): DrawerMotionRun {
   const duration = readMotionDrawerOpenMs();
+  const panelFrom = options?.fromTransform ?? DRAWER_OFFSCREEN_TRANSFORM;
+  const backdropFrom = options?.fromBackdropOpacity ?? 0;
   panel.style.opacity = "1";
-  const panelFrom = readPanelTransform(panel);
-  const backdropFrom = readOpacity(backdrop);
+  panel.style.transform = panelFrom;
+  backdrop.style.opacity = String(backdropFrom);
+  const sampler = sampleEnterTransforms(panel, duration);
   const panelRun = runKeyframes(
     panel,
-    [
-      { transform: panelFrom },
-      { transform: "translate3d(0, 0, 0)" },
-    ],
+    [{ transform: panelFrom }, { transform: DRAWER_OPEN_TRANSFORM }],
     duration,
   );
   const backdropRun = runKeyframes(
@@ -93,10 +137,13 @@ export function playDrawerEnterMotion(
   );
   return {
     cancel: () => {
+      sampler.cancel();
       panelRun.cancel();
       backdropRun.cancel();
     },
-    finished: Promise.all([panelRun.finished, backdropRun.finished]).then(() => undefined),
+    finished: Promise.all([panelRun.finished, backdropRun.finished]).then(() => {
+      sampler.cancel();
+    }),
   };
 }
 
@@ -110,10 +157,7 @@ export function playDrawerExitMotion(
   const backdropFrom = readOpacity(backdrop);
   const panelRun = runKeyframes(
     panel,
-    [
-      { transform: panelFrom },
-      { transform: "translate3d(100%, 0, 0)" },
-    ],
+    [{ transform: panelFrom }, { transform: DRAWER_OFFSCREEN_TRANSFORM }],
     duration,
   );
   const backdropRun = runKeyframes(
@@ -131,10 +175,8 @@ export function playDrawerExitMotion(
 }
 
 export function logDrawerMotionDev(event: string, detail: Record<string, unknown>) {
-  if (!import.meta.env.DEV) return;
   if (typeof window === "undefined") return;
-  const enabled = window.localStorage.getItem("metrio-drawer-motion-debug") === "1";
-  if (!enabled) return;
+  if (window.localStorage.getItem("metrio-drawer-motion-debug") !== "1") return;
   const bucket = (window as unknown as { __metrioDrawerMotion?: unknown[] }).__metrioDrawerMotion;
   const entry = { t: performance.now(), event, ...detail };
   if (Array.isArray(bucket)) {
