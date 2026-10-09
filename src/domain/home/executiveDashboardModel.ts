@@ -12,6 +12,7 @@ import {
   buildDirectorDashboardKpis,
   buildEmployeeDashboardKpis,
   buildManagerDashboardKpis,
+  resolveCanonicalTeamEfficiencyCard,
   type DashboardKpiCard,
 } from "./buildDashboardKpis";
 import type { PersonAvailability } from "../people/types";
@@ -348,12 +349,10 @@ export function buildManagerExecutiveModel(input: {
     role: "manager",
   });
   const summary = input.teamSnapshot?.summary ?? [];
-  const teamEfficiency =
-    summary.find((m) => m.label === "Efficiency") ??
-    (() => {
-      const value = metricValue(input.performanceSnapshot.metrics, "Efficiency");
-      return value ? { label: "Efficiency", value } : null;
-    })();
+  const teamEfficiency = resolveCanonicalTeamEfficiencyCard(
+    summary,
+    metricValue(input.performanceSnapshot.metrics, "Efficiency") ?? null,
+  );
   const firstPass =
     summary.find((m) => m.label === "First pass")?.value ??
     metricValue(input.performanceSnapshot.metrics, "First pass") ??

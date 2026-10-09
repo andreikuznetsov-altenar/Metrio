@@ -1,5 +1,6 @@
 import type { DeliveryRiskRow, TeamPerformanceSnapshot } from "../performance";
 import type { ScopeHealthSummary } from "../home/executiveDashboardModel";
+import { canonicalTeamEfficiencyIndexValue } from "../home/buildDashboardKpis";
 import { buildScopeHealthSummary } from "../home/executiveDashboardModel";
 import type { HomeRoleVariant } from "../home/homeTypes";
 import { parseActiveJiraCount } from "../home/dashboardContextSummary";
@@ -43,13 +44,21 @@ export function scopeHealthForTray(input: TrayPerformanceSummaryInput): ScopeHea
   return buildScopeHealthSummary(input.homeRole, input.scopeHealthEvidence);
 }
 
+function trayIndexValue(input: TrayPerformanceSummaryInput): string {
+  const role = trayRoleFromHome(input.homeRole);
+  if (role === "manager") {
+    return canonicalTeamEfficiencyIndexValue(input.teamSnapshot?.summary ?? []);
+  }
+  const scopeHealth = scopeHealthForTray(input);
+  return scopeHealth.line.split("·")[0]?.trim() || "—";
+}
+
 export function buildTraySummaryFromPerformance(
   input: TrayPerformanceSummaryInput,
   unreadNotificationCount: number,
 ): TraySummaryModel {
   const role = trayRoleFromHome(input.homeRole);
-  const scopeHealth = scopeHealthForTray(input);
-  const indexValue = scopeHealth.line.split("·")[0]?.trim() || "—";
+  const indexValue = trayIndexValue(input);
 
   return buildTraySummaryModel({
     role,

@@ -105,6 +105,31 @@ export function buildEmployeeDashboardKpis(input: {
 }
 
 /**
+ * Canonical team Efficiency card — Dashboard Team Health, Performance Efficiency, tray Team index.
+ */
+export function resolveCanonicalTeamEfficiencyCard(
+  summary: readonly Pick<MetricCardData, "label" | "value" | "status" | "statusVariant">[],
+  fallbackEfficiencyValue?: string | null,
+): Pick<MetricCardData, "label" | "value" | "status" | "statusVariant"> | null {
+  const fromSummary = summary.find((metric) => metric.label === "Efficiency");
+  if (fromSummary?.value) {
+    return fromSummary;
+  }
+  if (fallbackEfficiencyValue) {
+    return { label: "Efficiency", value: fallbackEfficiencyValue };
+  }
+  return null;
+}
+
+/** Display value for tray Team index (same digits as Team Health / Performance Efficiency). */
+export function canonicalTeamEfficiencyIndexValue(
+  summary: readonly Pick<MetricCardData, "label" | "value" | "status" | "statusVariant">[],
+  fallbackEfficiencyValue?: string | null,
+): string {
+  return resolveCanonicalTeamEfficiencyCard(summary, fallbackEfficiencyValue)?.value ?? "—";
+}
+
+/**
  * Manager KPI strip.
  * TEAM HEALTH reuses the canonical team Efficiency metric (same source as Performance).
  * Delivery-risk counts stay on the Delivery risk card — never populate Team health.
