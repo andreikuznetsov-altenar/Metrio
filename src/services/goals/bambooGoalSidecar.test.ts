@@ -1,10 +1,19 @@
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { countLegacyMetrioOnlyGoals } from "../../domain/goals/normalizeGoal";
 import { isLegacyMetrioOnlyGoal, type Goal } from "../../domain/goals/goalTypes";
 import {
   findBambooGoalSidecar,
   mergeBambooWithSidecarLinks,
+  removeBambooGoalSidecar,
 } from "./bambooGoalSidecar";
+
+const saveGoalsData = vi.hoisted(() => vi.fn(async () => undefined));
+const loadGoalsData = vi.hoisted(() => vi.fn());
+
+vi.mock("./goalsPersistence", () => ({
+  loadGoalsData: (...args: unknown[]) => loadGoalsData(...args),
+  saveGoalsData: (...args: unknown[]) => saveGoalsData(...args),
+}));
 
 function sampleGoal(overrides: Partial<Goal> = {}): Goal {
   return {
@@ -25,6 +34,11 @@ function sampleGoal(overrides: Partial<Goal> = {}): Goal {
 }
 
 describe("bambooGoalSidecar source of truth", () => {
+  beforeEach(() => {
+    saveGoalsData.mockReset();
+    loadGoalsData.mockReset();
+  });
+
   it("Bamboo fields override stale local HR fields; sidecar links preserved", () => {
     const bamboo = {
       id: "77",
@@ -69,6 +83,40 @@ describe("bambooGoalSidecar source of truth", () => {
       "X-1",
     ]);
     expect(findBambooGoalSidecar(file, "5", "missing")).toBeNull();
+  });
+
+  it("removes sidecar after Bamboo goal delete", async () => {
+    loadGoalsData.mockResolvedValue({
+      schemaVersion: 1,
+      goals: [],
+      history: [],
+      bambooSidecars: [
+        {
+          bambooEmployeeId: "5",
+          bambooGoalId: "77",
+          linkedJiraIssueKeys: ["X-1"],
+          linkedJiraProjectKeys: [],
+          linkedConfluencePageIds: [],
+          updatedAt: "2026-10-01T00:00:00.000Z",
+        },
+        {
+          bambooEmployeeId: "5",
+          bambooGoalId: "keep",
+          linkedJiraIssueKeys: [],
+          linkedJiraProjectKeys: [],
+          linkedConfluencePageIds: [],
+          updatedAt: "2026-10-01T00:00:00.000Z",
+        },
+      ],
+    });
+    await removeBambooGoalSidecar("5", "77");
+    expect(saveGoalsData).toHaveBeenCalledWith(
+      expect.objectContaining({
+        bambooSidecars: [
+          expect.objectContaining({ bambooGoalId: "keep" }),
+        ],
+      }),
+    );
   });
 
   it("classifies goals without bambooGoalId as legacy Metrio-only", () => {

@@ -24,7 +24,8 @@ import { TeamOverviewView } from "./TeamOverviewView";
 import { TeamPeopleView } from "./TeamPeopleView";
 import { TeamPerformanceSubnav } from "./TeamPerformanceSubnav";
 import { TeamRadarView } from "./TeamRadarView";
-import { ManagerGoalsView } from "./ManagerGoalsView";
+import { useCurrentUser } from "../../app/CurrentUserContext";
+import { EmployeeGoalsView } from "./EmployeeGoalsView";
 import { HistoryReportsView } from "./HistoryReportsView";
 import "./goal-detail-drawer.css";
 import { PerformanceStatusBanner } from "./PerformanceStatusBanner";
@@ -52,6 +53,7 @@ export function TeamPerformanceOverview({
   );
   const paintedView = usePaintedSelection(requestedView);
   const { viewModels, uiState } = usePerformanceData();
+  const { currentUser } = useCurrentUser();
   const { registerTeamView } = usePerformanceExport();
   const { openTeamMetricDrilldown, openTeamTrendDrilldown } =
     usePerformanceAnalytics();
@@ -169,6 +171,7 @@ export function TeamPerformanceOverview({
         paintedView={paintedView}
         snapshot={snapshot}
         secondary={secondary}
+        ownPersonId={currentUser.person.id}
         onOpenPerson={handleOpenPerson}
         onSelectRadar={selectRadar}
         onOpenMetricDrilldown={openMetricDrilldown}
@@ -183,6 +186,7 @@ const TeamPerformancePaintedBody = memo(
     paintedView,
     snapshot,
     secondary,
+    ownPersonId,
     onOpenPerson,
     onSelectRadar,
     onOpenMetricDrilldown,
@@ -191,6 +195,7 @@ const TeamPerformancePaintedBody = memo(
     paintedView: TeamPerformanceView | null;
     snapshot: TeamPerformanceSnapshot;
     secondary: TeamSecondarySnapshot;
+    ownPersonId: string;
     onOpenPerson: (personId: string, tab?: PersonDrawerTab) => void;
     onSelectRadar: () => void;
     onOpenMetricDrilldown: (metric: MetricCardData, source: HTMLElement) => void;
@@ -231,7 +236,8 @@ const TeamPerformancePaintedBody = memo(
         ) : null}
         {paintedView === "goals" ? (
           <div data-testid="performance-view-goals">
-            <ManagerGoalsView />
+            {/* Bamboo is canonical; legacy ManagerGoalsView is not rendered */}
+            <EmployeeGoalsView personId={ownPersonId} />
           </div>
         ) : null}
         {paintedView === "history-reports" ? (
@@ -245,5 +251,6 @@ const TeamPerformancePaintedBody = memo(
   (prev, next) =>
     prev.paintedView === next.paintedView &&
     prev.snapshot === next.snapshot &&
-    prev.secondary === next.secondary,
+    prev.secondary === next.secondary &&
+    prev.ownPersonId === next.ownPersonId,
 );

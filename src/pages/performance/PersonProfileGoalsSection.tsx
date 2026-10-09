@@ -1,6 +1,10 @@
+import { ExternalLink } from "lucide-react";
+import { Button } from "../../components/Button/Button";
 import { useBambooEmployeeGoals } from "../../hooks/useBambooEmployeeGoals";
 import { milestoneSummary } from "../../domain/goals/normalizeBambooGoal";
 import type { BambooGoal } from "../../domain/goals/bambooGoalTypes";
+import { buildBambooGoalUrl } from "../../config/buildBambooGoalUrl";
+import { openExternalUrl } from "../../platform/openExternal";
 import { DrawerPanelPlaceholder } from "../../components/Drawer/DrawerPanelPlaceholder";
 import "./goal-detail-drawer.css";
 import "./performance-skeletons.css";
@@ -23,8 +27,21 @@ function formatStatus(goal: BambooGoal): string {
   }
 }
 
-function ProfileGoalRow({ goal }: { goal: BambooGoal }) {
+function ProfileGoalRow({
+  goal,
+  bambooEmployeeId,
+}: {
+  goal: BambooGoal;
+  bambooEmployeeId: string;
+}) {
   const milestones = milestoneSummary(goal);
+  const openInBamboo = () => {
+    const url = buildBambooGoalUrl({
+      employeeId: bambooEmployeeId,
+      goalId: goal.id,
+    });
+    void openExternalUrl(url);
+  };
   return (
     <article
       className="person-profile-goal"
@@ -42,6 +59,18 @@ function ProfileGoalRow({ goal }: { goal: BambooGoal }) {
       {milestones ? (
         <div className="person-profile-goal__milestones">{milestones}</div>
       ) : null}
+      <div className="person-profile-goal__actions">
+        <Button
+          type="button"
+          variant="secondary"
+          size="compact"
+          onClick={openInBamboo}
+          data-testid="person-profile-goal-open-in-bamboo"
+        >
+          <ExternalLink size={14} aria-hidden strokeWidth={1.75} />
+          Open in Bamboo
+        </Button>
+      </div>
     </article>
   );
 }
@@ -101,10 +130,14 @@ export function PersonProfileGoalsSection({
         />
       ) : null}
 
-      {goals.length > 0 && state !== "forbidden" ? (
+      {goals.length > 0 && state !== "forbidden" && bambooEmployeeId ? (
         <div className="person-profile-goals__list" data-testid="person-profile-goals-list">
           {goals.map((goal) => (
-            <ProfileGoalRow key={goal.id} goal={goal} />
+            <ProfileGoalRow
+              key={goal.id}
+              goal={goal}
+              bambooEmployeeId={bambooEmployeeId}
+            />
           ))}
         </div>
       ) : null}

@@ -35,6 +35,20 @@ export async function upsertBambooGoalSidecar(
   return next;
 }
 
+/** Remove Metrio sidecar after a successful Bamboo goal delete. */
+export async function removeBambooGoalSidecar(
+  employeeId: string,
+  goalId: string,
+): Promise<void> {
+  const file = await loadGoalsData();
+  const key = bambooGoalSidecarKey(employeeId, goalId);
+  const next = (file.bambooSidecars ?? []).filter(
+    (s) => bambooGoalSidecarKey(s.bambooEmployeeId, s.bambooGoalId) !== key,
+  );
+  if (next.length === (file.bambooSidecars ?? []).length) return;
+  await saveGoalsData({ ...file, bambooSidecars: next });
+}
+
 /**
  * Merge Bamboo SoT fields over any stale local HR copy while preserving sidecar links.
  */

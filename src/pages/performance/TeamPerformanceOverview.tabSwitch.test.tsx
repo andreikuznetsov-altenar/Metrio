@@ -34,11 +34,17 @@ vi.mock("./TeamDeliveryRiskView", () => ({
     return null;
   },
 }));
-vi.mock("./ManagerGoalsView", () => ({
-  ManagerGoalsView: () => null,
+vi.mock("./EmployeeGoalsView", () => ({
+  EmployeeGoalsView: () => null,
 }));
 vi.mock("./HistoryReportsView", () => ({
   HistoryReportsView: () => null,
+}));
+
+vi.mock("../../app/CurrentUserContext", () => ({
+  useCurrentUser: () => ({
+    currentUser: { person: { id: "self-person" } },
+  }),
 }));
 
 vi.mock("../../app/PerformanceExportContext", () => ({

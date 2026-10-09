@@ -1,10 +1,20 @@
 import { useMemo, useState } from "react";
 import { Button } from "../../components/Button/Button";
+import { Modal } from "../../components/Modal/Modal";
 import { SegmentedControl } from "../../components/SegmentedControl/SegmentedControl";
+import { useToast } from "../../components/Toast/ToastContext";
 import { useCurrentUser } from "../../app/CurrentUserContext";
 import { usePerformanceData } from "../../app/PerformanceDataContext";
+import { buildBambooGoalUrl } from "../../config/buildBambooGoalUrl";
+import { resolveBambooSubdomain } from "../../config/product";
 import type { BambooGoal, BambooGoalStatusFilter } from "../../domain/goals/bambooGoalTypes";
 import { useBambooEmployeeGoals } from "../../hooks/useBambooEmployeeGoals";
+import { openExternalUrl } from "../../platform/openExternal";
+import {
+  BambooClient,
+  BambooPermissionError,
+} from "../../services/bamboo/bambooClient";
+import { removeBambooGoalSidecar } from "../../services/goals/bambooGoalSidecar";
 import { BambooCreateGoalForm } from "./BambooCreateGoalForm";
 import { BambooGoalCard } from "./BambooGoalCard";
 import { BambooGoalDetailDrawer } from "./BambooGoalDetailDrawer";
@@ -20,11 +30,15 @@ const TAB_TO_FILTER: Record<GoalsTab, BambooGoalStatusFilter> = {
 };
 
 export function EmployeeGoalsView({ personId }: { personId: string }) {
+  const toast = useToast();
   const { currentUser } = useCurrentUser();
   const { data } = usePerformanceData();
   const [tab, setTab] = useState<GoalsTab>("active");
   const [creating, setCreating] = useState(false);
   const [selected, setSelected] = useState<BambooGoal | null>(null);
+  const [pendingDelete, setPendingDelete] = useState<BambooGoal | null>(null);
+  const [deleteBusy, setDeleteBusy] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   const person = useMemo(
     () => data?.teamSnapshot.persons.find((p) => p.id === personId) ?? null,
@@ -44,6 +58,59 @@ export function EmployeeGoalsView({ personId }: { personId: string }) {
   const onWriteSuccess = async () => {
     invalidate();
     await refresh({ force: true });
+  };
+
+  const openInBamboo = (goal: BambooGoal) => {
+    if (!bambooEmployeeId) return;
+    try {
+      const url = buildBambooGoalUrl({
+        employeeId: bambooEmployeeId,
+        goalId: goal.id,
+      });
+      void openExternalUrl(url);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Could not open BambooHR.");
+    }
+  };
+
+  const removeGoalFromUi = (goalId: string) => {
+    if (selected?.id === goalId) setSelected(null);
+    if (pendingDelete?.id === goalId) setPendingDelete(null);
+  };
+
+  const confirmDelete = async () => {
+    if (!pendingDelete || !bambooEmployeeId) return;
+    setDeleteBusy(true);
+    setDeleteError(null);
+    try {
+      const subdomain = resolveBambooSubdomain();
+      if (!subdomain) throw new Error("BambooHR is not configured.");
+      const client = new BambooClient({ subdomain });
+      const deletedId = pendingDelete.id;
+      await client.deleteGoal(bambooEmployeeId, deletedId);
+      try {
+        await removeBambooGoalSidecar(bambooEmployeeId, deletedId);
+      } catch {
+        // best-effort sidecar cleanup
+      }
+      removeGoalFromUi(deletedId);
+      setPendingDelete(null);
+      invalidate();
+      await refresh({ force: true });
+      toast.success("Goal deleted from BambooHR");
+    } catch (e) {
+      if (e instanceof BambooPermissionError) {
+        setDeleteError(
+          "You don't have permission to delete this goal in BambooHR.",
+        );
+      } else {
+        setDeleteError(
+          e instanceof Error ? e.message : "Could not delete goal.",
+        );
+      }
+    } finally {
+      setDeleteBusy(false);
+    }
   };
 
   if (!isOwn) {
@@ -140,6 +207,11 @@ export function EmployeeGoalsView({ personId }: { personId: string }) {
               key={goal.id}
               goal={goal}
               onOpen={() => setSelected(goal)}
+              onOpenInBamboo={() => openInBamboo(goal)}
+              onRequestDelete={() => {
+                setDeleteError(null);
+                setPendingDelete(goal);
+              }}
             />
           ))}
         </div>
@@ -151,7 +223,48 @@ export function EmployeeGoalsView({ personId }: { personId: string }) {
         ownerEmployeeId={bambooEmployeeId}
         onClose={() => setSelected(null)}
         onChanged={() => void onWriteSuccess()}
+        onDeleted={(goalId) => {
+          removeGoalFromUi(goalId);
+        }}
       />
+
+      <Modal
+        open={pendingDelete != null}
+        onClose={() => {
+          if (!deleteBusy) setPendingDelete(null);
+        }}
+        title="Delete goal?"
+      >
+        <p data-testid="bamboo-delete-confirm-copy">
+          This goal will be deleted from BambooHR.
+        </p>
+        {deleteError ? (
+          <p className="bamboo-goal-form__error" role="alert">
+            {deleteError}
+          </p>
+        ) : null}
+        <div className="bamboo-goal-detail__toolbar">
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={() => setPendingDelete(null)}
+            disabled={deleteBusy}
+            data-testid="bamboo-delete-cancel"
+          >
+            Cancel
+          </Button>
+          <Button
+            type="button"
+            variant="danger"
+            onClick={() => void confirmDelete()}
+            disabled={deleteBusy}
+            loading={deleteBusy}
+            data-testid="bamboo-delete-confirm"
+          >
+            Delete goal
+          </Button>
+        </div>
+      </Modal>
     </div>
   );
 }
