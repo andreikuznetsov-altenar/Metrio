@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { Button } from "../../components/Button/Button";
-import { Tabs } from "../../components/ui/Tabs";
+import { SegmentedControl } from "../../components/SegmentedControl/SegmentedControl";
 import { useCurrentUser } from "../../app/CurrentUserContext";
 import { usePerformanceData } from "../../app/PerformanceDataContext";
 import type { BambooGoal, BambooGoalStatusFilter } from "../../domain/goals/bambooGoalTypes";
@@ -69,14 +69,14 @@ export function EmployeeGoalsView({ personId }: { personId: string }) {
   return (
     <div className="employee-goals" data-testid="employee-goals">
       <div className="goals-view__toolbar">
-        <Tabs
-          aria-label="Goal status"
+        <SegmentedControl
+          ariaLabel="Goal status"
           value={tab}
-          onChange={(id) => setTab(id as GoalsTab)}
-          items={[
-            { id: "active", label: "Active" },
-            { id: "completed", label: "Completed" },
-            { id: "closed", label: "Closed" },
+          onChange={setTab}
+          options={[
+            { value: "active", label: "Active" },
+            { value: "completed", label: "Completed" },
+            { value: "closed", label: "Closed" },
           ]}
         />
         <Button

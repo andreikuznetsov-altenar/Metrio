@@ -600,7 +600,7 @@
 
 .settings-identity-manager__card--interactive {
   cursor: pointer;
-  border-radius: var(--radius-md, 8px);
+  border-radius: var(--radius-card);
   padding: var(--space-2);
   margin: calc(-1 * var(--space-2));
 }
