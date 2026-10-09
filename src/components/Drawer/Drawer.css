@@ -24,6 +24,13 @@
   opacity: 0;
 }
 
+/*
+ * Secondary panel scroll contract:
+ * .drawer (column, height 100%) → .drawer__header (flex-shrink 0)
+ * → .drawer__body (flex 1, min-height 0, overflow-y auto, metrio-scroll--hidden-thumb)
+ * → optional .drawer__footer (flex-shrink 0).
+ * Notification Center uses .drawer--notifications + inner .notification-center__main scroll.
+ */
 .drawer {
   position: absolute;
   top: 0;
@@ -64,10 +71,18 @@
 }
 
 .drawer__body {
-  flex: 1;
+  flex: 1 1 auto;
   min-height: 0;
   overflow-y: auto;
   overflow-x: hidden;
   padding: var(--drawer-body-padding);
+}
+
+.drawer__footer {
+  flex: 0 0 auto;
+  flex-shrink: 0;
+  padding: var(--space-3) var(--drawer-header-padding-x);
+  border-top: 1px solid var(--color-border);
+  background: var(--color-surface);
 }
 

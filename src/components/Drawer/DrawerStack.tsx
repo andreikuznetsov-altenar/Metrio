@@ -29,6 +29,7 @@ export interface DrawerStackProps {
   ariaLabel: string;
   header?: ReactNode;
   headerActions?: ReactNode;
+  footer?: ReactNode;
   children: ReactNode;
   size?: DrawerSize;
   className?: string;
@@ -51,6 +52,7 @@ export function DrawerStack({
   ariaLabel,
   header,
   headerActions,
+  footer,
   children,
   size = "default",
   className,
@@ -136,6 +138,7 @@ export function DrawerStack({
         <div className="drawer__body metrio-scroll metrio-scroll--hidden-thumb">
           {children}
         </div>
+        {footer ? <div className="drawer__footer">{footer}</div> : null}
       </aside>
     </div>,
   );

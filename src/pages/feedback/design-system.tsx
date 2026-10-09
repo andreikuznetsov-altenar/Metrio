@@ -79,9 +79,11 @@ export function Drawer({
       ariaLabel={title}
       size={size}
       header={<h2 className="feedback-ds__drawer-title">{title}</h2>}
+      footer={
+        footer ? <div className="feedback-ds__drawer-footer">{footer}</div> : undefined
+      }
     >
       {children}
-      {footer ? <div className="feedback-ds__drawer-footer">{footer}</div> : null}
     </BaseDrawer>
   );
 }

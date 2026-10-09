@@ -30,6 +30,9 @@ describe("Notification drawer scroll geometry", () => {
     expect(css).toMatch(
       /\.drawer--notifications\s+\.drawer__body[\s\S]*?padding-bottom:\s*0/,
     );
+    expect(css).not.toMatch(
+      /\.drawer--notification\s+\.drawer__body[\s\S]*?overflow:\s*hidden/,
+    );
     expect(css).toMatch(
       /\.notification-center__main\s*\{[\s\S]*?flex:\s*1\s+1\s+auto/,
     );

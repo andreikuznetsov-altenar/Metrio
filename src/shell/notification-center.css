@@ -273,13 +273,17 @@
   padding-bottom: var(--space-3);
 }
 
-.drawer--notification .drawer__body,
+/*
+ * Notification Center only: drawer body is a flex shell; list scrolls in
+ * .notification-center__main. Do NOT apply overflow:hidden to .drawer--notification
+ * alone — that width token is shared by Feedback setup drawers and others that
+ * scroll directly on .drawer__body.
+ */
 .drawer--notifications .drawer__body {
   display: flex;
   flex-direction: column;
   flex: 1 1 auto;
   min-height: 0;
-  /* Drawer body hosts the flex column; list scrolls inside .notification-center__main. */
   overflow: hidden;
   /*
    * Root cause of the bottom blank strip: generic .drawer__body padding (20px)

@@ -33,6 +33,8 @@ export interface DrawerProps {
   ariaLabel: string;
   header?: ReactNode;
   headerActions?: ReactNode;
+  /** Fixed action bar below the scrollable body (not inside .drawer__body). */
+  footer?: ReactNode;
   children: ReactNode;
   size?: DrawerSize;
   className?: string;
@@ -46,6 +48,7 @@ export function Drawer({
   ariaLabel,
   header,
   headerActions,
+  footer,
   children,
   size = "default",
   className,
@@ -107,6 +110,7 @@ export function Drawer({
         <div className="drawer__body metrio-scroll metrio-scroll--hidden-thumb">
           {children}
         </div>
+        {footer ? <div className="drawer__footer">{footer}</div> : null}
       </aside>
     </div>,
   );
