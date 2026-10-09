@@ -67,23 +67,50 @@ export interface PdfWorkloadRow {
   workload: string;
 }
 
+export interface PdfTeamRosterMember {
+  personId: string;
+  name: string;
+  jobTitle: string;
+  avatarDataUrl?: string | null;
+}
+
+export interface PdfIndividualEfficiencyCard {
+  personId: string;
+  name: string;
+  jobTitle: string;
+  avatarDataUrl?: string | null;
+  efficiency: string;
+  firstPass: string;
+  completed: string;
+  backflows: string;
+}
+
 export interface TeamPerformancePdfLayout {
   companyLogoSrc: string;
   companyLogoSource: string;
+  useVectorLogo: boolean;
+  teamName: string;
   reportRange: ReportRangeIso;
   reportRangeTitle: string;
-  kpiOverview: PdfKpiTeaser[];
-  digestSummary: string;
-  digestAttention: PdfDigestTable;
-  digestRecentChanges: PdfDigestTable;
-  teamAttention: {
-    rows: PdfAttentionRow[];
-    subtitle?: string;
+  roster: PdfTeamRosterMember[];
+  teamEfficiency: {
+    hero: PdfKpiTeaser;
+    supporting: PdfKpiTeaser[];
   };
+  individualEfficiency: PdfIndividualEfficiencyCard[];
+  digestSummary: string;
+  digestRecentChanges: PdfDigestTable;
   teamTrends: PdfTrendBlock[];
   workloadBalance: {
     subtitle?: string;
-    rows: PdfWorkloadRow[];
+    rows: (PdfWorkloadRow & { personId: string })[];
+  };
+  /** @deprecated Removed from layout — kept for legacy section builders only. */
+  kpiOverview?: PdfKpiTeaser[];
+  digestAttention?: PdfDigestTable;
+  teamAttention?: {
+    rows: PdfAttentionRow[];
+    subtitle?: string;
   };
 }
 

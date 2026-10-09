@@ -64,6 +64,20 @@ describe('ownedIssues', () => {
     expect(getOperationalIssues(person).map((i) => i.issueKey)).toEqual(['UX-1']);
   });
 
+  it('falls back to issues when ownedIssues is an empty array', () => {
+    const person = {
+      id: 'lead',
+      bamboo: { workEmail: 'andrei@co.com' },
+      jira: { canonicalKey: 'andrei@co.com' },
+      issues: [
+        issue('UX-1', 'andrei@co.com'),
+        issue('UX-2', 'ic@co.com'),
+      ],
+      ownedIssues: [],
+    } as unknown as Person;
+    expect(getOperationalIssues(person).map((i) => i.issueKey)).toEqual(['UX-1']);
+  });
+
   it('getOperationalIssues prefers ownedIssues collection', () => {
     const person = {
       id: '1',

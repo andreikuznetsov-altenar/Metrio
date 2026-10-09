@@ -19,7 +19,9 @@ export function filterOwnedIssues(
 }
 
 export function getOperationalIssues(person: Person): AuditIssue[] {
-  if (person.ownedIssues) return person.ownedIssues;
+  if (person.ownedIssues && person.ownedIssues.length > 0) {
+    return person.ownedIssues;
+  }
   const canonicalKey =
     person.jira?.canonicalKey || person.bamboo.workEmail || person.id;
   return filterOwnedIssues(person.issues, canonicalKey);

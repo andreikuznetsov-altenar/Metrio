@@ -97,18 +97,16 @@ describe('teamPerformancePdfModel', () => {
     });
 
     expect(layout.reportRange).toEqual(reportRange);
-    expect(layout.kpiOverview.map((kpi) => kpi.label)).toEqual([
-      'Efficiency',
+    expect(layout.teamName).toBeTruthy();
+    expect(layout.teamEfficiency.hero.value).toBe('91%');
+    expect(layout.teamEfficiency.supporting.map((kpi) => kpi.label)).toEqual([
       'First pass',
       'Completed',
       'Backflows',
     ]);
-    expect(layout.kpiOverview[0]?.value).toBe('91%');
-    expect(layout.digestSummary).toContain('selected period');
-    expect(layout.digestSummary).not.toMatch(/this week/i);
-    expect(layout.digestAttention.title).toBe('Attention');
+    expect(layout.digestSummary).toContain('Jul 2026');
     expect(layout.digestRecentChanges.title).toBe('Recent changes');
-    expect(layout.teamAttention.rows).toHaveLength(1);
+    expect(layout.teamAttention).toBeUndefined();
     expect(layout.teamTrends[0]?.chartPoints.length).toBeGreaterThan(1);
   });
 });

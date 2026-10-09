@@ -74,6 +74,34 @@ const reportData: AuditReportData = {
   perUserKpi: {},
 };
 
+function minimalTeamLayout(
+  overrides: Partial<import('./types').TeamPerformancePdfLayout> = {},
+): import('./types').TeamPerformancePdfLayout {
+  return {
+    companyLogoSrc: '',
+    companyLogoSource: 'test',
+    useVectorLogo: true,
+    teamName: 'UX Design',
+    reportRange: { from: '2026-07-09', to: '2026-10-09' },
+    reportRangeTitle: '9 Jul 2026 — 9 Oct 2026',
+    roster: [{ personId: 'p1', name: 'Andrei Kuznetsov', jobTitle: 'Head of UX Design' }],
+    teamEfficiency: {
+      hero: { label: 'Efficiency', value: '91%', description: 'Healthy' },
+      supporting: [
+        { label: 'First pass', value: '84%' },
+        { label: 'Completed', value: '25' },
+        { label: 'Backflows', value: '4' },
+      ],
+    },
+    individualEfficiency: [],
+    digestSummary: 'Selected period summary.',
+    digestRecentChanges: { title: 'Recent changes', rows: [{ label: 'Completed', value: '-17' }] },
+    teamTrends: [],
+    workloadBalance: { rows: [] },
+    ...overrides,
+  };
+}
+
 const EXPORT_VIEWS: PerformanceExportView[] = [
   'team-overview',
   'team-radar',
@@ -121,40 +149,10 @@ describe('renderPerformancePdfBytes', () => {
       ...payloadFor('team-overview'),
       sections: [],
       reportRange: { from: '2026-07-09', to: '2026-10-09' },
-      teamLayout: {
+      teamLayout: minimalTeamLayout({
         companyLogoSrc: badLogo,
         companyLogoSource: 'test-incompatible',
-        reportRange: { from: '2026-07-09', to: '2026-10-09' },
-        reportRangeTitle: '9 Jul 2026 — 9 Oct 2026',
-        kpiOverview: [
-          { label: 'Efficiency', value: '91%' },
-          { label: 'First pass', value: '84%' },
-          { label: 'Completed', value: '25' },
-          { label: 'Backflows', value: '4' },
-        ],
-        digestSummary: 'For the selected period, team completed work.',
-        digestAttention: {
-          title: 'Attention',
-          rows: [{ label: 'People need attention', value: '2' }],
-        },
-        digestRecentChanges: {
-          title: 'Recent changes',
-          rows: [{ label: 'Completed', value: '-17' }],
-        },
-        teamAttention: {
-          subtitle: '2 people flagged',
-          rows: [
-            {
-              personId: 'p1',
-              personName: 'Andrei Kuznetsov',
-              attention: 'No activity',
-              issues: '1',
-              severity: 'Watch',
-              workload: 'Light',
-              avatarDataUrl: badLogo,
-            },
-          ],
-        },
+        useVectorLogo: true,
         teamTrends: [
           {
             label: 'Completed',
@@ -167,9 +165,17 @@ describe('renderPerformancePdfBytes', () => {
           },
         ],
         workloadBalance: {
-          rows: [{ personName: 'Sam', active: '1', atRisk: '0', workload: 'Light' }],
+          rows: [
+            {
+              personId: 'p1',
+              personName: 'Sam',
+              active: '1',
+              atRisk: '0',
+              workload: 'Light',
+            },
+          ],
         },
-      },
+      }),
     };
     const bytes = await renderPerformancePdfBytes(payload);
     expect(new TextDecoder().decode(bytes.slice(0, 4))).toBe('%PDF');
@@ -182,19 +188,11 @@ describe('renderPerformancePdfBytes', () => {
     const payload = {
       ...payloadFor('team-overview'),
       sections: [],
-      teamLayout: {
+      teamLayout: minimalTeamLayout({
         companyLogoSrc: okLogo,
         companyLogoSource: 'bundled-test',
-        reportRange: { from: '2026-07-09', to: '2026-10-09' },
-        reportRangeTitle: '9 Jul 2026 — 9 Oct 2026',
-        kpiOverview: [{ label: 'Efficiency', value: '91%' }],
-        digestSummary: 'Selected period summary.',
-        digestAttention: { title: 'Attention', rows: [{ label: 'Tasks', value: '0' }] },
-        digestRecentChanges: { title: 'Recent changes', rows: [{ label: 'Changes', value: '—' }] },
-        teamAttention: { rows: [] },
-        teamTrends: [],
-        workloadBalance: { rows: [] },
-      },
+        useVectorLogo: false,
+      }),
     };
     const bytes = await renderPerformancePdfBytes(payload);
     expect(new TextDecoder().decode(bytes.slice(0, 4))).toBe('%PDF');

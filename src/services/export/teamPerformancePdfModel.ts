@@ -2,7 +2,6 @@ import { endOfDay, format, parseISO } from 'date-fns';
 import { parseDateStartOfDay } from '../../domain/jira/dates';
 import type { DateRange } from '../../domain/periods/dateRange';
 import { buildDeliveryRiskItems } from '../../domain/radar/deliveryRisk';
-import { buildTeamRadar, summarizeTeamRadar } from '../../domain/radar/teamRadar';
 import type { TeamPerformanceSnapshot } from '../../domain/performance';
 import type { TeamSnapshot } from '../../domain/people/types';
 import type { AuditReportData } from '../../domain/jira/types';
@@ -18,6 +17,13 @@ import {
   trendSufficiency,
 } from '../../domain/trends/trendEngine';
 import type { TeamPerformancePdfLayout, ReportRangeIso } from './types';
+import {
+  buildCanonicalPersonPeriodKpis,
+  deliveryRiskCountByPersonId,
+  filterIndividualContributorPersons,
+  resolveTeamDisplayNameFromPersons,
+  workloadBalanceSubtitle,
+} from './teamPdfHelpers';
 
 function reportRangeToDateRange(range: ReportRangeIso): DateRange {
   const start = parseDateStartOfDay(range.from) ?? parseISO(range.from);
@@ -30,10 +36,26 @@ export function formatPdfReportRangeTitle(range: ReportRangeIso): string {
   return `${fmt(range.from)} — ${fmt(range.to)}`;
 }
 
-function severityLabel(severity: string): string {
-  if (severity === 'critical') return 'Critical';
-  if (severity === 'warning') return 'Watch';
-  return 'Stable';
+function pickTeamKpis(summary: TeamPerformanceSnapshot['summary']) {
+  const byLabel = new Map(summary.map((metric) => [metric.label, metric]));
+  const hero = byLabel.get('Efficiency');
+  const supportingLabels = ['First pass', 'Completed', 'Backflows'] as const;
+  return {
+    hero: {
+      label: 'Efficiency',
+      value: hero?.value ?? '—',
+      description: hero?.status ?? undefined,
+      comparison: hero?.contextLabel,
+    },
+    supporting: supportingLabels.map((label) => {
+      const metric = byLabel.get(label);
+      return {
+        label,
+        value: metric?.value ?? '—',
+        comparison: metric?.contextLabel,
+      };
+    }),
+  };
 }
 
 export function buildTeamPerformancePdfLayout(input: {
@@ -56,9 +78,8 @@ export function buildTeamPerformancePdfLayout(input: {
     reportRangeToDateRange(reportRange),
     params,
   );
-  const radar = buildTeamRadar(teamSnapshot, params);
-  const radarSummary = summarizeTeamRadar(radar);
   const deliveryRisk = buildDeliveryRiskItems(teamSnapshot, params);
+  const atRiskByPerson = deliveryRiskCountByPersonId(deliveryRisk);
 
   const avgCycleDays =
     periodFlow.avgCycleMs !== null
@@ -66,28 +87,8 @@ export function buildTeamPerformancePdfLayout(input: {
       : '—';
 
   const digestSummary =
-    `For the selected period (${formatPdfReportRangeTitle(reportRange)}), the team completed ${periodFlow.completedCount} items ` +
-    `with ${periodFlow.firstPassPercent}% first pass, ${avgCycleDays} days average cycle, and ${periodFlow.backflowCount} backflows. ` +
-    `${radarSummary.peopleNeedingAttention} people need attention; ${deliveryRisk.length} tasks are at delivery risk.`;
-
-  const digestAttention = {
-    title: 'Attention',
-    rows: [
-      {
-        label: 'People need attention',
-        value: String(radarSummary.peopleNeedingAttention ?? 0),
-      },
-      { label: 'Tasks at risk', value: String(deliveryRisk.length) },
-      {
-        label: 'High workload',
-        value: String(teamSnapshot.summary.highWorkload ?? 0),
-      },
-      {
-        label: 'Vacation soon',
-        value: String(teamSnapshot.summary.vacationSoon ?? 0),
-      },
-    ],
-  };
+    `For ${formatPdfReportRangeTitle(reportRange)}, the team completed ${periodFlow.completedCount} items ` +
+    `with ${periodFlow.firstPassPercent}% first pass, ${avgCycleDays} days average cycle, and ${periodFlow.backflowCount} backflows.`;
 
   const completedPoints = personTrendFieldPoints(kpiSnapshots, 'completedOnDate');
   const firstPassPoints = personTrendFieldPoints(kpiSnapshots, 'firstPassOnDate');
@@ -138,27 +139,26 @@ export function buildTeamPerformancePdfLayout(input: {
     rows: recentRows.length ? recentRows : [{ label: 'Changes', value: '—' }],
   };
 
-  const kpiOverview = teamOverview.summary
-    .filter((metric) =>
-      ['Efficiency', 'First pass', 'Completed', 'Backflows'].includes(metric.label),
-    )
-    .map((metric) => ({
-      label: metric.label,
-      value: metric.value,
-      description: metric.tooltip,
-      comparison: metric.contextLabel,
-    }));
+  const teamEfficiency = pickTeamKpis(teamOverview.summary);
 
-  const teamAttentionRows = teamOverview.attention.map((row) => ({
-    personId: row.personId,
-    personName: row.personName ?? '—',
-    bambooEmployeeId: teamSnapshot.persons.find((p) => p.id === row.personId)?.bamboo.id,
-    attention: row.reason,
-    issues: String(row.issueCount),
-    severity: severityLabel(row.severity),
-    workload: row.workload ?? '—',
-    avatarDataUrl: input.avatarDataUrls?.[row.personId] ?? null,
+  const roster = teamSnapshot.persons.map((person) => ({
+    personId: person.id,
+    name: person.bamboo.displayName,
+    jobTitle: person.bamboo.jobTitle || '—',
+    avatarDataUrl: input.avatarDataUrls?.[person.id] ?? null,
   }));
+
+  const contributors = filterIndividualContributorPersons(teamSnapshot.persons);
+  const individualEfficiency = contributors.map((person) => {
+    const kpis = buildCanonicalPersonPeriodKpis(person);
+    return {
+      personId: person.id,
+      name: person.bamboo.displayName,
+      jobTitle: person.bamboo.jobTitle || '—',
+      avatarDataUrl: input.avatarDataUrls?.[person.id] ?? null,
+      ...kpis,
+    };
+  });
 
   const teamTrends = teamOverview.trends.map((trend) => ({
     label: trend.label,
@@ -172,32 +172,40 @@ export function buildTeamPerformancePdfLayout(input: {
     })),
   }));
 
-  const workloadBalance = {
-    subtitle: teamOverview.workload[0]
-      ? `${teamOverview.workload[0].personName ?? 'Team member'} has the highest active workload.`
-      : undefined,
-    rows: teamOverview.workload.map((row) => ({
-      personName: row.personName ?? '—',
-      active: String(row.activeWork),
-      atRisk: String(row.atRisk),
-      workload: row.workload,
-    })),
-  };
+  const workloadRows = teamOverview.workload.map((row) => ({
+    personId: row.personId,
+    personName: row.personName ?? '—',
+    active: String(row.activeWork),
+    atRisk: String(atRiskByPerson.get(row.personId) ?? row.atRisk ?? 0),
+    workload: row.workload,
+  }));
+
+  const numericActive = workloadRows.map((row) => ({
+    personName: row.personName,
+    active: Number.parseInt(row.active, 10) || 0,
+  }));
+
+  const vectorLogoPreferred =
+    !input.companyLogoSrc ||
+    input.companyLogoSource.includes('incompatible') ||
+    input.companyLogoSource === 'unavailable';
 
   return {
     companyLogoSrc: input.companyLogoSrc,
     companyLogoSource: input.companyLogoSource,
+    useVectorLogo: vectorLogoPreferred,
+    teamName: resolveTeamDisplayNameFromPersons(teamSnapshot.persons),
     reportRange,
     reportRangeTitle: formatPdfReportRangeTitle(reportRange),
-    kpiOverview,
+    roster,
+    teamEfficiency,
+    individualEfficiency,
     digestSummary,
-    digestAttention,
     digestRecentChanges,
-    teamAttention: {
-      rows: teamAttentionRows,
-      subtitle: `${teamOverview.attentionTotalCount} people flagged in the selected period`,
-    },
     teamTrends,
-    workloadBalance,
+    workloadBalance: {
+      subtitle: workloadBalanceSubtitle(numericActive),
+      rows: workloadRows,
+    },
   };
 }
