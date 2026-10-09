@@ -55,6 +55,11 @@ import {
   buildDeliveryDependencyGraph,
   collectLinkedIssueKeys,
 } from "../../domain/dependencies/buildDeliveryDependencyGraph";
+import {
+  getBambooTimeOffCache,
+  noteBambooTimeOffFetched,
+  shouldFetchBambooTimeOff,
+} from "../refresh/performanceRefreshCadence";
 
 export type { PerformanceFetchResult, PerformanceIdentityResolution } from "./performanceTypes";
 
@@ -124,10 +129,19 @@ function membersForJiraScope(
   return scope.members;
 }
 
+export type PerformanceFetchOptions = {
+  /**
+   * Bypass Bamboo TTL and refetch time-off (manual refresh, reconnect,
+   * credential change). Background ticks leave this false.
+   */
+  forceBamboo?: boolean;
+};
+
 export async function fetchPerformanceData(
   dateRange: PerformanceDateRange,
   reviewTarget: PerformanceReviewTarget,
   audience: PerformanceAudience,
+  options: PerformanceFetchOptions = {},
 ): Promise<PerformanceFetchResult> {
   if (import.meta.env.VITE_VISUAL_FIXTURE === "1") {
     const { buildVisualPerformanceFetchResult } = await import(
@@ -308,30 +322,54 @@ export async function fetchPerformanceData(
     fetchChangelog: (key) => jira.fetchAllChangelog(key),
   });
 
+  const forceBamboo = Boolean(options.forceBamboo);
   let timeOffEntries: TimeOffEntry[] = [];
-  try {
-    const range = getWhosOutHorizonRange();
-    const seen = new Set<string>();
-    for (const chunk of splitWhosOutRange(range.start, range.end)) {
-      const raw = await bamboo.getWhosOut(chunk.start, chunk.end);
-      for (const entry of raw as TimeOffEntry[]) {
-        const id = String(entry.employeeId || "");
-        const start = (entry.start || entry.startDate || "").slice(0, 10);
-        const end = (entry.end || entry.endDate || "").slice(0, 10);
-        const dedupe = `${id}:${start}:${end}`;
-        if (!id || !start || !end || seen.has(dedupe)) continue;
-        seen.add(dedupe);
-        timeOffEntries.push(entry);
-      }
-    }
-  } catch {
-    partialWarnings.push("bamboo_time_off_unavailable");
+  const bambooCache = getBambooTimeOffCache();
+  if (!shouldFetchBambooTimeOff({ force: forceBamboo }) && bambooCache) {
+    timeOffEntries = [...bambooCache.entries];
     void writeLog(
-      "warn",
+      "info",
       "app",
       "performance_bamboo",
-      "Could not refresh Bamboo time off.",
+      `Reusing Bamboo time-off cache ageMs=${Date.now() - bambooCache.fetchedAtMs}`,
     );
+  } else {
+    try {
+      const range = getWhosOutHorizonRange();
+      const seen = new Set<string>();
+      for (const chunk of splitWhosOutRange(range.start, range.end)) {
+        const raw = await bamboo.getWhosOut(chunk.start, chunk.end);
+        for (const entry of raw as TimeOffEntry[]) {
+          const id = String(entry.employeeId || "");
+          const start = (entry.start || entry.startDate || "").slice(0, 10);
+          const end = (entry.end || entry.endDate || "").slice(0, 10);
+          const dedupe = `${id}:${start}:${end}`;
+          if (!id || !start || !end || seen.has(dedupe)) continue;
+          seen.add(dedupe);
+          timeOffEntries.push(entry);
+        }
+      }
+      noteBambooTimeOffFetched(timeOffEntries);
+    } catch {
+      if (bambooCache) {
+        timeOffEntries = [...bambooCache.entries];
+        partialWarnings.push("bamboo_time_off_stale_cache");
+        void writeLog(
+          "warn",
+          "app",
+          "performance_bamboo",
+          "Bamboo time-off fetch failed; preserved cached entries.",
+        );
+      } else {
+        partialWarnings.push("bamboo_time_off_unavailable");
+        void writeLog(
+          "warn",
+          "app",
+          "performance_bamboo",
+          "Could not refresh Bamboo time off.",
+        );
+      }
+    }
   }
 
   const vacationSoonWithinDays = prefs.operationalRules.vacation.soonWithinDays;

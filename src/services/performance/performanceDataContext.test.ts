@@ -143,6 +143,7 @@ describe("PerformanceDataContext", () => {
       expect.objectContaining({ preset: "30d" }),
       "team",
       "team",
+      { forceBamboo: true },
     );
   });
 

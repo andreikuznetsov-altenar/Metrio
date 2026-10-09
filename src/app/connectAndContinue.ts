@@ -27,6 +27,7 @@ import {
 } from '../platform/secureStorage';
 import { persistConnectionConfig } from './connectionStorage';
 import { resetAvatarSession } from '../services/bamboo/bambooAvatarService';
+import { clearBambooTimeOffCache } from '../services/refresh/performanceRefreshCadence';
 
 export interface ConnectFormInput {
   workEmail: string;
@@ -176,6 +177,7 @@ export async function connectAndContinue(input: ConnectFormInput): Promise<void>
 
   resetOrgHierarchyCache();
   resetAvatarSession();
+  clearBambooTimeOffCache();
   await savePreferences(prefs);
   await persistConnectionConfig({ workEmail }, { jiraToken, bambooApiKey });
 }

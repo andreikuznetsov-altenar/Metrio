@@ -35,6 +35,7 @@ import {
   type PerformanceViewModels,
 } from "../services/performance/performanceViewModel";
 import { registerCoalescedBackgroundRefresh } from "../services/refresh/backgroundRefresh";
+import { shouldRefreshOnSystemResume } from "../services/refresh/performanceRefreshCadence";
 import { DEFAULT_OPERATIONAL_RULES } from "../domain/operationalRules/operationalRulesDefaults";
 import { useOptionalCurrentUser } from "./CurrentUserContext";
 import type { OperationalRules } from "../domain/operationalRules/operationalRulesTypes";
@@ -233,10 +234,13 @@ export function PerformanceDataProvider({
       );
 
       try {
+        // Manual / initial must bypass Bamboo TTL so a failed source is retried.
+        // Silent background ticks reuse Bamboo when its 60m TTL is still valid.
         const next = await fetchPerformanceData(
           dateRange,
           reviewTarget,
           audience,
+          { forceBamboo: mode !== "silent" },
         );
         if (!isLatestPerformanceRequest(requestId, requestSeqRef.current)) {
           return;
@@ -510,8 +514,14 @@ export function PerformanceDataProvider({
 
     void (async () => {
       try {
-        const unsub = await registerCoalescedBackgroundRefresh(async () => {
-          await coalescedSilentRef.current();
+        const unsub = await registerCoalescedBackgroundRefresh({
+          refresh: async () => {
+            await coalescedSilentRef.current();
+          },
+          shouldRefreshOnResume: () =>
+            shouldRefreshOnSystemResume(
+              dataRef.current?.lastUpdatedAt ?? null,
+            ),
         });
         if (disposed) {
           unsub();

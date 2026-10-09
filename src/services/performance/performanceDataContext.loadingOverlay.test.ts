@@ -28,8 +28,27 @@ vi.mock("../performance/performanceRefreshSideEffects", () => ({
   markPerformanceIntegrationsStale: vi.fn(async () => undefined),
 }));
 
+const backgroundRefreshHandlers: {
+  current: null | {
+    refresh: () => Promise<void>;
+    shouldRefreshOnResume?: () => boolean;
+  };
+} = { current: null };
+
 vi.mock("../refresh/backgroundRefresh", () => ({
-  registerCoalescedBackgroundRefresh: vi.fn(async () => () => {}),
+  registerCoalescedBackgroundRefresh: vi.fn(async (options: unknown) => {
+    if (typeof options === "function") {
+      backgroundRefreshHandlers.current = {
+        refresh: options as () => Promise<void>,
+      };
+    } else {
+      backgroundRefreshHandlers.current = options as {
+        refresh: () => Promise<void>;
+        shouldRefreshOnResume?: () => boolean;
+      };
+    }
+    return () => undefined;
+  }),
 }));
 
 const mockFetch = vi.mocked(fetchPerformanceData);
@@ -154,6 +173,7 @@ describe("PerformanceDataContext loading overlay", () => {
     mockFetch.mockReset();
     mockFetch.mockResolvedValue(resultWithMarker("initial"));
     clearDashboardCacheForTests();
+    backgroundRefreshHandlers.current = null;
     mutableProviderProps.dateRange = createPerformanceDateRange("30d");
     mutableProviderProps.reviewTarget = "team";
   });
@@ -371,5 +391,55 @@ describe("PerformanceDataContext loading overlay", () => {
     });
     await waitFor(() => expect(result.current.status).toBe("ready"));
     expect(result.current.contentOverlayVisible).toBe(false);
+  });
+
+  it("H: silent scheduler refresh does not activate content overlay", async () => {
+    const { result } = renderHook(() => usePerformanceData(), {
+      wrapper: providerWrapper(createPerformanceDateRange("30d"), "team"),
+    });
+    await waitReady(result);
+    await waitFor(() => expect(backgroundRefreshHandlers.current).toBeTruthy());
+
+    const resolveRefresh = await deferNextFetch();
+    const previousVm = result.current.viewModels;
+
+    await act(async () => {
+      void backgroundRefreshHandlers.current!.refresh();
+    });
+
+    // Silent mode keeps status ready/partial — never flips overlay on.
+    expect(result.current.contentLoadingActive).toBe(false);
+    expect(result.current.contentOverlayVisible).toBe(false);
+    expect(result.current.viewModels).toBe(previousVm);
+    expect(result.current.status).not.toBe("refreshing");
+
+    await act(async () => {
+      resolveRefresh("silent-done");
+    });
+    await waitFor(() =>
+      expect(result.current.data?.lastUpdatedAt).toBe("silent-done"),
+    );
+    expect(result.current.contentOverlayVisible).toBe(false);
+    // Background tick must reuse Bamboo TTL (forceBamboo false).
+    const silentCall = mockFetch.mock.calls.find(
+      (call) => call[3]?.forceBamboo === false,
+    );
+    expect(silentCall).toBeTruthy();
+  });
+
+  it("D: manual refresh forces Bamboo bypass", async () => {
+    const { result } = renderHook(() => usePerformanceData(), {
+      wrapper: providerWrapper(createPerformanceDateRange("30d"), "team"),
+    });
+    await waitReady(result);
+    mockFetch.mockClear();
+    mockFetch.mockResolvedValue(resultWithMarker("manual"));
+    await act(async () => {
+      await result.current.refresh();
+    });
+    await waitFor(() =>
+      expect(result.current.data?.lastUpdatedAt).toBe("manual"),
+    );
+    expect(mockFetch.mock.calls.at(-1)?.[3]?.forceBamboo).toBe(true);
   });
 });
