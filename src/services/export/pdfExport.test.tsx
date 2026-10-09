@@ -113,6 +113,92 @@ describe('renderPerformancePdfBytes', () => {
     expect(bytes.length).toBeGreaterThan(500);
     expect(new TextDecoder().decode(bytes.slice(0, 4))).toBe('%PDF');
   });
+
+  it('team layout survives incompatible SVG logo and avatar (wordmark/initials fallback)', async () => {
+    const badSvg = `<svg xmlns="http://www.w3.org/2000/svg"><text font-family="Helvetica, Arial, sans-serif" font-weight="700">Altenar</text></svg>`;
+    const badLogo = `data:image/svg+xml;base64,${Buffer.from(badSvg).toString('base64')}`;
+    const payload = {
+      ...payloadFor('team-overview'),
+      sections: [],
+      reportRange: { from: '2026-07-09', to: '2026-10-09' },
+      teamLayout: {
+        companyLogoSrc: badLogo,
+        companyLogoSource: 'test-incompatible',
+        reportRange: { from: '2026-07-09', to: '2026-10-09' },
+        reportRangeTitle: '9 Jul 2026 — 9 Oct 2026',
+        kpiOverview: [
+          { label: 'Efficiency', value: '91%' },
+          { label: 'First pass', value: '84%' },
+          { label: 'Completed', value: '25' },
+          { label: 'Backflows', value: '4' },
+        ],
+        digestSummary: 'For the selected period, team completed work.',
+        digestAttention: {
+          title: 'Attention',
+          rows: [{ label: 'People need attention', value: '2' }],
+        },
+        digestRecentChanges: {
+          title: 'Recent changes',
+          rows: [{ label: 'Completed', value: '-17' }],
+        },
+        teamAttention: {
+          subtitle: '2 people flagged',
+          rows: [
+            {
+              personId: 'p1',
+              personName: 'Andrei Kuznetsov',
+              attention: 'No activity',
+              issues: '1',
+              severity: 'Watch',
+              workload: 'Light',
+              avatarDataUrl: badLogo,
+            },
+          ],
+        },
+        teamTrends: [
+          {
+            label: 'Completed',
+            value: '25',
+            chartPoints: [
+              { date: '2026-07-09', value: 2 },
+              { date: '2026-08-09', value: 4 },
+              { date: '2026-10-09', value: 6 },
+            ],
+          },
+        ],
+        workloadBalance: {
+          rows: [{ personName: 'Sam', active: '1', atRisk: '0', workload: 'Light' }],
+        },
+      },
+    };
+    const bytes = await renderPerformancePdfBytes(payload);
+    expect(new TextDecoder().decode(bytes.slice(0, 4))).toBe('%PDF');
+    expect(bytes.length).toBeGreaterThan(1000);
+  });
+
+  it('team layout renders with compatible bundled-style Altenar SVG logo', async () => {
+    const okSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 40"><text font-size="28" fill="#0B3D2E">Altenar</text></svg>`;
+    const okLogo = `data:image/svg+xml;base64,${Buffer.from(okSvg).toString('base64')}`;
+    const payload = {
+      ...payloadFor('team-overview'),
+      sections: [],
+      teamLayout: {
+        companyLogoSrc: okLogo,
+        companyLogoSource: 'bundled-test',
+        reportRange: { from: '2026-07-09', to: '2026-10-09' },
+        reportRangeTitle: '9 Jul 2026 — 9 Oct 2026',
+        kpiOverview: [{ label: 'Efficiency', value: '91%' }],
+        digestSummary: 'Selected period summary.',
+        digestAttention: { title: 'Attention', rows: [{ label: 'Tasks', value: '0' }] },
+        digestRecentChanges: { title: 'Recent changes', rows: [{ label: 'Changes', value: '—' }] },
+        teamAttention: { rows: [] },
+        teamTrends: [],
+        workloadBalance: { rows: [] },
+      },
+    };
+    const bytes = await renderPerformancePdfBytes(payload);
+    expect(new TextDecoder().decode(bytes.slice(0, 4))).toBe('%PDF');
+  });
 });
 
 describe('exportPerformancePdf', () => {

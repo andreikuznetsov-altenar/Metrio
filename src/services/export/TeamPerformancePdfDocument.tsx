@@ -1,5 +1,6 @@
 import { Document, Image, Page, Svg, Line, Polyline, Text, View } from '@react-pdf/renderer';
 import type { TeamPerformancePdfLayout } from './types';
+import { sanitizePdfImageSrc } from './pdfSafeImage';
 import { pdfStyles } from './pdfStyles';
 
 function initialsFromName(name: string): string {
@@ -9,20 +10,48 @@ function initialsFromName(name: string): string {
   return `${parts[0][0] ?? ''}${parts[1][0] ?? ''}`.toUpperCase();
 }
 
+function CompanyBrandMark({ logoSrc }: { logoSrc: string }) {
+  const safeLogo = sanitizePdfImageSrc(logoSrc);
+  if (safeLogo) {
+    return <Image src={safeLogo} style={pdfStyles.companyLogo} />;
+  }
+  // Deterministic react-pdf Text fallback when SVG/image is incompatible.
+  return <Text style={pdfStyles.companyWordmark}>Altenar</Text>;
+}
+
+function PersonAvatar({
+  name,
+  avatarDataUrl,
+}: {
+  name: string;
+  avatarDataUrl?: string | null;
+}) {
+  const safeAvatar = sanitizePdfImageSrc(avatarDataUrl);
+  if (safeAvatar) {
+    return <Image src={safeAvatar} style={pdfStyles.avatar} />;
+  }
+  return (
+    <View style={pdfStyles.avatarFallback}>
+      <Text style={pdfStyles.avatarFallbackText}>{initialsFromName(name)}</Text>
+    </View>
+  );
+}
+
 function MiniTrendChart({ points }: { points: { date: string; value: number }[] }) {
-  if (points.length < 2) {
+  const usable = points.filter((point) => Number.isFinite(point.value));
+  if (usable.length < 2) {
     return <Text style={pdfStyles.trendNoChart}>Insufficient chart data</Text>;
   }
   const width = 220;
   const height = 56;
-  const values = points.map((p) => p.value);
+  const values = usable.map((p) => p.value);
   const min = Math.min(...values);
   const max = Math.max(...values);
   const span = max - min || 1;
-  const coords = points.map((point, index) => {
-    const x = (index / (points.length - 1)) * width;
+  const coords = usable.map((point, index) => {
+    const x = (index / (usable.length - 1)) * width;
     const y = height - ((point.value - min) / span) * (height - 8) - 4;
-    return `${x},${y}`;
+    return `${Number.isFinite(x) ? x : 0},${Number.isFinite(y) ? y : height / 2}`;
   });
   return (
     <Svg width={width} height={height} viewBox={`0 0 ${width} ${height}`}>
@@ -55,9 +84,7 @@ export function TeamPerformancePdfDocument({ layout }: { layout: TeamPerformance
     <Document>
       <Page size="A4" style={pdfStyles.page}>
         <View style={pdfStyles.teamHeader} wrap={false}>
-          {layout.companyLogoSrc ? (
-            <Image src={layout.companyLogoSrc} style={pdfStyles.companyLogo} />
-          ) : null}
+          <CompanyBrandMark logoSrc={layout.companyLogoSrc} />
           <Text style={pdfStyles.teamReportTitle}>Team Performance Report</Text>
           <Text style={pdfStyles.teamReportDates}>{layout.reportRangeTitle}</Text>
         </View>
@@ -104,13 +131,7 @@ export function TeamPerformancePdfDocument({ layout }: { layout: TeamPerformance
           {layout.teamAttention.rows.map((row) => (
             <View key={row.personId} style={pdfStyles.tableRowMuted} wrap={false}>
               <View style={pdfStyles.attentionPersonCol}>
-                {row.avatarDataUrl ? (
-                  <Image src={row.avatarDataUrl} style={pdfStyles.avatar} />
-                ) : (
-                  <View style={pdfStyles.avatarFallback}>
-                    <Text style={pdfStyles.avatarFallbackText}>{initialsFromName(row.personName)}</Text>
-                  </View>
-                )}
+                <PersonAvatar name={row.personName} avatarDataUrl={row.avatarDataUrl} />
                 <Text style={pdfStyles.attentionPersonName}>{row.personName}</Text>
               </View>
               <Text style={pdfStyles.attentionCol}>{row.attention}</Text>

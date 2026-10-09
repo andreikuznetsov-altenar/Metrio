@@ -120,6 +120,13 @@ export const pdfStyles = StyleSheet.create({
     objectFit: 'contain',
     marginBottom: 8,
   },
+  companyWordmark: {
+    fontSize: 18,
+    fontFamily: 'Helvetica',
+    fontWeight: 700,
+    color: '#0B3D2E',
+    marginBottom: 8,
+  },
   teamReportTitle: {
     fontSize: 22,
     fontWeight: 700,

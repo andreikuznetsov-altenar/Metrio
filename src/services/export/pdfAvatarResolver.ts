@@ -1,5 +1,6 @@
 import type { TeamSnapshot } from '../../domain/people/types';
 import { fetchEmployeeAvatarDataUrl } from '../bamboo/bambooAvatarService';
+import { sanitizePdfImageSrc } from './pdfSafeImage';
 
 export async function resolvePdfAvatarDataUrls(
   teamSnapshot: TeamSnapshot,
@@ -16,7 +17,7 @@ export async function resolvePdfAvatarDataUrls(
       }
       try {
         const dataUrl = await fetchEmployeeAvatarDataUrl(bambooId, 'small');
-        return [personId, dataUrl] as const;
+        return [personId, sanitizePdfImageSrc(dataUrl)] as const;
       } catch {
         return [personId, null] as const;
       }

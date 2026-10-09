@@ -30,22 +30,41 @@ function errorClass(error: unknown): string {
   return typeof error;
 }
 
+function isNodeRuntime(): boolean {
+  const proc = (globalThis as { process?: { versions?: { node?: string } } }).process;
+  return Boolean(proc?.versions?.node);
+}
+
 async function pdfDocumentToBytes(
   document: React.ReactElement,
   doc: ReturnType<typeof pdf>,
 ): Promise<Uint8Array> {
+  let toBlobError: unknown;
   try {
     const blob = await doc.toBlob();
     if (typeof blob.arrayBuffer === 'function') {
       return new Uint8Array(await blob.arrayBuffer());
     }
-  } catch {
-    // Fall back to buffer rendering (Vitest/jsdom and some WebViews).
+  } catch (error) {
+    toBlobError = error;
   }
-  const buffer = await renderToBuffer(
-    document as Parameters<typeof renderToBuffer>[0],
+
+  // renderToBuffer is Node-only. In packaged WebView, never mask the real toBlob error.
+  if (isNodeRuntime()) {
+    try {
+      const buffer = await renderToBuffer(
+        document as Parameters<typeof renderToBuffer>[0],
+      );
+      return new Uint8Array(buffer);
+    } catch (bufferError) {
+      throw toBlobError ?? bufferError;
+    }
+  }
+
+  throw (
+    toBlobError ??
+    new Error('PDF toBlob failed and renderToBuffer is unavailable in this runtime')
   );
-  return new Uint8Array(buffer);
 }
 
 function toExportError(code: PdfExportErrorCode, error: unknown): PdfExportResult {
@@ -66,6 +85,11 @@ export async function renderPerformancePdfBytes(payload: PerformanceExportPayloa
   try {
     bytes = await pdfDocumentToBytes(document, pdf(document));
   } catch (error) {
+    const rawMessage = error instanceof Error ? error.message : String(error);
+    const stackHint =
+      error instanceof Error && error.stack
+        ? error.stack.split('\n').slice(0, 4).join(' | ')
+        : undefined;
     await logPdfExportEvent({
       stage: 'render',
       outcome: 'error',
@@ -74,7 +98,9 @@ export async function renderPerformancePdfBytes(payload: PerformanceExportPayloa
       targetExtension: 'pdf',
       errorCode: 'pdf_render_failed',
       errorClass: errorClass(error),
-      errorMessage: error instanceof Error ? error.message : String(error),
+      errorMessage: [rawMessage, stackHint, payload.teamLayout ? 'layout=team' : 'layout=sections']
+        .filter(Boolean)
+        .join(' :: '),
     });
     throw error;
   }
