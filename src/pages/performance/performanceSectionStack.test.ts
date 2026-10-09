@@ -29,5 +29,8 @@ describe("route layer pointer contract", () => {
     expect(css).toMatch(
       /\.app-modal-layer:has\(\.metrio-modal-root--open\)[\s\S]*pointer-events: auto/,
     );
+    expect(css).toMatch(
+      /\.app-modal-layer:has\(\.metrio-modal-root\[data-open="true"\]\)/,
+    );
   });
 });

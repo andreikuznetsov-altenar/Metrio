@@ -10,7 +10,8 @@
   pointer-events: none;
 }
 
-.metrio-modal-root--open {
+.metrio-modal-root--open,
+.metrio-modal-root[data-open="true"] {
   pointer-events: auto;
 }
 

@@ -102,6 +102,7 @@ export function Modal({
       className={
         visible ? "metrio-modal-root metrio-modal-root--open" : "metrio-modal-root"
       }
+      data-open={open ? "true" : undefined}
       data-testid="metrio-modal-root"
       role="presentation"
       onClick={(event) => event.stopPropagation()}
