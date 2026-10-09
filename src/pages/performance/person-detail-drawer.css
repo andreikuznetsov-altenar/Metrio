@@ -110,11 +110,17 @@
   align-self: flex-start;
 }
 
+/*
+ * Profile ↔ Brief crossfade: both panels share grid-area "stack". Inactive panels must
+ * not participate in row sizing (grid uses max of stacked items) or scroll height
+ * includes the hidden view and leaves a large blank tail.
+ */
 .person-drawer-views {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   grid-template-areas: "stack";
   min-width: 0;
+  position: relative;
 }
 
 .person-drawer-view {
@@ -133,6 +139,11 @@
 }
 
 .person-drawer-view--inactive {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  width: 100%;
   opacity: 0;
   visibility: hidden;
   pointer-events: none;
