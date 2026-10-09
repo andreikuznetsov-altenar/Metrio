@@ -1,6 +1,7 @@
 import { BUILTIN_FEEDBACK_TEMPLATES } from './feedbackTemplates';
 import type { FeedbackCyclesData } from './feedbackCycleTypes';
 import type { Survey, SurveyDataFile } from '../survey/types';
+import { attachLegacyOrphanSurveysAsCycles } from '../feedbackV2/operations';
 
 export const FEEDBACK_CYCLES_SCHEMA_EXTENSION = 2;
 
@@ -31,7 +32,7 @@ export function tagLegacySurveysAsRuns(surveys: Survey[]): Survey[] {
 
 export function applyFeedbackCyclesMigration(data: SurveyDataFile): SurveyDataFile {
   const cyclesBlock = ensureFeedbackCyclesData(data);
-  return {
+  let migrated: SurveyDataFile = {
     ...data,
     schemaVersion: Math.max(
       data.schemaVersion ?? 1,
@@ -42,4 +43,6 @@ export function applyFeedbackCyclesMigration(data: SurveyDataFile): SurveyDataFi
     templates: cyclesBlock.templates,
     scheduleState: cyclesBlock.scheduleState,
   };
+  migrated = attachLegacyOrphanSurveysAsCycles(migrated);
+  return migrated;
 }

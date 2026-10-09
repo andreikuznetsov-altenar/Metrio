@@ -26,14 +26,12 @@ import { PageSubnav } from "../../shell/PageSubnav";
 import type { SettingsSection } from "./types";
 import { normalizeSettingsSection } from "./settingsSection";
 import { GoogleConnectionPanel } from "../feedback/GoogleConnectionPanel";
-import { CalendarSettingsPanel } from "./CalendarSettingsPanel";
 import { disconnectCalendarCache } from "../../hooks/useUpcomingMeetings";
 import { SettingsCredentialField } from "./SettingsCredentialField";
 import "../page-content.css";
 import { OperationalRulesSettingsPanel } from "./OperationalRulesSettingsPanel";
 import { PreferencesSettingsPanel } from "./PreferencesSettingsPanel";
 import { CompanyAppSettingsPanel } from "./CompanyAppSettingsPanel";
-import { MetrioCloudSettingsPanel } from "./MetrioCloudSettingsPanel";
 import "./settings.css";
 
 const SECTIONS: { id: SettingsSection; label: string }[] = [
@@ -309,16 +307,12 @@ export function SettingsPage({
             />
           </section>
 
-          <section className="settings-card">
-            <MetrioCloudSettingsPanel />
-          </section>
-
           <section className="settings-card settings-card--google" data-testid="settings-google-card">
             <div className="settings-card__head">
-              <h3 className="settings-card__title">Google</h3>
+              <h3 className="settings-card__title">Google Forms bridge</h3>
             </div>
             <p className="settings-card__description">
-              Connect Google to create and send Feedback surveys.
+              Personal Apps Script Web App URL and connection key for Feedback surveys.
             </p>
             <GoogleConnectionPanel
               prefs={prefs}
@@ -333,9 +327,6 @@ export function SettingsPage({
             />
           </section>
 
-          <section className="settings-card">
-            <CalendarSettingsPanel prefs={prefs} onUpdatePrefs={patchGooglePrefs} embedded />
-          </section>
         </div>
       ) : null}
 

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Mail } from 'lucide-react';
 import type { AppPreferences } from '../../platform/preferences';
-import { isSurveyGoogleConfigured, usesAppsScriptGoogle } from '../../services/survey/surveyGoogleClient';
+import { usesAppsScriptGoogle } from '../../services/survey/surveyGoogleClient';
 import { formatAppsScriptError } from '../../services/survey/appsScriptSurveyClient';
 import { formatGoogleOAuthError } from './feedbackUi';
 import { FEEDBACK_HELP } from './feedbackHelp';
@@ -55,7 +55,7 @@ export function GoogleConnectionPanel({
   const [bridgeSecret, setBridgeSecret] = useState('');
   const linked = hasGoogleAccount(prefs);
   const appsScriptMode = usesAppsScriptGoogle(prefs);
-  const oauthMode = isSurveyGoogleConfigured(prefs) && !appsScriptMode;
+  const oauthMode = false;
   const displayMessage = message || localMessage;
 
   const closeConnectDrawer = () => {

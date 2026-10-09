@@ -1,14 +1,15 @@
 import { render, screen, waitFor } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import { ToastProvider } from "../components/Toast/ToastContext";
 import { DEFAULT_PREFERENCES } from "../platform/preferences";
 import { FeedbackPage } from "./FeedbackPage";
+import { createDefaultSurveyData } from "../domain/survey/defaults";
 
 const connectedPrefs = {
   ...DEFAULT_PREFERENCES,
   google: {
     ...DEFAULT_PREFERENCES.google,
+    appsScriptWebAppUrl: "https://script.google.com/macros/s/test/exec",
     accountEmail: "lead@company.com",
     formsConnected: true,
     gmailConnected: true,
@@ -20,7 +21,11 @@ vi.mock("../app/FeedbackTeamProvider", () => ({
   useFeedbackAppStore: () => ({
     prefs: connectedPrefs,
     teamDetection: { ok: true, mode: "team" as const },
-    teamSnapshot: null,
+    teamSnapshot: {
+      mode: "team",
+      persons: [],
+      summary: { available: 0, onVacation: 0, vacationSoon: 0, highWorkload: 0, problematic: 0 },
+    },
     updatePrefs: vi.fn(),
   }),
 }));
@@ -37,49 +42,33 @@ vi.mock("../app/CurrentUserContext", () => ({
 
 vi.mock("../app/feedbackSurveyStore", () => ({
   useFeedbackSurveyStore: () => ({
-    data: { defaults: { questions: [] }, surveys: [], activeSurveyId: null },
+    data: {
+      defaults: createDefaultSurveyData(),
+      surveys: [],
+      activeSurveyId: null,
+      cycles: [],
+    },
     loading: false,
     error: null,
     connectGoogle: vi.fn(),
     disconnectGoogle: vi.fn(),
     prepareIssues: [],
     sendSummary: null,
-    showRecipients: false,
     showSendConfirm: false,
-    showReminderConfirm: false,
-    showRegenerateConfirm: false,
-    recipientSearch: "",
-    recipientStatusFilter: "all",
     init: vi.fn().mockResolvedValue(undefined),
-    saveDefaults: vi.fn(),
-    prepareSurvey: vi.fn(),
-    regenerateGoogleForm: vi.fn(),
-    sendTestEmail: vi.fn(),
+    createFeedbackSurvey: vi.fn(),
+    repeatFeedbackCycleRun: vi.fn(),
+    deleteFeedbackCycle: vi.fn(),
+    closeSurvey: vi.fn(),
     sendSurveyBatch: vi.fn(),
     syncResponses: vi.fn(),
-    sendReminders: vi.fn(),
-    setShowRecipients: vi.fn(),
     setShowSendConfirm: vi.fn(),
-    setShowReminderConfirm: vi.fn(),
-    setShowRegenerateConfirm: vi.fn(),
-    setRecipientSearch: vi.fn(),
-    setRecipientStatusFilter: vi.fn(),
-    setActiveSurvey: vi.fn(),
-    updateRecipient: vi.fn(),
-    updateActiveSurvey: vi.fn(),
   }),
-  getSurveyMetrics: () => ({
-    respondentCount: 0,
-    scaleQuestions: [],
-    multipleQuestions: [],
-    overallEffectivenessIndex: 0,
-    overallStatus: "Critical" as const,
-  }),
+  getSurveyMetrics: () => null,
 }));
 
 describe("FeedbackPage", () => {
-  it("renders survey delivery results and history navigation", async () => {
-    const user = userEvent.setup();
+  it("renders Feedback cycles V2 landing", async () => {
     render(
       <ToastProvider>
         <FeedbackPage />
@@ -87,13 +76,11 @@ describe("FeedbackPage", () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByRole("button", { name: "Survey" })).toBeInTheDocument();
+      expect(screen.getByTestId("feedback-v2-page")).toBeInTheDocument();
     });
-    expect(screen.getByRole("button", { name: "Delivery" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Results" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "History" })).toBeInTheDocument();
-
-    await user.click(screen.getByRole("button", { name: "Results" }));
-    expect(screen.getByTestId("feedback-results-empty")).toBeInTheDocument();
+    expect(screen.getByText("Feedback cycles")).toBeInTheDocument();
+    expect(screen.getByTestId("feedback-new-survey")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Survey" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "History" })).not.toBeInTheDocument();
   });
 });

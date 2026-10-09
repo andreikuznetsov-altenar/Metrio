@@ -15,8 +15,8 @@ describe("resolveSafeFeedbackNotificationTab", () => {
     expect(resolveSafeFeedbackNotificationTab("delivery", access)).toBeNull();
   });
 
-  it("allows survey tab for leaf manager", () => {
+  it("maps legacy survey tab to cycles landing for leaf manager", () => {
     const access = resolveOrgFeatureAccess("leaf_manager");
-    expect(resolveSafeFeedbackNotificationTab("survey", access)).toBe("survey");
+    expect(resolveSafeFeedbackNotificationTab("survey", access)).toBe("cycles");
   });
 });

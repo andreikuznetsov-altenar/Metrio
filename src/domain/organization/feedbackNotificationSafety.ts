@@ -17,11 +17,11 @@ export function resolveSafeFeedbackNotificationTab(
   if (!access.showFeedbackTab) {
     return null;
   }
-  if (tab === "results") {
-    return access.canViewOwnFeedbackResults ? tab : null;
-  }
   if (!access.canViewSurveyManagement) {
     return access.canViewOwnFeedbackResults ? "results" : null;
   }
-  return tab;
+  if (tab === "results" && access.canViewOwnFeedbackResults) {
+    return tab;
+  }
+  return "cycles";
 }

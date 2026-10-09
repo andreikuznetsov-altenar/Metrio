@@ -17,7 +17,6 @@ import { connectAppsScriptGoogle } from '../services/survey/appsScriptSurveyClie
 import {
   createSurveyGoogleClient,
 } from '../services/survey/surveyGoogleClient';
-import { GoogleSurveyClient } from '../services/survey/googleSurveyClient';
 import { applyProductConfig, resolveBambooSubdomain, resolveJiraBaseUrl } from '../config/product';
 import { getFeedbackPrefsSnapshot } from './feedbackPrefsBridge';
 import { createDefaultSurveyData } from '../domain/survey/defaults';
@@ -28,7 +27,12 @@ import {
   recoverStaleSendingRecipients,
   saveSurveyData,
 } from '../services/survey/surveyPersistence';
-import { runFeedbackCycleScheduler } from '../platform/feedbackCycleScheduler';
+import {
+  createCycleWithFirstRun,
+  deleteFeedbackCycle,
+  repeatCycleRun,
+  type NewFeedbackSurveyInput,
+} from '../domain/feedbackV2/operations';
 import {
   ensureGoogleFormForSurvey,
   regenerateGoogleFormForSurvey,
@@ -94,6 +98,11 @@ interface SurveyState {
   resetSurveyHistory: () => Promise<void>;
   updateActiveSurvey: (surveyId: string, patch: Partial<Survey>) => Promise<void>;
 
+  createFeedbackSurvey: (input: NewFeedbackSurveyInput) => Promise<Survey>;
+  repeatFeedbackCycleRun: (cycleId: string, input: NewFeedbackSurveyInput) => Promise<Survey | null>;
+  deleteFeedbackCycle: (cycleId: string) => Promise<void>;
+  provisionRunGoogleForm: (surveyId: string) => Promise<Survey>;
+
   setShowRecipients: (open: boolean) => void;
   setShowSendConfirm: (open: boolean) => void;
   setShowReminderConfirm: (open: boolean) => void;
@@ -136,12 +145,8 @@ export const useFeedbackSurveyStore = create<SurveyState>((set, get) => ({
   init: async () => {
     const loaded = await loadSurveyData();
     const surveys = loaded.surveys.map((survey) => recoverStaleSendingRecipients(survey));
-    let data = { ...loaded, surveys };
-    const scheduled = runFeedbackCycleScheduler(data);
-    if (scheduled !== data) {
-      data = scheduled;
-    }
-    if (JSON.stringify(data.surveys) !== JSON.stringify(loaded.surveys) || scheduled !== loaded) {
+    const data = { ...loaded, surveys };
+    if (JSON.stringify(data.surveys) !== JSON.stringify(loaded.surveys)) {
       await saveSurveyData(data);
     }
     set({ data });
@@ -165,26 +170,16 @@ export const useFeedbackSurveyStore = create<SurveyState>((set, get) => ({
     try {
       const prefs = getFeedbackPrefsSnapshot();
       const bridgeUrl = input.webAppUrl.trim() || prefs.google.appsScriptWebAppUrl.trim();
-      if (bridgeUrl) {
-        const status = await connectAppsScriptGoogle(bridgeUrl, input.bridgeSecret);
-        set({ loading: false });
-        return {
-          accountEmail: status.account_email,
-          formsConnected: status.forms_connected,
-          gmailConnected: status.gmail_connected,
-          calendarConnected: status.calendar_connected ?? false,
-        };
+      if (!bridgeUrl) {
+        throw new Error('Apps Script Web App URL is required.');
       }
-
-      const client = new GoogleSurveyClient();
-      await client.connect();
-      const status = await client.getStatus();
+      const status = await connectAppsScriptGoogle(bridgeUrl, input.bridgeSecret);
       set({ loading: false });
       return {
         accountEmail: status.account_email,
         formsConnected: status.forms_connected,
         gmailConnected: status.gmail_connected,
-        calendarConnected: status.calendar_connected,
+        calendarConnected: status.calendar_connected ?? false,
       };
     } catch (e) {
       set({ loading: false, error: e instanceof Error ? e.message : String(e) });
@@ -632,6 +627,78 @@ export const useFeedbackSurveyStore = create<SurveyState>((set, get) => ({
       throw new Error('Structural survey changes are locked after emails have been sent.');
     }
     const next = patchSurvey(data, surveyId, patch);
+    await saveSurveyData(next);
+    set({ data: next });
+  },
+
+  provisionRunGoogleForm: async (surveyId) => {
+    const data = get().data;
+    const survey = data.surveys.find((s) => s.id === surveyId);
+    if (!survey) throw new Error('Survey run not found.');
+    set({ loading: true, error: null });
+    try {
+      const client = surveyClient();
+      const nextSurvey = await ensureGoogleFormForSurvey(client, survey, data.defaults);
+      const next = patchSurvey(data, surveyId, nextSurvey);
+      await saveSurveyData(next);
+      set({ data: next, loading: false });
+      return nextSurvey;
+    } catch (e) {
+      set({ loading: false, error: e instanceof Error ? e.message : String(e) });
+      throw e;
+    }
+  },
+
+  createFeedbackSurvey: async (input) => {
+    set({ loading: true, error: null });
+    try {
+      const created = createCycleWithFirstRun(get().data, input);
+      await saveSurveyData(created.data);
+      set({ data: created.data, loading: false });
+      const client = surveyClient();
+      const provisioned = await ensureGoogleFormForSurvey(
+        client,
+        created.run,
+        created.data.defaults,
+      );
+      const next = patchSurvey(created.data, created.run.id, provisioned);
+      await saveSurveyData(next);
+      set({ data: next });
+      return provisioned;
+    } catch (e) {
+      set({ loading: false, error: e instanceof Error ? e.message : String(e) });
+      throw e;
+    }
+  },
+
+  repeatFeedbackCycleRun: async (cycleId, input) => {
+    set({ loading: true, error: null });
+    try {
+      const repeated = repeatCycleRun(get().data, cycleId, input);
+      if (!repeated) {
+        set({ loading: false });
+        return null;
+      }
+      await saveSurveyData(repeated.data);
+      set({ data: repeated.data, loading: false });
+      const client = surveyClient();
+      const provisioned = await ensureGoogleFormForSurvey(
+        client,
+        repeated.run,
+        repeated.data.defaults,
+      );
+      const next = patchSurvey(repeated.data, repeated.run.id, provisioned);
+      await saveSurveyData(next);
+      set({ data: next });
+      return provisioned;
+    } catch (e) {
+      set({ loading: false, error: e instanceof Error ? e.message : String(e) });
+      throw e;
+    }
+  },
+
+  deleteFeedbackCycle: async (cycleId) => {
+    const next = deleteFeedbackCycle(get().data, cycleId);
     await saveSurveyData(next);
     set({ data: next });
   },

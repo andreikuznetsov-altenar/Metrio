@@ -10,48 +10,38 @@ import { DEFAULT_PREFERENCES } from '../../platform/preferences';
 
 const updatePrefs = vi.fn();
 const connectGoogle = vi.fn();
-const disconnectGoogle = vi.fn();
-const refreshGoogleStatus = vi.fn();
 const init = vi.fn();
 
 const surveyStoreState = {
-  data: { defaults: createDefaultSurveyData(), surveys: [], activeSurveyId: null },
+  data: { defaults: createDefaultSurveyData(), surveys: [], activeSurveyId: null, cycles: [] },
   loading: false,
   error: null,
   prepareIssues: [] as Array<{ field: string; message: string }>,
   sendSummary: null as string | null,
-  showRecipients: false,
   showSendConfirm: false,
+  showRecipients: false,
   showReminderConfirm: false,
   showRegenerateConfirm: false,
   recipientSearch: '',
   recipientStatusFilter: 'all',
   init,
   saveDefaults: vi.fn(),
-  prepareSurvey: vi.fn(),
-  regenerateGoogleForm: vi.fn(),
-  sendTestEmail: vi.fn(),
+  createFeedbackSurvey: vi.fn(),
+  repeatFeedbackCycleRun: vi.fn(),
+  deleteFeedbackCycle: vi.fn(),
+  closeSurvey: vi.fn(),
   sendSurveyBatch: vi.fn(),
   syncResponses: vi.fn(),
-  sendReminders: vi.fn(),
-  setShowRecipients: vi.fn(),
   setShowSendConfirm: vi.fn(),
-  setShowReminderConfirm: vi.fn(),
-  setShowRegenerateConfirm: vi.fn(),
-  setRecipientSearch: vi.fn(),
-  setRecipientStatusFilter: vi.fn(),
-  setActiveSurvey: vi.fn(),
-  updateRecipient: vi.fn(),
-  updateActiveSurvey: vi.fn(),
   connectGoogle,
-  disconnectGoogle,
-  refreshGoogleStatus,
+  disconnectGoogle: vi.fn(),
+  refreshGoogleStatus: vi.fn(),
 };
 
 const appStoreState = {
   prefs: DEFAULT_PREFERENCES,
   teamDetection: { mode: 'team' as const, ok: true, employee: null, fullTeam: [], directReports: [] },
-  teamSnapshot: null,
+  teamSnapshot: { mode: 'team', persons: [], summary: { available: 0, onVacation: 0, vacationSoon: 0, highWorkload: 0, problematic: 0 } },
   updatePrefs,
 };
 
@@ -61,12 +51,7 @@ vi.mock('../../app/FeedbackTeamProvider', () => ({
 
 vi.mock('../../app/feedbackSurveyStore', () => ({
   useFeedbackSurveyStore: () => surveyStoreState,
-  getSurveyMetrics: () => ({
-    respondentCount: 0,
-    overallStatus: 'neutral',
-    scaleQuestions: [],
-    multipleQuestions: [],
-  }),
+  getSurveyMetrics: () => null,
 }));
 
 const currentUserState = {
@@ -79,32 +64,25 @@ vi.mock('../../app/CurrentUserContext', () => ({
   useCurrentUser: () => ({ currentUser: currentUserState }),
 }));
 
-
 function renderPage() {
   const container = document.createElement('div');
   document.body.appendChild(container);
   const root = createRoot(container);
   act(() => {
-    root.render(
-      createElement(ToastProvider, null, createElement(FeedbackPage)),
-    );
+    root.render(createElement(ToastProvider, null, createElement(FeedbackPage)));
   });
   return { container, root };
 }
 
-describe('FeedbackPage', () => {
+describe('FeedbackPage V2', () => {
   let container: HTMLDivElement;
   let root: Root;
 
   beforeEach(() => {
     document.documentElement.setAttribute('data-theme', 'light');
     currentUserState.orgRole = 'leaf_manager';
-    currentUserState.person.role = 'lead';
     appStoreState.prefs = { ...DEFAULT_PREFERENCES };
     appStoreState.teamDetection = { mode: 'team', ok: true, employee: null, fullTeam: [], directReports: [] };
-    surveyStoreState.loading = false;
-    surveyStoreState.error = null;
-    surveyStoreState.prepareIssues = [];
     init.mockResolvedValue(undefined);
     const rendered = renderPage();
     container = rendered.container;
@@ -116,35 +94,32 @@ describe('FeedbackPage', () => {
     container.remove();
   });
 
-  it('shows survey tabs and disconnected placeholder when Google is not linked', async () => {
+  it('shows Feedback cycles landing without legacy top-level tabs', async () => {
     await act(async () => {
       await Promise.resolve();
     });
-    expect(container.querySelector('.performance-subnav')).toBeTruthy();
-    expect(container.querySelector('[data-testid="feedback-survey-disconnected"]')).toBeTruthy();
-    expect(container.textContent).toContain('Connect Google to send surveys');
-    expect(container.textContent).not.toContain('Connect Google to send surveys.');
-    expect(container.textContent).toContain('Setup instructions');
+    expect(container.querySelector('[data-testid="feedback-v2-page"]')).toBeTruthy();
+    expect(container.textContent).toContain('Feedback cycles');
+    expect(container.textContent).toContain('New survey');
+    expect(container.textContent).not.toContain('Template library');
+    expect(container.textContent).not.toContain('Delivery');
+    expect(container.querySelector('.performance-subnav')).toBeFalsy();
+    expect(container.textContent).not.toContain('Connect Google to send surveys');
   });
 
-  it('shows personal results outside team survey mode', async () => {
-    appStoreState.teamDetection = { mode: 'personal', ok: true, employee: null, fullTeam: [], directReports: [] };
-    currentUserState.orgRole = 'individual_contributor';
-    currentUserState.person.role = 'employee';
-    act(() => {
-      root.render(createElement(ToastProvider, null, createElement(FeedbackPage)));
-    });
+  it('prompts Apps Script setup when bridge is not configured', async () => {
     await act(async () => {
       await Promise.resolve();
     });
-    expect(container.textContent).toContain('Results');
+    expect(container.textContent).toContain('Set up Google Forms');
   });
 
-  it('shows survey tabs when Google forms are connected', async () => {
+  it('does not show legacy Survey tab when bridge is ready', async () => {
     appStoreState.prefs = {
       ...DEFAULT_PREFERENCES,
       google: {
         ...DEFAULT_PREFERENCES.google,
+        appsScriptWebAppUrl: 'https://script.google.com/macros/s/test/exec',
         accountEmail: 'lead@company.com',
         formsConnected: true,
         gmailConnected: true,
@@ -156,60 +131,7 @@ describe('FeedbackPage', () => {
     await act(async () => {
       await Promise.resolve();
     });
-    expect(container.querySelector('.performance-subnav')).toBeTruthy();
-    expect(container.textContent).toContain('Survey');
-    expect(container.textContent).toContain('Delivery');
-    expect(container.textContent).toContain('Google Workspace');
-  });
-
-  it('shows delivery disconnected empty state without inline delivery fallback', async () => {
-    await act(async () => {
-      await Promise.resolve();
-    });
-    const deliveryTab = container.querySelector(
-      '.performance-subnav button[name="Delivery"], .performance-subnav [data-subnav-id="delivery"]',
-    );
-    const buttons = Array.from(container.querySelectorAll('.performance-subnav button'));
-    const delivery = buttons.find((b) => b.textContent?.trim() === 'Delivery');
-    expect(delivery).toBeTruthy();
-    act(() => {
-      delivery!.click();
-    });
-    expect(container.querySelector('[data-testid="feedback-delivery-disconnected"]')).toBeTruthy();
-    expect(container.textContent).not.toMatch(/^Connect Google to send surveys\.$/);
-    expect(container.textContent).toContain('Connect Google to manage survey delivery');
-  });
-
-  it('shows results disconnected empty state on Results tab', async () => {
-    await act(async () => {
-      await Promise.resolve();
-    });
-    const buttons = Array.from(container.querySelectorAll('.performance-subnav button'));
-    const results = buttons.find((b) => b.textContent?.trim() === 'Results');
-    expect(results).toBeTruthy();
-    act(() => {
-      results!.click();
-    });
-    expect(container.querySelector('[data-testid="feedback-results-disconnected"]')).toBeTruthy();
-  });
-
-  it('shows compact strip when Google is linked', async () => {
-    appStoreState.prefs = {
-      ...DEFAULT_PREFERENCES,
-      google: {
-        ...DEFAULT_PREFERENCES.google,
-        accountEmail: 'lead@company.com',
-        formsConnected: true,
-        gmailConnected: false,
-      },
-    };
-    act(() => {
-      root.render(createElement(ToastProvider, null, createElement(FeedbackPage)));
-    });
-    await act(async () => {
-      await Promise.resolve();
-    });
-    expect(container.textContent).toContain('lead@company.com');
-    expect(container.querySelector('.feedback-google-strip')).toBeTruthy();
+    expect(container.textContent).not.toContain('History');
+    expect(container.querySelector('.performance-subnav')).toBeFalsy();
   });
 });
