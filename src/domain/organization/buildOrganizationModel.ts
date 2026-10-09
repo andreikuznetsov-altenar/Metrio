@@ -1,8 +1,8 @@
 import { formatDuration } from "../jira/dates";
 import { getEfficiencyStatus } from "../jira/kpi";
-import type { KpiData } from "../jira/types";
 import type { Person } from "../people/types";
 import type { ReportParams } from "../jira/types";
+import { buildCanonicalKpiForPersonScope } from "../jira/scopedCanonicalKpi";
 import type { MetricCardData } from "../performance";
 import type { DeliveryRiskItem } from "../radar/types";
 import type { FeedbackActionSummary } from "../feedback/feedbackActionSummary";
@@ -29,51 +29,15 @@ import type {
   OrganizationTeamTrend,
 } from "./organizationTypes";
 
-function aggregateKpi(persons: Person[]): KpiData {
-  const totals = {
-    startedCount: 0,
-    completedCount: 0,
-    firstPassAcceptedCount: 0,
-    backflowCount: 0,
-    avgProgressToReviewMs: null as number | null,
-    efficiencyIndex: 0,
-  };
-  const cycleSamples: number[] = [];
-
-  for (const person of persons) {
-    const kpi = person.performance;
-    if (!kpi) continue;
-    totals.startedCount += kpi.startedCount;
-    totals.completedCount += kpi.completedCount;
-    totals.firstPassAcceptedCount += kpi.firstPassAcceptedCount;
-    totals.backflowCount += kpi.backflowCount;
-    if (kpi.avgProgressToReviewMs != null) {
-      cycleSamples.push(kpi.avgProgressToReviewMs);
-    }
-  }
-
-  if (cycleSamples.length) {
-    totals.avgProgressToReviewMs = Math.round(
-      cycleSamples.reduce((a, b) => a + b, 0) / cycleSamples.length,
-    );
-  }
-
-  const completionRate =
-    totals.startedCount > 0 ? totals.completedCount / totals.startedCount : 0;
-  const firstPassRate =
-    totals.completedCount > 0
-      ? totals.firstPassAcceptedCount / totals.completedCount
-      : 0;
-  totals.efficiencyIndex = Math.round(
-    (completionRate * 0.4 + firstPassRate * 0.4) * 100 -
-      Math.min(totals.backflowCount * 3, 20),
-  );
-
-  return totals as KpiData;
-}
-
-function buildTeamRow(team: TeamGroup, deliveryRisk: DeliveryRiskItem[]): OrganizationTeamRow {
-  const kpi = aggregateKpi(team.persons);
+function buildTeamRow(
+  team: TeamGroup,
+  deliveryRisk: DeliveryRiskItem[],
+  params: ReportParams,
+): OrganizationTeamRow {
+  const kpi = buildCanonicalKpiForPersonScope({
+    persons: team.persons,
+    params,
+  });
   const firstPassPercent =
     kpi.completedCount > 0
       ? Math.round((kpi.firstPassAcceptedCount / kpi.completedCount) * 100)
@@ -122,8 +86,11 @@ function scopeLabel(scope: AuthorizedPeopleScope): string {
   return "Personal scope";
 }
 
-function buildSummaryMetrics(persons: Person[]): MetricCardData[] {
-  const kpi = aggregateKpi(persons);
+function buildSummaryMetrics(
+  persons: Person[],
+  params: ReportParams,
+): MetricCardData[] {
+  const kpi = buildCanonicalKpiForPersonScope({ persons, params });
   const firstPassRate =
     kpi.completedCount > 0
       ? Math.round((kpi.firstPassAcceptedCount / kpi.completedCount) * 100)
@@ -155,9 +122,15 @@ function buildSummaryMetrics(persons: Person[]): MetricCardData[] {
   ];
 }
 
-function buildTeamTrends(teams: TeamGroup[]): OrganizationTeamTrend[] {
+function buildTeamTrends(
+  teams: TeamGroup[],
+  params: ReportParams,
+): OrganizationTeamTrend[] {
   return teams.map((team) => {
-    const kpi = aggregateKpi(team.persons);
+    const kpi = buildCanonicalKpiForPersonScope({
+      persons: team.persons,
+      params,
+    });
     if (kpi.completedCount < 3) {
       return {
         teamId: team.teamId,
@@ -216,9 +189,9 @@ export function buildOrganizationModel(input: {
         roster: input.bambooRoster ?? [],
         snapshotPersons: persons,
       }).map((branch) =>
-        buildLeadershipBranchRow(branch, deliveryRisk),
+        buildLeadershipBranchRow(branch, deliveryRisk, input.params),
       )
-    : teams.map((team) => buildTeamRow(team, deliveryRisk));
+    : teams.map((team) => buildTeamRow(team, deliveryRisk, input.params));
   const teamsNeedingAttention = [...teamRows]
     .filter((row) => row.attentionCount > 0)
     .sort((a, b) => a.attentionSeverity - b.attentionSeverity || b.attentionCount - a.attentionCount);
@@ -245,14 +218,15 @@ export function buildOrganizationModel(input: {
           persons,
           deliveryRisk,
           graph: buildOrgGraph(input.bambooRoster ?? []),
+          params: input.params,
         })
       : undefined;
 
   return {
     scope: input.scope,
     scopeLabel: scopeLabel(input.scope),
-    summary: buildSummaryMetrics(persons),
-    teamTrends: buildTeamTrends(teams),
+    summary: buildSummaryMetrics(persons, input.params),
+    teamTrends: buildTeamTrends(teams, input.params),
     teamsNeedingAttention,
     signals,
     teams: teamRows.sort((a, b) => a.teamName.localeCompare(b.teamName)),

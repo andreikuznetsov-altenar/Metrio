@@ -1,6 +1,7 @@
 import type { Person } from "../people/types";
 import type { DeliveryRiskItem } from "../radar/types";
-import type { KpiData } from "../jira/types";
+import type { ReportParams } from "../jira/types";
+import { buildCanonicalKpiForPersonScope } from "../jira/scopedCanonicalKpi";
 import type { TopLevelManagerBranch } from "./orgRole";
 import type { ResolvedEmployee } from "../../services/bamboo/orgResolver";
 import {
@@ -14,56 +15,6 @@ import type {
   LeadershipBranchMetrics,
 } from "./leadershipBranchTypes";
 import { dedupeIssueKeys } from "./leadershipBranches";
-
-function aggregateKpiFromUniquePersons(persons: Person[]): KpiData {
-  const seen = new Set<string>();
-  const unique = persons.filter((p) => {
-    if (seen.has(p.id)) return false;
-    seen.add(p.id);
-    return true;
-  });
-
-  const totals = {
-    startedCount: 0,
-    completedCount: 0,
-    firstPassAcceptedCount: 0,
-    backflowCount: 0,
-    avgProgressToReviewMs: null as number | null,
-    efficiencyIndex: 0,
-  };
-  const cycleSamples: number[] = [];
-
-  for (const person of unique) {
-    const kpi = person.performance;
-    if (!kpi) continue;
-    totals.startedCount += kpi.startedCount;
-    totals.completedCount += kpi.completedCount;
-    totals.firstPassAcceptedCount += kpi.firstPassAcceptedCount;
-    totals.backflowCount += kpi.backflowCount;
-    if (kpi.avgProgressToReviewMs != null) {
-      cycleSamples.push(kpi.avgProgressToReviewMs);
-    }
-  }
-
-  if (cycleSamples.length) {
-    totals.avgProgressToReviewMs = Math.round(
-      cycleSamples.reduce((a, b) => a + b, 0) / cycleSamples.length,
-    );
-  }
-
-  const completionRate =
-    totals.startedCount > 0 ? totals.completedCount / totals.startedCount : 0;
-  const firstPassRate =
-    totals.completedCount > 0
-      ? totals.firstPassAcceptedCount / totals.completedCount
-      : 0;
-  totals.efficiencyIndex = Math.round(
-    (completionRate * 0.4 + firstPassRate * 0.4) * 100 -
-      Math.min(totals.backflowCount * 3, 20),
-  );
-
-  return totals as KpiData;
-}
 
 export function buildBranchCapacitySummary(persons: Person[]): BranchCapacitySummary {
   const seen = new Set<string>();
@@ -150,6 +101,8 @@ export function aggregateLeadershipBranchMetrics(input: {
   descendantIds: string[];
   persons: Person[];
   deliveryRisk: DeliveryRiskItem[];
+  /** Required for canonical Efficiency (same params as Performance team KPI). */
+  params: ReportParams;
 }): LeadershipBranchMetrics {
   const personById = new Map(input.persons.map((p) => [p.id, p]));
   const uniqueIds = [...new Set(input.descendantIds)];
@@ -159,7 +112,10 @@ export function aggregateLeadershipBranchMetrics(input: {
 
   const personIds = new Set(uniqueIds);
   const branchRisk = branchDeliveryRiskItems(personIds, input.deliveryRisk);
-  const kpi = aggregateKpiFromUniquePersons(branchPersons);
+  const kpi = buildCanonicalKpiForPersonScope({
+    persons: branchPersons,
+    params: input.params,
+  });
   const firstPassPercent =
     kpi.completedCount > 0
       ? Math.round((kpi.firstPassAcceptedCount / kpi.completedCount) * 100)
@@ -221,6 +177,7 @@ export function buildLeadershipBranches(input: {
   persons: Person[];
   deliveryRisk: DeliveryRiskItem[];
   graph: Map<string, import("./orgGraph").OrgNode>;
+  params: ReportParams;
 }): LeadershipBranch[] {
   const rosterById = new Map(input.roster.map((p) => [p.id, p]));
 
@@ -233,6 +190,7 @@ export function buildLeadershipBranches(input: {
       descendantIds: memberIds,
       persons: input.persons,
       deliveryRisk: input.deliveryRisk,
+      params: input.params,
     });
 
     return {

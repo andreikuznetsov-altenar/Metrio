@@ -5,14 +5,16 @@ import type { Person } from '../people/types';
 export function dedupeIssuesByKey(issues: AuditIssue[]): AuditIssue[] {
   const map = new Map<string, AuditIssue>();
   for (const issue of issues) {
-    if (!map.has(issue.issueKey)) {
-      map.set(issue.issueKey, issue);
-    }
+    const key = issue?.issueKey?.trim();
+    if (!key || map.has(key)) continue;
+    map.set(key, issue);
   }
   return [...map.values()];
 }
 
 /** Unique team issues for team-level metrics (reassigned issues counted once). */
 export function collectUniqueTeamIssues(persons: Person[]): AuditIssue[] {
-  return dedupeIssuesByKey(persons.flatMap((person) => person.issues));
+  return dedupeIssuesByKey(
+    persons.flatMap((person) => person.issues ?? []).filter(Boolean),
+  );
 }

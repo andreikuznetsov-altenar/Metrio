@@ -4,7 +4,8 @@ import type { TopLevelManagerBranch } from "./orgRole";
 import type { ResolvedEmployee } from "../../services/bamboo/orgResolver";
 import type { OrganizationTeamRow } from "./organizationTypes";
 import { formatDuration } from "../jira/dates";
-import type { KpiData } from "../jira/types";
+import type { ReportParams } from "../jira/types";
+import { buildCanonicalKpiForPersonScope } from "../jira/scopedCanonicalKpi";
 import {
   buildBranchCapacitySummary,
   formatBranchCapacitySummaryLabel,
@@ -16,49 +17,6 @@ export interface LeadershipBranchGroup {
   leaderName: string;
   leaderTitle?: string;
   persons: Person[];
-}
-
-function aggregateKpiFromPersons(persons: Person[]): KpiData {
-  const totals = {
-    startedCount: 0,
-    completedCount: 0,
-    firstPassAcceptedCount: 0,
-    backflowCount: 0,
-    avgProgressToReviewMs: null as number | null,
-    efficiencyIndex: 0,
-  };
-  const cycleSamples: number[] = [];
-
-  for (const person of persons) {
-    const kpi = person.performance;
-    if (!kpi) continue;
-    totals.startedCount += kpi.startedCount;
-    totals.completedCount += kpi.completedCount;
-    totals.firstPassAcceptedCount += kpi.firstPassAcceptedCount;
-    totals.backflowCount += kpi.backflowCount;
-    if (kpi.avgProgressToReviewMs != null) {
-      cycleSamples.push(kpi.avgProgressToReviewMs);
-    }
-  }
-
-  if (cycleSamples.length) {
-    totals.avgProgressToReviewMs = Math.round(
-      cycleSamples.reduce((a, b) => a + b, 0) / cycleSamples.length,
-    );
-  }
-
-  const completionRate =
-    totals.startedCount > 0 ? totals.completedCount / totals.startedCount : 0;
-  const firstPassRate =
-    totals.completedCount > 0
-      ? totals.firstPassAcceptedCount / totals.completedCount
-      : 0;
-  totals.efficiencyIndex = Math.round(
-    (completionRate * 0.4 + firstPassRate * 0.4) * 100 -
-      Math.min(totals.backflowCount * 3, 20),
-  );
-
-  return totals as KpiData;
 }
 
 export function groupPersonsByLeadershipBranch(input: {
@@ -91,8 +49,12 @@ export function groupPersonsByLeadershipBranch(input: {
 export function buildLeadershipBranchRow(
   group: LeadershipBranchGroup,
   deliveryRisk: DeliveryRiskItem[],
+  params: ReportParams,
 ): OrganizationTeamRow {
-  const kpi = aggregateKpiFromPersons(group.persons);
+  const kpi = buildCanonicalKpiForPersonScope({
+    persons: group.persons,
+    params,
+  });
   const firstPassPercent =
     kpi.completedCount > 0
       ? Math.round((kpi.firstPassAcceptedCount / kpi.completedCount) * 100)

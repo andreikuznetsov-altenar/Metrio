@@ -55,6 +55,13 @@ describe("leadershipBranchAggregation", () => {
       descendantIds: ["a", "b"],
       persons,
       deliveryRisk,
+      params: {
+        dateFrom: "2024-01-01",
+        dateTo: "2024-01-31",
+        targetReviewDays: 3,
+        users: [],
+        projects: [],
+      },
     });
     expect(metrics.capacity.totalPeople).toBe(2);
     expect(metrics.uniqueDeliveryRiskCount).toBe(1);
@@ -73,6 +80,13 @@ describe("leadershipBranchAggregation", () => {
         ["lead", { id: "lead", directReportIds: ["e1"], supervisorId: "exec" }],
         ["e1", { id: "e1", directReportIds: [], supervisorId: "lead" }],
       ]),
+      params: {
+        dateFrom: "2024-01-01",
+        dateTo: "2024-01-31",
+        targetReviewDays: 3,
+        users: [],
+        projects: [],
+      },
     });
     expect(branches).toHaveLength(1);
     expect(branches[0].leaderName).toBe("Head UX");
