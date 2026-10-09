@@ -1,62 +1,44 @@
 import {
   listNotificationEvents,
-  recordNotificationEvent,
-  removeNotificationEventsByDedupeKeys,
+  replaceNotificationEvents,
   type NotificationEvent,
 } from "./notificationEvents";
 import { dispatchNativeNotification } from "./notificationNativeDispatch";
+import {
+  allIntegrationProblemDedupeKeys,
+  collapseIntegrationProblemDuplicates,
+  defaultIntegrationProblemCopy,
+  integrationProblemDedupeKey,
+  isIntegrationProblemForSource,
+  legacyIntegrationProblemDedupeKeys,
+  normalizeIntegrationProblemEvents,
+  type IntegrationHealthMap,
+  type IntegrationProblemSource,
+} from "./integrationProblemMigration";
+import { enrichInboxEvent } from "../domain/inbox/actionInboxModel";
 
-/** Integrations that emit live-state `integration_problem` notifications. */
-export type IntegrationProblemSource = "jira" | "bamboo";
+export type { IntegrationProblemSource, IntegrationHealthMap };
+export {
+  allIntegrationProblemDedupeKeys,
+  collapseIntegrationProblemDuplicates,
+  integrationProblemDedupeKey,
+  isIntegrationProblemForSource,
+  legacyIntegrationProblemDedupeKeys,
+  normalizeIntegrationProblemEvents,
+};
 
-export function integrationProblemDedupeKey(
-  source: IntegrationProblemSource,
-): string {
-  return `integration_problem:${source}`;
-}
-
-/** Legacy keys from earlier passes (resolve + restored cards). */
-export function legacyIntegrationProblemDedupeKeys(
-  source: IntegrationProblemSource,
-): string[] {
-  return [`integration:${source}:unhealthy`, `integration:${source}:restored`];
-}
-
-export function allIntegrationProblemDedupeKeys(
-  source: IntegrationProblemSource,
-): string[] {
-  return [
-    integrationProblemDedupeKey(source),
-    ...legacyIntegrationProblemDedupeKeys(source),
-  ];
-}
-
-function integrationLabel(source: IntegrationProblemSource): string {
-  return source === "jira" ? "Jira" : "BambooHR";
-}
-
-function defaultCopy(source: IntegrationProblemSource): {
-  title: string;
-  message: string;
-} {
-  const label = integrationLabel(source);
-  return {
-    title: `${label} connection problem`,
-    message: `${label} data could not be refreshed. Check Connections in Settings.`,
-  };
+function newEventId(): string {
+  return `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
 }
 
 export function findActiveIntegrationProblem(
   source: IntegrationProblemSource,
 ): NotificationEvent | undefined {
-  const keys = new Set(allIntegrationProblemDedupeKeys(source));
   return listNotificationEvents().find(
     (event) =>
-      event.type === "integration_problem" &&
-      Boolean(event.dedupeKey) &&
-      keys.has(event.dedupeKey!) &&
+      isIntegrationProblemForSource(event, source) &&
       !event.resolvedAt &&
-      !event.dedupeKey!.endsWith(":restored"),
+      !event.dedupeKey?.endsWith(":restored"),
   );
 }
 
@@ -77,77 +59,74 @@ export interface SetIntegrationProblemResult {
 /**
  * Ensure exactly one active live-state problem notification for this integration.
  * Repeated failures keep the same card (incident-start `createdAt`, no unread bump, no native spam).
+ * Scrubs ALL legacy/duplicate siblings for the source before writing the canonical card.
  */
 export function setIntegrationProblem(
   input: SetIntegrationProblemInput,
 ): SetIntegrationProblemResult {
   const { source } = input;
-  const copy = defaultCopy(source);
+  const copy = defaultIntegrationProblemCopy(source);
   const dedupeKey = integrationProblemDedupeKey(source);
   const title = input.title ?? copy.title;
   const message = input.message ?? copy.message;
-  const existing = findActiveIntegrationProblem(source);
 
-  // Always drop restored leftovers for this source.
-  removeNotificationEventsByDedupeKeys([
-    `integration:${source}:restored`,
-  ]);
+  const all = listNotificationEvents();
+  const matched = all.filter((event) =>
+    isIntegrationProblemForSource(event, source),
+  );
+  const others = all.filter(
+    (event) => !isIntegrationProblemForSource(event, source),
+  );
+  const active = matched.filter(
+    (event) => !event.resolvedAt && !event.dedupeKey?.endsWith(":restored"),
+  );
+  const hadActive = active.length > 0;
 
-  if (existing?.dedupeKey === dedupeKey) {
-    const event = recordNotificationEvent({
-      type: "integration_problem",
-      title,
-      message,
-      target: { kind: "settings", section: "connections" },
-      dedupeKey,
-      source,
-      actionRequired: true,
-    });
-    return { event, created: false };
-  }
+  const byCreated = [...active].sort(
+    (a, b) => Date.parse(a.createdAt) - Date.parse(b.createdAt),
+  );
+  const earliest = byCreated[0];
+  const preferred =
+    active.find((event) => event.dedupeKey === dedupeKey) ?? earliest;
+  const anyUnread = active.some((event) => !event.readAt);
 
-  // Migrate legacy unhealthy key → canonical, preserving incident start + read state.
-  if (existing) {
-    removeNotificationEventsByDedupeKeys(legacyIntegrationProblemDedupeKeys(source));
-    const event = recordNotificationEvent({
-      type: "integration_problem",
-      title,
-      message,
-      target: { kind: "settings", section: "connections" },
-      dedupeKey,
-      source,
-      actionRequired: true,
-      createdAt: existing.createdAt,
-      readAt: existing.readAt,
-    });
-    return { event, created: false };
-  }
-
-  const event = recordNotificationEvent({
+  const event = enrichInboxEvent({
+    id: preferred?.id ?? newEventId(),
     type: "integration_problem",
+    createdAt: earliest?.createdAt ?? new Date().toISOString(),
+    readAt: hadActive ? (anyUnread ? undefined : preferred?.readAt) : undefined,
     title,
     message,
+    severity: preferred?.severity ?? "warning",
     target: { kind: "settings", section: "connections" },
     dedupeKey,
     source,
     actionRequired: true,
   });
 
-  if (input.emitNative !== false) {
+  replaceNotificationEvents([event, ...others]);
+
+  if (!hadActive && input.emitNative !== false) {
     void dispatchNativeNotification({ title, body: message }).catch(
       () => undefined,
     );
   }
 
-  return { event, created: true };
+  return { event, created: !hadActive };
 }
 
 /**
  * Remove the active integration-problem card for this source entirely.
- * No "connection restored" history card.
+ * No "connection restored" history card. Scrubs legacy IDs and title matches too.
  */
 export function clearIntegrationProblem(source: IntegrationProblemSource): void {
-  removeNotificationEventsByDedupeKeys(allIntegrationProblemDedupeKeys(source));
+  const all = listNotificationEvents();
+  const next = all.filter(
+    (event) => !isIntegrationProblemForSource(event, source),
+  );
+  if (next.length !== all.length) {
+    replaceNotificationEvents(next);
+  }
 }
 
 /** Hide resolved / restored integration cards left over from older builds. */
@@ -158,4 +137,24 @@ export function isActiveIntegrationProblemNotification(
   if (event.resolvedAt) return false;
   if (event.dedupeKey?.endsWith(":restored")) return false;
   return true;
+}
+
+export interface HydrateIntegrationProblemsResult {
+  changed: boolean;
+  events: NotificationEvent[];
+}
+
+/**
+ * Hydration migration: normalize persisted integration incidents against current health.
+ * Silent — never emits native notifications.
+ */
+export function hydrateIntegrationProblemNotifications(
+  health?: IntegrationHealthMap,
+): HydrateIntegrationProblemsResult {
+  const current = listNotificationEvents();
+  const { events, changed } = normalizeIntegrationProblemEvents(current, health);
+  if (changed) {
+    replaceNotificationEvents(events);
+  }
+  return { changed, events };
 }

@@ -42,6 +42,7 @@ import {
   listNotificationEventsOrThrow,
   NOTIFICATION_EVENTS_CHANGED,
 } from "../platform/notificationEvents";
+import { hydrateIntegrationProblemNotifications } from "../platform/integrationProblemNotifications";
 import { JiraIssueText } from "../components/JiraIssueLink/JiraIssueText";
 import {
   clearActionInboxHistory,
@@ -115,6 +116,7 @@ export function NotificationCenter({
   orgFeatureAccess,
 }: NotificationCenterProps) {
   const bodyRef = useRef<HTMLDivElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
   const [events, setEvents] = useState<NotificationEvent[]>([]);
   const [loadError, setLoadError] = useState(false);
@@ -131,6 +133,8 @@ export function NotificationCenter({
 
   const refresh = useCallback(() => {
     try {
+      // Sync collapse so the drawer paints immediately; health reconcile follows async.
+      hydrateIntegrationProblemNotifications();
       const next = listNotificationEventsOrThrow();
       setEvents(next);
       setLoadError(false);
@@ -139,7 +143,21 @@ export function NotificationCenter({
       setLoadError(true);
       setEvents([]);
       syncUnread([]);
+      return;
     }
+
+    void Promise.resolve(loadPreferences())
+      .then((prefs) => {
+        const { changed } = hydrateIntegrationProblemNotifications({
+          jira: prefs.sync.jiraStale ? "unhealthy" : "healthy",
+          bamboo: prefs.sync.bambooStale ? "unhealthy" : "healthy",
+        });
+        if (!changed) return;
+        const reconciled = listNotificationEventsOrThrow();
+        setEvents(reconciled);
+        syncUnread(reconciled);
+      })
+      .catch(() => undefined);
   }, [syncUnread]);
 
   useEffect(() => {
@@ -155,7 +173,7 @@ export function NotificationCenter({
       setConfirmClear(false);
       setMenuOpen(false);
       requestAnimationFrame(() => {
-        bodyRef.current?.scrollTo({ top: 0, behavior: "instant" as ScrollBehavior });
+        scrollRef.current?.scrollTo({ top: 0, behavior: "instant" as ScrollBehavior });
       });
     }
   }, [open, refresh]);
@@ -280,7 +298,11 @@ export function NotificationCenter({
             onChange={setSourceFilter}
           />
         </div>
-        <div className="notification-center__main metrio-scroll metrio-scroll--hidden-thumb">
+        <div
+          ref={scrollRef}
+          className="notification-center__main metrio-scroll metrio-scroll--hidden-thumb"
+          data-testid="notification-scroll-viewport"
+        >
         {confirmClear ? (
           <div className="notification-center__confirm" role="alertdialog" aria-label="Clear notifications">
             <p className="notification-center__confirm-text">

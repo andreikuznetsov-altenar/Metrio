@@ -3,6 +3,7 @@ import {
   inboxActionRequiredForType,
   inboxSourceForType,
 } from "../domain/inbox/actionInboxModel";
+import { collapseIntegrationProblemDuplicates } from "./integrationProblemMigration";
 import {
   normalizeStoredNotificationEvent,
   severityForNotificationType,
@@ -56,11 +57,18 @@ function readRawEvents(): NotificationEvent[] {
 
 function writeEvents(events: NotificationEvent[]): void {
   if (typeof localStorage === "undefined") return;
-  localStorage.setItem(
-    STORAGE_KEY,
-    JSON.stringify(events.slice(0, NOTIFICATION_EVENT_LIMIT)),
+  // Collapse duplicate integration incidents on every persist (idempotent).
+  const normalized = collapseIntegrationProblemDuplicates(events).slice(
+    0,
+    NOTIFICATION_EVENT_LIMIT,
   );
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(normalized));
   notifyStoreChanged();
+}
+
+/** Replace the full notification list (hydration / scrub). Triggers listeners. */
+export function replaceNotificationEvents(events: NotificationEvent[]): void {
+  writeEvents(events);
 }
 
 export class NotificationPersistenceError extends Error {
@@ -157,12 +165,18 @@ export function recordNotificationEvent(
         issueTitle: input.issueTitle ?? existing.issueTitle,
         personId: input.personId ?? existing.personId,
         personName: input.personName ?? existing.personName,
+        source: input.source ?? existing.source,
         actionRequired:
           input.actionRequired ??
           existing.actionRequired ??
           inboxActionRequiredForType(input.type),
       });
-      const rest = events.filter((_, index) => index !== existingIdx);
+      // Drop sibling rows with the same dedupe key (legacy duplicate writes).
+      const rest = events.filter(
+        (event, index) =>
+          index !== existingIdx &&
+          !(event.dedupeKey === input.dedupeKey && !event.resolvedAt),
+      );
       writeEvents([updated, ...rest]);
       return updated;
     }
@@ -308,4 +322,16 @@ export function clearNotificationEventsForTests(): void {
 
 export function seedNotificationEventsForTests(events: NotificationEvent[]): void {
   writeEvents(events);
+}
+
+/**
+ * Test helper: write events without collapsing integration duplicates.
+ * Used to simulate legacy persisted stores that predate singleton upsert.
+ */
+export function seedRawNotificationEventsForTests(
+  events: NotificationEvent[],
+): void {
+  if (typeof localStorage === "undefined") return;
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(events));
+  notifyStoreChanged();
 }

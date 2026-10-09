@@ -55,18 +55,23 @@
 }
 
 .notification-center__body {
-  flex: 1;
+  flex: 1 1 auto;
   min-height: 0;
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
+  /* Body is a flex column shell — not the scroll container. */
+  overflow: hidden;
 }
 
 .notification-center__main {
-  flex: 1;
+  flex: 1 1 auto;
   min-height: 0;
   display: flex;
   flex-direction: column;
+  /* Scroll viewport fills remaining drawer height to the bottom edge. */
+  overflow-x: hidden;
+  overflow-y: auto;
 }
 
 .notification-center__filters {
@@ -272,8 +277,16 @@
 .drawer--notifications .drawer__body {
   display: flex;
   flex-direction: column;
+  flex: 1 1 auto;
   min-height: 0;
+  /* Drawer body hosts the flex column; list scrolls inside .notification-center__main. */
   overflow: hidden;
+  /*
+   * Root cause of the bottom blank strip: generic .drawer__body padding (20px)
+   * reserved empty space below the inner scroll viewport. Keep horizontal + top
+   * inset; zero the bottom so cards scroll to the drawer edge.
+   */
+  padding-bottom: 0;
 }
 
 @media (prefers-reduced-motion: reduce) {

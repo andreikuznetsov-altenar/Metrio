@@ -1,6 +1,7 @@
 import type { AppPreferences } from "./preferences";
 import {
   clearIntegrationProblem,
+  hydrateIntegrationProblemNotifications,
   setIntegrationProblem,
   type IntegrationProblemSource,
 } from "./integrationProblemNotifications";
@@ -35,6 +36,12 @@ export function processIntegrationNotificationTransitions(
     { key: "jira", stale: partial.jiraStale ?? prefs.sync.jiraStale },
     { key: "bamboo", stale: partial.bambooStale ?? prefs.sync.bambooStale },
   ];
+
+  // Silent hydration: collapse legacy duplicates, then apply current health.
+  hydrateIntegrationProblemNotifications({
+    jira: (partial.jiraStale ?? prefs.sync.jiraStale) ? "unhealthy" : "healthy",
+    bamboo: (partial.bambooStale ?? prefs.sync.bambooStale) ? "unhealthy" : "healthy",
+  });
 
   for (const { key, stale } of pairs) {
     const next: IntegrationHealth = stale ? "unhealthy" : "healthy";
