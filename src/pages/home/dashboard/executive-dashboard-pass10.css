@@ -77,7 +77,8 @@
 .executive-metrics-pair {
   display: grid;
   grid-template-columns: repeat(12, minmax(0, 1fr));
-  gap: var(--space-3);
+  column-gap: var(--space-2);
+  row-gap: var(--space-3);
   align-items: stretch;
 }
 
@@ -100,7 +101,8 @@
 .executive-lower-three {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: var(--space-3);
+  column-gap: var(--space-2);
+  row-gap: var(--space-3);
   align-items: stretch;
 }
 
@@ -163,12 +165,14 @@
   margin: 0;
   padding: 0;
   display: grid;
-  gap: var(--space-3);
+  column-gap: var(--space-2);
+  row-gap: var(--space-3);
   grid-template-columns: repeat(var(--recommendation-count, 1), minmax(0, 1fr));
 }
 
 .executive-recommendations__list--carousel {
   display: flex;
+  gap: var(--space-2);
   grid-template-columns: none;
   overflow-x: auto;
   overflow-y: hidden;

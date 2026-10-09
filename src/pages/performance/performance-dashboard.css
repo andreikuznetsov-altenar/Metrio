@@ -221,7 +221,8 @@
 .performance-metrics {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: var(--space-3);
+  column-gap: var(--space-2);
+  row-gap: var(--space-3);
 }
 
 .performance-metric-card {
@@ -547,7 +548,8 @@
 .performance-trends {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: var(--space-3);
+  column-gap: var(--space-2);
+  row-gap: var(--space-3);
 }
 
 .performance-trend-card {
@@ -670,7 +672,8 @@
 .performance-person-detail__stats {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: var(--space-2);
+  column-gap: var(--space-2);
+  row-gap: var(--space-3);
 }
 
 .performance-person-detail__stat {
@@ -1241,7 +1244,8 @@
 .employee-my-week-summary {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: var(--space-3);
+  column-gap: var(--space-2);
+  row-gap: var(--space-3);
   margin-bottom: var(--space-5);
   padding: var(--space-3) var(--space-4);
   border-radius: var(--radius-card);
@@ -1302,6 +1306,7 @@
 .performance-director-team-meta {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: var(--space-3);
+  column-gap: var(--space-2);
+  row-gap: var(--space-3);
   margin: var(--space-4) 0;
 }

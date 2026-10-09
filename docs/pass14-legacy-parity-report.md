@@ -11,11 +11,7 @@ Production Metrio is **not** used as the legacy reference.
 
 UX Apps Script date-filters changelog via `rangeEvents`. Metrio product KPI uses full history and keeps cycles whose `completedAt` falls in the inclusive `dateFrom`/`dateTo` window. Fixtures feed the GS oracle range-truncated events so period semantics are comparable.
 
-Workload / capacity is **not** a GS Time Stat port. Those rows are tagged `PRODUCT_RULE` against PASS 14 canonical rules.
-
-**LEGACY PARITY** covers only concepts Apps Script implemented: completed-cycle KPI, first pass, backflow, hold, cycle durations, efficiency, per-user and team KPI, WSkins Internal Review completion.
-
-**METRIO PRODUCT RULE** covers hierarchical workload, organizational-unit workload, drawer data, recommendations, capacity contributor intervals, and corporate statuses Apps Script never named (Need to Fix, Quality Assurance, Handover Completed, and other project-specific states).
+Workload / capacity is **not** a GS Time Stat port. Those rows are tagged `PRODUCT_RULE` against PASS 14.1 canonical rules.
 
 Generated rows: 380. Unexplained mismatches: 0.
 
@@ -391,35 +387,35 @@ Generated rows: 380. Unexplained mismatches: 0.
 | team-kpi-unique-keys | avgTodoToApprovedMs | 431999995 | 431999995 | MATCH | Identical on the same fixture. | `Code.gs flattenGroupedIssues_ + buildKpiFromIssues_` | `unique issueKey flatten + buildKpiFromIssues` |
 | team-kpi-unique-keys | efficiencyIndex | 100 | 100 | MATCH | Identical on the same fixture. | `Code.gs flattenGroupedIssues_ + buildKpiFromIssues_` | `unique issueKey flatten + buildKpiFromIssues` |
 | 1-todo-ip-review-done | activeWorkCount | n/a (Time Stat is not this model) | 0 | PRODUCT_RULE | Review/QA/hold/waiting excluded from activeWorkCount and capacity (PASS 14.1). Not a GS Time Stat port. | `n/a — writeWSkinsTimeStatAutoSheet_ / UX time stat not used` | `capacityWorkload.countOperationalWorkload / calculateWorkload` |
-| 1-todo-ip-review-done | capacityLoadPercent | n/a | 43.9 | PRODUCT_RULE | capacityDataState=measured; level=low. Overloaded only when load > 100. | `n/a` | `calculateCapacityBreakdown` |
+| 1-todo-ip-review-done | capacityLoadPercent | n/a | 0 | PRODUCT_RULE | capacityDataState=measured; level=low. Overloaded only when load > 100. | `n/a` | `calculateCapacityBreakdown` |
 | 2-ip-review-ip-review-done | activeWorkCount | n/a (Time Stat is not this model) | 0 | PRODUCT_RULE | Review/QA/hold/waiting excluded from activeWorkCount and capacity (PASS 14.1). Not a GS Time Stat port. | `n/a — writeWSkinsTimeStatAutoSheet_ / UX time stat not used` | `capacityWorkload.countOperationalWorkload / calculateWorkload` |
-| 2-ip-review-ip-review-done | capacityLoadPercent | n/a | 58.5 | PRODUCT_RULE | capacityDataState=measured; level=normal. Overloaded only when load > 100. | `n/a` | `calculateCapacityBreakdown` |
+| 2-ip-review-ip-review-done | capacityLoadPercent | n/a | 0 | PRODUCT_RULE | capacityDataState=measured; level=low. Overloaded only when load > 100. | `n/a` | `calculateCapacityBreakdown` |
 | 3-long-review | activeWorkCount | n/a (Time Stat is not this model) | 0 | PRODUCT_RULE | Review/QA/hold/waiting excluded from activeWorkCount and capacity (PASS 14.1). Not a GS Time Stat port. | `n/a — writeWSkinsTimeStatAutoSheet_ / UX time stat not used` | `capacityWorkload.countOperationalWorkload / calculateWorkload` |
-| 3-long-review | capacityLoadPercent | n/a | 0 | PRODUCT_RULE | capacityDataState=insufficient_history; level=normal. Overloaded only when load > 100. | `n/a` | `calculateCapacityBreakdown` |
+| 3-long-review | capacityLoadPercent | n/a | 0 | PRODUCT_RULE | capacityDataState=insufficient_history; level=low. Overloaded only when load > 100. | `n/a` | `calculateCapacityBreakdown` |
 | 4-hold | activeWorkCount | n/a (Time Stat is not this model) | 0 | PRODUCT_RULE | Review/QA/hold/waiting excluded from activeWorkCount and capacity (PASS 14.1). Not a GS Time Stat port. | `n/a — writeWSkinsTimeStatAutoSheet_ / UX time stat not used` | `capacityWorkload.countOperationalWorkload / calculateWorkload` |
-| 4-hold | capacityLoadPercent | n/a | 0 | PRODUCT_RULE | capacityDataState=insufficient_history; level=normal. Overloaded only when load > 100. | `n/a` | `calculateCapacityBreakdown` |
+| 4-hold | capacityLoadPercent | n/a | 0 | PRODUCT_RULE | capacityDataState=insufficient_history; level=low. Overloaded only when load > 100. | `n/a` | `calculateCapacityBreakdown` |
 | 5-waiting | activeWorkCount | n/a (Time Stat is not this model) | 0 | PRODUCT_RULE | Review/QA/hold/waiting excluded from activeWorkCount and capacity (PASS 14.1). Not a GS Time Stat port. | `n/a — writeWSkinsTimeStatAutoSheet_ / UX time stat not used` | `capacityWorkload.countOperationalWorkload / calculateWorkload` |
-| 5-waiting | capacityLoadPercent | n/a | 0 | PRODUCT_RULE | capacityDataState=insufficient_history; level=normal. Overloaded only when load > 100. | `n/a` | `calculateCapacityBreakdown` |
+| 5-waiting | capacityLoadPercent | n/a | 0 | PRODUCT_RULE | capacityDataState=insufficient_history; level=low. Overloaded only when load > 100. | `n/a` | `calculateCapacityBreakdown` |
 | 6-cancelled | activeWorkCount | n/a (Time Stat is not this model) | 0 | PRODUCT_RULE | Review/QA/hold/waiting excluded from activeWorkCount and capacity (PASS 14.1). Not a GS Time Stat port. | `n/a — writeWSkinsTimeStatAutoSheet_ / UX time stat not used` | `capacityWorkload.countOperationalWorkload / calculateWorkload` |
-| 6-cancelled | capacityLoadPercent | n/a | 0 | PRODUCT_RULE | capacityDataState=insufficient_history; level=normal. Overloaded only when load > 100. | `n/a` | `calculateCapacityBreakdown` |
+| 6-cancelled | capacityLoadPercent | n/a | 0 | PRODUCT_RULE | capacityDataState=insufficient_history; level=low. Overloaded only when load > 100. | `n/a` | `calculateCapacityBreakdown` |
 | 7-reassignment | activeWorkCount | n/a (Time Stat is not this model) | 0 | PRODUCT_RULE | Review/QA/hold/waiting excluded from activeWorkCount and capacity (PASS 14.1). Not a GS Time Stat port. | `n/a — writeWSkinsTimeStatAutoSheet_ / UX time stat not used` | `capacityWorkload.countOperationalWorkload / calculateWorkload` |
-| 7-reassignment | capacityLoadPercent | n/a | 43.9 | PRODUCT_RULE | capacityDataState=measured; level=low. Overloaded only when load > 100. | `n/a` | `calculateCapacityBreakdown` |
+| 7-reassignment | capacityLoadPercent | n/a | 0 | PRODUCT_RULE | capacityDataState=measured; level=low. Overloaded only when load > 100. | `n/a` | `calculateCapacityBreakdown` |
 | 8-multiple-cycles | activeWorkCount | n/a (Time Stat is not this model) | 0 | PRODUCT_RULE | Review/QA/hold/waiting excluded from activeWorkCount and capacity (PASS 14.1). Not a GS Time Stat port. | `n/a — writeWSkinsTimeStatAutoSheet_ / UX time stat not used` | `capacityWorkload.countOperationalWorkload / calculateWorkload` |
-| 8-multiple-cycles | capacityLoadPercent | n/a | 28.7 | PRODUCT_RULE | capacityDataState=measured; level=low. Overloaded only when load > 100. | `n/a` | `calculateCapacityBreakdown` |
+| 8-multiple-cycles | capacityLoadPercent | n/a | 0 | PRODUCT_RULE | capacityDataState=measured; level=low. Overloaded only when load > 100. | `n/a` | `calculateCapacityBreakdown` |
 | 9-first-pass | activeWorkCount | n/a (Time Stat is not this model) | 0 | PRODUCT_RULE | Review/QA/hold/waiting excluded from activeWorkCount and capacity (PASS 14.1). Not a GS Time Stat port. | `n/a — writeWSkinsTimeStatAutoSheet_ / UX time stat not used` | `capacityWorkload.countOperationalWorkload / calculateWorkload` |
-| 9-first-pass | capacityLoadPercent | n/a | 43.9 | PRODUCT_RULE | capacityDataState=measured; level=low. Overloaded only when load > 100. | `n/a` | `calculateCapacityBreakdown` |
+| 9-first-pass | capacityLoadPercent | n/a | 0 | PRODUCT_RULE | capacityDataState=measured; level=low. Overloaded only when load > 100. | `n/a` | `calculateCapacityBreakdown` |
 | 10-backflow | activeWorkCount | n/a (Time Stat is not this model) | 0 | PRODUCT_RULE | Review/QA/hold/waiting excluded from activeWorkCount and capacity (PASS 14.1). Not a GS Time Stat port. | `n/a — writeWSkinsTimeStatAutoSheet_ / UX time stat not used` | `capacityWorkload.countOperationalWorkload / calculateWorkload` |
-| 10-backflow | capacityLoadPercent | n/a | 58.5 | PRODUCT_RULE | capacityDataState=measured; level=normal. Overloaded only when load > 100. | `n/a` | `calculateCapacityBreakdown` |
+| 10-backflow | capacityLoadPercent | n/a | 0 | PRODUCT_RULE | capacityDataState=measured; level=low. Overloaded only when load > 100. | `n/a` | `calculateCapacityBreakdown` |
 | 11-no-completion-in-period | activeWorkCount | n/a (Time Stat is not this model) | 0 | PRODUCT_RULE | Review/QA/hold/waiting excluded from activeWorkCount and capacity (PASS 14.1). Not a GS Time Stat port. | `n/a — writeWSkinsTimeStatAutoSheet_ / UX time stat not used` | `capacityWorkload.countOperationalWorkload / calculateWorkload` |
-| 11-no-completion-in-period | capacityLoadPercent | n/a | 0 | PRODUCT_RULE | capacityDataState=insufficient_history; level=normal. Overloaded only when load > 100. | `n/a` | `calculateCapacityBreakdown` |
+| 11-no-completion-in-period | capacityLoadPercent | n/a | 0 | PRODUCT_RULE | capacityDataState=insufficient_history; level=low. Overloaded only when load > 100. | `n/a` | `calculateCapacityBreakdown` |
 | ws-1-happy | activeWorkCount | n/a (Time Stat is not this model) | 0 | PRODUCT_RULE | Review/QA/hold/waiting excluded from activeWorkCount and capacity (PASS 14.1). Not a GS Time Stat port. | `n/a — writeWSkinsTimeStatAutoSheet_ / UX time stat not used` | `capacityWorkload.countOperationalWorkload / calculateWorkload` |
-| ws-1-happy | capacityLoadPercent | n/a | 43.9 | PRODUCT_RULE | capacityDataState=measured; level=low. Overloaded only when load > 100. | `n/a` | `calculateCapacityBreakdown` |
+| ws-1-happy | capacityLoadPercent | n/a | 0 | PRODUCT_RULE | capacityDataState=measured; level=low. Overloaded only when load > 100. | `n/a` | `calculateCapacityBreakdown` |
 | ws-3-long-progress | activeWorkCount | n/a (Time Stat is not this model) | 1 | PRODUCT_RULE | Review/QA/hold/waiting excluded from activeWorkCount and capacity (PASS 14.1). Not a GS Time Stat port. | `n/a — writeWSkinsTimeStatAutoSheet_ / UX time stat not used` | `capacityWorkload.countOperationalWorkload / calculateWorkload` |
 | ws-3-long-progress | capacityLoadPercent | n/a | 0 | PRODUCT_RULE | capacityDataState=insufficient_history; level=normal. Overloaded only when load > 100. | `n/a` | `calculateCapacityBreakdown` |
 | ws-4-hold | activeWorkCount | n/a (Time Stat is not this model) | 0 | PRODUCT_RULE | Review/QA/hold/waiting excluded from activeWorkCount and capacity (PASS 14.1). Not a GS Time Stat port. | `n/a — writeWSkinsTimeStatAutoSheet_ / UX time stat not used` | `capacityWorkload.countOperationalWorkload / calculateWorkload` |
-| ws-4-hold | capacityLoadPercent | n/a | 29.3 | PRODUCT_RULE | capacityDataState=measured; level=low. Overloaded only when load > 100. | `n/a` | `calculateCapacityBreakdown` |
+| ws-4-hold | capacityLoadPercent | n/a | 0 | PRODUCT_RULE | capacityDataState=measured; level=low. Overloaded only when load > 100. | `n/a` | `calculateCapacityBreakdown` |
 | ws-6-cancelled | activeWorkCount | n/a (Time Stat is not this model) | 0 | PRODUCT_RULE | Review/QA/hold/waiting excluded from activeWorkCount and capacity (PASS 14.1). Not a GS Time Stat port. | `n/a — writeWSkinsTimeStatAutoSheet_ / UX time stat not used` | `capacityWorkload.countOperationalWorkload / calculateWorkload` |
-| ws-6-cancelled | capacityLoadPercent | n/a | 0 | PRODUCT_RULE | capacityDataState=insufficient_history; level=normal. Overloaded only when load > 100. | `n/a` | `calculateCapacityBreakdown` |
+| ws-6-cancelled | capacityLoadPercent | n/a | 0 | PRODUCT_RULE | capacityDataState=insufficient_history; level=low. Overloaded only when load > 100. | `n/a` | `calculateCapacityBreakdown` |
 
 ## Cycle engine
 

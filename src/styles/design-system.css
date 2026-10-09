@@ -54,3 +54,12 @@
 .surface-interactive:hover {
   background: var(--color-surface-secondary);
 }
+
+/**
+ * PASS 16.1 — neighboring same-level cards/blocks: 8px horizontal (--space-2),
+ * preserve 12px row rhythm (--space-3) unless a surface sets its own row-gap.
+ */
+.metrio-sibling-card-gap {
+  column-gap: var(--space-2);
+  row-gap: var(--space-3);
+}

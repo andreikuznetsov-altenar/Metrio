@@ -52,7 +52,8 @@
 .home-layout {
   display: grid;
   grid-template-columns: 1fr;
-  gap: var(--space-5);
+  column-gap: var(--space-2);
+  row-gap: var(--space-5);
 }
 
 @media (min-width: 960px) {
@@ -207,7 +208,8 @@
 .dashboard-digest-row {
   display: grid;
   grid-template-columns: 1fr;
-  gap: var(--space-3);
+  column-gap: var(--space-2);
+  row-gap: var(--space-3);
   margin-bottom: var(--space-4);
 }
 
@@ -285,7 +287,8 @@
 .dashboard-operational-row {
   display: grid;
   grid-template-columns: 1fr;
-  gap: var(--space-3);
+  column-gap: var(--space-2);
+  row-gap: var(--space-3);
   margin-bottom: var(--space-4);
 }
 

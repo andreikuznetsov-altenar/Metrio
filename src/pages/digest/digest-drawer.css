@@ -72,7 +72,8 @@
 .digest-drawer__metric-grid--week {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: var(--space-3) var(--space-4);
+  column-gap: var(--space-2);
+  row-gap: var(--space-4);
 }
 
 .digest-drawer__metric {
