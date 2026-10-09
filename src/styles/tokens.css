@@ -49,6 +49,7 @@
   /* Performance / dashboard tables */
   --performance-table-edge-inset: var(--space-4);
   --performance-table-action-inset-end: var(--space-4);
+  --delivery-risk-action-button-min-width: 7.25rem;
   /* Shared Radar Action button width — fits "Review workload" without compression */
   --radar-action-button-width: 10.5rem;
   --refresh-status-shadow: 0 -2px 12px rgba(15, 17, 21, 0.08);

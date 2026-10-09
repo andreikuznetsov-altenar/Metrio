@@ -881,7 +881,10 @@
 }
 
 .performance-table.performance-table--delivery-risk col.col-action {
-  width: 7.5rem;
+  width: calc(
+    2 * var(--delivery-risk-action-button-min-width) + var(--space-2) +
+      var(--performance-table-action-inset-end)
+  );
 }
 
 .performance-table.performance-table--report-history col.col-action {
@@ -992,6 +995,10 @@
 }
 
 .performance-delivery-risk__jira-btn {
+  flex: 0 0 auto;
+  min-width: var(--delivery-risk-action-button-min-width);
+  max-width: 100%;
+  box-sizing: border-box;
   white-space: nowrap;
 }
 

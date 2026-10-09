@@ -188,29 +188,34 @@ export function TeamDeliveryRiskView({
                     <Badge variant={statusVariant(row.status)}>{row.status}</Badge>
                   </td>
                   <td className="performance-table__action">
-                    <Button
-                      type="button"
-                      variant="secondary"
-                      className="performance-delivery-risk__jira-btn"
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        openJourney(row);
-                      }}
+                    <div
+                      className="performance-table__action-controls"
+                      data-testid="delivery-risk-action-cell"
                     >
-                      View journey
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="secondary"
-                      className="performance-delivery-risk__jira-btn"
-                      disabled={!issueUrl}
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        if (issueUrl) void openExternalUrl(issueUrl);
-                      }}
-                    >
-                      Open Jira
-                    </Button>
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        className="performance-delivery-risk__jira-btn"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          openJourney(row);
+                        }}
+                      >
+                        View journey
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        className="performance-delivery-risk__jira-btn"
+                        disabled={!issueUrl}
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          if (issueUrl) void openExternalUrl(issueUrl);
+                        }}
+                      >
+                        Open Jira
+                      </Button>
+                    </div>
                   </td>
                 </tr>
               );
