@@ -175,22 +175,21 @@ export function BambooCreateGoalDrawer({
             void submit();
           }}
         >
-          <div className="bamboo-goal-form__title-due-row">
-            <Input
-              label="Title"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              data-testid="bamboo-goal-title"
-              required
-            />
-            <MetrioDatePicker
-              label="Due date"
-              value={dueDate}
-              onChange={setDueDate}
-              popoverSide="top"
-              testId="bamboo-goal-due-date"
-            />
-          </div>
+          <Input
+            label="Title"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            data-testid="bamboo-goal-title"
+            required
+          />
+          <MetrioDatePicker
+            label="Due date"
+            value={dueDate}
+            onChange={setDueDate}
+            popoverSide="top"
+            layout="stacked"
+            testId="bamboo-goal-due-date"
+          />
 
           <Textarea
             label="Description"

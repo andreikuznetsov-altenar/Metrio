@@ -15,6 +15,8 @@ export interface MetrioDatePickerProps {
   onChange: (isoDate: string) => void;
   /** Prefer top in short drawers so the calendar is not clipped. */
   popoverSide?: "top" | "bottom";
+  /** Inline label beside field (filters) or stacked label above full-width field (forms). */
+  layout?: "inline" | "stacked";
   testId?: string;
 }
 
@@ -38,16 +40,41 @@ export function MetrioDatePicker({
   disabled,
   onChange,
   popoverSide = "bottom",
+  layout = "inline",
   testId,
 }: MetrioDatePickerProps) {
   const [open, setOpen] = useState(false);
   const selected = useMemo(() => parseIsoDateOnly(value), [value]);
   const display = formatPerformanceDateDisplay(value) || "Select date";
+  const pickerClass =
+    layout === "stacked"
+      ? "metrio-date-picker metrio-date-picker--stacked"
+      : "metrio-date-picker";
+
+  const openPicker = () => {
+    if (!disabled) setOpen(true);
+  };
 
   return (
     <Popover.Root open={open} onOpenChange={setOpen}>
-      <div className="metrio-date-picker">
-        <span className="metrio-date-picker__label">{label}</span>
+      <div className={pickerClass}>
+        {layout === "stacked" ? (
+          <span
+            className="metrio-date-picker__label metrio-date-picker__label--stacked"
+            onClick={openPicker}
+            onKeyDown={(event) => {
+              if (event.key === "Enter" || event.key === " ") {
+                event.preventDefault();
+                openPicker();
+              }
+            }}
+            role="presentation"
+          >
+            {label}
+          </span>
+        ) : (
+          <span className="metrio-date-picker__label">{label}</span>
+        )}
         <Popover.Trigger asChild disabled={disabled}>
           <button
             id={id}

@@ -18,6 +18,7 @@ import { PerformanceTableColgroup } from "./PerformanceTableColgroup";
 import { METRIO_TABLE_CLASS, MetrioTableWrap } from "./MetrioTable";
 import { TableWorkLead } from "./TableWorkLead";
 import { JiraIssueText } from "../JiraIssueLink/JiraIssueText";
+import { TableActionsHeader } from "./TableActionsHeader";
 import { TableHeaderCell } from "./TableHeaderCell";
 import type { TableSortState } from "./tableSort";
 
@@ -101,7 +102,7 @@ export function DashboardActionQueueTable({
     { id: "work", label: workColumnLabel },
     { id: "reason", label: "Reason" },
     { id: "context", label: "Context" },
-    { id: "action", label: "Action" },
+    { id: "action", label: null },
   ] as const;
   const sort: TableSortState =
     sortColumnId && sortDirection
@@ -117,19 +118,29 @@ export function DashboardActionQueueTable({
         <PerformanceTableColgroup columns={[...QUEUE_COLGROUP]} />
         <thead>
           <tr>
-            {headerColumns.map((col) => (
-              <TableHeaderCell
-                key={col.id}
-                columnId={col.id}
-                label={
-                  col.id === "work" ? <TableWorkLead label={col.label} /> : col.label
-                }
-                sortable={sortable && col.id !== "action"}
-                sort={sort}
-                onToggle={onToggleSort}
-                className={col.id === "action" ? "performance-table__action" : undefined}
-              />
-            ))}
+            {headerColumns.map((col) =>
+              col.id === "action" ? (
+                <TableActionsHeader
+                  key={col.id}
+                  className="performance-table__action"
+                />
+              ) : (
+                <TableHeaderCell
+                  key={col.id}
+                  columnId={col.id}
+                  label={
+                    col.id === "work" ? (
+                      <TableWorkLead label={col.label!} />
+                    ) : (
+                      col.label
+                    )
+                  }
+                  sortable={sortable}
+                  sort={sort}
+                  onToggle={onToggleSort}
+                />
+              ),
+            )}
           </tr>
         </thead>
         <tbody>

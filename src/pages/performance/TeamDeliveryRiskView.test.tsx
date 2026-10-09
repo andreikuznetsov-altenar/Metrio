@@ -78,7 +78,7 @@ describe("TeamDeliveryRiskView", () => {
     const wrap = container.querySelector(
       ".performance-table-wrap--delivery-risk",
     ) as HTMLElement;
-    expect(getComputedStyle(wrap).overflowX).toBe("visible");
+    expect(getComputedStyle(wrap).overflowX).toBe("auto");
     Object.defineProperty(table, "clientWidth", { value: 960, configurable: true });
     Object.defineProperty(table, "scrollWidth", { value: 960, configurable: true });
     expect(table.scrollWidth).toBeLessThanOrEqual(table.clientWidth + 1);
@@ -114,6 +114,9 @@ describe("TeamDeliveryRiskView", () => {
     const interactionCss = fs.readFileSync(
       path.resolve(process.cwd(), "src/styles/ui-interaction-system.css"),
       "utf8",
+    );
+    expect(interactionCss).toMatch(
+      /\.performance-table__action-controls[\s\S]*flex-wrap:\s*nowrap/,
     );
     expect(interactionCss).toMatch(
       /\.performance-table__action-controls[\s\S]*gap:\s*var\(--space-2\)/,

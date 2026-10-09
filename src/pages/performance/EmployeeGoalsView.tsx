@@ -198,11 +198,13 @@ export function EmployeeGoalsView({ personId }: { personId: string }) {
 
       {state === "loading" ? (
         <div
-          className="performance-skeleton-drawer"
+          className="employee-goals__loading"
           data-testid="employee-goals-loading"
+          role="status"
           aria-busy="true"
+          aria-label="Loading goals"
         >
-          <div className="performance-skeleton-card" />
+          <span className="employee-goals__loading-spinner" aria-hidden="true" />
         </div>
       ) : null}
 

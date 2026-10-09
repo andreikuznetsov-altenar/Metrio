@@ -93,8 +93,9 @@ describe("DashboardActionQueueTable geometry", () => {
       "Work",
       "Reason",
       "Context",
-      "Action",
+      "",
     ]);
+    expect(headers[3]).toHaveAccessibleName("Actions");
   });
 
   it("aligns each header left edge with body cells on the same column index", () => {

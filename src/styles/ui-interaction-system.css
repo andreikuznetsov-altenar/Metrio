@@ -314,10 +314,16 @@
 
 .performance-table__action-controls {
   display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
   align-items: center;
-  flex-wrap: wrap;
   gap: var(--space-2);
   max-width: 100%;
+}
+
+.performance-table__action-header-mark {
+  display: block;
+  min-height: 1.25rem;
 }
 
 .performance-table__work-lead {

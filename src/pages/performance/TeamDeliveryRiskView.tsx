@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Badge } from "../../components/Badge/Badge";
 import { Button } from "../../components/Button/Button";
+import { TableActionsHeader } from "../../components/Table/TableActionsHeader";
 import { SortableTableHeader } from "../../components/Table/SortableTableHeader";
 import { useTableSort } from "../../components/Table/useTableSort";
 import { resolveJiraBaseUrl } from "../../config/product";
@@ -32,7 +33,6 @@ const DELIVERY_RISK_COLUMNS = [
     type: "status" as const,
     statusKind: "deliveryStatus" as const,
   },
-  { id: "jira", type: "issueKey" as const },
 ];
 
 export interface TeamDeliveryRiskViewProps {
@@ -57,7 +57,6 @@ export function TeamDeliveryRiskView({
     () => (row: DeliveryRiskRow, columnId: string) => {
       switch (columnId) {
         case "issue":
-        case "jira":
           return row.issueKey;
         case "description":
           return row.issueTitle;
@@ -141,14 +140,7 @@ export function TeamDeliveryRiskView({
                 onToggle={toggleSort}
               />
               <SortableTableHeader columnId="status" label="Status" sort={sort} onToggle={toggleSort} />
-              <SortableTableHeader
-                columnId="jira"
-                label="Jira"
-                sort={sort}
-                onToggle={toggleSort}
-                className="performance-table__action"
-
-              />
+              <TableActionsHeader className="performance-table__action" />
             </tr>
           </thead>
           <tbody>

@@ -96,8 +96,9 @@ describe("TeamRadarView table columns", () => {
       "Reason",
       "Tasks",
       "Severity",
-      "Action",
+      "",
     ]);
+    expect(headers[4]).toHaveAccessibleName("Actions");
   });
 
   it("aligns Severity and Action headers with their body cells on the same column index", () => {
@@ -107,7 +108,7 @@ describe("TeamRadarView table columns", () => {
     const actionIndex = 4;
     const headers = within(table).getAllByRole("columnheader");
     expect(headers[severityIndex]).toHaveTextContent("Severity");
-    expect(headers[actionIndex]).toHaveTextContent("Action");
+    expect(headers[actionIndex]).toHaveAccessibleName("Actions");
 
     const firstRow = within(table).getAllByRole("row")[1];
     const cells = within(firstRow).getAllByRole("cell");

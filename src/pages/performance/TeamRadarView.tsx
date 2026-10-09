@@ -3,6 +3,7 @@ import { Badge } from "../../components/Badge/Badge";
 import { Button } from "../../components/Button/Button";
 import { GroupedIssuePreview } from "../../components/GroupedIssuePreview/GroupedIssuePreview";
 import { PersonAvatar } from "../../components/PersonAvatar/PersonAvatar";
+import { TableActionsHeader } from "../../components/Table/TableActionsHeader";
 import { SortableTableHeader } from "../../components/Table/SortableTableHeader";
 import { useTableSort } from "../../components/Table/useTableSort";
 import { usePerformanceData } from "../../app/PerformanceDataContext";
@@ -23,7 +24,6 @@ const RADAR_COLUMNS = [
     type: "status" as const,
     statusKind: "attentionSeverity" as const,
   },
-  { id: "action", type: "text" as const },
 ];
 
 function drawerTabForRadarAction(action: RadarPrimaryAction): PersonDrawerTab {
@@ -59,8 +59,6 @@ export function TeamRadarView({ rows, onOpenPerson }: TeamRadarViewProps) {
           return row.reason;
         case "tasks":
           return row.tasksAffected;
-        case "action":
-          return row.action;
         case "severity":
           return row.severity;
         default:
@@ -121,13 +119,7 @@ export function TeamRadarView({ rows, onOpenPerson }: TeamRadarViewProps) {
                 onToggle={toggleSort}
                 className="performance-table__severity"
               />
-              <SortableTableHeader
-                columnId="action"
-                label="Action"
-                sort={sort}
-                onToggle={toggleSort}
-                className="performance-table__action"
-              />
+              <TableActionsHeader className="performance-table__action" />
             </tr>
           </thead>
           <tbody>

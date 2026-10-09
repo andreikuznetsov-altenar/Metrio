@@ -19,6 +19,15 @@ export function availabilityBadgeVariant(label: string): BadgeVariant {
   return "neutral";
 }
 
+export function deliveryStatusBadgeVariant(status: string): BadgeVariant {
+  const normalized = status.toLowerCase();
+  if (normalized.includes("block")) return "danger";
+  if (normalized.includes("review") || normalized.includes("rework")) {
+    return "warning";
+  }
+  return "neutral";
+}
+
 export function workloadBadgeVariantFromLabel(
   label: WorkloadDisplayLabel | string,
 ): BadgeVariant {

@@ -759,7 +759,7 @@
 }
 
 .performance-table-wrap--delivery-risk {
-  overflow-x: visible;
+  overflow-x: auto;
   max-width: 100%;
 }
 

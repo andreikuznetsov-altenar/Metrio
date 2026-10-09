@@ -3,8 +3,8 @@ import type { PersonAvailability } from '../people/types';
 import { classifyTaskHealth } from '../task-health/taskHealthEngine';
 import {
   calculateCapacityBreakdown,
-  capacityLevelFromPercent,
   countOperationalWorkload,
+  resolveCurrentOperationalCapacityPresentation,
   MONTHLY_CAPACITY_HOURS,
   requiredHeadcount,
   type CapacityDataState,
@@ -179,11 +179,13 @@ export function calculateWorkload(
     mappings: options.mappings,
     now: options.now,
   });
-  const capacityDataState = capacityBreakdown.capacityDataState;
-  const level =
-    capacityDataState === 'measured'
-      ? capacityLevelFromPercent(capacityBreakdown.capacityLoadPercent)
-      : 'normal';
+  const capacityPresentation = resolveCurrentOperationalCapacityPresentation(
+    capacityBreakdown,
+    operational,
+  );
+  const capacityDataState = capacityPresentation.capacityDataState;
+  const level = capacityPresentation.level;
+  const displayedCapacityPercent = capacityPresentation.capacityLoadPercent;
 
   const levelLabel =
     capacityDataState === 'measured'
@@ -197,15 +199,15 @@ export function calculateWorkload(
       : 'Not enough history';
 
   const capacityNote =
-    capacityDataState === 'measured' && capacityBreakdown.estimatedMonthlyHours > 0
-      ? ` · ~${capacityBreakdown.estimatedMonthlyHours}h/mo (${capacityBreakdown.capacityLoadPercent}% of ${MONTHLY_CAPACITY_HOURS}h)`
+    capacityDataState === 'measured' && displayedCapacityPercent > 0
+      ? ` · ~${capacityBreakdown.estimatedMonthlyHours}h/mo (${displayedCapacityPercent}% of ${MONTHLY_CAPACITY_HOURS}h)`
       : capacityDataState === 'insufficient_history'
         ? ' · capacity not measured (no completed cycles in period)'
         : '';
 
   return {
     level,
-    score: capacityBreakdown.capacityLoadPercent,
+    score: displayedCapacityPercent,
     activeCount,
     inProgressCount,
     inReviewCount: operational.reviewCount,
@@ -213,10 +215,10 @@ export function calculateWorkload(
     atRiskCount,
     overdueCount,
     summary: `${levelLabel} workload · ${activeCount} active · ${inProgressCount} in progress · ${problematicCount} problematic${capacityNote}`,
-    capacityLoadPercent: capacityBreakdown.capacityLoadPercent,
+    capacityLoadPercent: displayedCapacityPercent,
     estimatedMonthlyHours: capacityBreakdown.estimatedMonthlyHours,
     monthlyCapacityHours: MONTHLY_CAPACITY_HOURS,
-    requiredHeadcount: requiredHeadcount(capacityBreakdown.capacityLoadPercent),
+    requiredHeadcount: requiredHeadcount(displayedCapacityPercent),
     currentAssignedIssueCount: operational.currentAssignedIssueCount,
     activeWorkCount: operational.activeWorkCount,
     reviewCount: operational.reviewCount,

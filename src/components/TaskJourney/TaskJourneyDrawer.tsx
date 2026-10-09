@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { format } from 'date-fns';
 import { Badge } from '../Badge/Badge';
 import { Button } from '../Button/Button';
@@ -10,12 +10,14 @@ import {
   type TaskJourney,
   type TaskJourneyTimelineEntry,
 } from '../../domain/task-journey/buildTaskJourney';
+import { deliveryStatusBadgeVariant } from '../../domain/performance/performanceStatusBadges';
 import type { OperationalRules } from '../../domain/operationalRules/operationalRulesTypes';
 import type { Person } from '../../domain/people/types';
 import { buildJiraIssueBrowseUrl } from '../../platform/jiraIssueUrl';
 import { loadPreferences } from '../../platform/preferences';
 import { openExternalUrl } from '../../platform/openExternal';
 import { resolveJiraBaseUrl } from '../../config/product';
+import { useOptionalPersonNavigation } from '../../app/PersonNavigationContext';
 import './TaskJourneyDrawer.css';
 
 function formatTimelineDate(iso: string): string {
@@ -77,6 +79,44 @@ function TimelineItem({ entry }: { entry: TaskJourneyTimelineEntry }) {
   );
 }
 
+function OwnerLink({
+  name,
+  personId,
+  onOpenPerson,
+}: {
+  name: string;
+  personId?: string;
+  onOpenPerson?: (personId: string) => void;
+}) {
+  if (personId && onOpenPerson) {
+    return (
+      <button
+        type="button"
+        className="performance-table__person-link task-journey-drawer__owner-link"
+        onClick={() => onOpenPerson(personId)}
+      >
+        {name}
+      </button>
+    );
+  }
+  return <span>{name}</span>;
+}
+
+function DiagnosticRow({
+  label,
+  value,
+}: {
+  label: string;
+  value: ReactNode;
+}) {
+  return (
+    <div className="task-journey-drawer__diag-row">
+      <span className="task-journey-drawer__diag-label">{label}</span>
+      <span className="task-journey-drawer__diag-value">{value}</span>
+    </div>
+  );
+}
+
 export interface TaskJourneyDrawerProps {
   open: boolean;
   issue: AuditIssue | null;
@@ -99,6 +139,8 @@ export function TaskJourneyDrawer({
   onClose,
 }: TaskJourneyDrawerProps) {
   const [jiraBaseUrl, setJiraBaseUrl] = useState('');
+  const personNavigation = useOptionalPersonNavigation();
+  const openPerson = personNavigation?.openPerson;
 
   useEffect(() => {
     void loadPreferences().then((prefs) => {
@@ -120,27 +162,46 @@ export function TaskJourneyDrawer({
 
   const issueUrl = issue ? buildJiraIssueBrowseUrl(jiraBaseUrl, issue.issueKey) : '';
 
-  const stuckLabel =
-    journey?.problem.isAttentionEligible && journey.problem.severity
+  const stageDurationLabel = journey
+    ? journey.problem.isAttentionEligible && journey.problem.severity
       ? `Stuck for ${journey.problem.currentStageAgeLabel}`
-      : journey?.problem.currentStageAgeLabel !== '—'
-        ? `Current for ${journey?.problem.currentStageAgeLabel}`
-        : null;
+      : journey.problem.currentStageAgeLabel !== '—'
+        ? `Current for ${journey.problem.currentStageAgeLabel}`
+        : null
+    : null;
 
   const header = journey ? (
-    <div>
-      <h2 style={{ margin: 0, fontSize: '1.125rem', fontWeight: 700 }}>{journey.issueKey}</h2>
+    <div className="task-journey-drawer__header">
+      <h2 className="task-journey-drawer__issue-key">{journey.issueKey}</h2>
       <p className="task-journey-drawer__title">{journey.title}</p>
-      <div className="task-journey-drawer__header-meta">
+      <div className="task-journey-drawer__header-badges">
         {journey.problem.severity ? (
           <Badge variant="danger">Needs attention</Badge>
         ) : null}
-        <span>Current owner: {journey.currentOwner.name}</span>
-        <span>Current status: {journey.currentStatus}</span>
-        {stuckLabel ? <span>{stuckLabel}</span> : null}
+        <Badge variant={deliveryStatusBadgeVariant(journey.currentStatus)}>
+          {journey.currentStatus}
+        </Badge>
       </div>
+      {stageDurationLabel ? (
+        <p className="task-journey-drawer__stage-duration" data-testid="task-journey-stage-duration">
+          {stageDurationLabel}
+        </p>
+      ) : null}
+      <p className="task-journey-drawer__header-owner">
+        <span className="task-journey-drawer__header-owner-label">Current owner</span>
+        <OwnerLink
+          name={journey.currentOwner.name}
+          personId={journey.currentOwner.personId}
+          onOpenPerson={openPerson}
+        />
+      </p>
     </div>
   ) : null;
+
+  const currentStageLine =
+    journey && journey.problem.currentStageAgeLabel !== '—'
+      ? `${journey.currentStatus} · ${journey.problem.currentStageAgeLabel}`
+      : journey?.currentStatus ?? '—';
 
   return (
     <Drawer
@@ -171,12 +232,29 @@ export function TaskJourneyDrawer({
           <section className="task-journey-drawer__section" aria-label="Why this needs attention">
             <h3 className="task-journey-drawer__section-title">Why this needs attention</h3>
             <p className="task-journey-drawer__attention-lead">{journey.problem.headline}</p>
-            {journey.problem.detailLines.map((line) => (
-              <p key={line} className="task-journey-drawer__attention-detail">{line}</p>
-            ))}
-            <p className="task-journey-drawer__attention-detail">
-              Current owner: {journey.currentOwner.name}
-            </p>
+            <div className="task-journey-drawer__diag-block" data-testid="task-journey-diagnostic-block">
+              <DiagnosticRow label="Reason" value={journey.problem.primaryReason} />
+              <DiagnosticRow label="Current stage" value={currentStageLine} />
+              {journey.problem.targetReviewDays ? (
+                <DiagnosticRow
+                  label="Target"
+                  value={`${journey.problem.targetReviewDays} days`}
+                />
+              ) : null}
+              {journey.problem.lastActivityLabel ? (
+                <DiagnosticRow label="Last activity" value={journey.problem.lastActivityLabel} />
+              ) : null}
+              <DiagnosticRow
+                label="Current owner"
+                value={
+                  <OwnerLink
+                    name={journey.currentOwner.name}
+                    personId={journey.currentOwner.personId}
+                    onOpenPerson={openPerson}
+                  />
+                }
+              />
+            </div>
           </section>
 
           <section className="task-journey-drawer__section" aria-label="Task path">

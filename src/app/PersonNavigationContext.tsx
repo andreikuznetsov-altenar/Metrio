@@ -172,3 +172,7 @@ export function usePersonNavigation(): PersonNavigationValue {
   }
   return value;
 }
+
+export function useOptionalPersonNavigation(): PersonNavigationValue | null {
+  return useContext(PersonNavigationContext);
+}

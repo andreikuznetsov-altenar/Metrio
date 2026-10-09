@@ -1,6 +1,7 @@
 import { FileText } from "lucide-react";
 import { save } from "@tauri-apps/plugin-dialog";
 import { Button } from "../../components/Button/Button";
+import { TableActionsHeader } from "../../components/Table/TableActionsHeader";
 import { EmptyState } from "../../components/EmptyState/EmptyState";
 import { useToast } from "../../components/Toast/ToastContext";
 import {
@@ -67,7 +68,7 @@ export function HistoryReportsView() {
             <tr>
               <th scope="col">Date</th>
               <th scope="col">Time</th>
-              <th scope="col" className="performance-table__action">Action</th>
+              <TableActionsHeader className="performance-table__action" />
             </tr>
           </thead>
           <tbody>

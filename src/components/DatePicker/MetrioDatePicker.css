@@ -5,6 +5,24 @@
   min-width: 0;
 }
 
+.metrio-date-picker--stacked {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--space-1);
+  width: 100%;
+}
+
+.metrio-date-picker--stacked .metrio-date-picker__trigger {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.metrio-date-picker__label--stacked {
+  cursor: pointer;
+  align-self: flex-start;
+}
+
 .metrio-date-picker__label {
   flex-shrink: 0;
   font-size: 13px;

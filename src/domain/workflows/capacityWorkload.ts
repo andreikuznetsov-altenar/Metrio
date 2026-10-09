@@ -57,6 +57,50 @@ export function capacityLevelFromPercent(loadPercent: number): WorkloadLevel {
   return 'low';
 }
 
+export function hasCurrentOperationalCapacitySource(
+  operational: ReturnType<typeof countOperationalWorkload>,
+  activeSegmentHours: number,
+): boolean {
+  return operational.capacityContributorIssueCount > 0 || activeSegmentHours > 0;
+}
+
+/** Current profile load — historical completed cycles alone must not inflate live workload. */
+export function resolveCurrentOperationalCapacityPresentation(
+  capacityBreakdown: CapacityBreakdown,
+  operational: ReturnType<typeof countOperationalWorkload>,
+): {
+  capacityLoadPercent: number;
+  capacityDataState: CapacityDataState;
+  level: WorkloadLevel;
+} {
+  const hasCurrentSource = hasCurrentOperationalCapacitySource(
+    operational,
+    capacityBreakdown.activeSegmentHours,
+  );
+
+  if (!hasCurrentSource) {
+    return {
+      capacityLoadPercent: 0,
+      capacityDataState: capacityBreakdown.capacityDataState,
+      level: 'low',
+    };
+  }
+
+  if (capacityBreakdown.capacityDataState !== 'measured') {
+    return {
+      capacityLoadPercent: capacityBreakdown.capacityLoadPercent,
+      capacityDataState: capacityBreakdown.capacityDataState,
+      level: 'normal',
+    };
+  }
+
+  return {
+    capacityLoadPercent: capacityBreakdown.capacityLoadPercent,
+    capacityDataState: capacityBreakdown.capacityDataState,
+    level: capacityLevelFromPercent(capacityBreakdown.capacityLoadPercent),
+  };
+}
+
 export function calculateCapacityBreakdown(input: CapacityWorkloadInput): CapacityBreakdown {
   const { issues, params } = input;
   const now = input.now || new Date();
