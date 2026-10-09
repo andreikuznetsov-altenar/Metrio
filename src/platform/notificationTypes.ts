@@ -64,6 +64,8 @@ export interface NotificationEvent {
   severity?: NotificationSeverity;
   target?: NotificationTarget;
   dedupeKey?: string;
+  /** User dismissed the inbox card (hydration may strip these). */
+  deletedAt?: string;
   source?: ActionInboxSource;
   actionRequired?: boolean;
 }
@@ -201,6 +203,7 @@ export function normalizeStoredNotificationEvent(
     severity: raw.severity ?? severityForNotificationType(type),
     target,
     dedupeKey: raw.dedupeKey,
+    deletedAt: raw.deletedAt,
     resolvedAt: raw.resolvedAt,
     source: raw.source,
     actionRequired: raw.actionRequired,

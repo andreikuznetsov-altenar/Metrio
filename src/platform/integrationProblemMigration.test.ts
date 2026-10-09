@@ -171,11 +171,31 @@ describe("integration problem hydration migration", () => {
       jiraProblem({ id: "j2" }),
       jiraProblem({ id: "j3" }),
       jiraProblem({ id: "j4" }),
-      buildTaskAttentionEvent({ id: "t1" }),
-      buildTaskAttentionEvent({ id: "t2" }),
-      buildTaskAttentionEvent({ id: "t3" }),
-      buildTaskAttentionEvent({ id: "t4" }),
-      buildTaskAttentionEvent({ id: "t5" }),
+      buildTaskAttentionEvent({
+        id: "t1",
+        issueKey: "UX-1",
+        dedupeKey: "task-attention:person-1:UX-1:problematic",
+      }),
+      buildTaskAttentionEvent({
+        id: "t2",
+        issueKey: "UX-2",
+        dedupeKey: "task-attention:person-1:UX-2:problematic",
+      }),
+      buildTaskAttentionEvent({
+        id: "t3",
+        issueKey: "UX-3",
+        dedupeKey: "task-attention:person-1:UX-3:problematic",
+      }),
+      buildTaskAttentionEvent({
+        id: "t4",
+        issueKey: "UX-4",
+        dedupeKey: "task-attention:person-1:UX-4:problematic",
+      }),
+      buildTaskAttentionEvent({
+        id: "t5",
+        issueKey: "UX-5",
+        dedupeKey: "task-attention:person-1:UX-5:problematic",
+      }),
     ]);
     expect(countUnreadNotificationEvents()).toBe(9);
     hydrateIntegrationProblemNotifications({ jira: "unhealthy" });

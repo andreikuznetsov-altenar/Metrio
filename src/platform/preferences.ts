@@ -45,6 +45,11 @@ export interface NotificationState {
   workloadLevels: Record<string, string>;
   vacationNotified: Record<string, string>;
   problematicCounts: Record<string, number>;
+  /**
+   * Local calendar day (YYYY-MM-DD in user timezone) when a workload inbox
+   * notification was last created or deleted — caps alerts to one per day.
+   */
+  workloadNotificationLocalDay?: Record<string, string>;
   jiraAssignment?: JiraAssignmentState;
   integrationHealth?: {
     jira?: "healthy" | "unhealthy";

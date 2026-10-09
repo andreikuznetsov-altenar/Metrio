@@ -2,10 +2,13 @@ import { isJiraAssignmentInboxType } from "../domain/inbox/actionInboxModel";
 import type { NotificationEvent } from "./notificationTypes";
 import {
   clearNotificationHistory,
+  deleteNotificationEvent,
   markAllJiraAssignmentInboxEventsRead,
   markAllNotificationEventsRead,
   markNotificationEventRead,
+  touchWorkloadNotificationLocalDay,
 } from "./notificationEvents";
+import { loadPreferences, savePreferences } from "./preferences";
 import {
   acknowledgeTrayJiraIssue,
   markAllTrayJiraAssignmentsRead,
@@ -32,4 +35,17 @@ export async function clearActionInboxHistory(): Promise<void> {
   clearNotificationHistory();
   markAllJiraAssignmentInboxEventsRead();
   await markAllTrayJiraAssignmentsRead();
+}
+
+/** Removes one inbox card and applies workload same-day suppression when relevant. */
+export async function deleteActionInboxItem(
+  event: NotificationEvent,
+): Promise<void> {
+  deleteNotificationEvent(event.id);
+  if (event.type !== "workload_change" || !event.personId) return;
+  const prefs = await loadPreferences();
+  await savePreferences({
+    ...prefs,
+    notificationState: touchWorkloadNotificationLocalDay(prefs, event.personId),
+  });
 }

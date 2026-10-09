@@ -5,6 +5,13 @@ import {
 } from "../domain/inbox/actionInboxModel";
 import { collapseIntegrationProblemDuplicates } from "./integrationProblemMigration";
 import {
+  collapseSemanticNotificationDuplicates,
+  DEDUPE_UPSERT_TYPES,
+  findActiveNotificationByDedupeKey,
+  isWorkloadNotificationSuppressedToday,
+  localNotificationCalendarDay,
+} from "./notificationDedupe";
+import {
   normalizeStoredNotificationEvent,
   severityForNotificationType,
   type NotificationEvent,
@@ -13,17 +20,12 @@ import {
   type NotificationTarget,
   type ActionInboxSource,
 } from "./notificationTypes";
+import type { AppPreferences } from "./preferences";
+import { recordNotificationSuppression } from "./notificationSuppressions";
 
 const STORAGE_KEY = "metrio-notification-events";
 export const NOTIFICATION_EVENT_LIMIT = 100;
 export const NOTIFICATION_EVENTS_CHANGED = "metrio-notification-events-changed";
-
-const DEDUPE_UPSERT_TYPES: NotificationEventType[] = [
-  "integration_problem",
-  "feedback_action",
-  "bamboo_document_action",
-  "bamboo_onboarding_action",
-];
 
 export type {
   NotificationEvent,
@@ -55,10 +57,15 @@ function readRawEvents(): NotificationEvent[] {
   }
 }
 
+function normalizePersistedEvents(events: NotificationEvent[]): NotificationEvent[] {
+  return collapseSemanticNotificationDuplicates(
+    collapseIntegrationProblemDuplicates(events),
+  );
+}
+
 function writeEvents(events: NotificationEvent[]): void {
   if (typeof localStorage === "undefined") return;
-  // Collapse duplicate integration incidents on every persist (idempotent).
-  const normalized = collapseIntegrationProblemDuplicates(events).slice(
+  const normalized = normalizePersistedEvents(events).slice(
     0,
     NOTIFICATION_EVENT_LIMIT,
   );
@@ -92,7 +99,7 @@ export function listNotificationEventsOrThrow(): NotificationEvent[] {
 
 export function countUnreadNotificationEvents(): number {
   return listNotificationEvents().filter((event) => {
-    if (event.readAt) return false;
+    if (event.readAt || event.deletedAt) return false;
     // Live-state integration incidents: ignore resolved / restored leftovers.
     if (event.type === "integration_problem") {
       if (event.resolvedAt) return false;
@@ -119,6 +126,15 @@ export interface RecordNotificationEventInput {
   actionRequired?: boolean;
 }
 
+export interface RecordNotificationContext {
+  prefs?: AppPreferences;
+}
+
+export interface RecordNotificationResult {
+  event: NotificationEvent;
+  isNew: boolean;
+}
+
 function buildEventFromInput(
   input: RecordNotificationEventInput,
   id?: string,
@@ -143,51 +159,96 @@ function buildEventFromInput(
   });
 }
 
-export function recordNotificationEvent(
+function upsertIntegrationStyleEvent(
+  events: NotificationEvent[],
   input: RecordNotificationEventInput,
-): NotificationEvent {
-  const events = listNotificationEvents();
+  existingIdx: number,
+): NotificationEvent[] {
+  const existing = events[existingIdx];
+  const updated = enrichInboxEvent({
+    ...existing,
+    title: input.title,
+    message: input.message,
+    severity: input.severity ?? existing.severity,
+    target: input.target ?? existing.target,
+    issueKey: input.issueKey ?? existing.issueKey,
+    issueTitle: input.issueTitle ?? existing.issueTitle,
+    personId: input.personId ?? existing.personId,
+    personName: input.personName ?? existing.personName,
+    source: input.source ?? existing.source,
+    actionRequired:
+      input.actionRequired ??
+      existing.actionRequired ??
+      inboxActionRequiredForType(input.type),
+    createdAt: existing.createdAt,
+    readAt: existing.readAt,
+  });
+  const dedupeKey = input.dedupeKey;
+  return events
+    .map((event, index) => {
+      if (index === existingIdx) return updated;
+      if (dedupeKey && event.dedupeKey === dedupeKey && !event.resolvedAt) {
+        return null;
+      }
+      return event;
+    })
+    .filter((event): event is NotificationEvent => event != null);
+}
 
-  if (input.dedupeKey && DEDUPE_UPSERT_TYPES.includes(input.type)) {
+export function tryRecordNotificationEvent(
+  input: RecordNotificationEventInput,
+  context?: RecordNotificationContext,
+): RecordNotificationResult | null {
+  const events = listNotificationEvents();
+  const dedupeKey = input.dedupeKey?.trim();
+
+  if (dedupeKey && DEDUPE_UPSERT_TYPES.includes(input.type)) {
     const existingIdx = events.findIndex(
-      (event) =>
-        event.dedupeKey === input.dedupeKey && !event.resolvedAt,
+      (event) => event.dedupeKey === dedupeKey && !event.resolvedAt,
     );
     if (existingIdx >= 0) {
-      const existing = events[existingIdx];
-      const updated = enrichInboxEvent({
-        ...existing,
-        title: input.title,
-        message: input.message,
-        severity: input.severity ?? existing.severity,
-        target: input.target ?? existing.target,
-        issueKey: input.issueKey ?? existing.issueKey,
-        issueTitle: input.issueTitle ?? existing.issueTitle,
-        personId: input.personId ?? existing.personId,
-        personName: input.personName ?? existing.personName,
-        source: input.source ?? existing.source,
-        actionRequired:
-          input.actionRequired ??
-          existing.actionRequired ??
-          inboxActionRequiredForType(input.type),
-      });
-      // Drop sibling rows with the same dedupe key (legacy duplicate writes).
-      const rest = events.filter(
-        (event, index) =>
-          index !== existingIdx &&
-          !(event.dedupeKey === input.dedupeKey && !event.resolvedAt),
-      );
-      writeEvents([updated, ...rest]);
-      return updated;
+      const next = upsertIntegrationStyleEvent(events, input, existingIdx);
+      writeEvents(next);
+      const updated = next.find(
+        (event) => event.dedupeKey === dedupeKey && !event.resolvedAt,
+      )!;
+      return { event: updated, isNew: false };
+    }
+  }
+
+  if (dedupeKey) {
+    const existing = findActiveNotificationByDedupeKey(events, dedupeKey);
+    if (existing) {
+      return { event: existing, isNew: false };
+    }
+
+    if (
+      input.type === "workload_change" &&
+      input.personId &&
+      context?.prefs &&
+      isWorkloadNotificationSuppressedToday(input.personId, context.prefs)
+    ) {
+      return null;
     }
   }
 
   const event = buildEventFromInput(input);
   writeEvents([event, ...events]);
-  if (import.meta.env.DEV && input.dedupeKey) {
-    console.debug("[notifications] recorded", input.type, input.dedupeKey);
+  if (import.meta.env.DEV && dedupeKey) {
+    console.debug("[notifications] recorded", input.type, dedupeKey);
   }
-  return event;
+  return { event, isNew: true };
+}
+
+export function recordNotificationEvent(
+  input: RecordNotificationEventInput,
+  context?: RecordNotificationContext,
+): NotificationEvent {
+  const result = tryRecordNotificationEvent(input, context);
+  if (!result) {
+    throw new Error("notification suppressed");
+  }
+  return result.event;
 }
 
 export function markNotificationEventRead(id: string): void {
@@ -247,6 +308,17 @@ export function removeNotificationEventsByDedupeKeys(dedupeKeys: string[]): void
   writeEvents(next);
 }
 
+export function deleteNotificationEvent(id: string): NotificationEvent | null {
+  const events = listNotificationEvents();
+  const target = events.find((event) => event.id === id);
+  if (!target) return null;
+  writeEvents(events.filter((event) => event.id !== id));
+  if (target.dedupeKey) {
+    recordNotificationSuppression(target.dedupeKey);
+  }
+  return target;
+}
+
 export function syncTrayBambooInboxActions(
   actions: { id: string; label: string }[],
 ): void {
@@ -266,6 +338,7 @@ export function syncTrayBambooInboxActions(
           ...existing,
           title: "Document requires signature",
           message: action.label,
+          createdAt: existing.createdAt,
         });
         events = events.map((event, index) =>
           index === existingIdx ? updated : event,
@@ -334,4 +407,35 @@ export function seedRawNotificationEventsForTests(
   if (typeof localStorage === "undefined") return;
   localStorage.setItem(STORAGE_KEY, JSON.stringify(events));
   notifyStoreChanged();
+}
+
+/** Hydrate persisted inbox rows (collapse legacy semantic duplicates). */
+export function hydrateNotificationEventsFromStorage(): boolean {
+  const before = listNotificationEventsOrThrow();
+  const after = normalizePersistedEvents(before);
+  const changed =
+    after.length !== before.length ||
+    after.some((event, index) => event.id !== before[index]?.id);
+  if (!changed) return false;
+  if (typeof localStorage === "undefined") return false;
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(after));
+  notifyStoreChanged();
+  return true;
+}
+
+export function touchWorkloadNotificationLocalDay(
+  prefs: AppPreferences,
+  personId: string,
+  at = new Date(),
+): AppPreferences["notificationState"] {
+  const key = String(personId).trim();
+  if (!key) return prefs.notificationState;
+  const day = localNotificationCalendarDay(prefs, at);
+  return {
+    ...prefs.notificationState,
+    workloadNotificationLocalDay: {
+      ...prefs.notificationState.workloadNotificationLocalDay,
+      [key]: day,
+    },
+  };
 }

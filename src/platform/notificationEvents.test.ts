@@ -34,22 +34,24 @@ describe("notificationEvents", () => {
     expect(listNotificationEvents()[0].message).toBe("Updated");
   });
 
-  it("records events and allows repeated dedupe keys after separate transitions", () => {
-    recordNotificationEvent({
+  it("reuses active task_attention rows with the same dedupe key", () => {
+    const first = recordNotificationEvent({
       type: "task_attention",
       title: "Task needs attention",
       message: "UX-5446 · Sam",
       dedupeKey: "task:UX-5446",
       issueKey: "UX-5446",
     });
-    recordNotificationEvent({
+    const second = recordNotificationEvent({
       type: "task_attention",
       title: "Task needs attention",
       message: "UX-5446 · Sam",
       dedupeKey: "task:UX-5446",
       issueKey: "UX-5446",
     });
-    expect(listNotificationEvents()).toHaveLength(2);
+    expect(listNotificationEvents()).toHaveLength(1);
+    expect(second.id).toBe(first.id);
+    expect(second.createdAt).toBe(first.createdAt);
   });
 
   it("tracks unread count and mark read", () => {

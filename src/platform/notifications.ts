@@ -6,7 +6,8 @@ import { taskHealthThresholdsFromRules } from "../domain/operationalRules/normal
 import { normalizeOperationalRules } from "../domain/operationalRules/normalizeOperationalRules";
 import { getOperationalIssues } from "../domain/people/ownedIssues";
 import {
-  recordNotificationEvent,
+  touchWorkloadNotificationLocalDay,
+  tryRecordNotificationEvent,
   type RecordNotificationEventInput,
 } from "./notificationEvents";
 import type { NotificationEventType } from "./notificationTypes";
@@ -201,14 +202,32 @@ export async function processNotificationTransitions(
     params,
   );
 
+  let notificationState = nextState;
+
   for (const descriptor of descriptors) {
-    recordNotificationEvent(descriptor);
-    if (descriptor.native && descriptor.toggleKey && prefs.notifications[descriptor.toggleKey]) {
+    const recorded = tryRecordNotificationEvent(descriptor, { prefs });
+    if (!recorded) continue;
+    if (
+      recorded.isNew &&
+      descriptor.type === "workload_change" &&
+      descriptor.personId
+    ) {
+      notificationState = touchWorkloadNotificationLocalDay(
+        { ...prefs, notificationState },
+        descriptor.personId,
+      );
+    }
+    if (
+      recorded.isNew &&
+      descriptor.native &&
+      descriptor.toggleKey &&
+      prefs.notifications[descriptor.toggleKey]
+    ) {
       await dispatchNativeNotification(descriptor.native);
     }
   }
 
-  return { ...prefs, notificationState: nextState };
+  return { ...prefs, notificationState };
 }
 
 export function nativeToggleForType(

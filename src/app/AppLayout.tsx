@@ -45,6 +45,7 @@ import { NotificationCenter } from "../shell/NotificationCenter";
 import {
   clearNotificationHistory,
   countUnreadNotificationEvents,
+  hydrateNotificationEventsFromStorage,
   NOTIFICATION_EVENTS_CHANGED,
 } from "../platform/notificationEvents";
 import { RuntimeShellEffects } from "./RuntimeShellEffects";
@@ -283,6 +284,7 @@ function AppLayoutShell({
 
   useEffect(() => {
     bootLog("17M", "AppLayout mounted");
+    hydrateNotificationEventsFromStorage();
     setNotificationUnread(countUnreadNotificationEvents());
     const onChanged = () => setNotificationUnread(countUnreadNotificationEvents());
     window.addEventListener(NOTIFICATION_EVENTS_CHANGED, onChanged);

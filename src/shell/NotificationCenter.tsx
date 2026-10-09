@@ -39,6 +39,7 @@ import {
 } from "../platform/notificationInboxDisplay";
 import {
   countUnreadNotificationEvents,
+  hydrateNotificationEventsFromStorage,
   listNotificationEventsOrThrow,
   NOTIFICATION_EVENTS_CHANGED,
 } from "../platform/notificationEvents";
@@ -46,6 +47,7 @@ import { hydrateIntegrationProblemNotifications } from "../platform/integrationP
 import { JiraIssueText } from "../components/JiraIssueLink/JiraIssueText";
 import {
   clearActionInboxHistory,
+  deleteActionInboxItem,
   markActionInboxItemRead,
   markAllActionInboxItemsRead,
 } from "../platform/inboxReadSync";
@@ -134,6 +136,7 @@ export function NotificationCenter({
   const refresh = useCallback(() => {
     try {
       // Sync collapse so the drawer paints immediately; health reconcile follows async.
+      hydrateNotificationEventsFromStorage();
       hydrateIntegrationProblemNotifications();
       const next = listNotificationEventsOrThrow();
       setEvents(next);
@@ -403,8 +406,8 @@ export function NotificationCenter({
                               </time>
                             </div>
                           </div>
-                          {actionLabel ? (
-                            <div className="notification-center__card-actions">
+                          <div className="notification-center__card-actions">
+                            {actionLabel ? (
                               <Button
                                 type="button"
                                 variant="secondary"
@@ -413,8 +416,22 @@ export function NotificationCenter({
                               >
                                 {actionLabel}
                               </Button>
-                            </div>
-                          ) : null}
+                            ) : null}
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="compact"
+                              className="notification-center__dismiss"
+                              data-testid="notification-delete"
+                              onClick={() => {
+                                void deleteActionInboxItem(event).then(() =>
+                                  refresh(),
+                                );
+                              }}
+                            >
+                              Delete
+                            </Button>
+                          </div>
                         </article>
                       </li>
                     );
