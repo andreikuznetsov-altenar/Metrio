@@ -48,7 +48,7 @@ export function PerformanceExportProvider({
   selfPersonId: string;
   children: ReactNode;
 }) {
-  const { data, status, refreshing } = usePerformanceData();
+  const { data, status, refreshing, viewModels } = usePerformanceData();
   const toast = useToast();
   const [teamView, setTeamView] = useState<TeamPerformanceView>("overview");
   const [employeeView, setEmployeeView] =
@@ -84,16 +84,21 @@ export function PerformanceExportProvider({
         selfPersonId,
         workHistoryPeriod:
           exportView === "personal-work-history" ? workHistoryPeriod : undefined,
+        teamOverview:
+          audience === "team" && exportView === "team-overview"
+            ? viewModels?.teamOverview ?? null
+            : null,
       });
       const result = await exportPerformancePdf(payload);
       if (result.status === "busy") {
         return null;
       }
       if (result.status === "saved") {
-        toast.success("PDF exported");
         const openResult = await openExportedPdf(result.path);
         if (openResult.status === "error") {
-          toast.error(openResult.userMessage);
+          toast.info(openResult.userMessage);
+        } else {
+          toast.success("PDF exported");
         }
       } else if (result.status === "cancelled") {
         toast.info(PDF_EXPORT_CANCELLED_MESSAGE.replace(/\.$/, ""));
@@ -107,7 +112,7 @@ export function PerformanceExportProvider({
     } finally {
       setExporting(false);
     }
-  }, [audience, data, exportView, exporting, selfPersonId, toast, workHistoryPeriod]);
+  }, [audience, data, exportView, exporting, selfPersonId, toast, viewModels, workHistoryPeriod]);
 
   const value = useMemo(
     (): PerformanceExportContextValue => ({

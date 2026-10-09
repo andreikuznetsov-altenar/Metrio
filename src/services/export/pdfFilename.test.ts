@@ -15,8 +15,16 @@ describe('resolveExportView', () => {
 
 describe('buildPdfFilename', () => {
   it('builds deterministic filename without spaces', () => {
-    const name = buildPdfFilename('team-overview', new Date('2026-09-25T12:00:00'));
+    const name = buildPdfFilename('team-overview', { date: new Date('2026-09-25T12:00:00') });
     expect(name).toBe('Metrio-Team-Performance-2026-09-25.pdf');
+  });
+
+  it('uses selected report range in team overview filename', () => {
+    const name = buildPdfFilename('team-overview', {
+      dateFrom: '2026-07-08',
+      dateTo: '2026-10-08',
+    });
+    expect(name).toBe('Team_Performance_Report_2026-07-08_to_2026-10-08.pdf');
   });
 });
 

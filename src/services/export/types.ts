@@ -25,9 +25,73 @@ export interface PdfSection {
   rowHeaders?: string[];
 }
 
+export interface ReportRangeIso {
+  from: string;
+  to: string;
+}
+
+export interface PdfKpiTeaser {
+  label: string;
+  value: string;
+  description?: string;
+  comparison?: string;
+}
+
+export interface PdfDigestTable {
+  title: string;
+  rows: { label: string; value: string }[];
+}
+
+export interface PdfAttentionRow {
+  personId: string;
+  personName: string;
+  bambooEmployeeId?: string;
+  attention: string;
+  issues: string;
+  severity: string;
+  workload: string;
+  avatarDataUrl?: string | null;
+}
+
+export interface PdfTrendBlock {
+  label: string;
+  value: string;
+  comparison?: string;
+  chartPoints: { date: string; value: number }[];
+}
+
+export interface PdfWorkloadRow {
+  personName: string;
+  active: string;
+  atRisk: string;
+  workload: string;
+}
+
+export interface TeamPerformancePdfLayout {
+  companyLogoSrc: string;
+  companyLogoSource: string;
+  reportRange: ReportRangeIso;
+  reportRangeTitle: string;
+  kpiOverview: PdfKpiTeaser[];
+  digestSummary: string;
+  digestAttention: PdfDigestTable;
+  digestRecentChanges: PdfDigestTable;
+  teamAttention: {
+    rows: PdfAttentionRow[];
+    subtitle?: string;
+  };
+  teamTrends: PdfTrendBlock[];
+  workloadBalance: {
+    subtitle?: string;
+    rows: PdfWorkloadRow[];
+  };
+}
+
 export interface PerformanceExportPayload {
   view: PerformanceExportView;
   reportTitle: string;
+  reportRange?: ReportRangeIso;
+  teamLayout?: TeamPerformancePdfLayout;
   metadata: {
     reportRange: string;
     generatedAt: string;

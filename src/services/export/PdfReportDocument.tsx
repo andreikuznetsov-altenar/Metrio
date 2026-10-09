@@ -1,6 +1,6 @@
 import { Document, Page, Text, View } from '@react-pdf/renderer';
 import type { PerformanceExportPayload, PdfSection } from './types';
-import { MetrioPdfLogo } from './MetrioPdfLogo';
+import { TeamPerformancePdfDocument } from './TeamPerformancePdfDocument';
 import { pdfStyles } from './pdfStyles';
 
 function SectionBlock({ section }: { section: PdfSection }) {
@@ -48,6 +48,10 @@ function SectionBlock({ section }: { section: PdfSection }) {
 }
 
 export function PdfReportDocument({ payload }: { payload: PerformanceExportPayload }) {
+  if (payload.teamLayout) {
+    return <TeamPerformancePdfDocument layout={payload.teamLayout} />;
+  }
+
   const { metadata } = payload;
 
   const metaItems = [
@@ -68,7 +72,6 @@ export function PdfReportDocument({ payload }: { payload: PerformanceExportPaylo
     <Document>
       <Page size="A4" style={pdfStyles.page}>
         <View style={pdfStyles.header}>
-          <MetrioPdfLogo width={74} height={16} />
           <Text style={pdfStyles.title}>{payload.reportTitle}</Text>
           <View style={pdfStyles.metaGrid}>
             {metaItems.map((item) => (

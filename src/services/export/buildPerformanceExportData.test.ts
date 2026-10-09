@@ -86,7 +86,7 @@ describe('buildPerformanceExportData', () => {
     expect(titles).toContain('KPI overview');
     expect(titles).toContain('Team Trends');
     expect(titles).toContain('Workload Balance');
-    expect(titles).toContain('Upcoming time off');
+    expect(titles).not.toContain('Upcoming time off');
   });
 
   it('does not include credential fields', () => {

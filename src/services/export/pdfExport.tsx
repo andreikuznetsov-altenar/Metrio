@@ -121,11 +121,21 @@ async function exportPerformancePdfOnce(
     return toExportError('pdf_render_failed', error);
   }
 
-  const defaultName = buildPdfFilename(payload.view);
+  const defaultName = buildPdfFilename(payload.view, {
+    dateFrom: payload.reportRange?.from,
+    dateTo: payload.reportRange?.to,
+  });
+  let defaultPath = defaultName;
+  try {
+    const { documentDir, join } = await import('@tauri-apps/api/path');
+    defaultPath = await join(await documentDir(), 'Metrio', 'Reports', defaultName);
+  } catch {
+    defaultPath = defaultName;
+  }
   let path: string | null;
   try {
     path = await save({
-      defaultPath: defaultName,
+      defaultPath,
       filters: [{ name: 'PDF', extensions: ['pdf'] }],
     });
   } catch (error) {
@@ -206,10 +216,36 @@ export async function exportPerformancePdf(
   return result.value;
 }
 
-export async function openExportedPdf(path: string): Promise<PdfExportResult | { status: 'opened' }> {
+export async function revealExportedPdfInFolder(
+  path: string,
+): Promise<PdfExportResult | { status: 'revealed' }> {
+  const trimmed = path.trim();
+  if (!trimmed) {
+    return toExportError('pdf_open_failed', new Error('Empty file path'));
+  }
   try {
-    const { openPath } = await import('@tauri-apps/plugin-opener');
-    await openPath(path);
+    await invoke('reveal_exported_pdf_in_folder', { path: trimmed });
+    await logPdfExportEvent({ stage: 'open', outcome: 'ok' });
+    return { status: 'revealed' };
+  } catch (error) {
+    await logPdfExportEvent({
+      stage: 'open',
+      outcome: 'error',
+      errorCode: 'pdf_open_failed',
+      errorClass: errorClass(error),
+      errorMessage: error instanceof Error ? error.message : String(error),
+    });
+    return toExportError('pdf_open_failed', error);
+  }
+}
+
+export async function openExportedPdf(path: string): Promise<PdfExportResult | { status: 'opened' }> {
+  const trimmed = path.trim();
+  if (!trimmed) {
+    return toExportError('pdf_open_failed', new Error('Empty file path'));
+  }
+  try {
+    await invoke('open_exported_pdf', { path: trimmed });
     await logPdfExportEvent({ stage: 'open', outcome: 'ok' });
     return { status: 'opened' };
   } catch (error) {

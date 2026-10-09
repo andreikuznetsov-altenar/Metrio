@@ -21,7 +21,9 @@ import type { AppPreferences } from '../../platform/preferences';
 import { resolveDisplayTimezone } from '../../platform/displayTimezone';
 import { formatGeneratedTimestamp, formatUtcOffset } from '../../platform/timezone';
 import { getHistoryCoverageSummary } from '../../services/history/historicalBootstrap';
-import type { PerformanceExportPayload, PerformanceExportView, PdfSection } from './types';
+import type { TeamPerformanceSnapshot } from '../../domain/performance';
+import type { PerformanceExportPayload, PerformanceExportView, PdfSection, ReportRangeIso } from './types';
+import { buildTeamPerformancePdfLayout } from './teamPerformancePdfModel';
 
 function formatRange(from: string, to: string): string {
   const fmt = (iso: string) => {
@@ -92,10 +94,6 @@ function buildTeamOverviewSections(
     problematic: (p) => personProblematicCount(p, params),
   });
 
-  const upcoming = snapshot.persons.filter(
-    (p) => p.availability.state === 'vacation_soon' || p.availability.state === 'vacation_tomorrow',
-  );
-
   const sections: PdfSection[] = [
     {
       title: 'Team attention',
@@ -155,20 +153,6 @@ function buildTeamOverviewSections(
         cells: [row.personName, String(row.activeCount), String(row.atRiskCount), row.level],
       })),
     },
-    {
-      title: 'Upcoming time off',
-      subtitle: 'Next 14 days',
-      emptyText: 'No upcoming time off in the next 14 days.',
-      rowHeaders: ['Person', 'Dates', 'Duration', 'Type'],
-      rows: upcoming.map((person) => ({
-        cells: [
-          person.bamboo.displayName,
-          person.availability.startDate || 'Soon',
-          person.availability.endDate || '—',
-          person.availability.isHoliday ? 'Holiday' : 'Vacation',
-        ],
-      })),
-    },
   ];
 
   for (const column of digest) {
@@ -197,6 +181,9 @@ export function buildPerformanceExportData(input: {
   teamScopeLabel?: string;
   historyReportData?: AuditReportData;
   generatedAt?: Date;
+  teamOverview?: TeamPerformanceSnapshot;
+  companyLogo?: { src: string; source: string };
+  avatarDataUrls?: Record<string, string | null>;
 }): PerformanceExportPayload {
   const { view, snapshot, reportData, kpiSnapshots, firstPassMetrics, prefs, historyPerson, workHistoryPeriod } =
     input;
@@ -225,9 +212,26 @@ export function buildPerformanceExportData(input: {
       : undefined,
   };
 
-  let sections: PdfSection[] = [];
+  const reportRange: ReportRangeIso = {
+    from: params.dateFrom,
+    to: params.dateTo,
+  };
 
-  if (view === 'team-overview') {
+  let sections: PdfSection[] = [];
+  let teamLayout: PerformanceExportPayload['teamLayout'];
+
+  if (view === 'team-overview' && input.teamOverview && input.companyLogo) {
+    teamLayout = buildTeamPerformancePdfLayout({
+      reportRange,
+      teamOverview: input.teamOverview,
+      teamSnapshot: snapshot,
+      reportData,
+      kpiSnapshots,
+      companyLogoSrc: input.companyLogo.src,
+      companyLogoSource: input.companyLogo.source,
+      avatarDataUrls: input.avatarDataUrls,
+    });
+  } else if (view === 'team-overview') {
     sections = buildTeamOverviewSections(snapshot, reportData, kpiSnapshots, firstPassMetrics);
   } else if (view === 'team-radar') {
     const radar = buildTeamRadar(snapshot, reportData.params);
@@ -414,6 +418,8 @@ export function buildPerformanceExportData(input: {
   return {
     view,
     reportTitle: REPORT_TITLES[view],
+    reportRange,
+    teamLayout,
     metadata,
     sections,
   };

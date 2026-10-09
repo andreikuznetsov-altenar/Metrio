@@ -1,6 +1,8 @@
 use std::fs;
 use std::io::Write;
 use std::path::{Component, Path, PathBuf};
+use tauri::AppHandle;
+use tauri_plugin_opener::OpenerExt;
 
 #[derive(Debug, serde::Serialize)]
 pub struct WriteUserSelectedPdfResult {
@@ -58,6 +60,32 @@ pub fn write_user_selected_pdf(path: String, bytes: Vec<u8>) -> Result<WriteUser
     Ok(WriteUserSelectedPdfResult {
         path: path_buf.to_string_lossy().to_string(),
     })
+}
+
+#[tauri::command]
+pub fn open_exported_pdf(app: AppHandle, path: String) -> Result<(), String> {
+    let path_buf = validate_user_pdf_path(&path)?;
+    if !path_buf.is_file() {
+        return Err(format!("PDF file not found: {}", path_buf.display()));
+    }
+    let path_string = path_buf.to_string_lossy().to_string();
+    app.opener()
+        .open_path(path_string, None::<&str>)
+        .map_err(|e| e.to_string())?;
+    Ok(())
+}
+
+#[tauri::command]
+pub fn reveal_exported_pdf_in_folder(app: AppHandle, path: String) -> Result<(), String> {
+    let path_buf = validate_user_pdf_path(&path)?;
+    if !path_buf.is_file() {
+        return Err(format!("PDF file not found: {}", path_buf.display()));
+    }
+    let path_string = path_buf.to_string_lossy().to_string();
+    app.opener()
+        .reveal_item_in_dir(path_string)
+        .map_err(|e| e.to_string())?;
+    Ok(())
 }
 
 #[cfg(test)]

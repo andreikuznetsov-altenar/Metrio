@@ -25,7 +25,9 @@ use api::jira::{
     jira_test_connection,
 };
 use api::kpi_snapshot_store::{kpi_snapshot_load, kpi_snapshot_save};
-use api::pdf_export::write_user_selected_pdf;
+use api::pdf_export::{
+    open_exported_pdf, reveal_exported_pdf_in_folder, write_user_selected_pdf,
+};
 use api::report_history_store::{
     report_history_archive, report_history_copy_to_path, report_history_list,
     report_history_remove,
@@ -642,6 +644,8 @@ pub fn run() {
             kpi_snapshot_save,
             credential_import_legacy,
             write_user_selected_pdf,
+            open_exported_pdf,
+            reveal_exported_pdf_in_folder,
             report_history_list,
             report_history_archive,
             report_history_copy_to_path,

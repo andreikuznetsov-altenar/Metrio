@@ -2,7 +2,10 @@ import { buildFirstPassRateMetrics } from "../../domain/jira/firstPass";
 import type { PerformanceAudience } from "../../domain/performance/reportParams";
 import { loadPreferences } from "../../platform/preferences";
 import type { PerformanceFetchResult } from "../performance/performanceTypes";
+import type { TeamPerformanceSnapshot } from "../../domain/performance";
+import { resolveCompanyPdfLogoDataUrl } from "./companyPdfLogo";
 import { buildPerformanceExportData } from "./buildPerformanceExportData";
+import { resolvePdfAvatarDataUrls } from "./pdfAvatarResolver";
 import type { PerformanceExportView } from "./types";
 
 function teamScopeLabel(
@@ -23,8 +26,9 @@ export async function buildPerformanceExportPayloadFromFetch(input: {
   audience: PerformanceAudience;
   selfPersonId: string;
   workHistoryPeriod?: "week" | "month" | "quarter";
+  teamOverview?: TeamPerformanceSnapshot | null;
 }): Promise<ReturnType<typeof buildPerformanceExportData>> {
-  const { data, view, audience, selfPersonId, workHistoryPeriod } = input;
+  const { data, view, audience, selfPersonId, workHistoryPeriod, teamOverview } = input;
   const prefs = await loadPreferences();
   const firstPassMetrics = buildFirstPassRateMetrics(data.reportData);
 
@@ -48,6 +52,18 @@ export async function buildPerformanceExportPayloadFromFetch(input: {
       (person) => person.id === selfPersonId,
     ) ?? displaySnapshot.persons[0];
 
+  const companyLogo =
+    view === "team-overview" && audience === "team" && teamOverview
+      ? await resolveCompanyPdfLogoDataUrl()
+      : undefined;
+  const avatarDataUrls =
+    view === "team-overview" && audience === "team" && teamOverview
+      ? await resolvePdfAvatarDataUrls(
+          displaySnapshot,
+          teamOverview.attention.map((row) => row.personId),
+        )
+      : undefined;
+
   return buildPerformanceExportData({
     view,
     snapshot: displaySnapshot,
@@ -59,5 +75,8 @@ export async function buildPerformanceExportPayloadFromFetch(input: {
     historyPerson,
     workHistoryPeriod,
     teamScopeLabel: teamScopeLabel(audience, data.reportRanges),
+    teamOverview: teamOverview ?? undefined,
+    companyLogo,
+    avatarDataUrls,
   });
 }

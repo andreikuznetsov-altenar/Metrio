@@ -10,7 +10,20 @@ const VIEW_SLUGS: Record<PerformanceExportView, string> = {
   'personal-work-history': 'Work-History',
 };
 
-export function buildPdfFilename(view: PerformanceExportView, date = new Date()): string {
+function sanitizeFilenamePart(value: string): string {
+  return value.replace(/[^a-zA-Z0-9._-]+/g, '_');
+}
+
+export function buildPdfFilename(
+  view: PerformanceExportView,
+  options?: { date?: Date; dateFrom?: string; dateTo?: string },
+): string {
+  const date = options?.date ?? new Date();
+  if (view === 'team-overview' && options?.dateFrom && options?.dateTo) {
+    const from = sanitizeFilenamePart(options.dateFrom);
+    const to = sanitizeFilenamePart(options.dateTo);
+    return `Team_Performance_Report_${from}_to_${to}.pdf`;
+  }
   const slug = VIEW_SLUGS[view];
   const yyyy = date.getFullYear();
   const mm = String(date.getMonth() + 1).padStart(2, '0');

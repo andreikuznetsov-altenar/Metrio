@@ -21,4 +21,10 @@ describe('userMessageForPdfExportError', () => {
       "Couldn't save the PDF to the selected location.",
     );
   });
+
+  it('maps open failures to partial-success copy', () => {
+    expect(userMessageForPdfExportError('pdf_open_failed')).toBe(
+      "PDF saved, but couldn't open it automatically.",
+    );
+  });
 });

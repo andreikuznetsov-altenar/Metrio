@@ -24,7 +24,7 @@ export function userMessageForPdfExportError(code: PdfExportErrorCode, _sanitize
     case 'pdf_write_failed':
       return "Couldn't save the PDF to the selected location.";
     case 'pdf_open_failed':
-      return "PDF saved, but couldn't open the file.";
+      return "PDF saved, but couldn't open it automatically.";
     default:
       return "Couldn't export the PDF. Try again.";
   }

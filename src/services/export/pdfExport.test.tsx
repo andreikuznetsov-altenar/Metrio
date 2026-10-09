@@ -191,11 +191,29 @@ describe('exportPerformancePdf', () => {
     await first;
   });
 
-  it('opens saved pdf via opener plugin', async () => {
-    const { openPath } = await import('@tauri-apps/plugin-opener');
+  it('opens saved pdf via native opener command', async () => {
+    const { invoke } = await import('@tauri-apps/api/core');
+    vi.mocked(invoke).mockImplementation(async (command: string) => {
+      if (command === 'open_exported_pdf') {
+        return undefined;
+      }
+      throw new Error(`unexpected invoke ${command}`);
+    });
     const { openExportedPdf } = await import('./pdfExport');
     const result = await openExportedPdf('/Users/test/Desktop/out.pdf');
-    expect(openPath).toHaveBeenCalledWith('/Users/test/Desktop/out.pdf');
+    expect(invoke).toHaveBeenCalledWith('open_exported_pdf', {
+      path: '/Users/test/Desktop/out.pdf',
+    });
+    expect(result).toEqual({ status: 'opened' });
+  });
+
+  it('opens paths containing spaces via native opener command', async () => {
+    const { invoke } = await import('@tauri-apps/api/core');
+    vi.mocked(invoke).mockResolvedValue(undefined);
+    const { openExportedPdf } = await import('./pdfExport');
+    const spaced = '/Users/test/Documents/11. Altenar/out.pdf';
+    const result = await openExportedPdf(spaced);
+    expect(invoke).toHaveBeenCalledWith('open_exported_pdf', { path: spaced });
     expect(result).toEqual({ status: 'opened' });
   });
 });
