@@ -1,6 +1,6 @@
 import * as Popover from "@radix-ui/react-popover";
 import { CalendarDays, ChevronLeft, ChevronRight } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useId, useMemo, useState } from "react";
 import { DayPicker, type ChevronProps } from "react-day-picker";
 import { formatPerformanceDateDisplay } from "../../domain/performance/performanceDateRange";
 import { parseIsoDateOnly, toIsoDateOnly } from "./datePickerValue";
@@ -44,40 +44,39 @@ export function MetrioDatePicker({
   testId,
 }: MetrioDatePickerProps) {
   const [open, setOpen] = useState(false);
+  const fallbackId = useId();
+  const triggerId = id ?? fallbackId;
   const selected = useMemo(() => parseIsoDateOnly(value), [value]);
   const display = formatPerformanceDateDisplay(value) || "Select date";
   const pickerClass =
     layout === "stacked"
-      ? "metrio-date-picker metrio-date-picker--stacked"
+      ? "metrio-date-picker metrio-date-picker--stacked field"
       : "metrio-date-picker";
 
-  const openPicker = () => {
-    if (!disabled) setOpen(true);
-  };
+  useEffect(() => {
+    if (!open) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      event.stopPropagation();
+      setOpen(false);
+    };
+    document.addEventListener("keydown", onKeyDown, true);
+    return () => document.removeEventListener("keydown", onKeyDown, true);
+  }, [open]);
 
   return (
-    <Popover.Root open={open} onOpenChange={setOpen}>
+    <Popover.Root modal={false} open={open} onOpenChange={setOpen}>
       <div className={pickerClass}>
         {layout === "stacked" ? (
-          <span
-            className="metrio-date-picker__label metrio-date-picker__label--stacked"
-            onClick={openPicker}
-            onKeyDown={(event) => {
-              if (event.key === "Enter" || event.key === " ") {
-                event.preventDefault();
-                openPicker();
-              }
-            }}
-            role="presentation"
-          >
+          <label className="field__label" htmlFor={triggerId}>
             {label}
-          </span>
+          </label>
         ) : (
           <span className="metrio-date-picker__label">{label}</span>
         )}
         <Popover.Trigger asChild disabled={disabled}>
           <button
-            id={id}
+            id={triggerId}
             type="button"
             className="metrio-date-picker__trigger"
             data-state={open ? "open" : "closed"}

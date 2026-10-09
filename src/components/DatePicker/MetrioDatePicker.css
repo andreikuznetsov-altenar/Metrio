@@ -11,16 +11,12 @@
   align-items: stretch;
   gap: var(--space-1);
   width: 100%;
+  margin: 0;
 }
 
 .metrio-date-picker--stacked .metrio-date-picker__trigger {
   width: 100%;
   box-sizing: border-box;
-}
-
-.metrio-date-picker__label--stacked {
-  cursor: pointer;
-  align-self: flex-start;
 }
 
 .metrio-date-picker__label {
@@ -81,7 +77,7 @@
 }
 
 .metrio-date-picker__popover {
-  z-index: 70;
+  z-index: var(--z-popover, 115);
   width: min(280px, calc(100vw - 24px));
   padding: var(--space-6);
   border-radius: var(--radius-control);

@@ -73,8 +73,9 @@
   width: 100%;
 }
 
-.bamboo-goal-form--drawer {
+.bamboo-goal-form.bamboo-goal-form--drawer {
   margin: 0;
+  gap: var(--space-3);
 }
 
 .employee-goals__loading {
@@ -98,12 +99,6 @@
   to {
     transform: rotate(360deg);
   }
-}
-
-.bamboo-goal-form--drawer > .field,
-.bamboo-goal-form--drawer > .metrio-date-picker--stacked,
-.bamboo-goal-form--drawer > .textarea-field {
-  margin-bottom: var(--space-3);
 }
 
 .bamboo-goal-form__switch-row {
