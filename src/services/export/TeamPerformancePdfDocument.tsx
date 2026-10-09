@@ -1,10 +1,20 @@
-import { Document, Image, Page, Svg, Line, Polyline, Text, View } from '@react-pdf/renderer';
+import {
+  Document,
+  Image,
+  Page,
+  Polygon,
+  Svg,
+  Line,
+  Polyline,
+  Text,
+  View,
+} from '@react-pdf/renderer';
 import type { TeamPerformancePdfLayout } from './types';
 import { sanitizePdfImageSrc } from './pdfSafeImage';
-import { pdfStyles } from './pdfStyles';
+import { PDF_COLORS, pdfStyles } from './pdfStyles';
 import { AltenarPdfLogo } from './AltenarPdfLogo';
-
-const TREND_ACCENT = '#0070F0';
+import { buildTrendChartGeometry, polylineFromPoints } from './teamPdfChart';
+import { pdfWorkloadTone } from './teamPdfHelpers';
 
 function initialsFromName(name: string): string {
   const parts = name.trim().split(/\s+/).filter(Boolean);
@@ -41,39 +51,44 @@ function PersonAvatar({
   );
 }
 
-function MiniTrendChart({ points }: { points: { date: string; value: number }[] }) {
+function TeamReportHeader({ layout }: { layout: TeamPerformancePdfLayout }) {
+  return (
+    <View style={pdfStyles.teamHeader} wrap={false}>
+      <CompanyBrandMark layout={layout} />
+      <Text style={pdfStyles.teamReportTitle}>{layout.teamName}</Text>
+      <Text style={pdfStyles.teamReportDates}>{layout.reportRangeTitle}</Text>
+    </View>
+  );
+}
+
+function SmoothTrendChart({ points }: { points: { date: string; value: number }[] }) {
   const usable = points.filter((point) => Number.isFinite(point.value));
   if (usable.length < 2) {
     return <Text style={pdfStyles.trendNoChart}>Insufficient chart data</Text>;
   }
   const width = 248;
-  const height = 64;
-  const padX = 8;
-  const padY = 8;
-  const innerW = width - padX * 2;
-  const innerH = height - padY * 2;
+  const height = 72;
   const values = usable.map((p) => p.value);
-  const min = Math.min(...values);
-  const max = Math.max(...values);
-  const span = max - min || 1;
-  const coords = usable.map((point, index) => {
-    const x = padX + (index / (usable.length - 1)) * innerW;
-    const y = padY + innerH - ((point.value - min) / span) * innerH;
-    return `${Number.isFinite(x) ? x : padX},${Number.isFinite(y) ? y : height / 2}`;
-  });
+  const geometry = buildTrendChartGeometry(values, width, height, 10, 12);
+  if (!geometry) {
+    return <Text style={pdfStyles.trendNoChart}>Insufficient chart data</Text>;
+  }
+  const areaPoints = polylineFromPoints(geometry.areaPoints);
+  const linePoints = polylineFromPoints(geometry.linePoints);
   return (
     <Svg width={width} height={height} viewBox={`0 0 ${width} ${height}`}>
       <Line
-        x1={padX}
-        y1={height - padY}
-        x2={width - padX}
-        y2={height - padY}
-        stroke="#e6e6e6"
-        strokeWidth={1}
+        x1={10}
+        y1={geometry.baselineY}
+        x2={width - 10}
+        y2={geometry.baselineY}
+        stroke={PDF_COLORS.borderSubtle}
+        strokeWidth={0.75}
       />
+      <Polygon points={areaPoints} fill={PDF_COLORS.accentSoft} stroke="none" />
       <Polyline
-        points={coords.join(' ')}
-        stroke={TREND_ACCENT}
+        points={linePoints}
+        stroke={PDF_COLORS.accent}
         strokeWidth={1.25}
         fill="none"
       />
@@ -81,22 +96,12 @@ function MiniTrendChart({ points }: { points: { date: string; value: number }[] 
   );
 }
 
-function DigestTable({ table }: { table: { title: string; rows: { label: string; value: string }[] } }) {
-  return (
-    <View style={pdfStyles.digestTable} wrap={false}>
-      <Text style={pdfStyles.digestTableTitle}>{table.title}</Text>
-      <View style={pdfStyles.digestTableHeader}>
-        <Text style={pdfStyles.digestTableHeaderCell}>Item</Text>
-        <Text style={pdfStyles.digestTableHeaderCellRight}>Value</Text>
-      </View>
-      {table.rows.map((row) => (
-        <View key={`${table.title}-${row.label}`} style={pdfStyles.digestTableRow}>
-          <Text style={pdfStyles.digestTableCell}>{row.label}</Text>
-          <Text style={pdfStyles.digestTableCellRight}>{row.value}</Text>
-        </View>
-      ))}
-    </View>
-  );
+function workloadTextStyle(label: string) {
+  const tone = pdfWorkloadTone(label);
+  if (tone === 'danger') return pdfStyles.workloadToneDanger;
+  if (tone === 'warning') return pdfStyles.workloadToneWarning;
+  if (tone === 'success') return pdfStyles.workloadToneSuccess;
+  return pdfStyles.workloadSmallCol;
 }
 
 export function TeamPerformancePdfDocument({ layout }: { layout: TeamPerformancePdfLayout }) {
@@ -105,11 +110,7 @@ export function TeamPerformancePdfDocument({ layout }: { layout: TeamPerformance
   return (
     <Document>
       <Page size="A4" style={pdfStyles.page}>
-        <View style={pdfStyles.teamHeader} wrap={false}>
-          <CompanyBrandMark layout={layout} />
-          <Text style={pdfStyles.teamReportTitle}>{layout.teamName}</Text>
-          <Text style={pdfStyles.teamReportDates}>{layout.reportRangeTitle}</Text>
-        </View>
+        <TeamReportHeader layout={layout} />
 
         <View style={pdfStyles.sectionBlock} wrap={false}>
           <Text style={pdfStyles.sectionHeading}>Team</Text>
@@ -130,11 +131,13 @@ export function TeamPerformancePdfDocument({ layout }: { layout: TeamPerformance
           <Text style={pdfStyles.sectionHeading}>Team efficiency</Text>
           <View style={pdfStyles.efficiencyHeroRow}>
             <View style={pdfStyles.efficiencyHeroCard} wrap={false}>
-              <Text style={pdfStyles.efficiencyHeroValue}>{hero.value}</Text>
-              <Text style={pdfStyles.efficiencyHeroLabel}>{hero.label}</Text>
-              {hero.description ? (
-                <Text style={pdfStyles.efficiencyHeroStatus}>{hero.description}</Text>
-              ) : null}
+              <View>
+                <Text style={pdfStyles.efficiencyHeroValue}>{hero.value}</Text>
+                <Text style={pdfStyles.efficiencyHeroLabel}>{hero.label}</Text>
+                {hero.description ? (
+                  <Text style={pdfStyles.efficiencyHeroStatus}>{hero.description}</Text>
+                ) : null}
+              </View>
               {hero.comparison ? (
                 <Text style={pdfStyles.kpiComparison}>{hero.comparison}</Text>
               ) : null}
@@ -166,22 +169,35 @@ export function TeamPerformancePdfDocument({ layout }: { layout: TeamPerformance
                       <Text style={pdfStyles.rosterRole}>{card.jobTitle}</Text>
                     </View>
                   </View>
-                  <Text style={pdfStyles.individualEfficiencyValue}>{card.efficiency}</Text>
+                  <View style={pdfStyles.individualEfficiencyRow}>
+                    <Text style={pdfStyles.individualEfficiencyValue}>{card.efficiency}</Text>
+                    <Text style={pdfStyles.individualEfficiencyCaption}>Efficiency</Text>
+                  </View>
                   <View style={pdfStyles.individualMetricsRow}>
-                    <Text style={pdfStyles.individualMetric}>First pass {card.firstPass}</Text>
-                    <Text style={pdfStyles.individualMetric}>Completed {card.completed}</Text>
-                    <Text style={pdfStyles.individualMetric}>Backflows {card.backflows}</Text>
+                    <View style={pdfStyles.individualMetricRow}>
+                      <Text style={pdfStyles.individualMetricLabel}>First pass</Text>
+                      <Text style={pdfStyles.individualMetricValue}>{card.firstPass}</Text>
+                    </View>
+                    <View style={pdfStyles.individualMetricRow}>
+                      <Text style={pdfStyles.individualMetricLabel}>Completed</Text>
+                      <Text style={pdfStyles.individualMetricValue}>{card.completed}</Text>
+                    </View>
+                    <View style={pdfStyles.individualMetricRow}>
+                      <Text style={pdfStyles.individualMetricLabel}>Backflows</Text>
+                      <Text style={pdfStyles.individualMetricValue}>{card.backflows}</Text>
+                    </View>
                   </View>
                 </View>
               ))}
             </View>
           </View>
         ) : null}
+      </Page>
 
+      <Page size="A4" style={pdfStyles.page}>
         <View style={pdfStyles.sectionBlock} wrap={false}>
           <Text style={pdfStyles.sectionHeading}>Team digest</Text>
           <Text style={pdfStyles.digestSummary}>{layout.digestSummary}</Text>
-          <DigestTable table={layout.digestRecentChanges} />
         </View>
 
         <View style={pdfStyles.sectionBlock}>
@@ -198,7 +214,7 @@ export function TeamPerformancePdfDocument({ layout }: { layout: TeamPerformance
                     ) : null}
                   </View>
                 </View>
-                <MiniTrendChart points={trend.chartPoints} />
+                <SmoothTrendChart points={trend.chartPoints} />
               </View>
             ))}
           </View>
@@ -220,22 +236,36 @@ export function TeamPerformancePdfDocument({ layout }: { layout: TeamPerformance
               <Text style={pdfStyles.workloadCol}>{row.personName}</Text>
               <Text style={pdfStyles.workloadSmallCol}>{row.active}</Text>
               <Text style={pdfStyles.workloadSmallCol}>{row.atRisk}</Text>
-              <Text style={pdfStyles.workloadSmallCol}>{row.workload}</Text>
+              <Text style={workloadTextStyle(row.workload)}>{row.workload}</Text>
             </View>
           ))}
         </View>
+      </Page>
 
-        {layout.deliveryRiskDetails.rows.length > 0 ? (
+      {layout.deliveryRiskDetails.rows.length > 0 ? (
+        <Page size="A4" style={pdfStyles.page}>
           <View style={pdfStyles.sectionBlock}>
             <Text style={pdfStyles.sectionHeading}>Delivery risk details</Text>
             <Text style={pdfStyles.sectionLead}>{layout.deliveryRiskDetails.subtitle}</Text>
-            <View style={pdfStyles.deliveryRiskHeader}>
-              <Text style={pdfStyles.deliveryRiskColIssue}>Issue</Text>
-              <Text style={pdfStyles.deliveryRiskColOwner}>Owner</Text>
-              <Text style={pdfStyles.deliveryRiskColStatus}>Status</Text>
-              <Text style={pdfStyles.deliveryRiskColAge}>Age</Text>
-              <Text style={pdfStyles.deliveryRiskColReason}>Reason</Text>
-              <Text style={pdfStyles.deliveryRiskColPath}>Path</Text>
+            <View style={pdfStyles.deliveryRiskHeader} wrap={false}>
+              <Text style={[pdfStyles.deliveryRiskHeaderCell, pdfStyles.deliveryRiskColIssue]}>
+                Issue
+              </Text>
+              <Text style={[pdfStyles.deliveryRiskHeaderCell, pdfStyles.deliveryRiskColOwner]}>
+                Owner
+              </Text>
+              <Text style={[pdfStyles.deliveryRiskHeaderCell, pdfStyles.deliveryRiskColStatus]}>
+                Status
+              </Text>
+              <Text style={[pdfStyles.deliveryRiskHeaderCell, pdfStyles.deliveryRiskColAge]}>
+                Age
+              </Text>
+              <Text style={[pdfStyles.deliveryRiskHeaderCell, pdfStyles.deliveryRiskColReason]}>
+                Reason
+              </Text>
+              <Text style={[pdfStyles.deliveryRiskHeaderCell, pdfStyles.deliveryRiskColPath]}>
+                Path
+              </Text>
             </View>
             {layout.deliveryRiskDetails.rows.map((row) => (
               <View key={row.issueKey} style={pdfStyles.deliveryRiskRow} wrap={false}>
@@ -251,8 +281,8 @@ export function TeamPerformancePdfDocument({ layout }: { layout: TeamPerformance
               <Text style={pdfStyles.sectionLead}>{layout.deliveryRiskDetails.overflowLabel}</Text>
             ) : null}
           </View>
-        ) : null}
-      </Page>
+        </Page>
+      ) : null}
     </Document>
   );
 }

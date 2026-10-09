@@ -26,6 +26,7 @@ import {
 } from './teamPdfHelpers';
 import { buildTaskJourney } from '../../domain/task-journey/buildTaskJourney';
 import { resolveIssueCurrentOwner } from '../../domain/task-journey/resolveIssueCurrentOwner';
+import { formatPdfSafePath } from './teamPdfPath';
 
 export const TEAM_PDF_DELIVERY_RISK_DETAIL_LIMIT = 12;
 
@@ -209,7 +210,7 @@ export function buildTeamPerformancePdfLayout(input: {
         status: item.issue.currentStatus || item.status,
         stageAge: item.stageLabel,
         reason: item.reason,
-        path: journey.compressedPath,
+        path: formatPdfSafePath(journey.compressedPath),
       };
     });
   const overflowCount = Math.max(0, deliveryRisk.length - TEAM_PDF_DELIVERY_RISK_DETAIL_LIMIT);

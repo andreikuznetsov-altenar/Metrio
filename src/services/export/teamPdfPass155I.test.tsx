@@ -92,6 +92,15 @@ function personFixture(
 }
 
 describe('PASS 15.5I team PDF + workload', () => {
+  it('excludes team lead when bamboo id differs from person id', () => {
+    const andrei = personFixture('andrei-app', 'Andrei Kuznetsov', 'andrei@co.com', 'Head of UX Design');
+    andrei.bamboo.id = 'andrei-bamboo';
+    const daria = personFixture('daria', 'Daria Chernova', 'daria@co.com', 'Product Designer', 'andrei-bamboo');
+    const contributors = filterIndividualContributorPersons([andrei, daria]);
+    expect(contributors.map((p) => p.id)).toEqual(['daria']);
+    expect(contributors.some((p) => p.bamboo.displayName.includes('Andrei'))).toBe(false);
+  });
+
   it('excludes leads from individual efficiency using org graph direct reports', () => {
     const andrei = personFixture('andrei', 'Andrei Kuznetsov', 'andrei@co.com', 'Head of UX Design');
     const daria = personFixture('daria', 'Daria Chernova', 'daria@co.com', 'Product Designer', 'andrei');

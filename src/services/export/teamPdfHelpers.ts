@@ -23,10 +23,33 @@ export function resolveTeamDisplayNameFromPersons(persons: Person[]): string {
   return best;
 }
 
-/** Individual contributors only — anyone with direct reports in the org graph is excluded. */
+function personManagesSomeoneInRoster(person: Person, roster: Person[]): boolean {
+  const employeeId = person.bamboo.id?.trim() || person.id;
+  return roster.some((other) => {
+    if (other.id === person.id) return false;
+    const supervisorId = other.bamboo.supervisorId?.trim();
+    if (!supervisorId) return false;
+    return (
+      supervisorId === employeeId ||
+      supervisorId === person.id ||
+      supervisorId === person.bamboo.id
+    );
+  });
+}
+
+/** Individual contributors only — leads/managers with direct reports are excluded. */
 export function filterIndividualContributorPersons(persons: Person[]): Person[] {
   const graph = buildOrgGraph(persons.map((person) => person.bamboo));
-  return persons.filter((person) => !employeeHasDirectReports(person.id, graph));
+  return persons.filter((person) => {
+    const employeeId = person.bamboo.id?.trim() || person.id;
+    if (employeeHasDirectReports(employeeId, graph)) {
+      return false;
+    }
+    if (personManagesSomeoneInRoster(person, persons)) {
+      return false;
+    }
+    return true;
+  });
 }
 
 export function buildCanonicalPersonPeriodKpis(person: Person) {
@@ -47,6 +70,16 @@ export function deliveryRiskCountByPersonId(
     map.set(row.personId, (map.get(row.personId) ?? 0) + 1);
   }
   return map;
+}
+
+export type PdfWorkloadTone = 'danger' | 'warning' | 'success' | 'neutral';
+
+export function pdfWorkloadTone(workloadLabel: string): PdfWorkloadTone {
+  const normalized = workloadLabel.toLowerCase();
+  if (normalized.includes('overload')) return 'danger';
+  if (normalized.includes('heavy') || normalized.includes('high')) return 'warning';
+  if (normalized.includes('light') || normalized.includes('low')) return 'success';
+  return 'neutral';
 }
 
 export function workloadBalanceSubtitle(
