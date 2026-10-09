@@ -39,6 +39,7 @@ import { PerformanceStatusBanner } from "./PerformanceStatusBanner";
 import { EmployeeGoalsView } from "./EmployeeGoalsView";
 import "./goal-detail-drawer.css";
 import { buildMetricDrilldownRequest } from "./analyticsDrilldownModel";
+import "../../components/KpiCard/kpi-card.css";
 import "./performance-dashboard.css";
 
 export interface EmployeePerformanceOverviewProps {

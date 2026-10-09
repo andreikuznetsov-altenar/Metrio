@@ -347,6 +347,16 @@
   color: var(--color-text-primary);
 }
 
+/* Header Work label must match Reason/Context — body lead typography must not leak. */
+th .performance-table__work-lead-label,
+.performance-table__sort-label .performance-table__work-lead-label {
+  font-size: unset;
+  font-weight: 600;
+  line-height: normal;
+  color: var(--color-text-tertiary);
+  letter-spacing: normal;
+}
+
 .performance-table__tag-stack {
   display: flex;
   flex-wrap: wrap;

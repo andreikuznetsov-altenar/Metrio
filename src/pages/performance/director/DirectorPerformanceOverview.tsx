@@ -28,6 +28,7 @@ import { DirectorSignalsView } from "./DirectorSignalsView";
 import { DirectorTeamsView } from "./DirectorTeamsView";
 import { LeadershipBranchesPerformanceView } from "./LeadershipBranchesPerformanceView";
 import { buildLeadershipBranchPerformanceRows } from "../../../domain/organization/leadershipBranchPerformanceRows";
+import "../../../components/KpiCard/kpi-card.css";
 import "../performance-dashboard.css";
 
 export interface DirectorPerformanceOverviewProps {

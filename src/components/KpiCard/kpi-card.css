@@ -1,0 +1,54 @@
+/**
+ * Canonical KPI card geometry shared by Dashboard and Performance.
+ * Footer content may differ (badge vs comparison delta); header/value rhythm must match.
+ */
+
+.kpi-card,
+.executive-kpi-card,
+.card.performance-metric-card {
+  padding: var(--space-3);
+  border-radius: var(--radius-card);
+  border: 1px solid var(--color-border-subtle);
+  background: var(--color-surface-secondary);
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+.kpi-card__label-row,
+.executive-kpi-card__label-row,
+.performance-metric-card__label {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  margin: 0;
+  min-width: 0;
+}
+
+.kpi-card__label,
+.executive-kpi-card__label,
+.performance-metric-card__label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-text-tertiary);
+  line-height: 1.3;
+}
+
+.kpi-card__value,
+.executive-kpi-card__value,
+.performance-metric-card__value {
+  margin: var(--space-1) 0 0;
+  font-size: 22px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.2;
+  letter-spacing: 0;
+  color: var(--color-text-primary);
+}
+
+.kpi-card__footer,
+.executive-kpi-card__badge,
+.performance-metric-card__status {
+  margin-top: var(--space-2);
+}

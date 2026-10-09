@@ -225,12 +225,12 @@
 }
 
 .performance-metric-card {
-  padding: var(--space-3) var(--space-4);
+  /* Shell geometry from components/KpiCard/kpi-card.css */
   display: flex;
   flex-direction: column;
-  gap: var(--space-1);
-  min-height: 96px;
   justify-content: flex-start;
+  gap: 0;
+  min-height: 0;
 }
 
 .performance-metric-card--interactive {
@@ -269,8 +269,8 @@
   font-size: 11px;
   line-height: 1.35;
   color: var(--color-text-secondary);
-  margin-top: auto;
-  padding-top: var(--space-1);
+  margin-top: var(--space-2);
+  padding-top: 0;
   display: flex;
   flex-wrap: wrap;
   align-items: baseline;
@@ -418,21 +418,7 @@
   color: var(--color-text-secondary);
 }
 
-.performance-metric-card__label {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-1);
-  font-size: 12px;
-  color: var(--color-text-secondary);
-}
-
-.performance-metric-card__value {
-  font-size: 28px;
-  line-height: 1.1;
-  font-weight: 600;
-  letter-spacing: -0.03em;
-  color: var(--color-text-primary);
-}
+/* label / value / status geometry: components/KpiCard/kpi-card.css */
 
 .performance-metric-card__status {
   font-size: 12px;
@@ -824,6 +810,15 @@
 .performance-table__sort-label {
   min-width: 0;
   white-space: nowrap;
+  font: inherit;
+  font-weight: inherit;
+  color: inherit;
+}
+
+/* Sort state is arrow-only — never restyle the column title. */
+.performance-table__sort-btn.is-active {
+  color: inherit;
+  font-weight: inherit;
 }
 
 .performance-table__sort-btn:focus-visible {

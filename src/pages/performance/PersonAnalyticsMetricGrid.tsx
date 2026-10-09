@@ -6,6 +6,7 @@ import type { MetricCardData } from "../../domain/performance";
 import { formatMetricComparisonLine } from "../../domain/performance/kpiComparisonFormat";
 import { performanceHelp } from "../../domain/performance/performanceHelp";
 import { metricLabelToDrilldownMetric } from "./analyticsDrilldownModel";
+import "../../components/KpiCard/kpi-card.css";
 
 const METRIC_HELP: Record<string, string> = {
   Efficiency: performanceHelp.efficiency,

@@ -5,6 +5,8 @@ import type { ActionItem } from "../../domain/actions/actionTypes";
 import type { DashboardQueueRow } from "../../domain/actions/buildDashboardQueueRows";
 import { DashboardActionQueueTable } from "./DashboardActionQueueTable";
 import "../../pages/performance/performance-dashboard.css";
+import "../../styles/tokens.css";
+import "../../styles/ui-interaction-system.css";
 
 afterEach(() => cleanup());
 
@@ -122,4 +124,45 @@ describe("TableHeaderCell canonical header contract", () => {
       expect(["8px", "var(--space-2)"].includes(metric.innerGap ?? "")).toBe(true);
     }
   });
+
+  it("Work/Reason/Context typography matches in My Focus (sortable, including active Work)", () => {
+    renderQueue(true, "work");
+    const table = screen.getByTestId("dashboard-action-queue");
+    const [work, reason, context] = within(table).getAllByRole("columnheader").slice(0, 3);
+    const workLabel = work.querySelector(".performance-table__work-lead-label")!;
+    // Header Work must match columnheader tertiary chrome, not body primary lead.
+    expect(getComputedStyle(workLabel).color).toBe(getComputedStyle(work).color);
+    expect(getComputedStyle(workLabel).color).toBe(getComputedStyle(reason).color);
+    expect(getComputedStyle(workLabel).color).toBe(getComputedStyle(context).color);
+    expect(getComputedStyle(workLabel).fontWeight).toBe("600");
+    expect(getComputedStyle(work).fontWeight).toBe("600");
+    expect(work.querySelector(".performance-table__sort-btn")).toHaveClass("is-active");
+    expect(work.querySelector(".performance-table__sort-icon")).toHaveClass("is-active");
+  });
+
+  it("Work/Reason/Context typography matches in Team Actions (static)", () => {
+    renderQueue(false);
+    const table = screen.getByTestId("dashboard-action-queue");
+    const [work, reason, context] = within(table).getAllByRole("columnheader").slice(0, 3);
+    const workLabel = work.querySelector(".performance-table__work-lead-label")!;
+    expect(getComputedStyle(workLabel).fontWeight).toBe("600");
+    expect(getComputedStyle(workLabel).color).toBe(getComputedStyle(reason).color);
+    expect(getComputedStyle(workLabel).color).toBe(getComputedStyle(context).color);
+    expect(table.querySelector(".performance-table__sort-btn")).toBeNull();
+  });
+
+  it.each([1280, 1440, 1728] as const)(
+    "Work header stays tertiary (not body primary) at width %s",
+    (width) => {
+      Object.defineProperty(window, "innerWidth", { configurable: true, value: width });
+      renderQueue(true, "work");
+      const table = screen.getByTestId("dashboard-action-queue");
+      const work = within(table).getAllByRole("columnheader")[0]!;
+      const workLabel = work.querySelector(".performance-table__work-lead-label")!;
+      const color = getComputedStyle(workLabel).color;
+      // Must resolve tertiary token, not body primary lead color.
+      expect(color).toBe(getComputedStyle(work).color);
+      expect(getComputedStyle(workLabel).fontWeight).toBe("600");
+    },
+  );
 });

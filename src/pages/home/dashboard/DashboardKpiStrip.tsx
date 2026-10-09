@@ -1,6 +1,7 @@
 import { Badge } from "../../../components/Badge/Badge";
 import { HelpIcon } from "../../../components/HelpIcon/HelpIcon";
 import type { DashboardKpiCard } from "../../../domain/home/buildDashboardKpis";
+import "../../../components/KpiCard/kpi-card.css";
 
 export function DashboardKpiStrip({ cards }: { cards: DashboardKpiCard[] }) {
   if (!cards.length) return null;

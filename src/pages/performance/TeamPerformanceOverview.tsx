@@ -33,6 +33,7 @@ import {
   PerformanceOverviewSkeleton,
   PerformanceTableSkeleton,
 } from "./PerformanceSkeletons";
+import "../../components/KpiCard/kpi-card.css";
 import "./performance-dashboard.css";
 
 export interface TeamPerformanceOverviewProps {
