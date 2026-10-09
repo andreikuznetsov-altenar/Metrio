@@ -1,8 +1,10 @@
 // @vitest-environment jsdom
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { MetrioDatePicker } from "../components/DatePicker/MetrioDatePicker";
 import { PersonDetailDrawer } from "../pages/performance/PersonDetailDrawer";
 import type { PersonAnalyticsWorkspace } from "../domain/analytics/personAnalyticsWorkspace";
 
@@ -77,8 +79,19 @@ function read(rel: string) {
   return readFileSync(resolve(process.cwd(), rel), "utf8");
 }
 
+class ResizeObserverStub {
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+}
+
+afterEach(() => {
+  cleanup();
+  document.body.removeAttribute("style");
+  document.body.className = "";
+});
+
 describe("PASS 14.12 unified person drawer", () => {
-  afterEach(() => cleanup());
 
   it("A: opens on Profile by default", () => {
     stubContexts();
@@ -309,6 +322,11 @@ describe("PASS 14.12 scrollbar policy contracts", () => {
 });
 
 describe("PASS 14.12 control active-state parity", () => {
+  beforeEach(() => {
+    globalThis.ResizeObserver =
+      ResizeObserverStub as unknown as typeof ResizeObserver;
+  });
+
   it("Period/select and From/To date share one focus/open border contract", () => {
     const css = read("src/styles/ui-interaction-system.css");
     const block = css.match(
@@ -323,9 +341,7 @@ describe("PASS 14.12 control active-state parity", () => {
   });
 
   it("date picker trigger publishes data-state open while calendar is open", async () => {
-    const { MetrioDatePicker } = await import(
-      "../components/DatePicker/MetrioDatePicker"
-    );
+    const user = userEvent.setup();
     render(
       <MetrioDatePicker
         label="From"
@@ -335,10 +351,11 @@ describe("PASS 14.12 control active-state parity", () => {
     );
     const trigger = screen.getByRole("button", { name: /From date/i });
     expect(trigger.getAttribute("data-state")).toBe("closed");
-    fireEvent.click(trigger);
+    await user.click(trigger);
     await waitFor(() => {
       expect(trigger.getAttribute("data-state")).toBe("open");
     });
+    expect(screen.getByRole("grid")).toBeInTheDocument();
   });
 });
 
