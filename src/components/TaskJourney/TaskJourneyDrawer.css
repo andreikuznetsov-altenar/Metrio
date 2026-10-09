@@ -1,0 +1,126 @@
+.task-journey-drawer__title {
+  margin: 0.25rem 0 0;
+  font-size: 0.9375rem;
+  font-weight: 500;
+  line-height: 1.35;
+}
+
+.task-journey-drawer__header-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
+  margin-top: 0.5rem;
+  font-size: 0.875rem;
+  color: var(--metrio-text-secondary, #5c6570);
+}
+
+.task-journey-drawer__section {
+  margin-bottom: 1.5rem;
+}
+
+.task-journey-drawer__section-title {
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--metrio-text-secondary, #5c6570);
+  margin: 0 0 0.75rem;
+}
+
+.task-journey-drawer__attention-lead {
+  font-size: 1.0625rem;
+  font-weight: 600;
+  margin: 0 0 0.5rem;
+}
+
+.task-journey-drawer__attention-detail {
+  margin: 0.25rem 0;
+  font-size: 0.875rem;
+  color: var(--metrio-text-secondary, #5c6570);
+}
+
+.task-journey-drawer__notice {
+  font-size: 0.875rem;
+  color: var(--metrio-warning-text, #9a6700);
+  margin-bottom: 0.75rem;
+}
+
+.task-journey-timeline {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.task-journey-timeline__item {
+  position: relative;
+  padding-left: 1.25rem;
+  padding-bottom: 1rem;
+}
+
+.task-journey-timeline__item:last-child {
+  padding-bottom: 0;
+}
+
+.task-journey-timeline__dot {
+  position: absolute;
+  left: 0;
+  top: 0.35rem;
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  background: var(--metrio-border-strong, #c5ccd3);
+}
+
+.task-journey-timeline__item--current .task-journey-timeline__dot {
+  background: var(--metrio-accent, #2563eb);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--metrio-accent, #2563eb) 25%, transparent);
+}
+
+.task-journey-timeline__title {
+  font-weight: 600;
+  font-size: 0.9375rem;
+}
+
+.task-journey-timeline__meta {
+  font-size: 0.8125rem;
+  color: var(--metrio-text-secondary, #5c6570);
+  margin-top: 0.15rem;
+}
+
+.task-journey-timeline__backflow {
+  display: inline-block;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--metrio-warning-text, #9a6700);
+  margin-top: 0.25rem;
+}
+
+.task-journey-timeline__connector {
+  position: absolute;
+  left: 0.2rem;
+  top: 1rem;
+  bottom: 0;
+  width: 1px;
+  background: var(--metrio-border, #e2e6ea);
+}
+
+.task-journey-timeline__item:last-child .task-journey-timeline__connector {
+  display: none;
+}
+
+.task-journey-timeline__assignee {
+  font-size: 0.875rem;
+  color: var(--metrio-text-secondary, #5c6570);
+}
+
+.task-journey-drawer__path {
+  font-size: 0.875rem;
+  line-height: 1.45;
+  word-break: break-word;
+}
+
+.task-journey-drawer__footer-actions {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: flex-end;
+}

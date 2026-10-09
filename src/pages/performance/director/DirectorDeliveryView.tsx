@@ -17,6 +17,7 @@ function toRows(items: DeliveryRiskItem[]): DeliveryRiskRow[] {
     age: item.stageLabel,
     status: item.status,
     riskReason: item.reason,
+    issue: item.issue,
   }));
 }
 

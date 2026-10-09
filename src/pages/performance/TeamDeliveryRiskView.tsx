@@ -10,6 +10,7 @@ import { JiraIssueLink } from "../../components/JiraIssueLink/JiraIssueLink";
 import { buildJiraIssueBrowseUrl } from "../../platform/jiraIssueUrl";
 import { loadPreferences } from "../../platform/preferences";
 import { openExternalUrl } from "../../platform/openExternal";
+import { useTaskJourney } from "../../app/TaskJourneyContext";
 
 function statusVariant(status: string): "danger" | "warning" | "neutral" {
   const normalized = status.toLowerCase();
@@ -44,6 +45,7 @@ export function TeamDeliveryRiskView({
   onOpenPerson,
 }: TeamDeliveryRiskViewProps) {
   const [jiraBaseUrl, setJiraBaseUrl] = useState("");
+  const { openTaskJourney } = useTaskJourney();
 
   useEffect(() => {
     void loadPreferences().then((prefs) => {
@@ -79,6 +81,14 @@ export function TeamDeliveryRiskView({
     DELIVERY_RISK_COLUMNS,
     getValue,
   );
+
+  const openJourney = (row: DeliveryRiskRow) => {
+    if (row.issue) {
+      openTaskJourney(row.issue);
+      return;
+    }
+    openTaskJourney(row.issueKey);
+  };
 
   if (rows.length === 0) {
     return (
@@ -145,9 +155,17 @@ export function TeamDeliveryRiskView({
             {sortedRows.map((row) => {
               const issueUrl = buildJiraIssueBrowseUrl(jiraBaseUrl, row.issueKey);
               return (
-                <tr key={row.issueKey}>
+                <tr
+                  key={row.issueKey}
+                  className="performance-table__row--clickable"
+                  onClick={() => openJourney(row)}
+                >
                   <td className="performance-delivery-risk__key">
-                    <JiraIssueLink issueKey={row.issueKey} jiraBaseUrl={jiraBaseUrl} />
+                    <JiraIssueLink
+                      issueKey={row.issueKey}
+                      jiraBaseUrl={jiraBaseUrl}
+                      onClick={(event) => event.stopPropagation()}
+                    />
                   </td>
                   <td className="performance-table__cell--clamp-2" title={row.issueTitle}>
                     <span className="performance-table__clamp">{row.issueTitle}</span>
@@ -156,7 +174,10 @@ export function TeamDeliveryRiskView({
                     <button
                       type="button"
                       className="performance-table__person-link"
-                      onClick={() => onOpenPerson(row.ownerId)}
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        onOpenPerson(row.ownerId);
+                      }}
                     >
                       {row.ownerName || row.ownerId}
                     </button>
@@ -171,8 +192,20 @@ export function TeamDeliveryRiskView({
                       type="button"
                       variant="secondary"
                       className="performance-delivery-risk__jira-btn"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        openJourney(row);
+                      }}
+                    >
+                      View journey
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      className="performance-delivery-risk__jira-btn"
                       disabled={!issueUrl}
-                      onClick={() => {
+                      onClick={(event) => {
+                        event.stopPropagation();
                         if (issueUrl) void openExternalUrl(issueUrl);
                       }}
                     >

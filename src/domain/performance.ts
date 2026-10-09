@@ -1,4 +1,5 @@
 import type { BadgeVariant } from "../components/Badge/Badge";
+import type { AuditIssue } from "./jira/types";
 import type { RadarPrimaryAction, RadarSeverity } from "./radar/types";
 import type { TrendDirection } from "./trends/trendEngine";
 import type { CapacityDataState } from "./workflows/capacityWorkload";
@@ -265,6 +266,7 @@ export interface DeliveryRiskRow {
   age: string;
   status: string;
   riskReason: string;
+  issue?: AuditIssue;
 }
 
 export interface TeamSecondarySnapshot {

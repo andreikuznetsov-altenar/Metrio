@@ -451,6 +451,43 @@ export const pdfStyles = StyleSheet.create({
     width: '18%',
     fontSize: 8,
   },
+  deliveryRiskHeader: {
+    flexDirection: 'row',
+    borderBottomWidth: 1,
+    borderBottomColor: '#e6e6e6',
+    paddingBottom: 4,
+    marginBottom: 4,
+  },
+  deliveryRiskRow: {
+    flexDirection: 'row',
+    marginBottom: 4,
+  },
+  deliveryRiskColIssue: {
+    width: '11%',
+    fontSize: 7,
+    fontWeight: 600,
+  },
+  deliveryRiskColOwner: {
+    width: '14%',
+    fontSize: 7,
+  },
+  deliveryRiskColStatus: {
+    width: '12%',
+    fontSize: 7,
+  },
+  deliveryRiskColAge: {
+    width: '8%',
+    fontSize: 7,
+  },
+  deliveryRiskColReason: {
+    width: '18%',
+    fontSize: 7,
+  },
+  deliveryRiskColPath: {
+    width: '37%',
+    fontSize: 7,
+    lineHeight: 1.25,
+  },
   trendCard: {
     borderWidth: 1,
     borderColor: '#e6e6e6',

@@ -59,6 +59,7 @@ import {
 } from "../platform/dashboard/dashboardCache";
 import { buildIssueCatalog, type IssueCatalog } from "../domain/jira/issueCatalog";
 import { PerformanceIssueCatalogProvider } from "./PerformanceIssueCatalogContext";
+import { TaskJourneyProvider } from "./TaskJourneyContext";
 import { flattenTeamKpiIssues } from "../domain/analytics/analyticsReportScope";
 
 export type PerformanceLoadStatus =
@@ -611,7 +612,7 @@ export function PerformanceDataProvider({
   return (
     <PerformanceIssueCatalogProvider catalog={issueCatalog}>
       <PerformanceDataContext.Provider value={value}>
-        {children}
+        <TaskJourneyProvider>{children}</TaskJourneyProvider>
       </PerformanceDataContext.Provider>
     </PerformanceIssueCatalogProvider>
   );

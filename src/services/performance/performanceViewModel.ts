@@ -525,6 +525,7 @@ export function buildPerformanceViewModels(
     age: item.stageLabel,
     status: item.status,
     riskReason: item.reason,
+    issue: item.issue,
   }));
 
   const teamSecondary: TeamSecondarySnapshot = {

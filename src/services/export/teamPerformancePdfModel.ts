@@ -24,6 +24,10 @@ import {
   resolveTeamDisplayNameFromPersons,
   workloadBalanceSubtitle,
 } from './teamPdfHelpers';
+import { buildTaskJourney } from '../../domain/task-journey/buildTaskJourney';
+import { resolveIssueCurrentOwner } from '../../domain/task-journey/resolveIssueCurrentOwner';
+
+export const TEAM_PDF_DELIVERY_RISK_DETAIL_LIMIT = 12;
 
 function reportRangeToDateRange(range: ReportRangeIso): DateRange {
   const start = parseDateStartOfDay(range.from) ?? parseISO(range.from);
@@ -190,6 +194,32 @@ export function buildTeamPerformancePdfLayout(input: {
     input.companyLogoSource.includes('incompatible') ||
     input.companyLogoSource === 'unavailable';
 
+  const deliveryRiskDetailRows = deliveryRisk
+    .slice(0, TEAM_PDF_DELIVERY_RISK_DETAIL_LIMIT)
+    .map((item) => {
+      const journey = buildTaskJourney({
+        issue: item.issue,
+        params,
+        persons: teamSnapshot.persons,
+      });
+      const owner = resolveIssueCurrentOwner(item.issue, teamSnapshot.persons);
+      return {
+        issueKey: item.issueKey,
+        ownerName: owner.name,
+        status: item.issue.currentStatus || item.status,
+        stageAge: item.stageLabel,
+        reason: item.reason,
+        path: journey.compressedPath,
+      };
+    });
+  const overflowCount = Math.max(0, deliveryRisk.length - TEAM_PDF_DELIVERY_RISK_DETAIL_LIMIT);
+  const deliveryRiskDetails = {
+    subtitle: 'Current delivery risks (task-level evidence for performance risks)',
+    rows: deliveryRiskDetailRows,
+    overflowLabel:
+      overflowCount > 0 ? `+${overflowCount} more delivery risk tasks in Metrio` : null,
+  };
+
   return {
     companyLogoSrc: input.companyLogoSrc,
     companyLogoSource: input.companyLogoSource,
@@ -207,5 +237,6 @@ export function buildTeamPerformancePdfLayout(input: {
       subtitle: workloadBalanceSubtitle(numericActive),
       rows: workloadRows,
     },
+    deliveryRiskDetails,
   };
 }

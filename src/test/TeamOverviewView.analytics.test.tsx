@@ -23,6 +23,10 @@ vi.mock("../app/PerformanceDataContext", () => ({
   }),
 }));
 
+vi.mock("../app/TaskJourneyContext", () => ({
+  useOpenTaskJourneyFromKey: () => () => undefined,
+}));
+
 function renderOverview(ui: React.ReactElement) {
   return render(<TooltipProvider>{ui}</TooltipProvider>);
 }

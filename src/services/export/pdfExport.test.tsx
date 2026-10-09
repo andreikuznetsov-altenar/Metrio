@@ -98,6 +98,11 @@ function minimalTeamLayout(
     digestRecentChanges: { title: 'Recent changes', rows: [{ label: 'Completed', value: '-17' }] },
     teamTrends: [],
     workloadBalance: { rows: [] },
+    deliveryRiskDetails: {
+      subtitle: 'Current delivery risks',
+      rows: [],
+      overflowLabel: null,
+    },
     ...overrides,
   };
 }

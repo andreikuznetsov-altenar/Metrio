@@ -85,6 +85,21 @@ export interface PdfIndividualEfficiencyCard {
   backflows: string;
 }
 
+export interface PdfDeliveryRiskDetailRow {
+  issueKey: string;
+  ownerName: string;
+  status: string;
+  stageAge: string;
+  reason: string;
+  path: string;
+}
+
+export interface PdfDeliveryRiskDetailsSection {
+  subtitle: string;
+  rows: PdfDeliveryRiskDetailRow[];
+  overflowLabel: string | null;
+}
+
 export interface TeamPerformancePdfLayout {
   companyLogoSrc: string;
   companyLogoSource: string;
@@ -105,6 +120,7 @@ export interface TeamPerformancePdfLayout {
     subtitle?: string;
     rows: (PdfWorkloadRow & { personId: string })[];
   };
+  deliveryRiskDetails: PdfDeliveryRiskDetailsSection;
   /** @deprecated Removed from layout — kept for legacy section builders only. */
   kpiOverview?: PdfKpiTeaser[];
   digestAttention?: PdfDigestTable;

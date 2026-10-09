@@ -224,6 +224,34 @@ export function TeamPerformancePdfDocument({ layout }: { layout: TeamPerformance
             </View>
           ))}
         </View>
+
+        {layout.deliveryRiskDetails.rows.length > 0 ? (
+          <View style={pdfStyles.sectionBlock}>
+            <Text style={pdfStyles.sectionHeading}>Delivery risk details</Text>
+            <Text style={pdfStyles.sectionLead}>{layout.deliveryRiskDetails.subtitle}</Text>
+            <View style={pdfStyles.deliveryRiskHeader}>
+              <Text style={pdfStyles.deliveryRiskColIssue}>Issue</Text>
+              <Text style={pdfStyles.deliveryRiskColOwner}>Owner</Text>
+              <Text style={pdfStyles.deliveryRiskColStatus}>Status</Text>
+              <Text style={pdfStyles.deliveryRiskColAge}>Age</Text>
+              <Text style={pdfStyles.deliveryRiskColReason}>Reason</Text>
+              <Text style={pdfStyles.deliveryRiskColPath}>Path</Text>
+            </View>
+            {layout.deliveryRiskDetails.rows.map((row) => (
+              <View key={row.issueKey} style={pdfStyles.deliveryRiskRow} wrap={false}>
+                <Text style={pdfStyles.deliveryRiskColIssue}>{row.issueKey}</Text>
+                <Text style={pdfStyles.deliveryRiskColOwner}>{row.ownerName}</Text>
+                <Text style={pdfStyles.deliveryRiskColStatus}>{row.status}</Text>
+                <Text style={pdfStyles.deliveryRiskColAge}>{row.stageAge}</Text>
+                <Text style={pdfStyles.deliveryRiskColReason}>{row.reason}</Text>
+                <Text style={pdfStyles.deliveryRiskColPath}>{row.path}</Text>
+              </View>
+            ))}
+            {layout.deliveryRiskDetails.overflowLabel ? (
+              <Text style={pdfStyles.sectionLead}>{layout.deliveryRiskDetails.overflowLabel}</Text>
+            ) : null}
+          </View>
+        ) : null}
       </Page>
     </Document>
   );

@@ -12,6 +12,7 @@ import type { RadarPrimaryAction } from "../../domain/radar/types";
 import { performanceHelp } from "../../domain/performance/performanceHelp";
 import { loadPreferences } from "../../platform/preferences";
 import type { PersonDrawerTab } from "../../app/performanceAnalyticsContext";
+import { useOpenTaskJourneyFromKey } from "../../app/TaskJourneyContext";
 
 const RADAR_COLUMNS = [
   { id: "person", type: "person" as const },
@@ -40,6 +41,7 @@ export interface TeamRadarViewProps {
 export function TeamRadarView({ rows, onOpenPerson }: TeamRadarViewProps) {
   const { data } = usePerformanceData();
   const teamPersons = data?.teamSnapshot.persons ?? [];
+  const openTaskJourney = useOpenTaskJourneyFromKey();
   const [jiraBaseUrl, setJiraBaseUrl] = useState("");
 
   useEffect(() => {
@@ -157,6 +159,7 @@ export function TeamRadarView({ rows, onOpenPerson }: TeamRadarViewProps) {
                         jiraBaseUrl={jiraBaseUrl}
                         persons={teamPersons}
                         modalTitle={`Tasks — ${row.personName}`}
+                        onOpenIssue={openTaskJourney}
                       />
                     ) : row.primaryIssueKey && jiraBaseUrl ? (
                       <GroupedIssuePreview
@@ -164,6 +167,7 @@ export function TeamRadarView({ rows, onOpenPerson }: TeamRadarViewProps) {
                         jiraBaseUrl={jiraBaseUrl}
                         persons={teamPersons}
                         modalTitle={`Tasks — ${row.personName}`}
+                        onOpenIssue={openTaskJourney}
                       />
                     ) : null}
                     <span className="performance-radar-reason__detail">

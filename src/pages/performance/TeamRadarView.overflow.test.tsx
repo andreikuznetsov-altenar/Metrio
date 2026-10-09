@@ -17,6 +17,10 @@ vi.mock("../../app/PerformanceDataContext", () => ({
   }),
 }));
 
+vi.mock("../../app/TaskJourneyContext", () => ({
+  useOpenTaskJourneyFromKey: () => () => undefined,
+}));
+
 const rows: TeamRadarRow[] = [
   {
     personId: "p1",

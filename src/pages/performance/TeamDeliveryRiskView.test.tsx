@@ -9,6 +9,13 @@ vi.mock("../../platform/preferences", () => ({
   })),
 }));
 
+vi.mock("../../app/TaskJourneyContext", () => ({
+  useTaskJourney: () => ({
+    openTaskJourney: vi.fn(),
+    closeTaskJourney: vi.fn(),
+  }),
+}));
+
 describe("TeamDeliveryRiskView", () => {
   it("renders separate Issue and Description columns", async () => {
     render(

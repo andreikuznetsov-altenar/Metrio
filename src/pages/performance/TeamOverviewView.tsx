@@ -52,6 +52,7 @@ import { backflowIssueKeysFromRiskRows } from "../../domain/recommendations/back
 import { TaskListModal } from "../../components/TaskListModal/TaskListModal";
 import { buildTaskListModalRowsFromIssueKeys } from "../../domain/actions/buildTaskListModalRows";
 import { useOptionalPerformanceIssueCatalog } from "../../app/PerformanceIssueCatalogContext";
+import { useOpenTaskJourneyFromKey } from "../../app/TaskJourneyContext";
 
 const ATTENTION_OVERVIEW_COLUMNS = [
   { id: "person", type: "person" as const },
@@ -130,6 +131,7 @@ export function TeamOverviewView({
   const { rules: operationalRules } = useOperationalRules();
   const { data: performanceData } = usePerformanceData();
   const issueCatalog = useOptionalPerformanceIssueCatalog();
+  const openTaskJourney = useOpenTaskJourneyFromKey();
   const teamPersons = performanceData?.teamSnapshot.persons ?? [];
   const [jiraBaseUrl, setJiraBaseUrl] = useState("");
   const [issueListModal, setIssueListModal] = useState<{
@@ -563,9 +565,7 @@ export function TeamOverviewView({
                             jiraBaseUrl={jiraBaseUrl}
                             persons={teamPersons}
                             personNameForModal={name}
-                            onOpenIssue={(_issueKey, url) => {
-                              if (url) void openExternalUrl(url);
-                            }}
+                            onOpenIssue={openTaskJourney}
                           />
                         ) : (
                           "—"
@@ -783,9 +783,7 @@ export function TeamOverviewView({
         onClose={() => setIssueListModal(null)}
         title={issueListModal?.title ?? "Tasks"}
         rows={issueListRows}
-        onOpenIssue={(_issueKey, url) => {
-          if (url) void openExternalUrl(url);
-        }}
+        onOpenIssue={openTaskJourney}
       />
     </>
   );
