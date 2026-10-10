@@ -1,5 +1,5 @@
 import { render, screen } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { AnalyticsDrilldownDrawer } from "./AnalyticsDrilldownDrawer";
 import type { AnalyticsEvidence } from "../../domain/analytics/analyticsEvidenceTypes";
 
@@ -19,6 +19,25 @@ const evidence: AnalyticsEvidence = {
 };
 
 describe("AnalyticsDrilldownDrawer", () => {
+  const originalMatchMedia = window.matchMedia;
+
+  beforeEach(() => {
+    window.matchMedia = vi.fn().mockImplementation((query: string) => ({
+      matches: query === "(prefers-reduced-motion: reduce)",
+      media: query,
+      onchange: null,
+      addListener: () => {},
+      removeListener: () => {},
+      addEventListener: () => {},
+      removeEventListener: () => {},
+      dispatchEvent: () => false,
+    }));
+  });
+
+  afterEach(() => {
+    window.matchMedia = originalMatchMedia;
+  });
+
   it("renders metric intro in body and not in drawer header slot", () => {
     render(
       <AnalyticsDrilldownDrawer
