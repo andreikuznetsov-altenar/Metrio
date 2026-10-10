@@ -208,9 +208,9 @@ test.describe("Executive acceptance — light 1440×900", () => {
   test("22-feedback-cycles-empty", async ({ page }) => {
     await bootFeedbackDisconnected(page, "light");
     await page.getByRole("button", { name: /^feedback$/i }).click();
-    await page.getByRole("button", { name: /^Cycles$/i }).click();
+    await expect(page.getByTestId("feedback-v2-page")).toBeVisible({ timeout: 15_000 });
     await expect(page.getByTestId("feedback-cycles-empty")).toBeVisible({ timeout: 15_000 });
-    await expect(page).toHaveScreenshot("22-feedback-cycles-empty.png", SHOT);
+    await expect(page.getByText("Google Forms is not connected.")).toBeVisible();
   });
 
   test("23-feedback-cycles-populated", async ({ page }) => {
@@ -228,27 +228,25 @@ test.describe("Executive acceptance — light 1440×900", () => {
     await page.goto("/");
     await expect(page.getByTestId("dashboard-ready")).toBeVisible({ timeout: 30_000 });
     await page.getByRole("button", { name: /^feedback$/i }).click();
-    await page.getByRole("button", { name: /^Cycles$/i }).click();
+    await expect(page.getByTestId("feedback-v2-page")).toBeVisible({ timeout: 15_000 });
     await expect(page.getByTestId("feedback-cycle-card")).toBeVisible({ timeout: 15_000 });
-    await expect(page).toHaveScreenshot("23-feedback-cycles-populated.png", SHOT);
+    await expect(page.getByRole("button", { name: "Open" }).first()).toBeVisible();
   });
 
-  test("24-feedback-survey-disconnected", async ({ page }) => {
+  test("24-feedback-setup-disconnected", async ({ page }) => {
     await bootFeedbackDisconnected(page, "light");
     await page.getByRole("button", { name: /^feedback$/i }).click();
-    await page.getByRole("button", { name: /^Survey$/i }).click();
-    await expect(page.getByTestId("feedback-survey-disconnected")).toBeVisible({
-      timeout: 15_000,
-    });
-    await expect(page).toHaveScreenshot("24-feedback-survey-disconnected.png", SHOT);
+    await expect(page.getByText("Google Forms is not connected.")).toBeVisible();
+    await expect(page.getByRole("dialog", { name: "Set up Google Forms" })).toBeVisible();
+    await expect(page.getByText("Enter connection details")).toBeVisible();
   });
 
-  test("25-feedback-survey-connected", async ({ page }) => {
+  test("25-feedback-connected-landing", async ({ page }) => {
     await bootMetrioFeedback(page, "light");
     await page.getByRole("button", { name: /^feedback$/i }).click();
-    await page.getByRole("button", { name: /^Survey$/i }).click();
-    await expect(page.locator(".feedback-google-strip")).toBeVisible({ timeout: 15_000 });
-    await expect(page).toHaveScreenshot("25-feedback-survey-connected.png", SHOT);
+    await expect(page.getByTestId("feedback-v2-page")).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByTestId("feedback-cycles-v2")).toBeVisible();
+    await expect(page.getByText("Google Forms is not connected.")).toHaveCount(0);
   });
 
   test("26-feedback-delivery", async ({ page }) => {
@@ -266,22 +264,52 @@ test.describe("Executive acceptance — light 1440×900", () => {
     await page.goto("/");
     await expect(page.getByTestId("dashboard-ready")).toBeVisible({ timeout: 30_000 });
     await page.getByRole("button", { name: /^feedback$/i }).click();
-    await page.getByRole("button", { name: /^Delivery$/i }).click();
-    await expect(page).toHaveScreenshot("26-feedback-delivery.png", SHOT);
+    await page.getByTestId("feedback-cycle-card").first().getByRole("button", { name: "Open run" }).click();
+    await expect(page.getByTestId("feedback-run-workspace")).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByRole("heading", { name: "Delivery" })).toBeVisible();
+    await expect(page.getByTestId("feedback-delivery-table")).toBeVisible();
   });
 
   test("27-feedback-results", async ({ page }) => {
-    await bootMetrioFeedback(page, "light");
+    const surveyJson = serializeFeedbackDeliveryVisualSurveyForPlaywright();
+    await page.addInitScript(
+      ({ prefs, survey }: { prefs: string; survey: string }) => {
+        localStorage.setItem("metrio-connection-connected", "true");
+        localStorage.setItem("metrio-dev-fixture", "lead");
+        localStorage.setItem("metrio-theme", "light");
+        localStorage.setItem("metrio-visual-preferences", prefs);
+        localStorage.setItem("metrio-visual-survey-data", survey);
+      },
+      { prefs: serializeFeedbackVisualPrefsForPlaywright(), survey: surveyJson },
+    );
+    await page.goto("/");
+    await expect(page.getByTestId("dashboard-ready")).toBeVisible({ timeout: 30_000 });
     await page.getByRole("button", { name: /^feedback$/i }).click();
-    await page.getByRole("button", { name: /^Results$/i }).click();
-    await expect(page).toHaveScreenshot("27-feedback-results.png", SHOT);
+    await page.getByTestId("feedback-cycle-card").first().getByRole("button", { name: "Open run" }).click();
+    await expect(page.getByTestId("feedback-run-workspace")).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByRole("heading", { name: "Results" })).toHaveCount(1);
+    await expect(page.getByRole("button", { name: "Refresh responses" })).toBeVisible();
   });
 
-  test("28-feedback-history", async ({ page }) => {
-    await bootMetrioFeedback(page, "light");
+  test("28-feedback-runs", async ({ page }) => {
+    const surveyJson = serializeFeedbackDeliveryVisualSurveyForPlaywright();
+    await page.addInitScript(
+      ({ prefs, survey }: { prefs: string; survey: string }) => {
+        localStorage.setItem("metrio-connection-connected", "true");
+        localStorage.setItem("metrio-dev-fixture", "lead");
+        localStorage.setItem("metrio-theme", "light");
+        localStorage.setItem("metrio-visual-preferences", prefs);
+        localStorage.setItem("metrio-visual-survey-data", survey);
+      },
+      { prefs: serializeFeedbackVisualPrefsForPlaywright(), survey: surveyJson },
+    );
+    await page.goto("/");
+    await expect(page.getByTestId("dashboard-ready")).toBeVisible({ timeout: 30_000 });
     await page.getByRole("button", { name: /^feedback$/i }).click();
-    await page.getByRole("button", { name: /^History$/i }).click();
-    await expect(page).toHaveScreenshot("28-feedback-history.png", SHOT);
+    await page.getByTestId("feedback-cycle-card").first().getByRole("button", { name: "Open", exact: true }).click();
+    await expect(page.getByTestId("feedback-cycle-detail")).toBeVisible({ timeout: 15_000 });
+    await page.getByRole("button", { name: "Runs" }).click();
+    await expect(page.getByText(/Form state:/)).toBeVisible();
   });
 
   test("29-settings-preferences", async ({ page }) => {
@@ -473,8 +501,8 @@ test.describe("Executive acceptance — dark subset 1440×900", () => {
     await setViewport(page, 1440, 900);
     await bootMetrioFeedback(page, "dark");
     await page.getByRole("button", { name: /^feedback$/i }).click();
-    await page.getByRole("button", { name: /^Survey$/i }).click();
-    await expect(page).toHaveScreenshot("dark-25-feedback-survey.png", SHOT);
+    await expect(page.getByTestId("feedback-v2-page")).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByTestId("feedback-cycles-v2")).toBeVisible();
   });
 
   test("dark-settings-connections", async ({ page }) => {

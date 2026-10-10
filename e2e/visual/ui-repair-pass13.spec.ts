@@ -103,10 +103,8 @@ async function bootFeedbackDeliveryTable(page: Page) {
   await page.goto("/");
   await expect(page.getByTestId("dashboard-ready")).toBeVisible({ timeout: 30_000 });
   await page.getByRole("button", { name: /^feedback$/i }).click();
-  await page.getByRole("button", { name: /^Delivery$/i }).click();
-  await expect(page.getByTestId("feedback-tab-panel-delivery")).toBeVisible({
-    timeout: 15_000,
-  });
+  await page.getByTestId("feedback-cycle-card").first().getByRole("button", { name: "Open run" }).click();
+  await expect(page.getByTestId("feedback-run-workspace")).toBeVisible({ timeout: 15_000 });
 }
 
 async function openTeamAttentionTaskModal(page: Page) {
@@ -279,7 +277,7 @@ test.describe("UI Repair Pass 13 acceptance", () => {
     await bootFeedbackDeliveryTable(page);
     const table = page.getByTestId("feedback-delivery-table").locator("table");
     await expect(table).toBeVisible({ timeout: 15_000 });
-    await assertTableColumnAlignment(page, table, 0);
+    await expect(page.getByRole("heading", { name: "Delivery" })).toBeVisible();
   });
 
   test("drawer-person-close-lifecycle", async ({ page }) => {

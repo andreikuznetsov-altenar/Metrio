@@ -9,7 +9,7 @@ import { isFeedbackBridgeReady } from '../../domain/feedbackV2/bridgeReady';
 import { recipientsFromTeamMembers } from '../../domain/feedbackV2/recipients';
 import { resolveOrgFeatureAccess } from '../../domain/organization/orgFeatureAccess';
 import { useCurrentUser } from '../../app/CurrentUserContext';
-import { MetrioScrollArea, StatusBanner } from './design-system';
+import { Button, Drawer, MetrioScrollArea, StatusBanner } from './design-system';
 import '../page-content.css';
 import { formatGoogleOAuthError } from './feedbackUi';
 import { FeedbackBridgeSetupDrawer } from './FeedbackBridgeSetupDrawer';
@@ -94,6 +94,13 @@ export function FeedbackPage() {
     const cycleId = screen.kind === 'cycle' ? screen.cycleId : screen.cycleId;
     return (data.cycles ?? []).find((c) => c.id === cycleId) ?? null;
   }, [data.cycles, screen]);
+
+  const detailDrawerTitle =
+    screen.kind === 'run'
+      ? activeRun?.title ?? 'Feedback run'
+      : selectedCycle?.name ?? 'Feedback cycle';
+
+  const closeDetailDrawer = () => setScreen({ kind: 'landing' });
 
   const handleBridgeConnect = async (input: { webAppUrl: string; bridgeSecret: string }) => {
     const status = await connectGoogle(input);
@@ -193,73 +200,92 @@ export function FeedbackPage() {
 
               {!bridgeReady && canManage ? (
                 <StatusBanner tone="info">
-                  Connect your Google Apps Script bridge to create surveys.
-                  <button
-                    type="button"
-                    className="feedback-inline-link"
-                    onClick={() => setBridgeSetupOpen(true)}
-                  >
-                    Set up Google Forms
-                  </button>
+                  <div className="feedback-integration-notice">
+                    <div>
+                      <strong>Google Forms is not connected.</strong>
+                      <span>Set up the Apps Script bridge to create and send this survey.</span>
+                    </div>
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      size="small"
+                      onClick={() => setBridgeSetupOpen(true)}
+                    >
+                      Set up Google Forms
+                    </Button>
+                  </div>
                 </StatusBanner>
               ) : null}
 
-              {screen.kind === 'landing' ? (
-                <FeedbackCyclesLanding
-                  data={data}
-                  canManage={canManage}
-                  onNewSurvey={() => {
-                    if (!bridgeReady) {
-                      setBridgeSetupOpen(true);
-                      return;
-                    }
-                    setRepeatCycleId(null);
-                    setNewSurveyOpen(true);
-                  }}
-                  onOpenCycle={(cycleId) => setScreen({ kind: 'cycle', cycleId })}
-                  onOpenRun={(cycleId, runId) => setScreen({ kind: 'run', cycleId, runId })}
-                  onStopRun={(runId) => void closeSurvey(runId).then(() => toast.info('Run stopped'))}
-                  onRepeatCycle={(cycleId) => {
-                    if (!bridgeReady) {
-                      setBridgeSetupOpen(true);
-                      return;
-                    }
-                    setRepeatCycleId(cycleId);
-                    setNewSurveyOpen(true);
-                  }}
-                  onDeleteCycle={(cycleId) =>
-                    void deleteFeedbackCycle(cycleId).then(() => toast.info('Cycle deleted'))
+              <FeedbackCyclesLanding
+                data={data}
+                canManage={canManage}
+                onNewSurvey={() => {
+                  if (!bridgeReady) {
+                    setBridgeSetupOpen(true);
+                    return;
                   }
-                />
-              ) : null}
-
-              {screen.kind === 'cycle' && selectedCycle ? (
-                <FeedbackCycleDetailView
-                  cycle={selectedCycle}
-                  data={data}
-                  onBack={() => setScreen({ kind: 'landing' })}
-                  onOpenRun={(runId) =>
-                    setScreen({ kind: 'run', cycleId: selectedCycle.id, runId })
+                  setRepeatCycleId(null);
+                  setNewSurveyOpen(true);
+                }}
+                onOpenCycle={(cycleId) => setScreen({ kind: 'cycle', cycleId })}
+                onOpenRun={(cycleId, runId) => setScreen({ kind: 'run', cycleId, runId })}
+                onStopRun={(runId) => void closeSurvey(runId).then(() => toast.info('Run stopped'))}
+                onRepeatCycle={(cycleId) => {
+                  if (!bridgeReady) {
+                    setBridgeSetupOpen(true);
+                    return;
                   }
-                />
-              ) : null}
-
-              {screen.kind === 'run' && activeRun ? (
-                <FeedbackRunWorkspace
-                  run={activeRun}
-                  loading={loading}
-                  onBack={() => setScreen({ kind: 'cycle', cycleId: screen.cycleId })}
-                  onSend={() => sendSurveyBatch(activeRun.id, prefs)}
-                  onSync={() => syncResponses(activeRun.id)}
-                  onStop={() => closeSurvey(activeRun.id)}
-                  showSendConfirm={showSendConfirm}
-                  onShowSendConfirm={setShowSendConfirm}
-                />
-              ) : null}
+                  setRepeatCycleId(cycleId);
+                  setNewSurveyOpen(true);
+                }}
+                onDeleteCycle={(cycleId) =>
+                  void deleteFeedbackCycle(cycleId).then(() => toast.info('Cycle deleted'))
+                }
+              />
             </div>
           )}
         </div>
       </MetrioScrollArea>
+
+      <Drawer
+        open={screen.kind !== 'landing'}
+        size="analytics"
+        title={detailDrawerTitle}
+        onClose={closeDetailDrawer}
+      >
+        {screen.kind === 'cycle' && selectedCycle ? (
+          <FeedbackCycleDetailView
+            cycle={selectedCycle}
+            data={data}
+            canManage={canManage}
+            onOpenRun={(runId) =>
+              setScreen({ kind: 'run', cycleId: selectedCycle.id, runId })
+            }
+            onStopRun={(runId) => void closeSurvey(runId).then(() => toast.info('Run stopped'))}
+            onRepeatCycle={(cycleId) => {
+              if (!bridgeReady) {
+                setBridgeSetupOpen(true);
+                return;
+              }
+              setRepeatCycleId(cycleId);
+              setNewSurveyOpen(true);
+            }}
+          />
+        ) : null}
+
+        {screen.kind === 'run' && activeRun ? (
+          <FeedbackRunWorkspace
+            run={activeRun}
+            loading={loading}
+            onSend={() => sendSurveyBatch(activeRun.id, prefs)}
+            onSync={() => syncResponses(activeRun.id)}
+            onStop={() => closeSurvey(activeRun.id)}
+            showSendConfirm={showSendConfirm}
+            onShowSendConfirm={setShowSendConfirm}
+          />
+        ) : null}
+      </Drawer>
 
       <FeedbackBridgeSetupDrawer
         open={bridgeSetupOpen}

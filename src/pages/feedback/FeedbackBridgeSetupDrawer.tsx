@@ -49,39 +49,71 @@ export function FeedbackBridgeSetupDrawer({
       footer={
         <div className="ds-feedback-drawer-footer ds-feedback-drawer-footer--compact">
           <Button variant="secondary" onClick={onClose}>Cancel</Button>
-          <Button
-            disabled={busy || !webAppUrl.trim() || !bridgeSecret.trim()}
-            onClick={() => void runTest()}
-          >
-            {busy ? 'Testing…' : 'Test connection'}
-          </Button>
         </div>
       }
     >
-      <ol className="feedback-bridge-steps">
-        <li>
-          <Button variant="secondary" size="small" onClick={() => void openExternalUrl(GOOGLE_APPS_SCRIPT_HOME)}>
-            Open Apps Script
-          </Button>
+      <ol className="feedback-setup-flow">
+        <li className="feedback-setup-step">
+          <span className="feedback-setup-step__badge">1</span>
+          <div className="feedback-setup-step__content">
+            <h3>Open Apps Script</h3>
+            <p>Open your Google Apps Script console in the account that will own the form bridge.</p>
+            <Button variant="secondary" size="small" onClick={() => void openExternalUrl(GOOGLE_APPS_SCRIPT_HOME)}>
+              Open Apps Script
+            </Button>
+          </div>
         </li>
-        <li>Create and deploy the Metrio bridge (Web App).</li>
-        <li>Copy the Web App URL.</li>
-        <li>Enter the connection key from setupMetrio().</li>
-        <li>Test connection to finish setup.</li>
+        <li className="feedback-setup-step">
+          <span className="feedback-setup-step__badge">2</span>
+          <div className="feedback-setup-step__content">
+            <h3>Create and deploy Metrio bridge</h3>
+            <p>Create the bridge script, run setupMetrio(), then deploy it as a Web App.</p>
+          </div>
+        </li>
+        <li className="feedback-setup-step">
+          <span className="feedback-setup-step__badge">3</span>
+          <div className="feedback-setup-step__content">
+            <h3>Copy Web App URL</h3>
+            <p>Use the deployed Web App URL ending in /exec.</p>
+          </div>
+        </li>
+        <li className="feedback-setup-step">
+          <span className="feedback-setup-step__badge">4</span>
+          <div className="feedback-setup-step__content">
+            <h3>Enter connection details</h3>
+            <p>Paste the deployed Web App URL and the connection key from setupMetrio().</p>
+            <Input
+              label="Web App URL"
+              value={webAppUrl}
+              onChange={(e) => onWebAppUrlChange(e.target.value)}
+              placeholder="https://script.google.com/macros/s/.../exec"
+              error={Boolean(error)}
+            />
+            <InputPassword
+              label="Connection key"
+              value={bridgeSecret}
+              onChange={(e) => setBridgeSecret(e.target.value)}
+              placeholder="Paste connection key"
+              error={Boolean(error)}
+            />
+          </div>
+        </li>
+        <li className="feedback-setup-step">
+          <span className="feedback-setup-step__badge">5</span>
+          <div className="feedback-setup-step__content">
+            <h3>Test connection</h3>
+            <p>Confirm Metrio can create and send surveys through the bridge.</p>
+            {error ? <p className="feedback-field-error" role="alert">{error}</p> : null}
+            <Button
+              disabled={busy || !webAppUrl.trim() || !bridgeSecret.trim()}
+              loading={busy}
+              onClick={() => void runTest()}
+            >
+              Test connection
+            </Button>
+          </div>
+        </li>
       </ol>
-      {error ? <p className="feedback-field-error" role="alert">{error}</p> : null}
-      <Input
-        label="Web App URL"
-        value={webAppUrl}
-        onChange={(e) => onWebAppUrlChange(e.target.value)}
-        placeholder="https://script.google.com/macros/s/…/exec"
-      />
-      <InputPassword
-        label="Connection key"
-        value={bridgeSecret}
-        onChange={(e) => setBridgeSecret(e.target.value)}
-        placeholder="Paste connection key"
-      />
     </Drawer>
   );
 }

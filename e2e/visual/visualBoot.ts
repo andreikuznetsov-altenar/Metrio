@@ -107,10 +107,10 @@ export async function bootOrgRoleScenario(
 
 export async function openFeedbackTab(
   page: Page,
-  tab: "survey" | "results" | "delivery" | "history",
+  _tab: "survey" | "results" | "delivery" | "history",
 ) {
   await page.locator(".app-header__nav-link").filter({ hasText: "Feedback" }).click();
-  await page.getByTestId(`feedback-tab-panel-${tab}`).waitFor({ state: "visible", timeout: 30_000 }).catch(() => undefined);
+  await page.getByTestId("feedback-v2-page").waitFor({ state: "visible", timeout: 30_000 });
 }
 
 export async function bootConnected(

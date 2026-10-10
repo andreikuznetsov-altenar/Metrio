@@ -14,7 +14,6 @@ import {
 export function FeedbackRunWorkspace({
   run,
   loading,
-  onBack,
   onSend,
   onSync,
   onStop,
@@ -23,7 +22,6 @@ export function FeedbackRunWorkspace({
 }: {
   run: Survey;
   loading: boolean;
-  onBack: () => void;
   onSend: () => Promise<void>;
   onSync: () => Promise<void>;
   onStop: () => Promise<void>;
@@ -62,15 +60,13 @@ export function FeedbackRunWorkspace({
 
   return (
     <div className="feedback-run-workspace" data-testid="feedback-run-workspace">
-      <div className="feedback-cycle-detail__head">
-        <Button type="button" variant="secondary" size="small" onClick={onBack}>Back</Button>
-        <h2 className="feedback-cycle-detail__title">{run.title}</h2>
-        {phase === 'active' ? (
+      {phase === 'active' ? (
+        <div className="feedback-cycle-detail__head">
           <Button type="button" variant="secondary" size="small" onClick={() => void onStop()}>
             Stop run
           </Button>
-        ) : null}
-      </div>
+        </div>
+      ) : null}
 
       {!run.responderUri ? (
         <StatusBanner tone="warning">Google Form is not ready yet.</StatusBanner>
@@ -97,14 +93,14 @@ export function FeedbackRunWorkspace({
             {syncing ? (
               <>
                 <Loader2 size={14} className="feedback-btn-spinner" aria-hidden />
-                Syncing…
+                Syncing...
               </>
             ) : (
               'Refresh responses'
             )}
           </Button>
         </div>
-        <FeedbackResultsView metrics={metrics} sentCount={sentCount} />
+        <FeedbackResultsView metrics={metrics} sentCount={sentCount} title={null} />
       </div>
 
       <FeedbackSendConfirmDrawer

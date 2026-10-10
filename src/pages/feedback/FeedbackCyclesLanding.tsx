@@ -69,29 +69,45 @@ export function FeedbackCyclesLanding({
             const isActive = phase === 'active' || phase === 'draft';
             return (
               <li key={cycle.id} className="feedback-cycle-card" data-testid="feedback-cycle-card">
-                <button
-                  type="button"
-                  className="feedback-cycle-card__open"
-                  onClick={() => onOpenCycle(cycle.id)}
-                >
-                  <div className="feedback-cycle-card__head">
-                    <h3 className="feedback-cycle-card__title">{card.title}</h3>
-                    <Badge variant="neutral">{card.statusLabel}</Badge>
+                <div className="feedback-cycle-card__head">
+                  <h3 className="feedback-cycle-card__title">{card.title}</h3>
+                  <Badge variant="neutral">{card.statusLabel}</Badge>
+                </div>
+                <dl className="feedback-cycle-card__metrics feedback-cycle-card__metrics--v2">
+                  <div>
+                    <dt>Recipients</dt>
+                    <dd>{card.recipientPreview}</dd>
                   </div>
-                  <div className="feedback-cycle-card__metrics feedback-cycle-card__metrics--v2">
-                    <span>Recipients: <strong>{card.recipientPreview}</strong></span>
-                    <span>Questions: <strong>{card.questionCount}</strong></span>
-                    <span>Responses: <strong>{card.responsesLabel}</strong></span>
-                    {card.averageScore ? (
-                      <span>Avg score: <strong>{card.averageScore}</strong></span>
-                    ) : null}
-                    {card.trendLabel ? (
-                      <span className="feedback-cycle-card__trend">{card.trendLabel}</span>
-                    ) : null}
+                  <div>
+                    <dt>Questions</dt>
+                    <dd>{card.questionCount}</dd>
                   </div>
-                </button>
+                  <div>
+                    <dt>Responses</dt>
+                    <dd>{card.responsesLabel}</dd>
+                  </div>
+                  {card.averageScore ? (
+                    <div>
+                      <dt>Avg score</dt>
+                      <dd>{card.averageScore}</dd>
+                    </div>
+                  ) : null}
+                  {card.trendLabel ? (
+                    <div>
+                      <dt>Trend</dt>
+                      <dd>{card.trendLabel}</dd>
+                    </div>
+                  ) : null}
+                </dl>
                 {canManage ? (
                   <div className="feedback-cycle-card__actions">
+                    <Button
+                      type="button"
+                      variant="primary"
+                      onClick={() => onOpenCycle(cycle.id)}
+                    >
+                      Open
+                    </Button>
                     {card.currentRunId && isActive ? (
                       <>
                         <Button
@@ -99,7 +115,7 @@ export function FeedbackCyclesLanding({
                           variant="secondary"
                           onClick={() => onOpenRun(cycle.id, card.currentRunId!)}
                         >
-                          Open
+                          Open run
                         </Button>
                         <Button
                           type="button"
@@ -121,8 +137,19 @@ export function FeedbackCyclesLanding({
                     <Button type="button" variant="secondary" onClick={() => onRepeatCycle(cycle.id)}>
                       Repeat
                     </Button>
-                    <Button type="button" variant="secondary" onClick={() => onDeleteCycle(cycle.id)}>
+                    <Button type="button" variant="danger" onClick={() => onDeleteCycle(cycle.id)}>
                       Delete
+                    </Button>
+                  </div>
+                ) : null}
+                {!canManage ? (
+                  <div className="feedback-cycle-card__actions">
+                    <Button
+                      type="button"
+                      variant="primary"
+                      onClick={() => onOpenCycle(cycle.id)}
+                    >
+                      Open
                     </Button>
                   </div>
                 ) : null}

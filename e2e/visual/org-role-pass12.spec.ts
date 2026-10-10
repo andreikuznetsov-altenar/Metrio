@@ -36,7 +36,7 @@ test.describe("ORG Pass 12 IC", () => {
     await expect(page.getByTestId("feedback-ic-results-only")).toBeVisible({
       timeout: 15_000,
     });
-    await expect(page.getByTestId("feedback-tab-panel-survey")).toHaveCount(0);
+    await expect(page.getByTestId("feedback-v2-page")).toHaveCount(0);
   });
 });
 

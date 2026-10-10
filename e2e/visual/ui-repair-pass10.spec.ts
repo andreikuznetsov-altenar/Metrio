@@ -214,14 +214,10 @@ test.describe("UI Repair Pass 10 visual acceptance", () => {
     await page.goto("/");
     await expect(page.getByTestId("dashboard-ready")).toBeVisible({ timeout: 30_000 });
     await page.getByRole("button", { name: /^feedback$/i }).click();
-    await page.getByRole("button", { name: /^History$/i }).click();
-    await expect(page.getByTestId("feedback-history-table")).toBeVisible({
-      timeout: 15_000,
-    });
-    await expect(page.getByTestId("feedback-history-table")).toHaveScreenshot(
-      "feedback-history-neutral-selection.png",
-      SHOT,
-    );
+    await page.getByTestId("feedback-cycle-card").first().getByRole("button", { name: "Open", exact: true }).click();
+    await expect(page.getByTestId("feedback-cycle-detail")).toBeVisible({ timeout: 15_000 });
+    await page.getByRole("button", { name: "Runs" }).click();
+    await expect(page.getByText(/Form state:/)).toBeVisible();
   });
 
   test("search-open-neutral-border", async ({ page }) => {

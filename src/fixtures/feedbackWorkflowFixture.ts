@@ -53,6 +53,7 @@ export function serializeFeedbackVisualPrefsForPlaywright(): string {
       accountEmail: FEEDBACK_WORKFLOW_FIXTURE.google.accountEmail,
       formsConnected: true,
       gmailConnected: true,
+      appsScriptWebAppUrl: 'https://script.google.com/macros/s/visual/exec',
     },
   };
   return JSON.stringify(prefs);
@@ -97,6 +98,7 @@ export function serializeFeedbackCyclesPopulatedSurveyForPlaywright(): string {
 export function serializeFeedbackDeliveryVisualSurveyForPlaywright(): string {
   const now = new Date().toISOString();
   const surveyId = 'survey_visual_delivery';
+  const cycleId = 'cycle_visual_delivery';
   const defaults = createDefaultSurveyData();
   return JSON.stringify({
     schemaVersion: 2,
@@ -105,7 +107,7 @@ export function serializeFeedbackDeliveryVisualSurveyForPlaywright(): string {
     surveys: [
       {
         id: surveyId,
-        cycleId: null,
+        cycleId,
         periodKey: null,
         googleFormId: 'visual-form-id',
         responderUri: 'https://docs.google.com/forms/d/visual',
@@ -172,7 +174,17 @@ export function serializeFeedbackDeliveryVisualSurveyForPlaywright(): string {
         error: null,
       },
     ],
-    cycles: [],
+    cycles: [
+      {
+        id: cycleId,
+        name: 'Delivery feedback',
+        type: 'team',
+        status: 'active',
+        currentRunId: surveyId,
+        createdAt: now,
+        updatedAt: now,
+      },
+    ],
     templates: [],
   });
 }

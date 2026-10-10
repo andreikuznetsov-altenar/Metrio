@@ -21,7 +21,7 @@ test.describe("ORG Pass 12 route safety", () => {
     await expect(page.getByTestId("feedback-ic-results-only")).toBeVisible({
       timeout: 30_000,
     });
-    await expect(page.getByTestId("feedback-tab-panel-survey")).toHaveCount(0);
+    await expect(page.getByTestId("feedback-v2-page")).toHaveCount(0);
   });
 
   test("leaf manager can open survey tab", async ({ page }) => {
@@ -29,7 +29,7 @@ test.describe("ORG Pass 12 route safety", () => {
     await bootOrgRoleScenario(page, "leaf");
     await expect(page.getByTestId("dashboard-ready")).toBeVisible({ timeout: 30_000 });
     await page.locator(".app-header__nav-link").filter({ hasText: "Feedback" }).click();
-    await expect(page.getByTestId("feedback-tab-panel-survey")).toBeVisible({
+    await expect(page.getByTestId("feedback-v2-page")).toBeVisible({
       timeout: 30_000,
     });
   });
@@ -47,7 +47,7 @@ test.describe("ORG Pass 12 route safety", () => {
         new CustomEvent("metrio-open-feedback-tab", { detail: "survey" }),
       );
     });
-    await expect(page.getByTestId("feedback-tab-panel-survey")).toHaveCount(0);
+    await expect(page.getByTestId("feedback-v2-page")).toHaveCount(0);
   });
 
   test("leaf manager loses survey route after role becomes manager of managers", async ({
@@ -57,7 +57,7 @@ test.describe("ORG Pass 12 route safety", () => {
     await bootOrgRoleScenario(page, "leaf");
     await expect(page.getByTestId("dashboard-ready")).toBeVisible({ timeout: 30_000 });
     await page.locator(".app-header__nav-link").filter({ hasText: "Feedback" }).click();
-    await expect(page.getByTestId("feedback-tab-panel-survey")).toBeVisible({
+    await expect(page.getByTestId("feedback-v2-page")).toBeVisible({
       timeout: 30_000,
     });
     const momPrefs = serializeOrgRoleScenarioPrefsForPlaywright("mom");
@@ -71,7 +71,7 @@ test.describe("ORG Pass 12 route safety", () => {
       },
       { prefs: momPrefs, eventName: PREFERENCES_SAVED_EVENT },
     );
-    await expect(page.getByTestId("feedback-tab-panel-survey")).toHaveCount(0);
+    await expect(page.getByTestId("feedback-v2-page")).toHaveCount(0);
     await expect(page.getByTestId("dashboard-ready")).toBeVisible({
       timeout: 30_000,
     });
@@ -97,9 +97,9 @@ test.describe("ORG Pass 12 route safety", () => {
     await expect(page.getByTestId("dashboard-ready")).toBeVisible({
       timeout: 30_000,
     });
-    await expect(page.getByTestId("feedback-tab-panel-survey")).toHaveCount(0);
+    await expect(page.getByTestId("feedback-v2-page")).toHaveCount(0);
     await page.locator(".app-header__nav-link").filter({ hasText: "Feedback" }).click();
-    await expect(page.getByTestId("feedback-tab-panel-survey")).toBeVisible({
+    await expect(page.getByTestId("feedback-v2-page")).toBeVisible({
       timeout: 30_000,
     });
   });

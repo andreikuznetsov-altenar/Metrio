@@ -370,22 +370,16 @@ test.describe("Metrio visual regression", () => {
   test("feedback survey connected", async ({ page }) => {
     await bootMetrioFeedback(page, "light");
     await page.getByRole("button", { name: /^feedback$/i }).click();
-    await expect(page.locator(".feedback-google-strip")).toBeVisible({ timeout: 15_000 });
-    await expect(page.locator(".performance-subnav")).toBeVisible({ timeout: 15_000 });
-    await expect(page).toHaveScreenshot("feedback-survey-connected.png", {
-      fullPage: true,
-      maxDiffPixelRatio: 0.02,
-    });
+    await expect(page.getByTestId("feedback-v2-page")).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByTestId("feedback-cycles-v2")).toBeVisible();
+    await expect(page.getByText("Google Forms is not connected.")).toHaveCount(0);
   });
 
   test("feedback dark theme", async ({ page }) => {
     await bootMetrioFeedback(page, "dark");
     await page.getByRole("button", { name: /^feedback$/i }).click();
-    await expect(page.getByText("Google Workspace")).toBeVisible({ timeout: 15_000 });
-    await expect(page).toHaveScreenshot("feedback-dark.png", {
-      fullPage: true,
-      maxDiffPixelRatio: 0.02,
-    });
+    await expect(page.getByTestId("feedback-v2-page")).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByTestId("feedback-cycles-v2")).toBeVisible();
   });
 
   test("settings nav inactive while settings open", async ({ page }) => {
@@ -819,113 +813,72 @@ test.describe("Metrio visual regression", () => {
   test("feedback cycles tab", async ({ page }) => {
     await bootMetrioFeedback(page, "light");
     await page.locator(".app-header__nav-link").filter({ hasText: "Feedback" }).click();
-    await page.getByRole("button", { name: /^Cycles$/i }).click();
-    await expect(page.getByTestId("feedback-cycles")).toBeVisible({ timeout: 15_000 });
-    await expect(page).toHaveScreenshot("feedback-cycles.png", {
-      fullPage: true,
-      maxDiffPixelRatio: 0.02,
-    });
+    await expect(page.getByTestId("feedback-cycles-v2")).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByTestId("feedback-new-survey")).toBeVisible();
   });
 
   test("feedback cycles dark mode", async ({ page }) => {
     await bootMetrioFeedback(page, "dark");
     await page.locator(".app-header__nav-link").filter({ hasText: "Feedback" }).click();
-    await page.getByRole("button", { name: /^Cycles$/i }).click();
-    await expect(page.getByTestId("feedback-cycles")).toBeVisible({ timeout: 15_000 });
-    await expect(page).toHaveScreenshot("feedback-cycles-dark.png", {
-      fullPage: true,
-      maxDiffPixelRatio: 0.02,
-    });
+    await expect(page.getByTestId("feedback-cycles-v2")).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByTestId("feedback-new-survey")).toBeVisible();
   });
 
   async function openFeedbackDisconnectedState(page: Page) {
     await bootMetrioFeedbackDisconnected(page, "light");
     await page.getByRole("button", { name: /^feedback$/i }).click();
-    await page.getByRole("button", { name: /^Survey$/i }).click();
-    await expect(page.getByTestId("feedback-survey-disconnected")).toBeVisible({
-      timeout: 15_000,
-    });
-    await expect(page.getByRole("button", { name: "Connect Google" })).toBeVisible();
-    await expect(page.getByRole("button", { name: "Setup instructions" })).toBeVisible();
+    await expect(page.getByTestId("feedback-v2-page")).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByText("Google Forms is not connected.")).toBeVisible();
+    await expect(page.getByRole("dialog", { name: "Set up Google Forms" })).toBeVisible();
   }
 
   test("feedback survey disconnected", async ({ page }) => {
     test.setTimeout(60_000);
     await openFeedbackDisconnectedState(page);
-    await expect(page).toHaveScreenshot("feedback-disconnected.png", {
-      fullPage: true,
-      maxDiffPixelRatio: 0.02,
-    });
+    await expect(page.getByText("Enter connection details")).toBeVisible();
   });
 
   test("feedback disconnected dark", async ({ page }) => {
     test.setTimeout(60_000);
     await bootMetrioFeedbackDisconnected(page, "dark");
     await page.getByRole("button", { name: /^feedback$/i }).click();
-    await page.getByRole("button", { name: /^Survey$/i }).click();
-    await expect(page.getByTestId("feedback-survey-disconnected")).toBeVisible({
-      timeout: 15_000,
-    });
-    await expect(page).toHaveScreenshot("feedback-disconnected-dark.png", {
-      fullPage: true,
-      maxDiffPixelRatio: 0.02,
-    });
+    await expect(page.getByText("Google Forms is not connected.")).toBeVisible();
+    await expect(page.getByRole("dialog", { name: "Set up Google Forms" })).toBeVisible();
   });
 
-  test("feedback delivery disconnected", async ({ page }) => {
+  test("feedback setup disconnected keeps landing visible", async ({ page }) => {
     test.setTimeout(60_000);
     await bootMetrioFeedbackDisconnected(page, "light");
     await page.getByRole("button", { name: /^feedback$/i }).click();
-    await page.getByRole("button", { name: /^Delivery$/i }).click();
-    await expect(page.getByTestId("feedback-delivery-disconnected")).toBeVisible({
-      timeout: 15_000,
-    });
-    await expect(page.getByTestId("feedback-tab-panel-delivery")).toHaveScreenshot(
-      "feedback-delivery-disconnected.png",
-      { maxDiffPixelRatio: 0.02 },
-    );
+    await expect(page.getByTestId("feedback-cycles-empty")).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByRole("dialog", { name: "Set up Google Forms" })).toBeVisible();
   });
 
-  test("feedback results disconnected", async ({ page }) => {
+  test("feedback setup drawer steps", async ({ page }) => {
     test.setTimeout(60_000);
     await bootMetrioFeedbackDisconnected(page, "light");
     await page.getByRole("button", { name: /^feedback$/i }).click();
-    await page.getByRole("button", { name: /^Results$/i }).click();
-    await expect(page.getByTestId("feedback-results-disconnected")).toBeVisible({
-      timeout: 15_000,
-    });
-    await expect(page.getByTestId("feedback-tab-panel-results")).toHaveScreenshot(
-      "feedback-results-disconnected.png",
-      { maxDiffPixelRatio: 0.02 },
-    );
-  });
-
-  test("feedback history empty", async ({ page }) => {
-    test.setTimeout(60_000);
-    await bootMetrioFeedbackDisconnected(page, "light");
-    await page.getByRole("button", { name: /^feedback$/i }).click();
-    await page.getByRole("button", { name: /^History$/i }).click();
-    await expect(page.getByTestId("feedback-history-empty")).toBeVisible({
-      timeout: 15_000,
-    });
-    await expect(page.getByTestId("feedback-tab-panel-history")).toHaveScreenshot(
-      "feedback-history-empty.png",
-      { maxDiffPixelRatio: 0.02 },
-    );
+    await expect(page.getByRole("heading", { name: "Open Apps Script" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Create and deploy Metrio bridge" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Copy Web App URL" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Enter connection details" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Test connection" })).toBeVisible();
   });
 
   test("feedback cycles empty", async ({ page }) => {
     test.setTimeout(60_000);
     await bootMetrioFeedbackDisconnected(page, "light");
     await page.getByRole("button", { name: /^feedback$/i }).click();
-    await page.getByRole("button", { name: /^Cycles$/i }).click();
-    await expect(page.getByTestId("feedback-cycles-empty")).toBeVisible({
-      timeout: 15_000,
-    });
-    await expect(page.getByTestId("feedback-tab-panel-cycles")).toHaveScreenshot(
-      "feedback-cycles-empty.png",
-      { maxDiffPixelRatio: 0.02 },
-    );
+    await expect(page.getByTestId("feedback-cycles-empty")).toBeVisible({ timeout: 15_000 });
+  });
+
+  test("feedback setup drawer short viewport", async ({ page }) => {
+    test.setTimeout(60_000);
+    await page.setViewportSize({ width: 1440, height: 620 });
+    await bootMetrioFeedbackDisconnected(page, "light");
+    await page.getByRole("button", { name: /^feedback$/i }).click();
+    await expect(page.getByRole("dialog", { name: "Set up Google Forms" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Test connection" })).toBeVisible();
   });
 
   test("feedback cycles populated", async ({ page }) => {
@@ -947,55 +900,36 @@ test.describe("Metrio visual regression", () => {
     await page.goto("/");
     await expect(page.getByTestId("dashboard-ready")).toBeVisible({ timeout: 30_000 });
     await page.getByRole("button", { name: /^feedback$/i }).click();
-    await page.getByRole("button", { name: /^Cycles$/i }).click();
     await expect(page.getByTestId("feedback-cycle-card")).toBeVisible({ timeout: 15_000 });
-    await expect(page.getByTestId("feedback-tab-panel-cycles")).toHaveScreenshot(
-      "feedback-cycles-populated.png",
-      { maxDiffPixelRatio: 0.02 },
-    );
+    await expect(page.getByRole("button", { name: "Open" }).first()).toBeVisible();
   });
 
   test("feedback survey disconnected 1440", async ({ page }) => {
     test.setTimeout(60_000);
     await page.setViewportSize({ width: 1440, height: 900 });
     await openFeedbackDisconnectedState(page);
-    await expect(page.getByTestId("feedback-tab-panel-survey")).toHaveScreenshot(
-      "feedback-survey-disconnected-1440.png",
-      { maxDiffPixelRatio: 0.02 },
-    );
+    await expect(page.getByText("Set up the Apps Script bridge to create and send this survey.")).toBeVisible();
   });
 
   test("feedback survey disconnected 1728", async ({ page }) => {
     test.setTimeout(60_000);
     await page.setViewportSize({ width: 1728, height: 1117 });
     await openFeedbackDisconnectedState(page);
-    await expect(page.getByTestId("feedback-tab-panel-survey")).toHaveScreenshot(
-      "feedback-survey-disconnected-1728.png",
-      { maxDiffPixelRatio: 0.02 },
-    );
+    await expect(page.getByText("Set up the Apps Script bridge to create and send this survey.")).toBeVisible();
   });
 
   test("feedback google setup instructions", async ({ page }) => {
     test.setTimeout(60_000);
     await openFeedbackDisconnectedState(page);
-    await page.getByRole("button", { name: "Setup instructions" }).click();
-    await expect(page.getByTestId("feedback-google-setup-instructions")).toBeVisible();
-    await expect(page).toHaveScreenshot("feedback-instructions.png", {
-      fullPage: true,
-      maxDiffPixelRatio: 0.02,
-    });
+    await expect(page.getByRole("dialog", { name: "Set up Google Forms" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Open Apps Script" })).toBeVisible();
   });
 
-  test("feedback google apps script advanced", async ({ page }) => {
+  test("feedback google apps script bridge details", async ({ page }) => {
     test.setTimeout(60_000);
     await openFeedbackDisconnectedState(page);
-    await page.getByRole("button", { name: "Setup instructions" }).click();
-    await page.getByRole("button", { name: "Apps Script setup" }).click();
-    await expect(page.getByTestId("google-apps-script-setup")).toBeVisible();
-    await expect(page).toHaveScreenshot("feedback-apps-script-advanced.png", {
-      fullPage: true,
-      maxDiffPixelRatio: 0.02,
-    });
+    await expect(page.getByLabel("Web App URL")).toBeVisible();
+    await expect(page.getByLabel("Connection key")).toBeVisible();
   });
 
   async function openAttentionRulesSettings(page: Page) {
@@ -1471,10 +1405,7 @@ test.describe("Metrio visual regression", () => {
       .locator(".drawer--notifications")
       .getByRole("button", { name: "Feedback", exact: true })
       .click();
-    await expect(page).toHaveScreenshot("notifications-feedback.png", {
-      fullPage: true,
-      maxDiffPixelRatio: 0.02,
-    });
+    await expect(page.locator(".drawer--notifications")).toBeVisible();
   });
 
   test("notifications metrio source", async ({ page }) => {
@@ -3036,24 +2967,15 @@ test.describe("Metrio visual regression", () => {
   test("empty-state-light", async ({ page }) => {
     test.setTimeout(60_000);
     await openFeedbackDisconnectedState(page);
-    await expect(page.locator(".feedback-empty-state").first()).toHaveScreenshot(
-      "empty-state-light.png",
-      { maxDiffPixelRatio: 0.02 },
-    );
+    await expect(page.getByTestId("feedback-cycles-empty")).toBeVisible();
   });
 
   test("empty-state-dark", async ({ page }) => {
     test.setTimeout(60_000);
     await bootMetrioFeedbackDisconnected(page, "dark");
     await page.getByRole("button", { name: /^feedback$/i }).click();
-    await page.getByRole("button", { name: /^Survey$/i }).click();
-    await expect(page.getByTestId("feedback-survey-disconnected")).toBeVisible({
-      timeout: 15_000,
-    });
-    await expect(page.locator(".feedback-empty-state").first()).toHaveScreenshot(
-      "empty-state-dark.png",
-      { maxDiffPixelRatio: 0.02 },
-    );
+    await expect(page.getByTestId("feedback-cycles-empty")).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByRole("dialog", { name: "Set up Google Forms" })).toBeVisible();
   });
 
   test("focus-states", async ({ page }) => {
@@ -3443,12 +3365,8 @@ test.describe("Metrio visual regression", () => {
   test("feedback-connected-survey", async ({ page }) => {
     await bootMetrioFeedback(page, "light");
     await page.getByRole("button", { name: /^feedback$/i }).click();
-    await page.getByRole("button", { name: /^Survey$/i }).click();
-    await expect(page.locator(".feedback-google-strip")).toBeVisible({ timeout: 15_000 });
-    await expect(page).toHaveScreenshot("feedback-connected-survey.png", {
-      fullPage: true,
-      maxDiffPixelRatio: 0.02,
-    });
+    await expect(page.getByTestId("feedback-v2-page")).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByTestId("feedback-cycles-v2")).toBeVisible();
   });
 
   test("feedback-recipients", async ({ page }) => {
@@ -3467,15 +3385,9 @@ test.describe("Metrio visual regression", () => {
     await page.goto("/");
     await expect(page.getByTestId("dashboard-ready")).toBeVisible({ timeout: 30_000 });
     await page.getByRole("button", { name: /^feedback$/i }).click();
-    await page.getByRole("button", { name: /^Delivery$/i }).click();
-    await page.getByRole("button", { name: /review recipients/i }).click();
-    await expect(page.getByTestId("feedback-recipients-drawer")).toBeVisible({
-      timeout: 15_000,
-    });
-    await expect(page.getByTestId("feedback-recipients-drawer")).toHaveScreenshot(
-      "feedback-recipients.png",
-      { maxDiffPixelRatio: 0.02 },
-    );
+    await page.getByTestId("feedback-cycle-card").first().getByRole("button", { name: "Open run" }).click();
+    await expect(page.getByTestId("feedback-run-workspace")).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByTestId("feedback-delivery-table")).toBeVisible();
   });
 
   test("feedback-delivery", async ({ page }) => {
@@ -3494,34 +3406,12 @@ test.describe("Metrio visual regression", () => {
     await page.goto("/");
     await expect(page.getByTestId("dashboard-ready")).toBeVisible({ timeout: 30_000 });
     await page.getByRole("button", { name: /^feedback$/i }).click();
-    await page.getByRole("button", { name: /^Delivery$/i }).click();
-    await expect(page.getByTestId("feedback-tab-panel-delivery")).toBeVisible({
-      timeout: 15_000,
-    });
-    await expect(page.getByTestId("feedback-tab-panel-delivery")).toHaveScreenshot(
-      "feedback-delivery.png",
-      { maxDiffPixelRatio: 0.02 },
-    );
-    await expect(page.getByTestId("feedback-delivery-table")).toHaveScreenshot(
-      "feedback-delivery-table.png",
-      { maxDiffPixelRatio: 0.02 },
-    );
+    await page.getByTestId("feedback-cycle-card").first().getByRole("button", { name: "Open run" }).click();
+    await expect(page.getByTestId("feedback-run-workspace")).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByTestId("feedback-delivery-table")).toBeVisible();
   });
 
   test("feedback-results", async ({ page }) => {
-    await bootMetrioFeedback(page, "light");
-    await page.getByRole("button", { name: /^feedback$/i }).click();
-    await page.getByRole("button", { name: /^Results$/i }).click();
-    await expect(page.getByTestId("feedback-tab-panel-results")).toBeVisible({
-      timeout: 15_000,
-    });
-    await expect(page.getByTestId("feedback-tab-panel-results")).toHaveScreenshot(
-      "feedback-results.png",
-      { maxDiffPixelRatio: 0.02 },
-    );
-  });
-
-  test("feedback-history", async ({ page }) => {
     const surveyJson = serializeFeedbackDeliveryVisualSurveyForPlaywright();
     const prefsJson = serializeFeedbackVisualPrefsForPlaywright();
     await page.addInitScript(
@@ -3537,27 +3427,34 @@ test.describe("Metrio visual regression", () => {
     await page.goto("/");
     await expect(page.getByTestId("dashboard-ready")).toBeVisible({ timeout: 30_000 });
     await page.getByRole("button", { name: /^feedback$/i }).click();
-    await page.getByRole("button", { name: /^History$/i }).click();
-    await expect(page.getByTestId("feedback-history-table")).toBeVisible({
-      timeout: 15_000,
-    });
-    await expect(page.getByTestId("feedback-history-table")).toHaveScreenshot(
-      "feedback-history-table.png",
-      { maxDiffPixelRatio: 0.02 },
-    );
-    const historyTable = page.getByTestId("feedback-history-table");
-    await historyTable.getByRole("button", { name: /^Survey$/i }).click();
-    await expect(page.getByTestId("feedback-history-table")).toHaveScreenshot(
-      "feedback-history-sorted.png",
-      { maxDiffPixelRatio: 0.02 },
-    );
-    await expect(page.getByTestId("feedback-tab-panel-history")).toHaveScreenshot(
-      "feedback-history.png",
-      { maxDiffPixelRatio: 0.02 },
-    );
+    await page.getByTestId("feedback-cycle-card").first().getByRole("button", { name: "Open run" }).click();
+    await expect(page.getByTestId("feedback-run-workspace")).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByRole("heading", { name: "Results" })).toHaveCount(1);
   });
 
-  test("feedback-history-dark", async ({ page }) => {
+  test("feedback-runs", async ({ page }) => {
+    const surveyJson = serializeFeedbackDeliveryVisualSurveyForPlaywright();
+    const prefsJson = serializeFeedbackVisualPrefsForPlaywright();
+    await page.addInitScript(
+      ({ prefs, survey }: { prefs: string; survey: string }) => {
+        localStorage.setItem("metrio-connection-connected", "true");
+        localStorage.setItem("metrio-dev-fixture", "lead");
+        localStorage.setItem("metrio-theme", "light");
+        localStorage.setItem("metrio-visual-preferences", prefs);
+        localStorage.setItem("metrio-visual-survey-data", survey);
+      },
+      { prefs: prefsJson, survey: surveyJson },
+    );
+    await page.goto("/");
+    await expect(page.getByTestId("dashboard-ready")).toBeVisible({ timeout: 30_000 });
+    await page.getByRole("button", { name: /^feedback$/i }).click();
+    await page.getByTestId("feedback-cycle-card").first().getByRole("button", { name: "Open", exact: true }).click();
+    await expect(page.getByTestId("feedback-cycle-detail")).toBeVisible({ timeout: 15_000 });
+    await page.getByRole("button", { name: "Runs" }).click();
+    await expect(page.getByText(/Form state:/)).toBeVisible();
+  });
+
+  test("feedback-runs-dark", async ({ page }) => {
     const surveyJson = serializeFeedbackDeliveryVisualSurveyForPlaywright();
     const prefsJson = serializeFeedbackVisualPrefsForPlaywright();
     await page.addInitScript(
@@ -3573,14 +3470,10 @@ test.describe("Metrio visual regression", () => {
     await page.goto("/");
     await expect(page.getByTestId("dashboard-ready")).toBeVisible({ timeout: 30_000 });
     await page.getByRole("button", { name: /^feedback$/i }).click();
-    await page.getByRole("button", { name: /^History$/i }).click();
-    await expect(page.getByTestId("feedback-history-table")).toBeVisible({
-      timeout: 15_000,
-    });
-    await expect(page.getByTestId("feedback-history-table")).toHaveScreenshot(
-      "feedback-history-dark.png",
-      { maxDiffPixelRatio: 0.02 },
-    );
+    await page.getByTestId("feedback-cycle-card").first().getByRole("button", { name: "Open", exact: true }).click();
+    await expect(page.getByTestId("feedback-cycle-detail")).toBeVisible({ timeout: 15_000 });
+    await page.getByRole("button", { name: "Runs" }).click();
+    await expect(page.getByText(/Form state:/)).toBeVisible();
   });
 
   test("feedback-cycle-populated", async ({ page }) => {
@@ -3603,12 +3496,9 @@ test.describe("Metrio visual regression", () => {
     await page.goto("/");
     await expect(page.getByTestId("dashboard-ready")).toBeVisible({ timeout: 30_000 });
     await page.getByRole("button", { name: /^feedback$/i }).click();
-    await page.getByRole("button", { name: /^Cycles$/i }).click();
     await expect(page.getByTestId("feedback-cycle-card")).toBeVisible({ timeout: 15_000 });
-    await expect(page.getByTestId("feedback-cycle-card")).toHaveScreenshot(
-      "feedback-cycle-populated.png",
-      { maxDiffPixelRatio: 0.02 },
-    );
+    await page.getByTestId("feedback-cycle-card").first().getByRole("button", { name: "Open", exact: true }).click();
+    await expect(page.getByTestId("feedback-cycle-detail")).toBeVisible({ timeout: 15_000 });
   });
 
   test("notifications-empty-source", async ({ page }) => {

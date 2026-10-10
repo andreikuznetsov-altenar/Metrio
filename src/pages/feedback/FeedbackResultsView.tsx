@@ -6,15 +6,17 @@ import { surveyIndexBadgeVariant } from './feedbackUi';
 export function FeedbackResultsView({
   metrics,
   sentCount,
+  title = 'Results',
 }: {
   metrics: SurveyMetricsSummary;
   sentCount: number;
+  title?: string | null;
 }) {
   const responseRate =
     sentCount > 0 ? Math.round((metrics.respondentCount / sentCount) * 10000) / 100 : 0;
 
-  return (
-    <Section title="Results" variant="plain">
+  const content = (
+    <>
       <div className="ds-metric-grid ds-metric-grid--four">
         <MetricCard label="Sent" value={sentCount} />
         <MetricCard label="Responses" value={metrics.respondentCount} />
@@ -64,6 +66,16 @@ export function FeedbackResultsView({
           ))}
         </div>
       )}
+    </>
+  );
+
+  if (title === null) {
+    return <div className="feedback-results-content">{content}</div>;
+  }
+
+  return (
+    <Section title={title} variant="plain">
+      {content}
     </Section>
   );
 }
