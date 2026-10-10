@@ -1,11 +1,10 @@
 import {
   Document,
   Image,
-  Page,
-  Polygon,
-  Svg,
   Line,
-  Polyline,
+  Page,
+  Path,
+  Svg,
   Text,
   View,
 } from '@react-pdf/renderer';
@@ -13,7 +12,12 @@ import type { TeamPerformancePdfLayout } from './types';
 import { sanitizePdfImageSrc } from './pdfSafeImage';
 import { PDF_COLORS, pdfStyles } from './pdfStyles';
 import { AltenarPdfLogo } from './AltenarPdfLogo';
-import { buildTrendChartGeometry, polylineFromPoints } from './teamPdfChart';
+import {
+  areaPathFromPoints,
+  buildTrendChartGeometry,
+  linePathFromPoints,
+  smoothPathFromPoints,
+} from './teamPdfChart';
 import { pdfWorkloadTone } from './teamPdfHelpers';
 
 function initialsFromName(name: string): string {
@@ -61,7 +65,17 @@ function TeamReportHeader({ layout }: { layout: TeamPerformancePdfLayout }) {
   );
 }
 
-function SmoothTrendChart({ points }: { points: { date: string; value: number }[] }) {
+function isContinuousTrend(label: string): boolean {
+  return label === 'First pass' || label === 'Avg cycle';
+}
+
+function SmoothTrendChart({
+  label,
+  points,
+}: {
+  label: string;
+  points: { date: string; value: number }[];
+}) {
   const usable = points.filter((point) => Number.isFinite(point.value));
   if (usable.length < 2) {
     return <Text style={pdfStyles.trendNoChart}>Insufficient chart data</Text>;
@@ -69,27 +83,31 @@ function SmoothTrendChart({ points }: { points: { date: string; value: number }[
   const width = 248;
   const height = 72;
   const values = usable.map((p) => p.value);
-  const geometry = buildTrendChartGeometry(values, width, height, 10, 12);
+  const geometry = buildTrendChartGeometry(values, width, height, 14, 14);
   if (!geometry) {
     return <Text style={pdfStyles.trendNoChart}>Insufficient chart data</Text>;
   }
-  const areaPoints = polylineFromPoints(geometry.areaPoints);
-  const linePoints = polylineFromPoints(geometry.linePoints);
+  const linePath = isContinuousTrend(label)
+    ? smoothPathFromPoints(geometry.linePoints)
+    : linePathFromPoints(geometry.linePoints);
+  const areaPath = areaPathFromPoints(geometry.linePoints, geometry.baselineY);
   return (
     <Svg width={width} height={height} viewBox={`0 0 ${width} ${height}`}>
       <Line
-        x1={10}
+        x1={14}
         y1={geometry.baselineY}
-        x2={width - 10}
+        x2={width - 14}
         y2={geometry.baselineY}
         stroke={PDF_COLORS.borderSubtle}
         strokeWidth={0.75}
       />
-      <Polygon points={areaPoints} fill={PDF_COLORS.accentSoft} stroke="none" />
-      <Polyline
-        points={linePoints}
+      <Path d={areaPath} fill={PDF_COLORS.accentWash} stroke="none" />
+      <Path
+        d={linePath}
         stroke={PDF_COLORS.accent}
-        strokeWidth={1.25}
+        strokeWidth={1.15}
+        strokeLinecap="round"
+        strokeLinejoin="round"
         fill="none"
       />
     </Svg>
@@ -106,6 +124,7 @@ function workloadTextStyle(label: string) {
 
 export function TeamPerformancePdfDocument({ layout }: { layout: TeamPerformancePdfLayout }) {
   const { hero, supporting } = layout.teamEfficiency;
+  const teamKpis = [hero, ...supporting];
 
   return (
     <Document>
@@ -129,30 +148,19 @@ export function TeamPerformancePdfDocument({ layout }: { layout: TeamPerformance
 
         <View style={pdfStyles.sectionBlock} wrap={false}>
           <Text style={pdfStyles.sectionHeading}>Team efficiency</Text>
-          <View style={pdfStyles.efficiencyHeroRow}>
-            <View style={pdfStyles.efficiencyHeroCard} wrap={false}>
-              <View>
-                <Text style={pdfStyles.efficiencyHeroValue}>{hero.value}</Text>
-                <Text style={pdfStyles.efficiencyHeroLabel}>{hero.label}</Text>
-                {hero.description ? (
-                  <Text style={pdfStyles.efficiencyHeroStatus}>{hero.description}</Text>
+          <View style={pdfStyles.teamKpiRow}>
+            {teamKpis.map((kpi) => (
+              <View key={kpi.label} style={pdfStyles.teamKpiCard} wrap={false}>
+                <Text style={pdfStyles.teamKpiValue}>{kpi.value}</Text>
+                <Text style={pdfStyles.teamKpiLabel}>{kpi.label}</Text>
+                {kpi.description ? (
+                  <Text style={pdfStyles.teamKpiStatus}>{kpi.description}</Text>
+                ) : null}
+                {kpi.comparison ? (
+                  <Text style={pdfStyles.kpiComparison}>{kpi.comparison}</Text>
                 ) : null}
               </View>
-              {hero.comparison ? (
-                <Text style={pdfStyles.kpiComparison}>{hero.comparison}</Text>
-              ) : null}
-            </View>
-            <View style={pdfStyles.efficiencySupportGrid}>
-              {supporting.map((kpi) => (
-                <View key={kpi.label} style={pdfStyles.efficiencySupportCard} wrap={false}>
-                  <Text style={pdfStyles.efficiencySupportValue}>{kpi.value}</Text>
-                  <Text style={pdfStyles.efficiencySupportLabel}>{kpi.label}</Text>
-                  {kpi.comparison ? (
-                    <Text style={pdfStyles.kpiComparison}>{kpi.comparison}</Text>
-                  ) : null}
-                </View>
-              ))}
-            </View>
+            ))}
           </View>
         </View>
 
@@ -214,7 +222,7 @@ export function TeamPerformancePdfDocument({ layout }: { layout: TeamPerformance
                     ) : null}
                   </View>
                 </View>
-                <SmoothTrendChart points={trend.chartPoints} />
+                <SmoothTrendChart label={trend.label} points={trend.chartPoints} />
               </View>
             ))}
           </View>

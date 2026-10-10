@@ -15,9 +15,9 @@ describe('pdfSafeImage', () => {
     expect(isReactPdfCompatibleSvgMarkup(bad)).toBe(false);
   });
 
-  it('accepts fontless SVG wordmark markup', () => {
+  it('rejects fontless SVG text wordmark markup', () => {
     const ok = `<svg xmlns="http://www.w3.org/2000/svg"><text font-size="28" fill="#0B3D2E">Altenar</text></svg>`;
-    expect(isReactPdfCompatibleSvgMarkup(ok)).toBe(true);
+    expect(isReactPdfCompatibleSvgMarkup(ok)).toBe(false);
   });
 
   it('sanitizes incompatible SVG data URLs to null', () => {
@@ -31,8 +31,8 @@ describe('pdfSafeImage', () => {
     expect(sanitizePdfImageSrc(png)).toBe(png);
   });
 
-  it('keeps compatible SVG data URLs', () => {
-    const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 40"><text font-size="28" fill="#0B3D2E">Altenar</text></svg>`;
+  it('keeps compatible paths-only SVG data URLs', () => {
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 10"><path d="M1 1H19V9H1Z" fill="#0070F0"/></svg>`;
     const dataUrl = `data:image/svg+xml;base64,${Buffer.from(svg).toString('base64')}`;
     expect(sanitizePdfImageSrc(dataUrl)).toBe(dataUrl);
   });

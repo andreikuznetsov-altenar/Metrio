@@ -9,6 +9,7 @@ export const PDF_COLORS = {
   surfaceMuted: '#f6f7f8',
   accent: '#0070F0',
   accentSoft: '#e8f2ff',
+  accentWash: '#f3f8ff',
   success: '#0d7a4a',
   warning: '#9a6700',
   danger: '#b42318',
@@ -129,7 +130,7 @@ export const pdfStyles = StyleSheet.create({
     gap: 6,
   },
   companyLogo: {
-    width: 120,
+    width: 116,
     height: 24,
     objectFit: 'contain',
     marginBottom: 8,
@@ -143,7 +144,7 @@ export const pdfStyles = StyleSheet.create({
   },
   teamReportTitle: {
     fontSize: 20,
-    fontWeight: 700,
+    fontWeight: 600,
     color: PDF_COLORS.text,
     marginTop: 2,
     lineHeight: 1.2,
@@ -174,38 +175,36 @@ export const pdfStyles = StyleSheet.create({
     color: PDF_COLORS.textSecondary,
     fontWeight: 400,
   },
-  efficiencyHeroRow: {
+  teamKpiRow: {
     flexDirection: 'row',
     gap: 8,
     alignItems: 'stretch',
   },
-  efficiencyHeroCard: {
-    width: '36%',
-    minHeight: 118,
+  teamKpiCard: {
+    width: '23.5%',
+    minHeight: 78,
     borderWidth: 1,
     borderColor: PDF_COLORS.border,
-    borderRadius: 8,
-    paddingTop: 16,
-    paddingBottom: 14,
-    paddingHorizontal: 14,
-    backgroundColor: PDF_COLORS.surfaceMuted,
+    borderRadius: 6,
+    padding: 10,
+    backgroundColor: '#ffffff',
     justifyContent: 'flex-start',
   },
-  efficiencyHeroValue: {
-    fontSize: 36,
-    fontWeight: 700,
+  teamKpiValue: {
+    fontSize: 21,
+    fontWeight: 600,
     color: PDF_COLORS.text,
-    lineHeight: 1.05,
-    marginBottom: 8,
+    lineHeight: 1.1,
+    marginBottom: 5,
   },
-  efficiencyHeroLabel: {
-    fontSize: 10,
-    fontWeight: 500,
+  teamKpiLabel: {
+    fontSize: 8.5,
+    fontWeight: 400,
     color: PDF_COLORS.textSecondary,
-    lineHeight: 1.3,
-    marginBottom: 6,
+    lineHeight: 1.25,
+    marginBottom: 3,
   },
-  efficiencyHeroStatus: {
+  teamKpiStatus: {
     fontSize: 9,
     color: PDF_COLORS.success,
     fontWeight: 600,
@@ -268,8 +267,8 @@ export const pdfStyles = StyleSheet.create({
     marginBottom: 8,
   },
   individualEfficiencyValue: {
-    fontSize: 24,
-    fontWeight: 700,
+    fontSize: 21,
+    fontWeight: 600,
     color: PDF_COLORS.text,
     lineHeight: 1.1,
   },
@@ -307,10 +306,11 @@ export const pdfStyles = StyleSheet.create({
   trendGridItem: {
     width: '48%',
     borderWidth: 1,
-    borderColor: '#e6e6e6',
-    borderRadius: 8,
+    borderColor: PDF_COLORS.border,
+    borderRadius: 6,
     padding: 10,
     marginBottom: 4,
+    backgroundColor: '#ffffff',
   },
   trendDelta: {
     fontSize: 8,
@@ -366,8 +366,9 @@ export const pdfStyles = StyleSheet.create({
   },
   kpiComparison: {
     fontSize: 8,
-    color: '#646568',
+    color: PDF_COLORS.textMuted,
     marginTop: 4,
+    fontWeight: 400,
   },
   kpiDescription: {
     fontSize: 8,
@@ -394,7 +395,7 @@ export const pdfStyles = StyleSheet.create({
   },
   digestTableTitle: {
     fontSize: 9,
-    fontWeight: 700,
+    fontWeight: 600,
     paddingVertical: 6,
     paddingHorizontal: 8,
     backgroundColor: '#f3f3f4',
@@ -411,13 +412,13 @@ export const pdfStyles = StyleSheet.create({
   digestTableHeaderCell: {
     flex: 1,
     fontSize: 8,
-    fontWeight: 700,
+    fontWeight: 600,
     color: '#646568',
   },
   digestTableHeaderCellRight: {
     width: 56,
     fontSize: 8,
-    fontWeight: 700,
+    fontWeight: 600,
     color: '#646568',
     textAlign: 'right',
   },
@@ -442,13 +443,13 @@ export const pdfStyles = StyleSheet.create({
   },
   tableHeaderMuted: {
     flexDirection: 'row',
-    backgroundColor: '#f3f3f4',
+    backgroundColor: '#fafbfc',
     borderTopLeftRadius: 6,
     borderTopRightRadius: 6,
     paddingVertical: 5,
     paddingHorizontal: 8,
     borderBottomWidth: 1,
-    borderBottomColor: '#e6e6e6',
+    borderBottomColor: PDF_COLORS.borderSubtle,
   },
   tableRowMuted: {
     flexDirection: 'row',
@@ -456,7 +457,7 @@ export const pdfStyles = StyleSheet.create({
     paddingVertical: 5,
     paddingHorizontal: 8,
     borderBottomWidth: 1,
-    borderBottomColor: '#efefef',
+    borderBottomColor: PDF_COLORS.borderSubtle,
   },
   attentionPersonCol: {
     width: '34%',
@@ -498,7 +499,7 @@ export const pdfStyles = StyleSheet.create({
   workloadCol: {
     width: '46%',
     fontSize: 8,
-    fontWeight: 500,
+    fontWeight: 400,
     color: PDF_COLORS.text,
   },
   workloadSmallCol: {
@@ -520,13 +521,13 @@ export const pdfStyles = StyleSheet.create({
   },
   deliveryRiskHeader: {
     flexDirection: 'row',
-    backgroundColor: PDF_COLORS.surfaceMuted,
+    backgroundColor: '#fafbfc',
     borderTopLeftRadius: 6,
     borderTopRightRadius: 6,
     paddingVertical: 5,
     paddingHorizontal: 6,
     borderBottomWidth: 1,
-    borderBottomColor: PDF_COLORS.border,
+    borderBottomColor: PDF_COLORS.borderSubtle,
     marginBottom: 2,
   },
   deliveryRiskHeaderCell: {
@@ -545,7 +546,7 @@ export const pdfStyles = StyleSheet.create({
   deliveryRiskColIssue: {
     width: '11%',
     fontSize: 7,
-    fontWeight: 600,
+    fontWeight: 500,
     color: PDF_COLORS.text,
   },
   deliveryRiskColOwner: {
@@ -557,7 +558,7 @@ export const pdfStyles = StyleSheet.create({
     width: '12%',
     fontSize: 7,
     color: PDF_COLORS.text,
-    fontWeight: 500,
+    fontWeight: 400,
   },
   deliveryRiskColAge: {
     width: '8%',
@@ -590,12 +591,12 @@ export const pdfStyles = StyleSheet.create({
   },
   trendLabel: {
     fontSize: 9,
-    fontWeight: 600,
+    fontWeight: 500,
     color: PDF_COLORS.textSecondary,
   },
   trendValue: {
     fontSize: 11,
-    fontWeight: 700,
+    fontWeight: 600,
     color: PDF_COLORS.text,
     textAlign: 'right',
   },

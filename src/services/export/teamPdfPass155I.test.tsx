@@ -1,8 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import React from 'react';
 import { renderToBuffer } from '@react-pdf/renderer';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { buildTeamPerformancePdfLayout } from './teamPerformancePdfModel';
 import { TeamPerformancePdfDocument } from './TeamPerformancePdfDocument';
+import { pdfStyles } from './pdfStyles';
 import { EMPTY_KPI_SNAPSHOT_FILE } from '../../domain/snapshots/snapshotEngine';
 import type { TeamPerformanceSnapshot } from '../../domain/performance';
 import type { TeamSnapshot } from '../../domain/people/types';
@@ -143,7 +146,7 @@ describe('PASS 15.5I team PDF + workload', () => {
     expect(active).toBe(2);
   });
 
-  it('layout removes team attention and uses team name + efficiency hero', () => {
+  it('layout removes team attention and keeps four equal team KPI cards', () => {
     const andrei = personFixture('andrei', 'Andrei Kuznetsov', 'andrei@co.com', 'Head of UX Design');
     const daria = personFixture('daria', 'Daria Chernova', 'daria@co.com', 'Product Designer', 'andrei');
     const teamSnapshot: TeamSnapshot = {
@@ -202,11 +205,31 @@ describe('PASS 15.5I team PDF + workload', () => {
 
     expect(layout.teamName).toBe('UX Design');
     expect(layout.teamEfficiency.hero.value).toBe('91%');
+    expect([layout.teamEfficiency.hero, ...layout.teamEfficiency.supporting].map((k) => k.label)).toEqual([
+      'Efficiency',
+      'First pass',
+      'Completed',
+      'Backflows',
+    ]);
+    expect(pdfStyles.teamKpiCard.width).toBe('23.5%');
+    expect(pdfStyles.teamKpiCard.minHeight).toBe(78);
+    expect(pdfStyles.teamKpiValue.fontSize).toBe(21);
     expect(layout.individualEfficiency.map((c) => c.name)).toEqual(['Daria Chernova']);
     expect(layout.teamAttention).toBeUndefined();
     expect(layout.roster).toHaveLength(2);
     expect(layout.teamTrends).toHaveLength(4);
     expect(layout.workloadBalance.rows[0]?.active).toBe('2');
+  });
+
+  it('uses the recovered graphical Altenar logo asset with no SVG text fallback', async () => {
+    const publicLogo = readFileSync(resolve(process.cwd(), 'public/company/altenar-logo.svg'), 'utf8');
+    const component = readFileSync(
+      resolve(process.cwd(), 'src/services/export/TeamPerformancePdfDocument.tsx'),
+      'utf8',
+    );
+    expect(publicLogo).toContain('<path');
+    expect(publicLogo).not.toContain('<text');
+    expect(component).not.toContain('efficiencyHeroCard');
   });
 
   it('renders PDF with vector logo (not plain text wordmark)', async () => {

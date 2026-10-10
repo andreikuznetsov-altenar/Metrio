@@ -60,7 +60,7 @@ export async function buildPerformanceExportPayloadFromFetch(input: {
     view === "team-overview" && audience === "team" && teamOverview
       ? await resolvePdfAvatarDataUrls(
           displaySnapshot,
-          teamOverview.attention.map((row) => row.personId),
+          displaySnapshot.persons.map((person) => person.id),
         )
       : undefined;
 

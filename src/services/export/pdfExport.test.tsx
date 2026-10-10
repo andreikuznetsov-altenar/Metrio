@@ -147,7 +147,7 @@ describe('renderPerformancePdfBytes', () => {
     expect(new TextDecoder().decode(bytes.slice(0, 4))).toBe('%PDF');
   });
 
-  it('team layout survives incompatible SVG logo and avatar (wordmark/initials fallback)', async () => {
+  it('team layout survives incompatible SVG logo and avatar (graphical logo/initials fallback)', async () => {
     const badSvg = `<svg xmlns="http://www.w3.org/2000/svg"><text font-family="Helvetica, Arial, sans-serif" font-weight="700">Altenar</text></svg>`;
     const badLogo = `data:image/svg+xml;base64,${Buffer.from(badSvg).toString('base64')}`;
     const payload = {
@@ -187,8 +187,8 @@ describe('renderPerformancePdfBytes', () => {
     expect(bytes.length).toBeGreaterThan(1000);
   });
 
-  it('team layout renders with compatible bundled-style Altenar SVG logo', async () => {
-    const okSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 40"><text font-size="28" fill="#0B3D2E">Altenar</text></svg>`;
+  it('team layout renders with compatible paths-only Altenar SVG logo', async () => {
+    const okSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 10"><path d="M1 1H19V9H1Z" fill="#0070F0"/></svg>`;
     const okLogo = `data:image/svg+xml;base64,${Buffer.from(okSvg).toString('base64')}`;
     const payload = {
       ...payloadFor('team-overview'),

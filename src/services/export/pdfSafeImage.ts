@@ -29,6 +29,8 @@ function decodeSvgDataUrl(src: string): string | null {
 export function isReactPdfCompatibleSvgMarkup(svg: string): boolean {
   if (!svg.trim()) return false;
   // CSS font stacks / weights on <text> are a common packaged-render killer.
+  // PDF branding must use real graphical assets, not live SVG text glyphs.
+  if (/<text[\s>]/i.test(svg)) return false;
   if (/font-family\s*=/i.test(svg)) return false;
   if (/font-weight\s*=/i.test(svg)) return false;
   if (/style\s*=\s*["'][^"']*font-/i.test(svg)) return false;
