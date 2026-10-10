@@ -109,13 +109,18 @@ export function formatWorkloadLabel(
   return workloadDisplayLabel(level);
 }
 
+export function currentWorkloadForPerson(person: Person | undefined): WorkloadResult | null {
+  return person?.personalWorkload ?? person?.workload ?? null;
+}
+
 export function workloadLabelForPerson(person: Person | undefined): CapacityPresentationLabel {
   if (!person) return CAPACITY_INSUFFICIENT_LABEL;
-  const state = capacityDataStateFromWorkload(person.workload ?? null);
+  const workload = currentWorkloadForPerson(person);
+  const state = capacityDataStateFromWorkload(workload);
   if (state === "insufficient_history") {
     return CAPACITY_INSUFFICIENT_LABEL;
   }
-  return workloadDisplayLabel(person.workload?.level);
+  return workloadDisplayLabel(workload?.level);
 }
 
 export function buildWorkloadRowFields(
@@ -126,7 +131,8 @@ export function buildWorkloadRowFields(
   estimatedMonthlyHours?: number;
   monthlyCapacityHours?: number;
 } {
-  const capacityDataState = capacityDataStateForPerson(person);
+  const currentWorkload = currentWorkloadForPerson(person);
+  const capacityDataState = capacityDataStateFromWorkload(currentWorkload);
   const workload =
     capacityDataState === 'insufficient_history'
       ? CAPACITY_INSUFFICIENT_LABEL
@@ -138,18 +144,17 @@ export function buildWorkloadRowFields(
     capacityDataState,
     availability: person?.availability.label || '—',
   };
-  const personal = person?.personalWorkload ?? person?.workload;
-  if (personal?.capacityLoadPercent != null && capacityDataState === "measured") {
+  if (currentWorkload?.capacityLoadPercent != null && capacityDataState === "measured") {
     return {
       ...base,
-      capacityLoadPercent: personal.capacityLoadPercent,
-      estimatedMonthlyHours: personal.estimatedMonthlyHours,
-      monthlyCapacityHours: personal.monthlyCapacityHours,
+      capacityLoadPercent: currentWorkload.capacityLoadPercent,
+      estimatedMonthlyHours: currentWorkload.estimatedMonthlyHours,
+      monthlyCapacityHours: currentWorkload.monthlyCapacityHours,
     };
   }
   return base;
 }
 
 export function capacityDataStateForPerson(person: Person | undefined) {
-  return capacityDataStateFromWorkload(person?.personalWorkload ?? person?.workload ?? null);
+  return capacityDataStateFromWorkload(currentWorkloadForPerson(person));
 }

@@ -1,4 +1,9 @@
-import { personAtRiskCount, personProblematicCount, personRouteKey } from '../people/personDisplay';
+import {
+  currentWorkloadForPerson,
+  personAtRiskCount,
+  personProblematicCount,
+  personRouteKey,
+} from '../people/personDisplay';
 import type { Person } from '../people/types';
 import type { ReportParams } from '../jira/types';
 import type { TeamSnapshot } from '../people/types';
@@ -49,8 +54,9 @@ function buildPersonRadarItem(
   const operationalIssues = getOperationalIssues(person);
   const atRiskCount = personAtRiskCount(person, params);
   const problematicCount = personProblematicCount(person, params);
-  const workload = person.workload?.level || 'normal';
-  const activeCount = person.workload?.activeCount ?? getActiveIssues(person).length;
+  const currentWorkload = currentWorkloadForPerson(person);
+  const workload = currentWorkload?.level || 'normal';
+  const activeCount = currentWorkload?.activeCount ?? getActiveIssues(person).length;
 
   for (const issue of operationalIssues) {
     const attention = classifyIssueAttention(issue, params, now, rules);
@@ -143,7 +149,7 @@ export function buildTeamRadar(
   if (snapshot.mode !== 'team') return [];
 
   const activeCounts = snapshot.persons.map(
-    (p) => p.workload?.activeCount ?? getActiveIssues(p).length,
+    (p) => currentWorkloadForPerson(p)?.activeCount ?? getActiveIssues(p).length,
   );
   const teamAverageActive =
     activeCounts.length > 0

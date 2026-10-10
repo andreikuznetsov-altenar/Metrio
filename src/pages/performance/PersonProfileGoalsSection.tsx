@@ -48,17 +48,19 @@ function ProfileGoalRow({
       data-testid="person-profile-goal"
       data-goal-id={goal.id}
     >
-      <div className="person-profile-goal__title">{goal.title}</div>
-      <div className="person-profile-goal__meta">
-        <span>{goal.percentComplete}% complete</span>
-        <span aria-hidden>·</span>
-        <span>{formatDue(goal.dueDate)}</span>
-        <span aria-hidden>·</span>
-        <span>{formatStatus(goal)}</span>
+      <div className="person-profile-goal__main">
+        <div className="person-profile-goal__title">{goal.title}</div>
+        <div className="person-profile-goal__meta">
+          <span>{goal.percentComplete}% complete</span>
+          <span aria-hidden>·</span>
+          <span>{formatDue(goal.dueDate)}</span>
+          <span aria-hidden>·</span>
+          <span>{formatStatus(goal)}</span>
+        </div>
+        {milestones ? (
+          <div className="person-profile-goal__milestones">{milestones}</div>
+        ) : null}
       </div>
-      {milestones ? (
-        <div className="person-profile-goal__milestones">{milestones}</div>
-      ) : null}
       <div className="person-profile-goal__actions">
         <Button
           type="button"

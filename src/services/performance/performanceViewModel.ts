@@ -14,6 +14,7 @@ import {
   personProblematicCount,
   workloadLabelForPerson,
   buildWorkloadRowFields,
+  currentWorkloadForPerson,
 } from "../../domain/people/personDisplay";
 import { buildMyWeek } from "../../domain/personal/myWeek";
 import { buildWorkHistory } from "../../domain/personal/workHistory";
@@ -427,7 +428,7 @@ export function buildPerformanceViewModels(
         ? String(person.performance.completedCount)
         : "0",
       workload: formatWorkloadLabel(person.workload?.level, {
-        workload: person.workload,
+        workload: currentWorkloadForPerson(person),
         availability: person.availability,
       }),
       summary: avgCycleLabel(person),
@@ -470,7 +471,7 @@ export function buildPerformanceViewModels(
         ? `${person.performance.efficiencyIndex}%`
         : "—",
       workload: formatWorkloadLabel(person.workload?.level, {
-        workload: person.workload,
+        workload: currentWorkloadForPerson(person),
         availability: person.availability,
       }),
       availability: person.availability.label,
@@ -761,7 +762,7 @@ function buildPersonDetailSnapshot(
     personName: person.bamboo.displayName,
     availability: person.availability.label,
     workload: formatWorkloadLabel(person.workload?.level, {
-      workload: person.workload,
+      workload: currentWorkloadForPerson(person),
       availability: person.availability,
     }),
     efficiency: perf ? `${perf.efficiencyIndex}%` : "—",

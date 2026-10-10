@@ -9,8 +9,9 @@ import type { Person, TeamSnapshot } from "../../domain/people/types";
 import type { AuditReportData } from "../../domain/jira/types";
 import { EMPTY_KPI_SNAPSHOT_FILE } from "../../domain/snapshots/snapshotEngine";
 import { testKpi, testWorkload } from "../../domain/testFixtures";
-import type { AuditIssue } from "../../domain/jira/types";
+import type { AuditIssue, IssueEvent } from "../../domain/jira/types";
 import { filterOwnedIssues } from "../../domain/people/ownedIssues";
+import { calculateWorkload } from "../../domain/workload/workloadEngine";
 
 const params: AuditReportData["params"] = {
   dateFrom: "2026-01-01",
@@ -85,6 +86,37 @@ function activeIssue(
     rangeEvents: [],
     currentStatus: status,
     ...(ownerCanonical ? { currentAssigneeCanonical: ownerCanonical } : {}),
+  };
+}
+
+function statusEvent(
+  fromValue: string,
+  toValue: string,
+  changedAt: string,
+): IssueEvent {
+  return {
+    eventType: "Status",
+    changedAt,
+    changedBy: "Real Person",
+    fromValue,
+    toValue,
+    timeSincePreviousStatusMs: null,
+    isBackflow: false,
+    isHandoff: false,
+    isReturnToTeam: false,
+    excludeFromEfficiencyBackflow: false,
+  };
+}
+
+function completedCycleIssue(key: string, ownerCanonical: string): AuditIssue {
+  return {
+    ...activeIssue(key, "Completed capacity sample", "Done", ownerCanonical),
+    issueCreated: "2026-01-05T09:00:00.000Z",
+    events: [
+      statusEvent("To Do", "In Progress", "2026-01-06T09:00:00.000Z"),
+      statusEvent("In Progress", "In Review", "2026-01-08T09:00:00.000Z"),
+      statusEvent("In Review", "Done", "2026-01-09T09:00:00.000Z"),
+    ],
   };
 }
 
@@ -240,6 +272,115 @@ describe("buildPerformanceViewModels", () => {
     data.partialWarnings.push("no_jira_issues_in_period");
     const vm = buildPerformanceViewModels(data, "937");
     expect(vm.statusMessage).toBe("No Jira work found for this period.");
+  });
+
+  it("PASS 16.6 keeps review and hold-only current work out of Heavy and Overloaded workload", () => {
+    const person = bambooPerson("valeriia", "Valeriia Pavlova");
+    const owner = person.jira!.canonicalKey;
+    const issues = [
+      ...Array.from({ length: 6 }, (_, index) =>
+        activeIssue(`UX-R${index + 1}`, "Review item", "In Review", owner),
+      ),
+      ...Array.from({ length: 2 }, (_, index) =>
+        activeIssue(`UX-H${index + 1}`, "Hold item", "On Hold", owner),
+      ),
+      completedCycleIssue("UX-C1", owner),
+    ];
+    person.issues = issues;
+    person.ownedIssues = filterOwnedIssues(issues, owner);
+    person.personalWorkload = calculateWorkload(person.ownedIssues, params);
+    person.workload = person.personalWorkload;
+
+    expect(person.personalWorkload.capacityContributorIssueCount).toBe(0);
+    expect(person.personalWorkload.capacityLoadPercent).toBe(0);
+    expect(person.personalWorkload.level).toBe("low");
+
+    const vm = buildPerformanceViewModels(buildResult([person]), "valeriia");
+    expect(vm.teamSecondary.people[0].workload).toBe("Light");
+    expect(vm.teamOverview.workload[0].workload).toBe("Light");
+    expect(vm.getPersonDetail("valeriia")?.workload).toBe("Light");
+  });
+
+  it("PASS 16.6 allows High Attention with Light current workload", () => {
+    const person = bambooPerson("valeriia", "Valeriia Pavlova");
+    const owner = person.jira!.canonicalKey;
+    const issues = [
+      activeIssue("UX-HOLD", "Blocked handoff", "On Hold", owner),
+      completedCycleIssue("UX-C2", owner),
+    ];
+    person.issues = issues;
+    person.ownedIssues = filterOwnedIssues(issues, owner);
+    person.personalWorkload = calculateWorkload(person.ownedIssues, params);
+    person.workload = person.personalWorkload;
+
+    const vm = buildPerformanceViewModels(buildResult([person]), "valeriia");
+    expect(vm.teamSecondary.people[0].attentionSeverityLabel).toBe("High");
+    expect(vm.teamSecondary.people[0].workload).toBe("Light");
+    expect(vm.teamOverview.attention[0].workload).toBe("Light");
+  });
+
+  it("PASS 16.6 calculates active execution contributors normally", () => {
+    const owner = "jira-andrei";
+    const active = activeIssue("UX-ACTIVE", "Execution task", "In Progress", owner);
+    const result = calculateWorkload([active, completedCycleIssue("UX-C3", owner)], params);
+    expect(result.activeWorkCount).toBe(1);
+    expect(result.capacityContributorIssueCount).toBe(1);
+    expect(result.currentAssignedIssueCount).toBe(2);
+    expect(result.level).toMatch(/low|normal|high|overloaded/);
+  });
+
+  it("PASS 16.6 replaces stale overloaded workload snapshots with current personal workload", () => {
+    const person = bambooPerson("valeriia", "Valeriia Pavlova");
+    const owner = person.jira!.canonicalKey;
+    const issues = [
+      activeIssue("UX-R1", "Review item", "In Review", owner),
+      completedCycleIssue("UX-C4", owner),
+    ];
+    person.issues = issues;
+    person.ownedIssues = filterOwnedIssues(issues, owner);
+    person.workload = testWorkload({
+      level: "overloaded",
+      capacityLoadPercent: 140,
+      score: 140,
+    });
+    person.personalWorkload = calculateWorkload(person.ownedIssues, params);
+
+    const vm = buildPerformanceViewModels(buildResult([person]), "valeriia");
+    expect(person.workload.level).toBe("overloaded");
+    expect(person.personalWorkload.level).toBe("low");
+    expect(vm.teamSecondary.people[0].workload).toBe("Light");
+    expect(vm.teamOverview.workload[0].workload).toBe("Light");
+    expect(vm.getPersonDetail("valeriia")?.workload).toBe("Light");
+    expect(vm.teamOverview.personDetails.valeriia?.workload).toBe("Light");
+  });
+
+  it("PASS 16.6 uses one workload level across People, drawer, and Workload Balance", () => {
+    const andrei = bambooPerson("andrei", "Andrei Kuznetsov");
+    const daria = bambooPerson("daria", "Daria Chernova");
+    const valeriia = bambooPerson("valeriia", "Valeriia Pavlova");
+
+    for (const person of [andrei, daria, valeriia]) {
+      const owner = person.jira!.canonicalKey;
+      person.issues = [
+        activeIssue(`UX-${person.id}`, "Review item", "In Review", owner),
+        completedCycleIssue(`UX-C-${person.id}`, owner),
+      ];
+      person.ownedIssues = filterOwnedIssues(person.issues, owner);
+      person.workload = testWorkload({ level: "overloaded", capacityLoadPercent: 130 });
+      person.personalWorkload = calculateWorkload(person.ownedIssues, params);
+    }
+
+    const vm = buildPerformanceViewModels(buildResult([andrei, daria, valeriia]), "andrei");
+    for (const person of [andrei, daria, valeriia]) {
+      const peopleLevel = vm.teamSecondary.people.find(
+        (row) => row.personId === person.id,
+      )?.workload;
+      const balanceLevel = vm.teamOverview.workload.find(
+        (row) => row.personId === person.id,
+      )?.workload;
+      const drawerLevel = vm.getPersonDetail(person.id)?.workload;
+      expect([peopleLevel, balanceLevel, drawerLevel]).toEqual(["Light", "Light", "Light"]);
+    }
   });
 });
 
