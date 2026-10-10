@@ -69,9 +69,10 @@
   min-height: 0;
   display: flex;
   flex-direction: column;
-  /* Scroll viewport fills remaining drawer height to the bottom edge. */
+  /* Scroll viewport fills remaining drawer height; bottom inset matches drawer body horizontal padding. */
   overflow-x: hidden;
   overflow-y: auto;
+  padding-bottom: var(--drawer-body-padding);
 }
 
 .notification-center__filters {
@@ -286,9 +287,8 @@
   min-height: 0;
   overflow: hidden;
   /*
-   * Root cause of the bottom blank strip: generic .drawer__body padding (20px)
-   * reserved empty space below the inner scroll viewport. Keep horizontal + top
-   * inset; zero the bottom so cards scroll to the drawer edge.
+   * Bottom breathing room lives on .notification-center__main (scroll content), not here —
+   * otherwise padding below the scroll viewport becomes a non-scrollable blank strip.
    */
   padding-bottom: 0;
 }

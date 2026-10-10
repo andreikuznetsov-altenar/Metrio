@@ -22,7 +22,7 @@ afterEach(() => {
 });
 
 describe("Notification drawer scroll geometry", () => {
-  it("CSS contract: body has no bottom padding; scroll viewport fills remaining height", () => {
+  it("CSS contract: drawer body keeps zero bottom padding; scroll viewport owns canonical bottom inset", () => {
     const css = readFileSync(
       resolve(process.cwd(), "src/shell/notification-center.css"),
       "utf8",
@@ -42,8 +42,11 @@ describe("Notification drawer scroll geometry", () => {
     expect(css).toMatch(
       /\.notification-center__main\s*\{[\s\S]*?overflow-y:\s*auto/,
     );
+    expect(css).toMatch(
+      /\.notification-center__main\s*\{[\s\S]*?padding-bottom:\s*var\(--drawer-body-padding\)/,
+    );
     expect(css).not.toMatch(
-      /\.notification-center__main[\s\S]{0,200}padding-bottom:\s*(?!0)\d/,
+      /\.notification-center__card:last-child[\s\S]*margin-bottom/,
     );
   });
 
