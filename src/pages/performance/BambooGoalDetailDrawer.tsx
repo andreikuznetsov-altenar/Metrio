@@ -1,8 +1,11 @@
 import { useEffect, useState } from "react";
 import { ExternalLink } from "lucide-react";
 import { Button } from "../../components/Button/Button";
+import { Input } from "../../components/Input/Input";
 import { Drawer } from "../../components/Drawer/Drawer";
+import { MetrioDatePicker } from "../../components/DatePicker/MetrioDatePicker";
 import { Modal } from "../../components/Modal/Modal";
+import { Textarea } from "../../components/Textarea/Textarea";
 import { useToast } from "../../components/Toast/ToastContext";
 import { buildBambooGoalUrl } from "../../config/buildBambooGoalUrl";
 import { resolveBambooSubdomain } from "../../config/product";
@@ -332,55 +335,46 @@ export function BambooGoalDetailDrawer({
             ) : (
               <>
                 <h3 className="bamboo-goal-detail__section-title">Edit in Metrio</h3>
-                <label className="bamboo-goal-form__field">
-                  <span>Title</span>
-                  <input
-                    value={title}
-                    onChange={(e) => setTitle(e.target.value)}
-                    data-testid="bamboo-edit-title"
-                  />
-                </label>
-                <label className="bamboo-goal-form__field">
-                  <span>Description</span>
-                  <textarea
-                    value={description}
-                    onChange={(e) => setDescription(e.target.value)}
-                    rows={3}
-                    data-testid="bamboo-edit-description"
-                  />
-                </label>
-                <label className="bamboo-goal-form__field">
-                  <span>Due date</span>
-                  <input
-                    type="date"
-                    value={dueDate}
-                    onChange={(e) => setDueDate(e.target.value)}
-                    data-testid="bamboo-edit-due-date"
-                  />
-                </label>
-                <label className="bamboo-goal-form__field">
-                  <span>Shared with (owner always included)</span>
-                  <input
-                    value={shareIds.join(",")}
-                    onChange={(e) =>
-                      setShareIds(
-                        ensureOwnerInSharedWith(
-                          ownerEmployeeId,
-                          e.target.value.split(",").map((s) => s.trim()),
-                        ),
-                      )
-                    }
-                    data-testid="bamboo-edit-share"
-                  />
-                </label>
-                <label className="bamboo-goal-form__field">
-                  <span>Alignment option id (optional)</span>
-                  <input
-                    value={alignId}
-                    onChange={(e) => setAlignId(e.target.value)}
-                    data-testid="bamboo-edit-alignment"
-                  />
-                </label>
+                <Input
+                  label="Title"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  data-testid="bamboo-edit-title"
+                />
+                <Textarea
+                  label="Description"
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  rows={3}
+                  data-testid="bamboo-edit-description"
+                />
+                <MetrioDatePicker
+                  label="Due date"
+                  value={dueDate}
+                  onChange={setDueDate}
+                  popoverSide="top"
+                  layout="stacked"
+                  testId="bamboo-edit-due-date"
+                />
+                <Input
+                  label="Shared with (owner always included)"
+                  value={shareIds.join(",")}
+                  onChange={(e) =>
+                    setShareIds(
+                      ensureOwnerInSharedWith(
+                        ownerEmployeeId,
+                        e.target.value.split(",").map((s) => s.trim()),
+                      ),
+                    )
+                  }
+                  data-testid="bamboo-edit-share"
+                />
+                <Input
+                  label="Alignment option id (optional)"
+                  value={alignId}
+                  onChange={(e) => setAlignId(e.target.value)}
+                  data-testid="bamboo-edit-alignment"
+                />
                 <Button
                   type="button"
                   onClick={() => void saveDetails()}

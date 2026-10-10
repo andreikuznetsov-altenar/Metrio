@@ -293,17 +293,6 @@
   font-size: 13px;
 }
 
-.bamboo-goal-form__field input,
-.bamboo-goal-form__field textarea,
-.bamboo-goal-form__field select {
-  font: inherit;
-  padding: var(--space-2);
-  border: 1px solid var(--color-border-subtle);
-  border-radius: var(--radius-control);
-  background: var(--color-surface);
-  color: var(--color-text-primary);
-}
-
 .bamboo-goal-form__hint {
   margin: 0;
   font-size: 12px;

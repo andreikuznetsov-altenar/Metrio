@@ -234,12 +234,33 @@ describe("PASS 15.5E Bamboo Goals canonical", () => {
     );
     expect(within(detail).getByTestId("bamboo-goal-owner")).toHaveTextContent("42");
     expect(within(detail).getByTestId("bamboo-edit-title")).toHaveValue("Bamboo QA Goal");
+    expect(within(detail).getByTestId("bamboo-edit-title").className).toContain(
+      "metrio-field",
+    );
+    expect(within(detail).getByTestId("bamboo-edit-title").className).toContain(
+      "input",
+    );
     expect(within(detail).getByTestId("bamboo-edit-description")).toHaveValue(
       "Ship Bamboo Goals UI",
     );
-    expect(within(detail).getByTestId("bamboo-edit-due-date")).toHaveValue("2026-12-31");
+    expect(
+      within(detail).getByTestId("bamboo-edit-description").className,
+    ).toContain("textarea");
+    expect(
+      within(detail).getByTestId("bamboo-edit-description").className,
+    ).toContain("metrio-field");
+    const editDueDate = within(detail).getByTestId("bamboo-edit-due-date");
+    expect(editDueDate.className).toContain("metrio-date-picker__trigger");
+    expect(editDueDate).toHaveTextContent(/Dec.*31|31.*Dec/i);
+    expect(detail.querySelector('input[type="date"]')).toBeNull();
     expect(within(detail).getByTestId("bamboo-edit-share")).toBeInTheDocument();
+    expect(within(detail).getByTestId("bamboo-edit-share").className).toContain(
+      "metrio-field",
+    );
     expect(within(detail).getByTestId("bamboo-edit-alignment")).toHaveValue("align-1");
+    expect(
+      within(detail).getByTestId("bamboo-edit-alignment").className,
+    ).toContain("metrio-field");
     expect(within(detail).getByTestId("bamboo-edit-percent")).toHaveValue("40");
 
     const sidecar = within(detail).getByTestId("bamboo-sidecar-links");
@@ -249,6 +270,45 @@ describe("PASS 15.5E Bamboo Goals canonical", () => {
     expect(sidecar).toHaveTextContent("page-9");
     expect(detail.textContent).not.toMatch(/manualProgress/);
     expect(detail.textContent).not.toMatch(/\{"kind":"steps"/);
+  });
+
+  it("PASS 16.5: Edit in Metrio uses canonical date picker interaction, not native date input", async () => {
+    const user = userEvent.setup();
+    render(
+      <ToastProvider>
+        <EmployeeGoalsView personId="self-person" />
+      </ToastProvider>,
+    );
+    await waitFor(() => screen.getByText("Bamboo QA Goal"));
+    await user.click(screen.getByTestId("bamboo-goal-open"));
+    const drawer = await screen.findByTestId("bamboo-goal-detail-drawer");
+    expect(drawer.querySelector('input[type="date"]')).toBeNull();
+
+    const detail = screen.getByTestId("bamboo-goal-detail");
+    const dueDate = within(detail).getByTestId("bamboo-edit-due-date");
+    expect(dueDate.className).toContain("metrio-date-picker__trigger");
+    expect(dueDate.closest(".metrio-date-picker--stacked")).toBeTruthy();
+
+    await user.click(dueDate);
+    await waitFor(() => {
+      expect(dueDate.getAttribute("data-state")).toBe("open");
+    });
+    expect(screen.getByRole("grid")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: /December 15/i }));
+    await waitFor(() => {
+      expect(dueDate).toHaveTextContent(/Dec.*15|15.*Dec/i);
+    });
+
+    await user.click(dueDate);
+    await waitFor(() => {
+      expect(dueDate.getAttribute("data-state")).toBe("open");
+    });
+    await user.keyboard("{Escape}");
+    await waitFor(() => {
+      expect(dueDate.getAttribute("data-state")).toBe("closed");
+    });
+    expect(screen.getByTestId("bamboo-goal-detail-drawer")).toBeInTheDocument();
   });
 
   it("E/F/G: delete confirms, calls Bamboo API, updates cache/UI, cleans sidecar", async () => {

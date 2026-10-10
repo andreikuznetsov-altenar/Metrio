@@ -20,16 +20,15 @@ export interface MetrioDatePickerProps {
   testId?: string;
 }
 
-function DatePickerChevron({ orientation, className, ...props }: ChevronProps) {
+function DatePickerChevron({ orientation, className }: ChevronProps) {
   const Icon = orientation === "left" ? ChevronLeft : ChevronRight;
   return (
-    <button
-      type="button"
+    <span
       className={["metrio-date-picker__nav", className].filter(Boolean).join(" ")}
-      {...props}
+      aria-hidden
     >
       <Icon size={15} strokeWidth={1.75} aria-hidden />
-    </button>
+    </span>
   );
 }
 
