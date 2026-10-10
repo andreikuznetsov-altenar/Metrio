@@ -121,10 +121,21 @@ describe("TeamDeliveryRiskView", () => {
     expect(interactionCss).toMatch(
       /\.performance-table__action-controls[\s\S]*gap:\s*var\(--space-2\)/,
     );
+    const tokensCss = fs.readFileSync(
+      path.resolve(process.cwd(), "src/styles/tokens.css"),
+      "utf8",
+    );
+    expect(tokensCss).toContain("--delivery-risk-action-inset-end: var(--space-3)");
 
     const css = fs.readFileSync(
       path.resolve(process.cwd(), "src/pages/performance/performance-dashboard.css"),
       "utf8",
+    );
+    expect(css).toMatch(
+      /col\.col-action[\s\S]*var\(--space-3\) \+ var\(--delivery-risk-action-inset-end\)/,
+    );
+    expect(css).toMatch(
+      /\.performance-table--delivery-risk \.performance-table__action[\s\S]*padding-right:\s*var\(--delivery-risk-action-inset-end\)/,
     );
     expect(css).not.toMatch(
       /\.performance-delivery-risk__jira-btn[\s\S]*position:\s*absolute/,

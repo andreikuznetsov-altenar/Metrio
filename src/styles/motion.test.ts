@@ -14,7 +14,7 @@ describe("motion tokens", () => {
     expect(css).toContain("--motion-drawer-open: 400ms");
     expect(css).toContain("--motion-drawer-close: 400ms");
     expect(css).toContain("--ease-drawer: cubic-bezier(0.22, 1, 0.36, 1)");
-    expect(css).toContain("--drawer-panel-shadow:");
+    expect(css).toContain("--drawer-panel-shadow: none");
     expect(css).toContain("--ease-drawer:");
 
     const system = fs.readFileSync(

@@ -886,8 +886,12 @@
 .performance-table.performance-table--delivery-risk col.col-action {
   width: calc(
     2 * var(--delivery-risk-action-button-min-width) + var(--space-2) +
-      var(--performance-table-action-inset-end)
+      var(--space-3) + var(--delivery-risk-action-inset-end)
   );
+}
+
+.performance-table--delivery-risk .performance-table__action {
+  padding-right: var(--delivery-risk-action-inset-end);
 }
 
 .performance-table.performance-table--report-history col.col-action {

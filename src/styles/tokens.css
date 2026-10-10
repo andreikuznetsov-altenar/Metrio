@@ -49,6 +49,7 @@
   /* Performance / dashboard tables */
   --performance-table-edge-inset: var(--space-4);
   --performance-table-action-inset-end: var(--space-4);
+  --delivery-risk-action-inset-end: var(--space-3);
   --delivery-risk-action-button-min-width: 7.25rem;
   /* Shared Radar Action button width — fits "Review workload" without compression */
   --radar-action-button-width: 10.5rem;
@@ -82,10 +83,7 @@
   /* Legacy aliases */
   --transition-duration: var(--motion-control);
   --drawer-transition-duration: var(--motion-drawer);
-  --drawer-panel-shadow:
-    -32px 0 80px rgba(15, 17, 21, 0.08),
-    -12px 0 36px rgba(15, 17, 21, 0.04),
-    -4px 0 12px rgba(15, 17, 21, 0.03);
+  --drawer-panel-shadow: none;
   --side-panel-scrollbar-size: 4px;
   --side-panel-scrollbar-inset: 4px;
   --metrio-scrollbar-size: 4px;

@@ -39,7 +39,7 @@
   height: 100%;
   border-left: none;
   background: var(--color-surface);
-  box-shadow: var(--drawer-panel-shadow);
+  box-shadow: none;
   display: flex;
   flex-direction: column;
   opacity: 1;

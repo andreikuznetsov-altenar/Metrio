@@ -6,9 +6,9 @@ const read = (rel: string) =>
   fs.readFileSync(path.resolve(process.cwd(), rel), "utf8");
 
 describe("UI Repair Pass 13.7B side panels and motion", () => {
-  it("drawers use soft left shadow token and full-viewport overlay layer", () => {
+  it("drawers use no panel shadow and keep full-viewport overlay layer", () => {
     const drawerCss = read("src/components/Drawer/Drawer.css");
-    expect(drawerCss).toContain("box-shadow: var(--drawer-panel-shadow)");
+    expect(drawerCss).toContain("box-shadow: none");
 
     const shellCss = read("src/components/AppShell/AppShell.css");
     expect(shellCss).toMatch(/\.app-drawer-layer[\s\S]*position:\s*absolute/);
