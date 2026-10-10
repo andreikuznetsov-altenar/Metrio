@@ -9,6 +9,7 @@ import type {
 } from '../../domain/survey/types';
 
 import { applyFeedbackCyclesMigration } from '../../domain/feedbackCycles/migrateFeedbackData';
+import { getDocFixtureMode } from '../../platform/docFixtures';
 
 export const SURVEY_DATA_SCHEMA_VERSION = 2;
 
@@ -135,6 +136,12 @@ function visualFixtureSurveyEnabled(): boolean {
 }
 
 export async function loadSurveyData(): Promise<SurveyDataFile> {
+  const docMode = await getDocFixtureMode();
+  if (docMode.enabled) {
+    const { buildDocSurveyData } = await import('../../fixtures/docFixtureData');
+    return migrateSurveyData(buildDocSurveyData());
+  }
+
   if (visualFixtureSurveyEnabled()) {
     try {
       const stored = localStorage.getItem(VISUAL_SURVEY_DATA_KEY);
@@ -155,6 +162,10 @@ export async function loadSurveyData(): Promise<SurveyDataFile> {
 
 export async function saveSurveyData(data: SurveyDataFile): Promise<void> {
   const payload = { ...data, schemaVersion: SURVEY_DATA_SCHEMA_VERSION };
+  const docMode = await getDocFixtureMode();
+  if (docMode.enabled) {
+    return;
+  }
   if (visualFixtureSurveyEnabled()) {
     localStorage.setItem(VISUAL_SURVEY_DATA_KEY, JSON.stringify(payload));
     return;

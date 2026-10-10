@@ -1,4 +1,5 @@
 import { invoke } from '@tauri-apps/api/core';
+import { getDocFixtureMode } from '../../platform/docFixtures';
 import type {
   BambooCreateGoalInput,
   BambooGoal,
@@ -161,6 +162,12 @@ export class BambooClient {
     employeeId: string,
     filter: BambooGoalStatusFilter = 'status-inProgress',
   ): Promise<BambooGoal[]> {
+    const docMode = await getDocFixtureMode();
+    if (docMode.enabled) {
+      const { buildDocBambooGoals } = await import('../../fixtures/docFixtureData');
+      return buildDocBambooGoals(employeeId, filter);
+    }
+
     const result = await invokeBamboo<unknown>('bamboo_list_goals', {
       config: this.nativeConfig,
       params: { employee_id: employeeId, filter },
@@ -177,6 +184,12 @@ export class BambooClient {
   }
 
   async getGoalAggregate(employeeId: string, goalId: string): Promise<BambooGoal | null> {
+    const docMode = await getDocFixtureMode();
+    if (docMode.enabled) {
+      const { getDocBambooGoal } = await import('../../fixtures/docFixtureData');
+      return getDocBambooGoal(employeeId, goalId);
+    }
+
     const result = await invokeBamboo<unknown>('bamboo_get_goal_aggregate', {
       config: this.nativeConfig,
       params: { employee_id: employeeId, goal_id: goalId },

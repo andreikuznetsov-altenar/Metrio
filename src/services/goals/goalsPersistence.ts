@@ -6,6 +6,7 @@ import {
 import { normalizeGoalsFile } from "../../domain/goals/normalizeGoal";
 import { fetchCloudGoals } from "../metrioCloud/metrioCloudClient";
 import { MetrioCloudError } from "../metrioCloud/metrioCloudErrors";
+import { getDocFixtureMode } from "../../platform/docFixtures";
 
 export const EMPTY_GOALS_DATA: GoalsDataFile = {
   schemaVersion: GOALS_DATA_SCHEMA_VERSION,
@@ -20,6 +21,12 @@ function isVisualFixtureBuild(): boolean {
 }
 
 export async function loadGoalsDataLocal(): Promise<GoalsDataFile> {
+  const docMode = await getDocFixtureMode();
+  if (docMode.enabled) {
+    const { buildDocGoalsData } = await import("../../fixtures/docFixtureData");
+    return buildDocGoalsData();
+  }
+
   if (isVisualFixtureBuild() && typeof localStorage !== "undefined") {
     const raw = localStorage.getItem(VISUAL_GOALS_KEY);
     if (raw) {
@@ -35,6 +42,12 @@ export async function loadGoalsDataLocal(): Promise<GoalsDataFile> {
 }
 
 export async function loadGoalsData(): Promise<GoalsDataFile> {
+  const docMode = await getDocFixtureMode();
+  if (docMode.enabled) {
+    const { buildDocGoalsData } = await import("../../fixtures/docFixtureData");
+    return buildDocGoalsData();
+  }
+
   try {
     const cloud = await fetchCloudGoals();
     if (cloud) {
@@ -54,6 +67,10 @@ export async function loadGoalsData(): Promise<GoalsDataFile> {
 
 export async function saveGoalsData(data: GoalsDataFile): Promise<void> {
   const payload = normalizeGoalsFile(data);
+  const docMode = await getDocFixtureMode();
+  if (docMode.enabled) {
+    return;
+  }
   if (isVisualFixtureBuild() && typeof localStorage !== "undefined") {
     localStorage.setItem(VISUAL_GOALS_KEY, JSON.stringify(payload));
     return;

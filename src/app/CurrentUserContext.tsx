@@ -29,6 +29,7 @@ import { recordStartupPhase } from "../platform/observability/observabilityStore
 import {
   type WorkspaceStatus,
 } from "./workspaceSession";
+import { getDocFixtureMode } from "../platform/docFixtures";
 
 const DEV_FIXTURE_STORAGE_KEY = "metrio-dev-fixture";
 
@@ -126,6 +127,20 @@ export function CurrentUserProvider({ children }: { children: ReactNode }) {
     setWorkspaceError(null);
     bootLog("15", "initializeWorkspace started");
     const workspaceStarted = performance.now();
+
+    const docMode = await getDocFixtureMode();
+    if (docMode.enabled) {
+      const { getDocFixtureUser } = await import("../fixtures/docFixtureData");
+      setProductionUser(getDocFixtureUser(docMode.role));
+      setWorkspaceStatus("ready");
+      setBootstrapGeneration((value) => value + 1);
+      recordStartupPhase(
+        "workspace_ready",
+        Math.round(performance.now() - workspaceStarted),
+      );
+      bootLog("16", "initializeWorkspace finished status=ready doc_fixture=1");
+      return;
+    }
 
     const prefsStarted = performance.now();
     const outcome = await loadPreferencesOutcome();

@@ -22,6 +22,7 @@ import {
 } from "./notificationTypes";
 import type { AppPreferences } from "./preferences";
 import { recordNotificationSuppression } from "./notificationSuppressions";
+import { getDocFixtureMode } from "./docFixtures";
 
 const STORAGE_KEY = "metrio-notification-events";
 export const NOTIFICATION_EVENT_LIMIT = 100;
@@ -91,6 +92,13 @@ export function listNotificationEvents(): NotificationEvent[] {
   } catch {
     return [];
   }
+}
+
+export async function hydrateDocFixtureNotificationEvents(): Promise<void> {
+  const docMode = await getDocFixtureMode();
+  if (!docMode.enabled) return;
+  const { buildDocNotificationEvents } = await import("../fixtures/docFixtureData");
+  replaceNotificationEvents(buildDocNotificationEvents());
 }
 
 export function listNotificationEventsOrThrow(): NotificationEvent[] {

@@ -87,6 +87,12 @@ struct BuildInfoResponse {
     product_name: String,
 }
 
+#[derive(Debug, Serialize)]
+struct DocFixtureModeResponse {
+    enabled: bool,
+    role: String,
+}
+
 fn preferences_path(app: &AppHandle) -> Result<PathBuf, String> {
     let dir = app.path().app_data_dir().map_err(|e| e.to_string())?;
     fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
@@ -239,6 +245,22 @@ fn app_get_build_info() -> BuildInfoResponse {
             .to_string(),
         product_name: "Metrio".to_string(),
     }
+}
+
+#[tauri::command]
+fn app_get_doc_fixture_mode() -> DocFixtureModeResponse {
+    let enabled = std::env::var("METRIO_DOC_FIXTURES")
+        .map(|value| {
+            let normalized = value.trim().to_ascii_lowercase();
+            matches!(normalized.as_str(), "1" | "true" | "yes" | "on")
+        })
+        .unwrap_or(false);
+    let role = std::env::var("METRIO_DOC_ROLE")
+        .map(|value| value.trim().to_ascii_lowercase())
+        .ok()
+        .filter(|value| matches!(value.as_str(), "ic" | "lead" | "manager" | "director"))
+        .unwrap_or_else(|| "lead".to_string());
+    DocFixtureModeResponse { enabled, role }
 }
 
 #[tauri::command]
@@ -574,6 +596,7 @@ pub fn run() {
             preferences_save,
             storage_get_warnings,
             app_get_build_info,
+            app_get_doc_fixture_mode,
             diagnostics_export_file,
             support_bundle_export,
             logs_read_tail,

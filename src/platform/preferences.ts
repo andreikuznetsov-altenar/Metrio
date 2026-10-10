@@ -21,6 +21,7 @@ import {
   type DigestPersistedState,
   type DigestUserPreferences,
 } from './digestPreferences';
+import { getDocFixtureMode } from './docFixtures';
 
 export const PREFERENCES_SCHEMA_VERSION = 9;
 
@@ -365,6 +366,20 @@ export function readVisualPreferencesSync(): AppPreferences | null {
 }
 
 export async function loadPreferencesOutcome(): Promise<PreferencesLoadOutcome> {
+  const docMode = await getDocFixtureMode();
+  if (docMode.enabled) {
+    const { buildDocPreferences } = await import("../fixtures/docFixtureData");
+    return {
+      ok: true,
+      prefs: buildDocPreferences(
+        DEFAULT_PREFERENCES,
+        PREFERENCES_SCHEMA_VERSION,
+        docMode.role,
+      ),
+      source: "file",
+    };
+  }
+
   if (isVisualFixtureBuild()) {
     const raw =
       typeof window !== "undefined"
@@ -432,6 +447,12 @@ export async function savePreferences(prefs: AppPreferences): Promise<void> {
 
   if (isVisualFixtureBuild()) {
     localStorage.setItem(VISUAL_PREFS_STORAGE_KEY, JSON.stringify(prefs));
+    window.dispatchEvent(new CustomEvent(PREFERENCES_SAVED_EVENT, { detail: prefs }));
+    return;
+  }
+
+  const docMode = await getDocFixtureMode();
+  if (docMode.enabled) {
     window.dispatchEvent(new CustomEvent(PREFERENCES_SAVED_EVENT, { detail: prefs }));
     return;
   }

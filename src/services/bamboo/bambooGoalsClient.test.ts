@@ -9,8 +9,28 @@ vi.mock("@tauri-apps/api/core", () => ({
 import { BambooClient, BambooPermissionError } from "./bambooClient";
 
 describe("BambooClient goals", () => {
-  beforeEach(() => {
+  beforeEach(async () => {
     invoke.mockReset();
+    const {
+      resetDocFixtureModeCacheForTests,
+      setDocFixtureModeForTests,
+    } = await import("../../platform/docFixtures");
+    resetDocFixtureModeCacheForTests();
+    setDocFixtureModeForTests({ enabled: false, role: "lead" });
+  });
+
+  it("uses documentation fixture goals without invoking Bamboo", async () => {
+    const { setDocFixtureModeForTests } = await import("../../platform/docFixtures");
+    setDocFixtureModeForTests({ enabled: true, role: "ic" });
+    try {
+      const client = new BambooClient({ subdomain: "acme" });
+      const goals = await client.listGoals("doc-maria", "status-inProgress");
+      expect(invoke).not.toHaveBeenCalled();
+      expect(goals).toHaveLength(1);
+      expect(goals[0].title).toBe("Strengthen self-serve product flows");
+    } finally {
+      setDocFixtureModeForTests(null);
+    }
   });
 
   it("lists goals via bamboo_list_goals", async () => {

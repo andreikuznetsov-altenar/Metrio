@@ -60,6 +60,7 @@ import {
   noteBambooTimeOffFetched,
   shouldFetchBambooTimeOff,
 } from "../refresh/performanceRefreshCadence";
+import { getDocFixtureMode } from "../../platform/docFixtures";
 
 export type { PerformanceFetchResult, PerformanceIdentityResolution } from "./performanceTypes";
 
@@ -143,6 +144,21 @@ export async function fetchPerformanceData(
   audience: PerformanceAudience,
   options: PerformanceFetchOptions = {},
 ): Promise<PerformanceFetchResult> {
+  const docMode = await getDocFixtureMode();
+  if (docMode.enabled) {
+    const { buildDocPerformanceFetchResultFromRange } = await import(
+      "../../fixtures/docFixtureData"
+    );
+    const doc = buildDocPerformanceFetchResultFromRange(
+      docMode.role,
+      dateRange,
+      reviewTarget,
+      audience,
+    );
+    registerPersonDirectory(doc.teamSnapshot.persons);
+    return doc;
+  }
+
   if (import.meta.env.VITE_VISUAL_FIXTURE === "1") {
     const { buildVisualPerformanceFetchResult } = await import(
       "../../fixtures/performanceFetchFixture"

@@ -24,6 +24,7 @@ import {
   isAppConnected,
   markSessionConnected,
 } from "./connectionStorage";
+import { getDocFixtureMode } from "../platform/docFixtures";
 
 export type ConnectionGate = "bootstrapping" | "disconnected" | "connected";
 
@@ -112,7 +113,13 @@ export function ConnectionProvider({ children }: { children: ReactNode }) {
       setGate("disconnected");
     }, BOOTSTRAP_TIMEOUT_MS);
 
-    void bootstrapProductionSession()
+    void getDocFixtureMode()
+      .then((docMode) => {
+        if (docMode.enabled) {
+          return null;
+        }
+        return bootstrapProductionSession();
+      })
       .then((result) => {
         if (bootstrapRunRef.current !== runId) {
           return;
@@ -122,6 +129,13 @@ export function ConnectionProvider({ children }: { children: ReactNode }) {
           "bootstrap",
           Math.round(performance.now() - bootstrapStarted),
         );
+        if (result === null) {
+          bootLog("11", "bootstrap result=ready doc_fixture=1");
+          setStartupError(null);
+          setSessionRestoreError(null);
+          setGate("connected");
+          return;
+        }
         applyBootstrapResult(result);
       })
       .catch((error) => {
