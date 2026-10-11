@@ -4,8 +4,8 @@ import { useEffect, useId, useMemo, useState } from "react";
 import { DayPicker, type ChevronProps } from "react-day-picker";
 import { formatPerformanceDateDisplay } from "../../domain/performance/performanceDateRange";
 import { parseIsoDateOnly, toIsoDateOnly } from "./datePickerValue";
-import "./MetrioDatePicker.css";
 import "react-day-picker/style.css";
+import "./MetrioDatePicker.css";
 
 export interface MetrioDatePickerProps {
   id?: string;
@@ -103,6 +103,7 @@ export function MetrioDatePicker({
         >
           <DayPicker
             mode="single"
+            navLayout="after"
             weekStartsOn={1}
             selected={selected ?? undefined}
             onSelect={(day) => {

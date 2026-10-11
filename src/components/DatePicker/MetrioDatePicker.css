@@ -124,10 +124,53 @@
   font-size: 12px;
 }
 
+.metrio-date-picker__popover .rdp-month {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  column-gap: var(--space-2);
+}
+
 .metrio-date-picker__popover .rdp-month_caption {
+  flex: 1 1 auto;
+  min-width: 0;
+  height: auto;
+  display: flex;
+  align-items: center;
   font-size: 15px;
   font-weight: 600;
   color: var(--color-text-primary);
+}
+
+.metrio-date-picker__popover .rdp-caption_label {
+  display: inline-flex;
+  align-items: center;
+  min-height: 30px;
+  line-height: 1.2;
+}
+
+.metrio-date-picker__popover .rdp-nav {
+  position: static;
+  inset: auto;
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  height: auto;
+  margin: 0;
+  transform: none;
+}
+
+.metrio-date-picker__popover .rdp-button_previous,
+.metrio-date-picker__popover .rdp-button_next {
+  position: static;
+  top: auto;
+  margin: 0;
+  transform: none;
+}
+
+.metrio-date-picker__popover .rdp-month_grid {
+  flex: 0 0 100%;
 }
 
 .metrio-date-picker__popover .rdp-weekday {

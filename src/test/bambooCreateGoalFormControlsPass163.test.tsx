@@ -149,6 +149,53 @@ describe("PASS 16.3 Create Goal form control parity", () => {
     expect(screen.getByTestId("goal-due").className).toContain("metrio-field");
   });
 
+  it("DatePicker calendar header keeps caption and arrows on one centered row", () => {
+    const dateCss = read("src/components/DatePicker/MetrioDatePicker.css");
+    const datePicker = read("src/components/DatePicker/MetrioDatePicker.tsx");
+    const monthBlock = dateCss.match(
+      /\.metrio-date-picker__popover \.rdp-month\s*\{[\s\S]*?\}/,
+    )?.[0];
+    const captionBlock = dateCss.match(
+      /\.metrio-date-picker__popover \.rdp-month_caption\s*\{[\s\S]*?\}/,
+    )?.[0];
+    const navBlock = dateCss.match(
+      /\.metrio-date-picker__popover \.rdp-nav\s*\{[\s\S]*?\}/,
+    )?.[0];
+    const navButtonBlock = dateCss.match(
+      /\.metrio-date-picker__popover \.rdp-button_previous,[\s\S]*?\.metrio-date-picker__popover \.rdp-button_next\s*\{[\s\S]*?\}/,
+    )?.[0];
+    const gridBlock = dateCss.match(
+      /\.metrio-date-picker__popover \.rdp-month_grid\s*\{[\s\S]*?\}/,
+    )?.[0];
+
+    expect(datePicker).toContain('navLayout="after"');
+    expect(datePicker.indexOf('import "react-day-picker/style.css";')).toBeLessThan(
+      datePicker.indexOf('import "./MetrioDatePicker.css";'),
+    );
+    expect(monthBlock).toBeTruthy();
+    expect(monthBlock).toContain("display: flex");
+    expect(monthBlock).toContain("align-items: center");
+    expect(monthBlock).toContain("justify-content: space-between");
+    expect(captionBlock).toBeTruthy();
+    expect(captionBlock).toContain("display: flex");
+    expect(captionBlock).toContain("align-items: center");
+    expect(gridBlock).toBeTruthy();
+    expect(gridBlock).toContain("flex: 0 0 100%");
+
+    expect(navBlock).toBeTruthy();
+    expect(navBlock).toContain("position: static");
+    expect(navBlock).toContain("display: flex");
+    expect(navBlock).toContain("align-items: center");
+    expect(navBlock).toContain("transform: none");
+
+    expect(navButtonBlock).toBeTruthy();
+    expect(navButtonBlock).toContain("position: static");
+    expect(navButtonBlock).toContain("top: auto");
+    expect(navButtonBlock).toContain("transform: none");
+    expect(navBlock).not.toMatch(/translateY|top:\s*-\d|margin-top:\s*-/);
+    expect(navButtonBlock).not.toMatch(/translateY|top:\s*-\d|margin-top:\s*-/);
+  });
+
   it("Create Goal fields inherit canonical 1px field focus without Goal-specific overrides", () => {
     const interactionCss = read("src/styles/ui-interaction-system.css");
     const focusBlock = interactionCss.match(
