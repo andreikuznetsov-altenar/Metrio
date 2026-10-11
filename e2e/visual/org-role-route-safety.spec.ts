@@ -7,7 +7,7 @@ import { serializeOrgRoleScenarioPrefsForPlaywright } from "../../src/fixtures/o
 import { PREFERENCES_SAVED_EVENT } from "../../src/platform/preferences";
 
 test.describe("ORG Pass 12 route safety", () => {
-  test("IC cannot open survey management tab", async ({ page }) => {
+  test("IC cannot open Feedback route", async ({ page }) => {
     await setViewport(page, 1440, 900);
     await bootOrgRoleScenario(page, "ic");
     await expect(page.getByTestId("dashboard-ready")).toBeVisible({ timeout: 30_000 });
@@ -17,10 +17,10 @@ test.describe("ORG Pass 12 route safety", () => {
         new CustomEvent("metrio-open-feedback-tab", { detail: "survey" }),
       );
     });
-    await page.locator(".app-header__nav-link").filter({ hasText: "Feedback" }).click();
-    await expect(page.getByTestId("feedback-ic-results-only")).toBeVisible({
-      timeout: 30_000,
-    });
+    await expect(
+      page.locator(".app-header__nav-link").filter({ hasText: "Feedback" }),
+    ).toHaveCount(0);
+    await expect(page.getByTestId("dashboard-ready")).toBeVisible({ timeout: 30_000 });
     await expect(page.getByTestId("feedback-v2-page")).toHaveCount(0);
   });
 

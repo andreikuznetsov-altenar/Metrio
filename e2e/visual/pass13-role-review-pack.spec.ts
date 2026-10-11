@@ -34,15 +34,6 @@ const ROLES: RolePack[] = [
           await openPerformanceFromHome(page);
         },
       },
-      {
-        name: "03-feedback-results",
-        capture: async (page) => {
-          await page.locator(".app-header__nav-link").filter({ hasText: "Feedback" }).click();
-          await expect(page.getByTestId("feedback-ic-results-only")).toBeVisible({
-            timeout: 15_000,
-          });
-        },
-      },
     ],
   },
   {

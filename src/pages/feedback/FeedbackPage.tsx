@@ -7,8 +7,9 @@ import { getTodayIsoDate } from '../../domain/jira/dates';
 import { canManageFeedbackCycles } from '../../domain/feedbackCycles/feedbackRecipients';
 import { isFeedbackBridgeReady } from '../../domain/feedbackV2/bridgeReady';
 import { recipientsFromTeamMembers } from '../../domain/feedbackV2/recipients';
-import { resolveOrgFeatureAccess } from '../../domain/organization/orgFeatureAccess';
+import { resolveOrgFeatureAccessForUser } from '../../domain/organization/orgFeatureAccess';
 import { useCurrentUser } from '../../app/CurrentUserContext';
+import { appNavigate } from '../../app/navigationStore';
 import { Button, Drawer, MetrioScrollArea, StatusBanner } from './design-system';
 import '../page-content.css';
 import { formatGoogleOAuthError } from './feedbackUi';
@@ -37,7 +38,7 @@ type Screen =
 export function FeedbackPage() {
   const toast = useToast();
   const { currentUser } = useCurrentUser();
-  const orgAccess = resolveOrgFeatureAccess(currentUser.orgRole ?? 'unresolved');
+  const orgAccess = resolveOrgFeatureAccessForUser(currentUser);
   const { prefs, teamDetection, teamSnapshot, updatePrefs } = useFeedbackAppStore();
   const surveyStore = useFeedbackSurveyStore();
   const {
@@ -71,6 +72,12 @@ export function FeedbackPage() {
   useEffect(() => {
     init().finally(() => setInitializing(false));
   }, [init]);
+
+  useEffect(() => {
+    if (!orgAccess.showFeedbackTab) {
+      appNavigate({ route: 'home' });
+    }
+  }, [orgAccess.showFeedbackTab]);
 
   useEffect(() => {
     if (!bridgeReady && canManage) {
@@ -158,28 +165,21 @@ export function FeedbackPage() {
     setRepeatCycleId(null);
   };
 
+  if (!orgAccess.showFeedbackTab) {
+    return null;
+  }
+
   if (!isTeamMode) {
-    if (orgAccess.canViewOwnFeedbackResults) {
-      const metrics = getSurveyMetrics(data);
-      return (
-        <div className="ds-feedback-page-shell" data-testid="feedback-ic-results-only">
-          <MetrioScrollArea className="ds-feedback-scroll">
-            <div className="metrio-canvas ds-feedback-canvas">
-              {metrics ? (
-                <FeedbackResultsView metrics={metrics} sentCount={0} />
-              ) : (
-                <p className="ds-feedback-empty-inline">No feedback results yet.</p>
-              )}
-            </div>
-          </MetrioScrollArea>
-        </div>
-      );
-    }
+    const metrics = getSurveyMetrics(data);
     return (
-      <div className="ds-feedback-page-shell">
+      <div className="ds-feedback-page-shell" data-testid="feedback-results-only">
         <MetrioScrollArea className="ds-feedback-scroll">
           <div className="metrio-canvas ds-feedback-canvas">
-            <p className="ds-feedback-empty-inline">Feedback is available to team leads.</p>
+            {metrics ? (
+              <FeedbackResultsView metrics={metrics} sentCount={0} />
+            ) : (
+              <p className="ds-feedback-empty-inline">No feedback results yet.</p>
+            )}
           </div>
         </MetrioScrollArea>
       </div>

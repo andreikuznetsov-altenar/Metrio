@@ -11,6 +11,8 @@ const TEAMS_ATTENTION_COLUMNS = [
   { id: "team", type: "text" as const },
   { id: "attention", type: "number" as const },
   { id: "active", type: "number" as const },
+  { id: "capacity", type: "text" as const },
+  { id: "availability", type: "text" as const },
 ];
 
 export interface DirectorOverviewViewProps {
@@ -27,6 +29,10 @@ export function DirectorOverviewView({
   const topSignals = model.signals.slice(0, 5);
 
   const teamsAttention = model.teamsNeedingAttention.slice(0, 6);
+  const capacityByTeamId = useMemo(
+    () => new Map(model.teamCapacity.map((row) => [row.teamId, row])),
+    [model.teamCapacity],
+  );
 
   const getValue = useMemo(
     () => (row: (typeof teamsAttention)[number], columnId: string) => {
@@ -37,11 +43,15 @@ export function DirectorOverviewView({
           return row.attentionCount;
         case "active":
           return row.activeWork;
+        case "capacity":
+          return row.capacitySummaryLabel ?? "";
+        case "availability":
+          return capacityByTeamId.get(row.teamId)?.label ?? "";
         default:
           return "";
       }
     },
-    [],
+    [capacityByTeamId],
   );
 
   const { sortedRows, sort, toggleSort } = useTableSort(
@@ -51,20 +61,35 @@ export function DirectorOverviewView({
   );
 
   return (
-    <div data-testid="director-overview">
-      <p className="performance-employee-context">{model.scopeLabel}</p>
+    <div className="performance-org-overview" data-testid="director-overview">
+      <section className="performance-org-scope-card" data-testid="director-scope-header">
+        <div>
+          <p className="performance-org-scope-card__eyebrow">Performance scope</p>
+          <h3 className="performance-org-scope-card__title">{model.scopeLabel}</h3>
+        </div>
+        <Button variant="secondary" onClick={onOpenTeams}>
+          View all teams
+        </Button>
+      </section>
 
-      <h3 className="performance-section__title">Organization summary</h3>
-      <div className="performance-metrics">
+      <section className="performance-org-section" aria-label="Organization summary">
+        <div className="performance-org-section__header">
+          <h3 className="performance-section__title">Organization summary</h3>
+        </div>
+        <div className="performance-metrics" data-testid="director-kpi-row">
         {model.summary.map((metric) => (
           <div key={metric.label} className="performance-metric-card">
             <div className="performance-metric-card__label">{metric.label}</div>
             <div className="performance-metric-card__value">{metric.value}</div>
           </div>
         ))}
-      </div>
+        </div>
+      </section>
 
-      <h3 className="performance-section__title">Teams needing attention</h3>
+      <section className="performance-org-section" aria-label="Teams needing attention">
+      <div className="performance-org-section__header">
+        <h3 className="performance-section__title">Teams needing attention</h3>
+      </div>
       {model.teamsNeedingAttention.length === 0 ? (
         <p className="performance-inline-empty">
           No high-priority organization signals in this period.
@@ -91,6 +116,18 @@ export function DirectorOverviewView({
                   className="performance-table__num"
 
                 />
+                <SortableTableHeader
+                  columnId="capacity"
+                  label="Capacity"
+                  sort={sort}
+                  onToggle={toggleSort}
+                />
+                <SortableTableHeader
+                  columnId="availability"
+                  label="Availability"
+                  sort={sort}
+                  onToggle={toggleSort}
+                />
               </tr>
             </thead>
             <tbody>
@@ -99,16 +136,21 @@ export function DirectorOverviewView({
                   <td>{team.teamName}</td>
                   <td className="performance-table__num">{team.attentionCount}</td>
                   <td className="performance-table__num">{team.activeWork}</td>
+                  <td>{team.capacitySummaryLabel ?? "—"}</td>
+                  <td>{capacityByTeamId.get(team.teamId)?.label ?? "—"}</td>
                 </tr>
               ))}
             </tbody>
           </table>
         </MetrioTableWrap>
       )}
+      </section>
 
       {model.teamCapacity.some((row) => row.awayNextWeek > 0) ? (
-        <>
-          <h3 className="performance-section__title">Upcoming team availability</h3>
+        <section className="performance-org-section" aria-label="Upcoming team availability">
+          <div className="performance-org-section__header">
+            <h3 className="performance-section__title">Upcoming team availability</h3>
+          </div>
           <ul className="performance-director-capacity" data-testid="director-team-capacity">
             {model.teamCapacity
               .filter((row) => row.awayNextWeek > 0)
@@ -119,10 +161,13 @@ export function DirectorOverviewView({
                 </li>
               ))}
           </ul>
-        </>
+        </section>
       ) : null}
 
-      <h3 className="performance-section__title">Team trends</h3>
+      <section className="performance-org-section" aria-label="Team trends">
+      <div className="performance-org-section__header">
+        <h3 className="performance-section__title">Team trends</h3>
+      </div>
       <ul className="performance-director-trends">
         {model.teamTrends.map((trend) => (
           <li key={trend.teamId}>
@@ -131,10 +176,13 @@ export function DirectorOverviewView({
           </li>
         ))}
       </ul>
+      </section>
 
       {model.newStarterSummary.total > 0 ? (
-        <>
-          <h3 className="performance-section__title">New starters</h3>
+        <section className="performance-org-section" aria-label="New starters">
+          <div className="performance-org-section__header">
+            <h3 className="performance-section__title">New starters</h3>
+          </div>
           <p className="performance-inline-empty">
             {model.newStarterSummary.total} new starters in authorized scope
             {model.newStarterSummary.byTeam.length
@@ -143,23 +191,28 @@ export function DirectorOverviewView({
                   .join(", ")}`
               : ""}
           </p>
-        </>
+        </section>
       ) : null}
 
       {model.feedbackSummary.pendingRecipients > 0 ||
       model.feedbackSummary.deliveryFailures > 0 ? (
-        <>
-          <h3 className="performance-section__title">Feedback</h3>
+        <section className="performance-org-section" aria-label="Feedback">
+          <div className="performance-org-section__header">
+            <h3 className="performance-section__title">Feedback</h3>
+          </div>
           <p className="performance-inline-empty">
             {model.feedbackSummary.pendingRecipients} pending responses
             {model.feedbackSummary.deliveryFailures
               ? ` · ${model.feedbackSummary.deliveryFailures} delivery failures`
               : ""}
           </p>
-        </>
+        </section>
       ) : null}
 
-      <h3 className="performance-section__title">Signals</h3>
+      <section className="performance-org-section" aria-label="Signals">
+      <div className="performance-org-section__header">
+        <h3 className="performance-section__title">Signals</h3>
+      </div>
       {topSignals.length === 0 ? (
         <p className="performance-inline-empty">
           No high-priority organization signals in this period.
@@ -182,10 +235,7 @@ export function DirectorOverviewView({
           ))}
         </ul>
       )}
-
-      <Button variant="secondary" onClick={onOpenTeams}>
-        View all teams
-      </Button>
+      </section>
     </div>
   );
 }

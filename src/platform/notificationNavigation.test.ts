@@ -37,7 +37,7 @@ describe("openNotificationTarget", () => {
     expect(onOpenPerson).toHaveBeenCalledWith("person-9");
   });
 
-  it("maps survey notification to results for IC", async () => {
+  it("blocks survey notification for IC", async () => {
     const openedTabs: unknown[] = [];
     const onTab = (event: Event) => {
       openedTabs.push((event as CustomEvent).detail);
@@ -52,7 +52,7 @@ describe("openNotificationTarget", () => {
         orgFeatureAccess: resolveOrgFeatureAccess("individual_contributor"),
       },
     );
-    expect(openedTabs).toEqual(["results"]);
+    expect(openedTabs).toEqual([]);
     window.removeEventListener("metrio-open-feedback-tab", onTab);
   });
 });

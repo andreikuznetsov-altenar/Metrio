@@ -420,6 +420,101 @@
   margin-bottom: var(--space-1);
 }
 
+.executive-employee-summary__grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  column-gap: var(--space-2);
+  row-gap: var(--space-3);
+}
+
+@media (max-width: 1100px) {
+  .executive-employee-summary__grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.executive-employee-summary-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-width: 0;
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-card);
+  background: var(--color-surface);
+}
+
+.executive-employee-summary-card__title {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+}
+
+.executive-employee-summary-card__stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  column-gap: var(--space-2);
+  row-gap: var(--space-2);
+  margin: 0;
+}
+
+.executive-employee-summary-card__stats div {
+  min-width: 0;
+}
+
+.executive-employee-summary-card__stats dt {
+  margin: 0 0 var(--space-1);
+  font-size: 11px;
+  color: var(--color-text-tertiary);
+}
+
+.executive-employee-summary-card__stats dd {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.executive-resources-card__list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.executive-resources-card__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  min-width: 0;
+  padding: var(--space-2) 0;
+  border-bottom: 1px solid var(--color-border-subtle);
+}
+
+.executive-resources-card__row:last-child {
+  border-bottom: none;
+}
+
+.executive-resources-card__text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.executive-resources-card__title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.executive-resources-card__meta {
+  font-size: 12px;
+  color: var(--color-text-secondary);
+}
+
 .executive-queue-table {
   width: 100%;
   border-collapse: collapse;

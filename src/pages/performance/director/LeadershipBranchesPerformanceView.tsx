@@ -1,6 +1,8 @@
 import { useMemo } from "react";
 import type { LeadershipBranchPerformanceRow } from "../../../domain/organization/leadershipBranchPerformanceRows";
 import { Button } from "../../../components/Button/Button";
+import { Badge } from "../../../components/Badge/Badge";
+import { PersonAvatar } from "../../../components/PersonAvatar/PersonAvatar";
 import { METRIO_TABLE_CLASS, MetrioTableWrap } from "../../../components/Table/MetrioTable";
 import { SortableTableHeader } from "../../../components/Table/SortableTableHeader";
 import { useTableSort } from "../../../components/Table/useTableSort";
@@ -157,20 +159,42 @@ export function LeadershipBranchesPerformanceView({
                 <td>
                   <button
                     type="button"
-                    className="metrio-table-link"
+                    className="metrio-table-link performance-leader-cell"
                     onClick={() => onSelectLeader(row.leaderId)}
                   >
-                    <span className="metrio-table-link__primary">{row.leaderName}</span>
-                    {row.leaderTitle ? (
-                      <span className="metrio-table-link__secondary">{row.leaderTitle}</span>
-                    ) : null}
+                    <PersonAvatar
+                      personId={row.leaderId}
+                      displayName={row.leaderName}
+                      size="sm"
+                    />
+                    <span className="performance-leader-cell__text">
+                      <span className="metrio-table-link__primary">{row.leaderName}</span>
+                      {row.leaderTitle ? (
+                        <span className="metrio-table-link__secondary">{row.leaderTitle}</span>
+                      ) : null}
+                    </span>
                   </button>
                 </td>
                 <td>{row.peopleCount} people</td>
                 <td>{row.performanceLabel}</td>
                 <td>{row.attentionLabel}</td>
                 <td>{row.deliveryRiskCount}</td>
-                <td>{row.capacityLabel}</td>
+                <td>
+                  <div className="performance-capacity-mix" aria-label={row.capacityLabel}>
+                    {row.capacityParts.length ? (
+                      row.capacityParts.map((part) => (
+                        <Badge key={part.label} variant="neutral">
+                          {part.label}: {part.value}
+                        </Badge>
+                      ))
+                    ) : (
+                      <span>—</span>
+                    )}
+                    <span className="performance-capacity-mix__measured">
+                      {row.capacityMeasuredLabel}
+                    </span>
+                  </div>
+                </td>
                 <td>{row.availabilityLabel}</td>
               </tr>
             ))}

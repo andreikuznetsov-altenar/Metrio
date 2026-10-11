@@ -12,7 +12,6 @@ import { DashboardActionTabs } from "./DashboardActionTabs";
 import { DashboardAttentionNow } from "./DashboardAttentionNow";
 import { DashboardExecutiveHeader } from "./DashboardExecutiveHeader";
 import { DashboardKpiStrip } from "./DashboardKpiStrip";
-import { DashboardPrimaryTrend } from "./DashboardPrimaryTrend";
 import { DashboardScopeHealthSummary } from "./DashboardScopeHealthSummary";
 import { DashboardCompactRow } from "../../../components/DashboardCompactRow/DashboardCompactRow";
 import { JiraIssueLink } from "../../../components/JiraIssueLink/JiraIssueLink";
@@ -20,6 +19,8 @@ import { HomeGoalsSummaryCard } from "../HomeGoalsSummaryCard";
 import type { summarizeGoalsForHome } from "../../../domain/goals/goalReview";
 import { DashboardYourManagerCard } from "./DashboardYourManagerCard";
 import type { ResolvedEmployee } from "../../../services/bamboo/orgResolver";
+import { DashboardEmployeeWorkSummary } from "./DashboardEmployeeWorkSummary";
+import { openExternalUrl } from "../../../platform/openExternal";
 
 const QUEUE_PREVIEW = 5;
 type GoalsHomeSummary = ReturnType<typeof summarizeGoalsForHome>;
@@ -109,9 +110,12 @@ export function EmployeeExecutiveDashboard({
         </div>
       ) : null}
       <DashboardKpiStrip cards={model.kpis} />
-      <DashboardPrimaryTrend
+      <DashboardEmployeeWorkSummary
         trends={model.trends}
-        spanClass={model.trendSpanClass}
+        metrics={personal.performanceSnapshot.metrics}
+        workload={selfWorkload}
+        resources={personal.knowledge}
+        onOpenResource={(url) => void openExternalUrl(url)}
         onPointClick={onOpenTrendPoint}
       />
       <DashboardAttentionNow
@@ -162,11 +166,6 @@ export function EmployeeExecutiveDashboard({
       {goalsFeatureOn && goalsSummary && !goalsProminent ? (
         <div className="executive-dashboard__span-12 executive-lower-section">
           <HomeGoalsSummaryCard teamView={false} summary={goalsSummary} />
-        </div>
-      ) : null}
-      {personal.knowledge.length > 0 ? (
-        <div className="executive-dashboard__span-12 executive-lower-section">
-          <p className="executive-secondary-line">Knowledge: {personal.knowledge[0]?.title}</p>
         </div>
       ) : null}
     </>

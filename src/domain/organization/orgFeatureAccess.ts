@@ -1,4 +1,6 @@
 import type { OrgRole } from "./orgRole";
+import type { CurrentUser } from "../types";
+import type { OrgHierarchyScope } from "./orgRole";
 
 export interface OrgFeatureAccess {
   canManageSurveys: boolean;
@@ -20,14 +22,14 @@ export function resolveOrgFeatureAccess(
     return {
       canManageSurveys: false,
       canViewSurveyManagement: false,
-      canViewOwnFeedbackResults: true,
+      canViewOwnFeedbackResults: false,
       usesDirectTeamView: false,
       usesLeadershipBranchView: false,
       usesSelfView: true,
       canViewManagerContact: true,
       canViewLeadershipBranches: false,
       canViewTeamOperationalTables: false,
-      showFeedbackTab: true,
+      showFeedbackTab: false,
     };
   }
 
@@ -64,7 +66,7 @@ export function resolveOrgFeatureAccess(
   return {
     canManageSurveys: false,
     canViewSurveyManagement: false,
-    canViewOwnFeedbackResults: true,
+    canViewOwnFeedbackResults: false,
     usesDirectTeamView: false,
     usesLeadershipBranchView: false,
     usesSelfView: true,
@@ -72,5 +74,32 @@ export function resolveOrgFeatureAccess(
     canViewLeadershipBranches: false,
     canViewTeamOperationalTables: false,
     showFeedbackTab: false,
+  };
+}
+
+export function canUseFeedbackForOrgHierarchy(
+  hierarchy?: OrgHierarchyScope | null,
+): boolean {
+  return Boolean(
+    hierarchy?.role === "leaf_manager" &&
+      hierarchy.directIndividualContributorIds.length > 0,
+  );
+}
+
+export function canUseFeedback(currentUser: CurrentUser): boolean {
+  return canUseFeedbackForOrgHierarchy(currentUser.orgHierarchy);
+}
+
+export function resolveOrgFeatureAccessForUser(
+  currentUser: CurrentUser,
+): OrgFeatureAccess {
+  const access = resolveOrgFeatureAccess(currentUser.orgRole ?? "unresolved");
+  const feedbackAllowed = canUseFeedback(currentUser);
+  return {
+    ...access,
+    canManageSurveys: feedbackAllowed,
+    canViewSurveyManagement: feedbackAllowed,
+    canViewOwnFeedbackResults: feedbackAllowed,
+    showFeedbackTab: feedbackAllowed,
   };
 }

@@ -8,6 +8,7 @@ describe("org role feature gates", () => {
   it("hides survey management for individual contributor", () => {
     const access = resolveOrgFeatureAccess("individual_contributor");
     expect(access.canViewSurveyManagement).toBe(false);
+    expect(access.showFeedbackTab).toBe(false);
     expect(access.canViewManagerContact).toBe(true);
   });
 

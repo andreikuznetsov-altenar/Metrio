@@ -116,7 +116,7 @@ const PEOPLE: Record<
     email: "sofia.ivanova@metrio.example",
     title: "Design Operations Specialist",
     department: "Design",
-    supervisorId: "doc-andreas",
+    supervisorId: "doc-giorgos",
     role: "employee",
     orgRole: "individual_contributor",
   },
@@ -315,9 +315,9 @@ function hierarchy(role: DocFixtureRole, currentUserId: DocPersonId): OrgHierarc
       currentUserId,
       role: "manager_of_managers",
       supervisorId: "doc-nikolai",
-      directReportIds: ["doc-andrei", "doc-giorgos", "doc-sofia"],
+      directReportIds: ["doc-andrei", "doc-giorgos"],
       directManagerReportIds: ["doc-andrei", "doc-giorgos"],
-      directIndividualContributorIds: ["doc-sofia"],
+      directIndividualContributorIds: [],
       descendantIds: [
         currentUserId,
         "doc-andrei",
@@ -337,8 +337,8 @@ function hierarchy(role: DocFixtureRole, currentUserId: DocPersonId): OrgHierarc
         },
         {
           managerId: "doc-giorgos",
-          descendantIds: ["doc-giorgos", "doc-anna", "doc-mark"],
-          totalPeople: 3,
+          descendantIds: ["doc-giorgos", "doc-anna", "doc-mark", "doc-sofia"],
+          totalPeople: 4,
         },
       ],
       maxDepthBelow: 2,
@@ -678,6 +678,36 @@ export function buildDocPerformanceFetchResult(
     },
   };
   const reportRanges = resolvePerformanceReportRanges(displayRange, "team", audience, 3);
+  const teamKpi =
+    role === "director"
+      ? testKpi({
+          efficiencyIndex: 91,
+          completedCount: 76,
+          firstPassAcceptedCount: 66,
+          backflowCount: 7,
+          reviewSubmittedCount: 83,
+          avgProgressToReviewMs: 2.4 * 24 * 60 * 60 * 1000,
+          avgReviewToDoneMs: 1.1 * 24 * 60 * 60 * 1000,
+        })
+      : role === "manager"
+        ? testKpi({
+            efficiencyIndex: 88,
+            completedCount: 31,
+            firstPassAcceptedCount: 26,
+            backflowCount: 4,
+            reviewSubmittedCount: 35,
+            avgProgressToReviewMs: 2.6 * 24 * 60 * 60 * 1000,
+            avgReviewToDoneMs: 1.2 * 24 * 60 * 60 * 1000,
+          })
+        : testKpi({
+            efficiencyIndex: 91,
+            completedCount: 28,
+            firstPassAcceptedCount: 24,
+            backflowCount: 3,
+            reviewSubmittedCount: 31,
+            avgProgressToReviewMs: 2.4 * 24 * 60 * 60 * 1000,
+            avgReviewToDoneMs: 1.1 * 24 * 60 * 60 * 1000,
+          });
   const reportData: AuditReportData = {
     params: {
       dateFrom: displayRange.from,
@@ -700,15 +730,7 @@ export function buildDocPerformanceFetchResult(
     ),
     totalTransitions: 42,
     teamSummaryColumns: [],
-    teamKpi: testKpi({
-      efficiencyIndex: 91,
-      completedCount: 28,
-      firstPassAcceptedCount: 24,
-      backflowCount: 3,
-      reviewSubmittedCount: 31,
-      avgProgressToReviewMs: 2.4 * 24 * 60 * 60 * 1000,
-      avgReviewToDoneMs: 1.1 * 24 * 60 * 60 * 1000,
-    }),
+    teamKpi,
     perUserKpi: Object.fromEntries(
       persons.map((entry) => [entry.bamboo.workEmail, entry.performance ?? testKpi()]),
     ),

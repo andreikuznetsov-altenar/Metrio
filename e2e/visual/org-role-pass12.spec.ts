@@ -30,12 +30,11 @@ test.describe("ORG Pass 12 IC", () => {
     await expect(page.getByTestId("leadership-branches-performance")).toHaveCount(0);
   });
 
-  test("org-role-ic-feedback-results-only", async ({ page }) => {
+  test("org-role-ic-no-feedback-navigation", async ({ page }) => {
     await bootOrgRoleScenario(page, "ic");
-    await page.locator(".app-header__nav-link").filter({ hasText: "Feedback" }).click();
-    await expect(page.getByTestId("feedback-ic-results-only")).toBeVisible({
-      timeout: 15_000,
-    });
+    await expect(
+      page.locator(".app-header__nav-link").filter({ hasText: "Feedback" }),
+    ).toHaveCount(0);
     await expect(page.getByTestId("feedback-v2-page")).toHaveCount(0);
   });
 });

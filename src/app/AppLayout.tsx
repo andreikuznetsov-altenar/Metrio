@@ -12,7 +12,7 @@ import {
 import { isManagerRole } from "../domain/performance";
 import type { AppRoute } from "../domain/types";
 import { isFeedbackEnabled } from "./featureGates";
-import { resolveOrgFeatureAccess } from "../domain/organization/orgFeatureAccess";
+import { resolveOrgFeatureAccessForUser } from "../domain/organization/orgFeatureAccess";
 import { FeedbackPage } from "../pages/FeedbackPage";
 import { PerformancePage } from "../pages/PerformancePage";
 import { HomePage } from "../pages/home/HomePage";
@@ -241,9 +241,7 @@ function AppLayoutShell({
   const companyConfig = useOptionalCompanyConfig();
   const { currentUser } = useCurrentUser();
   const feedbackFeatureOn = isFeedbackEnabled(companyConfig?.effective.features);
-  const orgFeatureAccess = resolveOrgFeatureAccess(
-    currentUser.orgRole ?? "unresolved",
-  );
+  const orgFeatureAccess = resolveOrgFeatureAccessForUser(currentUser);
   const feedbackEnabled = feedbackFeatureOn && orgFeatureAccess.showFeedbackTab;
   const { resetConnection, invalidateSession } = useConnectionGate();
   const { openPerson } = usePersonNavigation();
@@ -402,10 +400,13 @@ function AppLayoutShell({
       ) {
         return;
       }
+      if (route === "feedback" && !feedbackEnabled) {
+        return;
+      }
       setSettingsOpen(false);
       setActiveRoute(route);
     },
-    [performanceNavEnabled, setActiveRoute, setSettingsOpen],
+    [feedbackEnabled, performanceNavEnabled, setActiveRoute, setSettingsOpen],
   );
 
   const onOpenSettings = useCallback(

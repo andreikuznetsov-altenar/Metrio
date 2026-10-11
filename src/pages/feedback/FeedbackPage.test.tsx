@@ -189,6 +189,17 @@ const currentUserState = {
   person: { id: 'lead-1', name: 'Lead', role: 'lead' as const },
   orgRole: 'leaf_manager' as const,
   team: { leadId: 'lead-1', directReportIds: ['rep-1'] },
+  orgHierarchy: {
+    currentUserId: 'lead-1',
+    role: 'leaf_manager' as const,
+    directReportIds: ['rep-1'],
+    directManagerReportIds: [],
+    directIndividualContributorIds: ['rep-1'],
+    descendantIds: ['lead-1', 'rep-1'],
+    topLevelManagerBranches: [],
+    maxDepthBelow: 1,
+    graphWarnings: [],
+  },
 };
 
 vi.mock('../../app/CurrentUserContext', () => ({

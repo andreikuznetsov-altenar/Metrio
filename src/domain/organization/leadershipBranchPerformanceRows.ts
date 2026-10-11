@@ -1,7 +1,12 @@
 import { getEfficiencyStatus } from "../jira/kpi";
 import type { LeadershipBranch } from "./leadershipBranchTypes";
 import type { OrganizationOverviewModel } from "./organizationTypes";
-import { formatBranchCapacitySummaryLabel } from "./leadershipBranchAggregation";
+import type { BranchCapacitySummary } from "./leadershipBranchTypes";
+
+export interface BranchCapacityPart {
+  label: string;
+  value: number;
+}
 
 export interface LeadershipBranchPerformanceRow {
   leaderId: string;
@@ -12,7 +17,18 @@ export interface LeadershipBranchPerformanceRow {
   attentionLabel: string;
   deliveryRiskCount: number;
   capacityLabel: string;
+  capacityParts: BranchCapacityPart[];
+  capacityMeasuredLabel: string;
   availabilityLabel: string;
+}
+
+function capacityParts(capacity: BranchCapacitySummary): BranchCapacityPart[] {
+  return [
+    { label: "Overloaded", value: capacity.overloaded },
+    { label: "Heavy", value: capacity.heavy },
+    { label: "Balanced", value: capacity.balanced },
+    { label: "Light", value: capacity.light },
+  ].filter((part) => part.value > 0);
 }
 
 function formatAttention(branch: LeadershipBranch): string {
@@ -37,11 +53,10 @@ export function buildLeadershipBranchPerformanceRows(
   return branches.map((branch) => {
     const status = getEfficiencyStatus(branch.metrics.efficiencyIndex);
     const cap = branch.metrics.capacity;
-    const capacityCore = formatBranchCapacitySummaryLabel(cap);
-    const capacityLabel =
-      cap.totalPeople > 0
-        ? `${capacityCore}${capacityCore !== "—" ? " · " : ""}${cap.measuredPeople}/${cap.totalPeople} measured`
-        : capacityCore;
+    const parts = capacityParts(cap);
+    const capacityLabel = parts.length
+      ? parts.map((part) => `${part.value} ${part.label}`).join(" · ")
+      : "—";
 
     return {
       leaderId: branch.leaderId,
@@ -51,7 +66,10 @@ export function buildLeadershipBranchPerformanceRows(
       performanceLabel: `${status} · ${branch.metrics.firstPassPercent}% first pass`,
       attentionLabel: formatAttention(branch),
       deliveryRiskCount: branch.metrics.uniqueDeliveryRiskCount,
-      capacityLabel: capacityLabel.replace(/ · $/, "") || "—",
+      capacityLabel,
+      capacityParts: parts,
+      capacityMeasuredLabel:
+        cap.totalPeople > 0 ? `${cap.measuredPeople}/${cap.totalPeople} measured` : "—",
       availabilityLabel: formatAvailability(branch),
     };
   });

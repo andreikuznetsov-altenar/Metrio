@@ -36,6 +36,17 @@ vi.mock("../app/CurrentUserContext", () => ({
       person: { id: "lead-1", name: "Lead", role: "lead" },
       orgRole: "leaf_manager",
       team: { leadId: "lead-1", directReportIds: ["rep-1"] },
+      orgHierarchy: {
+        currentUserId: "lead-1",
+        role: "leaf_manager",
+        directReportIds: ["rep-1"],
+        directManagerReportIds: [],
+        directIndividualContributorIds: ["rep-1"],
+        descendantIds: ["lead-1", "rep-1"],
+        topLevelManagerBranches: [],
+        maxDepthBelow: 1,
+        graphWarnings: [],
+      },
     },
   }),
 }));
