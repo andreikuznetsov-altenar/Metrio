@@ -44,6 +44,16 @@ interface ConnectionContextValue {
 
 const ConnectionContext = createContext<ConnectionContextValue | null>(null);
 
+export async function resolveStartupBootstrapForConnection(): Promise<
+  Awaited<ReturnType<typeof bootstrapProductionSession>> | null
+> {
+  const docMode = await getDocFixtureMode();
+  if (docMode.enabled) {
+    return null;
+  }
+  return bootstrapProductionSession();
+}
+
 export function ConnectionProvider({ children }: { children: ReactNode }) {
   const [gate, setGate] = useState<ConnectionGate>(() => {
     if (import.meta.env.DEV) {
@@ -113,13 +123,7 @@ export function ConnectionProvider({ children }: { children: ReactNode }) {
       setGate("disconnected");
     }, BOOTSTRAP_TIMEOUT_MS);
 
-    void getDocFixtureMode()
-      .then((docMode) => {
-        if (docMode.enabled) {
-          return null;
-        }
-        return bootstrapProductionSession();
-      })
+    void resolveStartupBootstrapForConnection()
       .then((result) => {
         if (bootstrapRunRef.current !== runId) {
           return;

@@ -36,7 +36,8 @@
     ],
     "macOS": {
       "entitlements": "./Entitlements.plist",
-      "hardenedRuntime": true
+      "hardenedRuntime": true,
+      "signingIdentity": "Developer ID Application: Andrei Kuznetsov (V36L7T43H8)"
     },
     "createUpdaterArtifacts": true
   },
