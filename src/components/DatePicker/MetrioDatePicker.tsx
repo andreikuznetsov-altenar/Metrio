@@ -77,7 +77,7 @@ export function MetrioDatePicker({
           <button
             id={triggerId}
             type="button"
-            className="metrio-date-picker__trigger"
+            className="metrio-date-picker__trigger metrio-field"
             data-state={open ? "open" : "closed"}
             aria-label={`${label} date, ${display}`}
             disabled={disabled}

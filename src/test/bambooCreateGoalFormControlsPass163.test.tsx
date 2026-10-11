@@ -112,7 +112,41 @@ describe("PASS 16.3 Create Goal form control parity", () => {
     expect(root?.querySelector(".field__label")).toHaveTextContent("Due date");
     const trigger = screen.getByTestId("goal-due");
     expect(trigger.className).toContain("metrio-date-picker__trigger");
+    expect(trigger.className).toContain("metrio-field");
     expect(getComputedStyle(trigger).width).not.toBe("0px");
+  });
+
+  it("DatePicker trigger uses the same canonical height contract as Input and Select", () => {
+    const dateCss = read("src/components/DatePicker/MetrioDatePicker.css");
+    const inputCss = read("src/components/Input/Input.css");
+    const selectCss = read("src/components/Select/Select.css");
+    const dateTriggerBlock = Array.from(
+      dateCss.matchAll(/\.metrio-date-picker__trigger\s*\{[\s\S]*?\}/g),
+    )
+      .map((match) => match[0])
+      .find((block) => block.includes("height:"));
+    const inputBlock = inputCss.match(/\.input\s*\{[\s\S]*?\}/)?.[0];
+    const selectBlock = selectCss.match(/\.select-trigger\s*\{[\s\S]*?\}/)?.[0];
+
+    expect(dateTriggerBlock).toBeTruthy();
+    expect(inputBlock).toBeTruthy();
+    expect(selectBlock).toBeTruthy();
+    expect(dateTriggerBlock).toContain("height: var(--control-height)");
+    expect(inputBlock).toContain("height: var(--control-height)");
+    expect(selectBlock).toContain("height: var(--control-height)");
+    expect(dateTriggerBlock).not.toContain("height: var(--control-height-default)");
+    expect(dateTriggerBlock).not.toMatch(/height:\s*(?:auto|3[0-5]px|3[7-9]px|4[0-4]px)/);
+
+    render(
+      <MetrioDatePicker
+        label="Due date"
+        value=""
+        onChange={() => undefined}
+        layout="stacked"
+        testId="goal-due"
+      />,
+    );
+    expect(screen.getByTestId("goal-due").className).toContain("metrio-field");
   });
 
   it("Create Goal fields inherit canonical 1px field focus without Goal-specific overrides", () => {

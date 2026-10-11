@@ -32,8 +32,8 @@
   gap: var(--space-2);
   min-width: 0;
   flex: 1;
-  height: var(--control-height-default);
-  padding: 0 var(--space-2) 0 32px;
+  height: var(--control-height);
+  padding: 0 var(--space-3) 0 calc(var(--space-3) + 20px);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-control);
   background: var(--color-surface);
@@ -65,7 +65,7 @@
 
 .metrio-date-picker__icon {
   position: absolute;
-  left: 10px;
+  left: var(--space-3);
   color: var(--color-text-tertiary);
   pointer-events: none;
 }
