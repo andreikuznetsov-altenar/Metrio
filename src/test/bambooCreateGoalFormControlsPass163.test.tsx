@@ -114,6 +114,35 @@ describe("PASS 16.3 Create Goal form control parity", () => {
     expect(trigger.className).toContain("metrio-date-picker__trigger");
     expect(getComputedStyle(trigger).width).not.toBe("0px");
   });
+
+  it("Create Goal fields inherit canonical 1px field focus without Goal-specific overrides", () => {
+    const interactionCss = read("src/styles/ui-interaction-system.css");
+    const focusBlock = interactionCss.match(
+      /\.metrio-field:focus-visible,[\s\S]*?\.settings-panel \.input:focus-visible \{[\s\S]*?\}/,
+    )?.[0];
+    expect(focusBlock).toBeTruthy();
+    expect(focusBlock).toContain("outline: none");
+    expect(focusBlock).toContain("box-shadow: none");
+    expect(focusBlock).toContain("border-color: var(--color-focus-border)");
+    expect(focusBlock).toContain("border-width: 1px");
+    expect(focusBlock).not.toMatch(/border-width:\s*[23]px/);
+    expect(focusBlock).not.toContain("padding-inline:");
+
+    const goalCss = read("src/pages/performance/goal-detail-drawer.css");
+    for (const selector of [
+      ".bamboo-goal-form .input",
+      ".bamboo-goal-form .textarea",
+      ".bamboo-goal-form .metrio-date-picker__trigger",
+      ".bamboo-create-goal-drawer .input",
+      ".bamboo-create-goal-drawer .textarea",
+      ".bamboo-create-goal-drawer .metrio-date-picker__trigger",
+    ]) {
+      expect(goalCss).not.toContain(selector);
+    }
+    expect(goalCss).not.toMatch(/bamboo-(?:goal-form|create-goal-drawer)[\s\S]*?:focus/);
+    expect(goalCss).not.toMatch(/bamboo-(?:goal-form|create-goal-drawer)[\s\S]*?box-shadow/);
+    expect(goalCss).not.toMatch(/bamboo-(?:goal-form|create-goal-drawer)[\s\S]*?outline/);
+  });
 });
 
 describe("PASS 16.3 Create Goal date picker interactions", () => {
