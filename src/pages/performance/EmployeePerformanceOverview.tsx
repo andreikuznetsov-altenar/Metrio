@@ -37,6 +37,8 @@ import { summarizeChangesWhileAway } from "../../domain/availability/changedWhil
 import { isUpcomingLeaveState } from "../../domain/availability/leaveCalendar";
 import { PerformanceStatusBanner } from "./PerformanceStatusBanner";
 import { EmployeeGoalsView } from "./EmployeeGoalsView";
+import { openExternalUrl } from "../../platform/openExternal";
+import type { OnboardingResource } from "../../domain/onboarding/resourceTypes";
 import "./goal-detail-drawer.css";
 import { buildMetricDrilldownRequest } from "./analyticsDrilldownModel";
 import "../../components/KpiCard/kpi-card.css";
@@ -55,6 +57,18 @@ function sortCurrentWorkRows(rows: PersonWorkRowData[]): PersonWorkRowData[] {
     return 4;
   };
   return [...rows].sort((a, b) => rank(a) - rank(b));
+}
+
+function resourceUrl(resource: OnboardingResource): string | null {
+  switch (resource.target.kind) {
+    case "external":
+    case "jira_project":
+    case "confluence_page":
+    case "confluence_space":
+      return resource.target.url;
+    default:
+      return null;
+  }
 }
 
 export function EmployeePerformanceOverview({ personId }: EmployeePerformanceOverviewProps) {
@@ -211,14 +225,54 @@ export function EmployeePerformanceOverview({ personId }: EmployeePerformanceOve
             />
           ) : null}
           {selfBamboo && (!selfBamboo.hireDate || !isNewStarter(selfBamboo.hireDate)) ? (
-            <section className="performance-section" aria-label="Resources">
+            <section className="performance-section executive-panel executive-resources-card" aria-label="Resources">
               <h3 className="performance-section__title">Resources</h3>
-              <p className="performance-inline-empty">
+              <p className="performance-section__subtitle">
                 {onboardingMatched.preview.length} recommended links for your role
               </p>
-              <Button variant="secondary" onClick={resourceLibrary.openLibrary}>
-                Open resource library
-              </Button>
+              <div className="executive-resources-card__list">
+                {onboardingMatched.preview.slice(0, 3).map((resource) => {
+                  const url = resourceUrl(resource);
+                  return (
+                    <div key={resource.id} className="executive-resources-card__row">
+                      <div className="executive-resources-card__text">
+                        <span className="executive-resources-card__title">{resource.title}</span>
+                        {resource.description ? (
+                          <span className="executive-resources-card__meta">
+                            {resource.description}
+                          </span>
+                        ) : null}
+                      </div>
+                      {url ? (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="small"
+                          onClick={() => void openExternalUrl(url)}
+                        >
+                          Open
+                        </Button>
+                      ) : null}
+                    </div>
+                  );
+                })}
+                <div className="executive-resources-card__row">
+                  <div className="executive-resources-card__text">
+                    <span className="executive-resources-card__title">Resource library</span>
+                    <span className="executive-resources-card__meta">
+                      Browse all matched resources
+                    </span>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="small"
+                    onClick={resourceLibrary.openLibrary}
+                  >
+                    Open
+                  </Button>
+                </div>
+              </div>
             </section>
           ) : null}
 

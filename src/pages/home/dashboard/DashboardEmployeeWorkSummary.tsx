@@ -41,7 +41,7 @@ export function DashboardEmployeeWorkSummary({
   return (
     <>
       <section
-        className="executive-dashboard__span-12 executive-panel executive-employee-summary"
+        className="executive-dashboard__span-12 executive-employee-summary"
         aria-label="Work summary"
         data-testid="employee-dashboard-work-summary"
       >

@@ -25,6 +25,35 @@ export interface LeadershipBranchesPerformanceViewProps {
   surfaceTestId?: string;
 }
 
+export function CapacityBadgeMix({
+  parts,
+  measuredLabel,
+  ariaLabel,
+}: {
+  parts: Array<{ label: string; value: number }>;
+  measuredLabel?: string;
+  ariaLabel?: string;
+}) {
+  return (
+    <div className="performance-capacity-mix" aria-label={ariaLabel}>
+      {parts.length ? (
+        parts.map((part) => (
+          <Badge key={part.label} variant="neutral">
+            {part.label}: {part.value}
+          </Badge>
+        ))
+      ) : (
+        <span>—</span>
+      )}
+      {measuredLabel ? (
+        <span className="performance-capacity-mix__measured">
+          {measuredLabel}
+        </span>
+      ) : null}
+    </div>
+  );
+}
+
 export function LeadershipBranchesPerformanceView({
   rows,
   selectedLeaderId,
@@ -159,7 +188,7 @@ export function LeadershipBranchesPerformanceView({
                 <td>
                   <button
                     type="button"
-                    className="metrio-table-link performance-leader-cell"
+                    className="performance-table__person-button performance-table__person-button--with-avatar performance-leader-cell"
                     onClick={() => onSelectLeader(row.leaderId)}
                   >
                     <PersonAvatar
@@ -167,10 +196,10 @@ export function LeadershipBranchesPerformanceView({
                       displayName={row.leaderName}
                       size="sm"
                     />
-                    <span className="performance-leader-cell__text">
-                      <span className="metrio-table-link__primary">{row.leaderName}</span>
+                    <span className="performance-table__person-text performance-leader-cell__text">
+                      <span className="performance-table__person-name">{row.leaderName}</span>
                       {row.leaderTitle ? (
-                        <span className="metrio-table-link__secondary">{row.leaderTitle}</span>
+                        <span className="performance-table__person-role">{row.leaderTitle}</span>
                       ) : null}
                     </span>
                   </button>
@@ -180,20 +209,11 @@ export function LeadershipBranchesPerformanceView({
                 <td>{row.attentionLabel}</td>
                 <td>{row.deliveryRiskCount}</td>
                 <td>
-                  <div className="performance-capacity-mix" aria-label={row.capacityLabel}>
-                    {row.capacityParts.length ? (
-                      row.capacityParts.map((part) => (
-                        <Badge key={part.label} variant="neutral">
-                          {part.label}: {part.value}
-                        </Badge>
-                      ))
-                    ) : (
-                      <span>—</span>
-                    )}
-                    <span className="performance-capacity-mix__measured">
-                      {row.capacityMeasuredLabel}
-                    </span>
-                  </div>
+                  <CapacityBadgeMix
+                    parts={row.capacityParts}
+                    measuredLabel={row.capacityMeasuredLabel}
+                    ariaLabel={row.capacityLabel}
+                  />
                 </td>
                 <td>{row.availabilityLabel}</td>
               </tr>

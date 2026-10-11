@@ -1366,10 +1366,11 @@
 }
 
 .performance-leader-cell {
-  display: inline-flex;
+  display: flex;
   align-items: center;
   gap: var(--space-2);
   text-align: left;
+  width: 100%;
 }
 
 .performance-leader-cell__text {
@@ -1385,6 +1386,7 @@
   flex-wrap: wrap;
   gap: var(--space-1);
   min-width: 0;
+  max-width: 280px;
 }
 
 .performance-capacity-mix__measured {

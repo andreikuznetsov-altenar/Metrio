@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { readFileSync } from "node:fs";
-import { render, screen } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { cleanup, render, screen } from "@testing-library/react";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { DashboardEmployeeWorkSummary } from "../pages/home/dashboard/DashboardEmployeeWorkSummary";
 import { DirectorOverviewView } from "../pages/performance/director/DirectorOverviewView";
 import { LeadershipBranchesPerformanceView } from "../pages/performance/director/LeadershipBranchesPerformanceView";
@@ -20,6 +20,10 @@ vi.mock("../platform/openExternal", () => ({
 }));
 
 describe("PASS 18 role-based UX", () => {
+  afterEach(() => {
+    cleanup();
+  });
+
   it("allows Feedback only for a leaf lead with direct IC reports", () => {
     const maria = getDocFixtureUser("ic");
     const andrei = getDocFixtureUser("lead");
@@ -80,6 +84,7 @@ describe("PASS 18 role-based UX", () => {
     );
 
     expect(screen.getByTestId("employee-dashboard-work-summary")).toBeInTheDocument();
+    expect(screen.getByTestId("employee-dashboard-work-summary")).not.toHaveClass("executive-panel");
     expect(screen.getByTestId("employee-dashboard-trend-card")).toBeInTheDocument();
     expect(screen.getByTestId("employee-dashboard-current-work-card")).toBeInTheDocument();
     expect(screen.getByTestId("employee-dashboard-delivery-quality-card")).toBeInTheDocument();
@@ -137,7 +142,11 @@ describe("PASS 18 role-based UX", () => {
 
     expect(screen.getByTestId("director-scope-header")).toBeInTheDocument();
     expect(screen.getByTestId("director-kpi-row")).toHaveTextContent("Efficiency");
+    expect(screen.getByText("Efficiency").closest(".performance-metric-card")).toBeTruthy();
     expect(screen.getByText("Teams needing attention")).toBeInTheDocument();
+    expect(screen.getByText("Heavy: 1")).toBeInTheDocument();
+    expect(screen.getByText("Balanced: 2")).toBeInTheDocument();
+    expect(screen.getByText("Light: 1")).toBeInTheDocument();
     expect(screen.getByText("Team trends")).toBeInTheDocument();
     expect(screen.getByText("Signals")).toBeInTheDocument();
   });
@@ -172,6 +181,12 @@ describe("PASS 18 role-based UX", () => {
     expect(screen.getByTestId("person-avatar")).toBeInTheDocument();
     expect(screen.getByText("Andrei Morozov")).toBeInTheDocument();
     expect(screen.getByText("UX Team Lead")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /andrei morozov/i })).toHaveClass(
+      "performance-table__person-button",
+    );
+    expect(screen.getByRole("button", { name: /andrei morozov/i })).not.toHaveClass(
+      "metrio-table-link",
+    );
     expect(screen.getByText("Heavy: 1")).toBeInTheDocument();
     expect(screen.getByText("4/4 measured")).toBeInTheDocument();
   });

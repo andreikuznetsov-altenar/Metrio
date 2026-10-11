@@ -5,6 +5,7 @@
 
 .kpi-card,
 .executive-kpi-card,
+.performance-metric-card,
 .card.performance-metric-card {
   padding: var(--space-3);
   border-radius: var(--radius-card);

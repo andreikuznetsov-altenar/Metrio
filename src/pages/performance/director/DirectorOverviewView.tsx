@@ -3,9 +3,11 @@ import type { OrganizationOverviewModel } from "../../../domain/organization/org
 import type { OrganizationSignal } from "../../../domain/organization/organizationTypes";
 import { Button } from "../../../components/Button/Button";
 import { Badge } from "../../../components/Badge/Badge";
+import { Card } from "../../../components/Card/Card";
 import { METRIO_TABLE_CLASS, MetrioTableWrap } from "../../../components/Table/MetrioTable";
 import { SortableTableHeader } from "../../../components/Table/SortableTableHeader";
 import { useTableSort } from "../../../components/Table/useTableSort";
+import { CapacityBadgeMix } from "./LeadershipBranchesPerformanceView";
 
 const TEAMS_ATTENTION_COLUMNS = [
   { id: "team", type: "text" as const },
@@ -14,6 +16,15 @@ const TEAMS_ATTENTION_COLUMNS = [
   { id: "capacity", type: "text" as const },
   { id: "availability", type: "text" as const },
 ];
+
+function parseCapacitySummaryLabel(label?: string): Array<{ label: string; value: number }> {
+  if (!label) return [];
+  return label
+    .split("·")
+    .map((part) => part.trim().match(/^(\d+)\s+(.+)$/))
+    .filter((match): match is RegExpMatchArray => Boolean(match))
+    .map((match) => ({ value: Number(match[1]), label: match[2] }));
+}
 
 export interface DirectorOverviewViewProps {
   model: OrganizationOverviewModel;
@@ -78,10 +89,10 @@ export function DirectorOverviewView({
         </div>
         <div className="performance-metrics" data-testid="director-kpi-row">
         {model.summary.map((metric) => (
-          <div key={metric.label} className="performance-metric-card">
+          <Card key={metric.label} className="performance-metric-card">
             <div className="performance-metric-card__label">{metric.label}</div>
             <div className="performance-metric-card__value">{metric.value}</div>
-          </div>
+          </Card>
         ))}
         </div>
       </section>
@@ -136,7 +147,12 @@ export function DirectorOverviewView({
                   <td>{team.teamName}</td>
                   <td className="performance-table__num">{team.attentionCount}</td>
                   <td className="performance-table__num">{team.activeWork}</td>
-                  <td>{team.capacitySummaryLabel ?? "—"}</td>
+                  <td>
+                    <CapacityBadgeMix
+                      parts={parseCapacitySummaryLabel(team.capacitySummaryLabel)}
+                      ariaLabel={team.capacitySummaryLabel ?? "No measured capacity"}
+                    />
+                  </td>
                   <td>{capacityByTeamId.get(team.teamId)?.label ?? "—"}</td>
                 </tr>
               ))}
