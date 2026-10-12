@@ -90,3 +90,35 @@ describe("JiraClient.fetchAllChangelogsBatch enrichment isolation", () => {
     expect(result.partialFailures).toHaveLength(1);
   });
 });
+
+describe("JiraClient.fetchAllIssues pagination", () => {
+  beforeEach(() => {
+    invoke.mockReset();
+  });
+
+  it("fetches current work issues from later Jira search pages", async () => {
+    invoke
+      .mockResolvedValueOnce({
+        issues: [{ key: "UX-1" }],
+        nextPageToken: "next-page",
+      })
+      .mockResolvedValueOnce({
+        issues: [{ key: "AGTC-2" }],
+      });
+
+    const client = new JiraClient({
+      baseUrl: "https://example.atlassian.net",
+      email: "user@example.com",
+    });
+
+    const issues = await client.fetchAllIssues(
+      'assignee in ("user@example.com") AND statusCategory != Done ORDER BY updated ASC, key ASC',
+    );
+
+    expect(issues).toEqual([{ key: "UX-1" }, { key: "AGTC-2" }]);
+    expect(invoke).toHaveBeenCalledTimes(2);
+    expect(invoke.mock.calls[1]?.[1]).toMatchObject({
+      params: { nextPageToken: "next-page" },
+    });
+  });
+});

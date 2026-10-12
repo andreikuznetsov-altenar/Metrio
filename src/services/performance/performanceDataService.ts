@@ -1,5 +1,5 @@
 import { resolveBambooSubdomain, resolveJiraBaseUrl } from "../../config/product";
-import { buildJql, normalizeReportParams } from "../../domain/jira/jql";
+import { buildCurrentWorkJql, buildJql, normalizeReportParams } from "../../domain/jira/jql";
 import { buildEnhancedJiraAuditReport } from "../../domain/jira/report";
 import { buildTeamIdentityIndex } from "../../domain/jira/users";
 import type { TimeOffEntry } from "../../domain/people/availability";
@@ -96,6 +96,18 @@ function issueKeyFromRaw(issue: unknown): string {
   if (!issue || typeof issue !== "object") return "";
   const key = (issue as { key?: string }).key;
   return typeof key === "string" ? key : "";
+}
+
+export function mergeIssuesByKey(...groups: unknown[][]): unknown[] {
+  const byKey = new Map<string, unknown>();
+  for (const group of groups) {
+    for (const issue of group) {
+      const key = issueKeyFromRaw(issue);
+      if (!key || byKey.has(key)) continue;
+      byKey.set(key, issue);
+    }
+  }
+  return [...byKey.values()];
 }
 
 function membersForJiraScope(
@@ -276,7 +288,20 @@ export async function fetchPerformanceData(
   });
 
   const jql = buildJql(fetchParams);
-  let issues = await jira.fetchAllIssues(jql);
+  const currentWorkJql = buildCurrentWorkJql(userInputs);
+  const [historicalIssues, currentIssues] = await Promise.all([
+    jira.fetchAllIssues(jql),
+    jira.fetchAllIssues(currentWorkJql),
+  ]);
+  let issues = mergeIssuesByKey(historicalIssues, currentIssues);
+  if (currentIssues.length > 0) {
+    void writeLog(
+      "info",
+      "app",
+      "performance_jira_current_work",
+      `Fetched current Jira work across all projects count=${currentIssues.length} historicalCount=${historicalIssues.length} mergedCount=${issues.length}`,
+    );
+  }
   const knownKeys = new Set(issues.map(issueKeyFromRaw).filter(Boolean));
   const linkedKeys = collectLinkedIssueKeys(issues).filter((k) => !knownKeys.has(k));
   if (linkedKeys.length) {

@@ -178,6 +178,7 @@ export function resolveSupervisorEmployee(
   org: OrgResolutionResult,
   roster: ResolvedEmployee[],
 ): ResolvedEmployee | undefined {
+  if (org.manager) return org.manager;
   if (!org.employee?.supervisorId) return undefined;
   return roster.find((p) => p.id === org.employee?.supervisorId);
 }

@@ -5,6 +5,7 @@ import {
   resolveOrgHierarchyScope,
   resolveOrgRole,
   resolveOrgRoleFromGraph,
+  resolveSupervisorEmployee,
 } from "./orgRole";
 
 function emp(
@@ -200,5 +201,25 @@ describe("aggregation deduplication", () => {
     );
     expect(allBranchPeople.size).toBe(4);
     expect(hierarchy?.descendantIds.length).toBe(5);
+  });
+});
+
+describe("resolveSupervisorEmployee", () => {
+  it("uses Bamboo upstream manager even when manager is outside the scoped team roster", () => {
+    const manager = emp("manager", undefined, "UX Team Lead");
+    const employee = emp("valeriia", "manager", "Designer");
+
+    expect(
+      resolveSupervisorEmployee(
+        org({
+          employee,
+          manager,
+          directReports: [],
+          fullTeam: [],
+          mode: "personal",
+        }),
+        [employee],
+      ),
+    ).toEqual(manager);
   });
 });

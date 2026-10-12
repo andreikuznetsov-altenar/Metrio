@@ -37,6 +37,14 @@ export function buildJql(params: ReportParams): string {
   return `${parts.join(' AND ')} ORDER BY updated ASC, key ASC`;
 }
 
+export function buildCurrentWorkJql(users: string[]): string {
+  const usersClause = users
+    .map((v) => `"${escapeJqlValue(v)}"`)
+    .join(', ');
+
+  return `assignee in (${usersClause}) AND statusCategory != Done ORDER BY updated ASC, key ASC`;
+}
+
 export function splitLinesOrComma(text: string): string[] {
   return String(text || '')
     .split(/\r?\n|,/)
