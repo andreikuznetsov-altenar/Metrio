@@ -215,9 +215,11 @@ export function EmployeePerformanceOverview({ personId }: EmployeePerformanceOve
           aria-label="Performance overview"
           data-testid="performance-view-overview"
         >
-          <section className="performance-section performance-section--compact-surface" aria-label="Performance scope">
-            <h3 className="performance-section__title">Performance scope</h3>
-            <p className="performance-employee-context">{workspace.contextLine}</p>
+          <section className="performance-section performance-scope-strip" aria-label="Performance scope">
+            <div>
+              <p className="performance-scope-strip__eyebrow">Performance scope</p>
+              <h3 className="performance-scope-strip__title">{workspace.contextLine}</h3>
+            </div>
           </section>
 
           {selfBamboo && selfBamboo.hireDate && isNewStarter(selfBamboo.hireDate) ? (
@@ -249,7 +251,7 @@ export function EmployeePerformanceOverview({ personId }: EmployeePerformanceOve
                       {url ? (
                         <Button
                           type="button"
-                          variant="ghost"
+                          variant="secondary"
                           size="small"
                           onClick={() => void openExternalUrl(url)}
                         >
@@ -268,7 +270,7 @@ export function EmployeePerformanceOverview({ personId }: EmployeePerformanceOve
                   </div>
                   <Button
                     type="button"
-                    variant="ghost"
+                    variant="secondary"
                     size="small"
                     onClick={resourceLibrary.openLibrary}
                   >

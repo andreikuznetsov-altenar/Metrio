@@ -107,14 +107,16 @@
 }
 
 .task-journey-timeline {
+  --task-journey-marker-halo: 3px;
+  --task-journey-marker-size: 0.5rem;
   list-style: none;
   margin: 0;
-  padding: 0;
+  padding: 0 0 0 var(--task-journey-marker-halo);
 }
 
 .task-journey-timeline__item {
   position: relative;
-  padding-left: 1.25rem;
+  padding-left: calc(var(--space-3) + var(--task-journey-marker-size));
   padding-bottom: 1rem;
 }
 
@@ -126,8 +128,8 @@
   position: absolute;
   left: 0;
   top: 0.35rem;
-  width: 0.5rem;
-  height: 0.5rem;
+  width: var(--task-journey-marker-size);
+  height: var(--task-journey-marker-size);
   border-radius: 50%;
   background: var(--metrio-border-strong, #c5ccd3);
 }

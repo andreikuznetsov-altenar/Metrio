@@ -129,7 +129,7 @@ export function DashboardEmployeeWorkSummary({
                 </div>
                 <Button
                   type="button"
-                  variant="ghost"
+                  variant="secondary"
                   size="small"
                   onClick={() => onOpenResource(resource.url)}
                 >

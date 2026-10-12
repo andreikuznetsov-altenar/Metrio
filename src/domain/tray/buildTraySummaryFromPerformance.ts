@@ -45,12 +45,7 @@ export function scopeHealthForTray(input: TrayPerformanceSummaryInput): ScopeHea
 }
 
 function trayIndexValue(input: TrayPerformanceSummaryInput): string {
-  const role = trayRoleFromHome(input.homeRole);
-  if (role === "manager") {
-    return canonicalTeamEfficiencyIndexValue(input.teamSnapshot?.summary ?? []);
-  }
-  const scopeHealth = scopeHealthForTray(input);
-  return scopeHealth.line.split("·")[0]?.trim() || "—";
+  return canonicalTeamEfficiencyIndexValue(input.teamSnapshot?.summary ?? []);
 }
 
 export function buildTraySummaryFromPerformance(

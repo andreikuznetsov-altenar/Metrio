@@ -158,33 +158,41 @@ export function DirectorOverviewView({
       )}
       </section>
 
-      {model.teamCapacity.some((row) => row.awayNextWeek > 0) ? (
-        <section className="performance-section" aria-label="Upcoming team availability">
-          <h3 className="performance-section__title">Upcoming team availability</h3>
-          <ul className="performance-director-capacity" data-testid="director-team-capacity">
-            {model.teamCapacity
-              .filter((row) => row.awayNextWeek > 0)
-              .map((row) => (
-                <li key={row.teamId}>
-                  <strong>{row.teamName}</strong>
-                  <span>{row.label}</span>
-                </li>
-              ))}
+      <div className="performance-director-compact-grid">
+        {model.teamCapacity.some((row) => row.awayNextWeek > 0) ? (
+          <section
+            className="performance-section performance-section--compact-surface"
+            aria-label="Upcoming team availability"
+          >
+            <h3 className="performance-section__title">Upcoming team availability</h3>
+            <ul className="performance-director-capacity" data-testid="director-team-capacity">
+              {model.teamCapacity
+                .filter((row) => row.awayNextWeek > 0)
+                .map((row) => (
+                  <li key={row.teamId}>
+                    <strong>{row.teamName}</strong>
+                    <span>{row.label}</span>
+                  </li>
+                ))}
+            </ul>
+          </section>
+        ) : null}
+
+        <section
+          className="performance-section performance-section--compact-surface"
+          aria-label="Team trends"
+        >
+          <h3 className="performance-section__title">Team trends</h3>
+          <ul className="executive-resources-card__list">
+            {model.teamTrends.map((trend) => (
+              <li key={trend.teamId} className="executive-resources-card__row">
+                <strong>{trend.teamName}</strong>
+                <span>{trend.label}</span>
+              </li>
+            ))}
           </ul>
         </section>
-      ) : null}
-
-      <section className="performance-section" aria-label="Team trends">
-      <h3 className="performance-section__title">Team trends</h3>
-      <ul className="executive-resources-card__list">
-        {model.teamTrends.map((trend) => (
-          <li key={trend.teamId} className="executive-resources-card__row">
-            <strong>{trend.teamName}</strong>
-            <span>{trend.label}</span>
-          </li>
-        ))}
-      </ul>
-      </section>
+      </div>
 
       {model.newStarterSummary.total > 0 ? (
         <section className="performance-section" aria-label="New starters">

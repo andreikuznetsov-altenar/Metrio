@@ -1159,6 +1159,16 @@
   font-size: 13px;
 }
 
+.performance-director-compact-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr));
+  gap: var(--space-3);
+}
+
+.performance-director-compact-grid .performance-section {
+  min-width: 0;
+}
+
 .performance-director-capacity strong {
   margin-right: var(--space-2);
 }

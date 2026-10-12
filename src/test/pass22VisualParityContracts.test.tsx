@@ -57,6 +57,7 @@ describe("PASS 22 visual parity contracts", () => {
     expect(screen.getByTestId("person-avatar")).toBeInTheDocument();
     expect(screen.getByText("Maria Camilleri").closest(".person-identity")).toBeTruthy();
     expect(screen.getByText("UX Team Lead")).toHaveClass("person-identity__role");
+    expect(screen.getByTestId("dashboard-your-manager")).toHaveClass("executive-panel");
   });
 
   it("uses the same identity primitive in People and Leadership tables", () => {
@@ -111,14 +112,15 @@ describe("PASS 22 visual parity contracts", () => {
     expect(manager).not.toContain("manager-only-kpi");
   });
 
-  it("contains employee performance scope data inside a canonical surface", () => {
+  it("contains employee performance scope data inside the canonical scope strip", () => {
     const employeePerformance = source(
       "src/pages/performance/EmployeePerformanceOverview.tsx",
     );
     const css = source("src/pages/performance/performance-dashboard.css");
 
-    expect(employeePerformance).toContain("performance-section--compact-surface");
-    expect(css).toContain(".performance-section--compact-surface");
+    expect(employeePerformance).toContain("performance-scope-strip");
+    expect(employeePerformance).toContain("performance-scope-strip__eyebrow");
+    expect(css).toContain(".performance-scope-strip");
     expect(css).toContain("border: 1px solid var(--color-border-subtle)");
     expect(css).toContain("border-radius: var(--radius-card)");
   });

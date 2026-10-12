@@ -125,3 +125,68 @@ describe("PASS 15.5H tray Team index", () => {
     expect(model.indexValue).toBe("—");
   });
 });
+
+describe("PASS 22.1 tray index parity", () => {
+  it("uses numeric personal index for employee tray instead of scope prose", () => {
+    const model = buildTraySummaryFromPerformance(
+      {
+        homeRole: "employee",
+        teamSnapshot: {
+          summary: [
+            {
+              label: "Efficiency",
+              value: "88%",
+              status: "Healthy",
+              statusVariant: "success",
+            },
+          ],
+          workload: [],
+        },
+        employeeActiveSummaryValue: "0",
+        deliveryRisk: [],
+        scopeHealthEvidence: {
+          role: "employee",
+          focusCount: 0,
+          deliveryRiskCount: 0,
+          selfWorkload: "Light",
+        },
+      },
+      0,
+    );
+
+    expect(model.indexLabel).toBe("Personal index");
+    expect(model.indexValue).toBe("88%");
+    expect(model.indexValue).not.toMatch(/scope|healthy|risk|attention/i);
+  });
+
+  it("uses the same numeric efficiency source for director tray", () => {
+    const model = buildTraySummaryFromPerformance(
+      {
+        homeRole: "director",
+        teamSnapshot: {
+          summary: [
+            {
+              label: "Efficiency",
+              value: "93%",
+              status: "Healthy",
+              statusVariant: "success",
+            },
+          ],
+          workload: [],
+        },
+        deliveryRisk: [],
+        scopeHealthEvidence: {
+          role: "director",
+          focusCount: 0,
+          deliveryRiskCount: 0,
+          teamWorkload: [],
+          organizationSignalCount: 0,
+        },
+      },
+      0,
+    );
+
+    expect(model.indexValue).toBe("93%");
+    expect(model.indexValue).not.toMatch(/scope|healthy|signal|risk/i);
+  });
+});

@@ -14,7 +14,7 @@ export function DashboardYourManagerCard({
   if (!manager) {
     return (
       <section
-        className="dashboard-your-manager module-surface"
+        className="dashboard-your-manager executive-panel"
         aria-labelledby="dashboard-your-manager-title"
         data-testid="dashboard-your-manager-unavailable"
       >
@@ -32,7 +32,7 @@ export function DashboardYourManagerCard({
 
   return (
     <section
-      className="dashboard-your-manager module-surface"
+      className="dashboard-your-manager executive-panel"
       aria-labelledby="dashboard-your-manager-title"
       data-testid="dashboard-your-manager"
     >

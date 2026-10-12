@@ -1,8 +1,7 @@
 .dashboard-your-manager {
   display: flex;
   flex-direction: column;
-  gap: var(--space-3);
-  padding: var(--space-4);
+  gap: var(--space-2);
 }
 
 .dashboard-your-manager__title {
@@ -14,7 +13,7 @@
 .dashboard-your-manager__body {
   display: flex;
   flex-direction: column;
-  gap: var(--space-3);
+  gap: var(--space-2);
   align-items: stretch;
 }
 
