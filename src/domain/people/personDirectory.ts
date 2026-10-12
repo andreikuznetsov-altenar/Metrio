@@ -7,15 +7,36 @@ export interface PersonDirectoryEntry {
 }
 
 const byPersonId = new Map<string, PersonDirectoryEntry>();
+const byBambooEmployeeId = new Map<string, PersonDirectoryEntry>();
+
+function registerEntry(entry: PersonDirectoryEntry): void {
+  byPersonId.set(entry.personId, entry);
+  byBambooEmployeeId.set(entry.bambooEmployeeId, entry);
+}
 
 export function registerPersonDirectory(persons: Person[]): void {
   for (const person of persons) {
     const bambooEmployeeId = person.bamboo?.id?.trim();
     if (!bambooEmployeeId) continue;
-    byPersonId.set(person.id, {
+    registerEntry({
       personId: person.id,
       bambooEmployeeId,
       displayName: person.bamboo.displayName,
+    });
+  }
+}
+
+export function registerBambooPersonDirectory(
+  employees: Array<{ id?: string | null; displayName?: string | null }>,
+): void {
+  for (const employee of employees) {
+    const bambooEmployeeId = employee.id?.trim();
+    const displayName = employee.displayName?.trim();
+    if (!bambooEmployeeId || !displayName) continue;
+    registerEntry({
+      personId: bambooEmployeeId,
+      bambooEmployeeId,
+      displayName,
     });
   }
 }
@@ -24,8 +45,15 @@ export function lookupPersonDirectory(personId: string): PersonDirectoryEntry | 
   return byPersonId.get(personId);
 }
 
+export function lookupBambooPersonDirectory(
+  bambooEmployeeId: string,
+): PersonDirectoryEntry | undefined {
+  return byBambooEmployeeId.get(bambooEmployeeId);
+}
+
 export function clearPersonDirectory(): void {
   byPersonId.clear();
+  byBambooEmployeeId.clear();
 }
 
 export function resolvePersonAvatarIdentity(input: {

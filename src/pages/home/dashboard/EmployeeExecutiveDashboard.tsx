@@ -102,7 +102,7 @@ export function EmployeeExecutiveDashboard({
       </div>
       <DashboardScopeHealthSummary scopeLabel={model.scopeLabel} summary={model.scopeHealth} />
       {showManagerCard ? (
-        <div className="executive-dashboard__span-12">
+        <div className="executive-dashboard__span-4">
           <DashboardYourManagerCard
             manager={managerContact}
             selfDepartment={selfDepartment}

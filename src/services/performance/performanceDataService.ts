@@ -39,7 +39,10 @@ import {
   resolveAuthorizedPeopleScope,
 } from "../../domain/organization/authorizedPeopleScope";
 import { JiraClient } from "../jira/jiraClient";
-import { registerPersonDirectory } from "../../domain/people/personDirectory";
+import {
+  registerBambooPersonDirectory,
+  registerPersonDirectory,
+} from "../../domain/people/personDirectory";
 import {
   buildTeamSnapshot,
 } from "../people/personService";
@@ -211,6 +214,16 @@ export async function fetchPerformanceData(
   }
 
   const org = scopeOrgForPerformance(prefs.teamDetection);
+  registerBambooPersonDirectory(
+    [
+      prefs.teamDetection.employee,
+      prefs.teamDetection.manager,
+      ...prefs.teamDetection.directReports,
+      ...prefs.teamDetection.fullTeam,
+    ].filter(
+      (employee): employee is ResolvedEmployee => Boolean(employee),
+    ),
+  );
   const scope = resolveTeamScope(org);
   if (!scope) {
     throw new Error("Could not resolve team scope.");

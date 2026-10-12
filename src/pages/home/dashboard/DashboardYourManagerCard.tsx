@@ -1,4 +1,4 @@
-import { PersonAvatar } from "../../../components/PersonAvatar/PersonAvatar";
+import { PersonIdentity } from "../../../components/PersonIdentity/PersonIdentity";
 import type { ResolvedEmployee } from "../../../services/bamboo/orgResolver";
 import "./dashboard-your-manager.css";
 
@@ -40,25 +40,18 @@ export function DashboardYourManagerCard({
         Your manager
       </h3>
       <div className="dashboard-your-manager__body">
-        <PersonAvatar
+        <PersonIdentity
           bambooEmployeeId={manager.id}
           displayName={manager.displayName}
-          size="lg"
+          role={manager.jobTitle}
+          secondary={department}
+          avatarSize="lg"
         />
-        <div className="dashboard-your-manager__details">
-          <div className="dashboard-your-manager__name">{manager.displayName}</div>
-          {manager.jobTitle ? (
-            <div className="dashboard-your-manager__meta">{manager.jobTitle}</div>
-          ) : null}
-          {department ? (
-            <div className="dashboard-your-manager__meta">{department}</div>
-          ) : null}
-          {manager.workEmail ? (
-            <a className="dashboard-your-manager__link" href={`mailto:${manager.workEmail}`}>
-              {manager.workEmail}
-            </a>
-          ) : null}
-        </div>
+        {manager.workEmail ? (
+          <a className="dashboard-your-manager__link" href={`mailto:${manager.workEmail}`}>
+            {manager.workEmail}
+          </a>
+        ) : null}
       </div>
     </section>
   );

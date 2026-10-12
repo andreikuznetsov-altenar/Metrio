@@ -13,25 +13,9 @@
 
 .dashboard-your-manager__body {
   display: flex;
-  gap: var(--space-3);
-  align-items: flex-start;
-}
-
-.dashboard-your-manager__details {
-  display: flex;
   flex-direction: column;
-  gap: var(--space-1);
-  min-width: 0;
-}
-
-.dashboard-your-manager__name {
-  font: var(--font-body-strong);
-  color: var(--color-text-primary);
-}
-
-.dashboard-your-manager__meta {
-  font: var(--font-body-sm);
-  color: var(--color-text-secondary);
+  gap: var(--space-3);
+  align-items: stretch;
 }
 
 .dashboard-your-manager__link {

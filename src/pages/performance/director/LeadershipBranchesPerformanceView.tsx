@@ -2,7 +2,7 @@ import { useMemo } from "react";
 import type { LeadershipBranchPerformanceRow } from "../../../domain/organization/leadershipBranchPerformanceRows";
 import { Button } from "../../../components/Button/Button";
 import { Badge } from "../../../components/Badge/Badge";
-import { PersonAvatar } from "../../../components/PersonAvatar/PersonAvatar";
+import { PersonIdentity } from "../../../components/PersonIdentity/PersonIdentity";
 import { METRIO_TABLE_CLASS, MetrioTableWrap } from "../../../components/Table/MetrioTable";
 import { SortableTableHeader } from "../../../components/Table/SortableTableHeader";
 import { useTableSort } from "../../../components/Table/useTableSort";
@@ -191,17 +191,12 @@ export function LeadershipBranchesPerformanceView({
                     className="performance-table__person-button performance-table__person-button--with-avatar performance-leader-cell"
                     onClick={() => onSelectLeader(row.leaderId)}
                   >
-                    <PersonAvatar
+                    <PersonIdentity
                       personId={row.leaderId}
                       displayName={row.leaderName}
-                      size="sm"
+                      role={row.leaderTitle}
+                      avatarSize="sm"
                     />
-                    <span className="performance-table__person-text performance-leader-cell__text">
-                      <span className="performance-table__person-name">{row.leaderName}</span>
-                      {row.leaderTitle ? (
-                        <span className="performance-table__person-role">{row.leaderTitle}</span>
-                      ) : null}
-                    </span>
                   </button>
                 </td>
                 <td>{row.peopleCount} people</td>

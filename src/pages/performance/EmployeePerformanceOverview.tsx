@@ -215,7 +215,10 @@ export function EmployeePerformanceOverview({ personId }: EmployeePerformanceOve
           aria-label="Performance overview"
           data-testid="performance-view-overview"
         >
-          <p className="performance-employee-context">{workspace.contextLine}</p>
+          <section className="performance-section performance-section--compact-surface" aria-label="Performance scope">
+            <h3 className="performance-section__title">Performance scope</h3>
+            <p className="performance-employee-context">{workspace.contextLine}</p>
+          </section>
 
           {selfBamboo && selfBamboo.hireDate && isNewStarter(selfBamboo.hireDate) ? (
             <GettingStartedSection

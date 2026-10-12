@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Badge } from "../../components/Badge/Badge";
 import { GroupedIssuePreview } from "../../components/GroupedIssuePreview/GroupedIssuePreview";
-import { PersonAvatar } from "../../components/PersonAvatar/PersonAvatar";
+import { PersonIdentity } from "../../components/PersonIdentity/PersonIdentity";
 import { SortableTableHeader } from "../../components/Table/SortableTableHeader";
 import { useTableSort } from "../../components/Table/useTableSort";
 import { usePerformanceData } from "../../app/PerformanceDataContext";
@@ -102,19 +102,12 @@ export function TeamPeopleView({ rows, onOpenPerson }: TeamPeopleViewProps) {
                     className="performance-table__person-button performance-table__person-button--with-avatar"
                     onClick={() => onOpenPerson(row.personId)}
                   >
-                    <PersonAvatar
+                    <PersonIdentity
                       personId={row.personId}
                       displayName={row.personName || row.personId}
-                      size="sm"
+                      role={row.role}
+                      avatarSize="sm"
                     />
-                    <span className="performance-table__person-text">
-                      <span className="performance-table__person-name">
-                        {row.personName}
-                      </span>
-                      <span className="performance-table__person-role">
-                        {row.role}
-                      </span>
-                    </span>
                   </button>
                 </td>
                 <td className="performance-table__num">{row.efficiency}</td>

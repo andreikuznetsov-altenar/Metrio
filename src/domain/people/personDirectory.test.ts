@@ -2,7 +2,9 @@ import { describe, expect, it, beforeEach } from "vitest";
 import type { Person } from "./types";
 import {
   clearPersonDirectory,
+  lookupBambooPersonDirectory,
   lookupPersonDirectory,
+  registerBambooPersonDirectory,
   registerPersonDirectory,
   resolvePersonAvatarIdentity,
 } from "./personDirectory";
@@ -48,5 +50,21 @@ describe("personDirectory", () => {
       person: person("metrio-1", "bamboo-42", "Alex"),
     });
     expect(identity.bambooEmployeeId).toBe("bamboo-42");
+  });
+
+  it("registers Bamboo directory people outside the active Metrio roster", () => {
+    registerBambooPersonDirectory([
+      { id: "manager-7", displayName: "Maria Camilleri" },
+    ]);
+
+    expect(lookupBambooPersonDirectory("manager-7")?.displayName).toBe(
+      "Maria Camilleri",
+    );
+
+    const identity = resolvePersonAvatarIdentity({
+      bambooEmployeeId: "manager-7",
+      displayName: "Maria Camilleri",
+    });
+    expect(identity.bambooEmployeeId).toBe("manager-7");
   });
 });

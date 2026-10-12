@@ -24,6 +24,8 @@ import { buildLeadershipRecommendations } from "../../../domain/recommendations/
 import { DashboardRecommendations } from "./DashboardRecommendations";
 import type { ProductRecommendation } from "../../../domain/recommendations/buildProductRecommendations";
 import { navigateProductRecommendation } from "../../../app/productRecommendationNavigation";
+import { DashboardMetricsPair } from "./DashboardMetricsPair";
+import { DashboardLowerThreeCards } from "./DashboardLowerThreeCards";
 
 type GoalsHomeSummary = ReturnType<typeof summarizeGoalsForHome>;
 
@@ -136,20 +138,25 @@ export function DirectorExecutiveDashboard({
         jiraBaseUrl={jiraBaseUrl}
       />
       {directIndividualContributorCount > 0 ? (
-        <p
-          className="executive-secondary-line executive-dashboard__span-12"
+        <section
+          className="executive-panel executive-dashboard__span-4"
           data-testid="dashboard-direct-ic-note"
         >
-          + {directIndividualContributorCount} direct contributor
-          {directIndividualContributorCount === 1 ? "" : "s"} included in totals
-        </p>
+          <h2 className="executive-panel__title">Direct contributors</h2>
+          <p className="executive-secondary-line">
+            + {directIndividualContributorCount} direct contributor
+            {directIndividualContributorCount === 1 ? "" : "s"} included in totals
+          </p>
+        </section>
       ) : null}
       <DashboardDirectorTeamHealthVisual
         organization={organization}
         onOpenDirectorView={onOpenDirectorView}
       />
-      <DashboardTeamCapacityVisual workload={model.teamWorkload} />
-      <DashboardDeliveryVisual summary={model.deliverySummary} />
+      <DashboardMetricsPair>
+        <DashboardTeamCapacityVisual workload={model.teamWorkload} />
+        <DashboardDeliveryVisual summary={model.deliverySummary} />
+      </DashboardMetricsPair>
       <DashboardActionTabs
         tabs={model.actionTabs}
         onOpenAction={onOpenAction}
@@ -160,14 +167,22 @@ export function DirectorExecutiveDashboard({
           <HomeGoalsSummaryCard teamView summary={goalsSummary} prominent />
         </div>
       ) : null}
-      <div
-        className="executive-dashboard__span-12"
-        data-testid="dashboard-director-org"
-      >
-        <Button type="button" variant="secondary" onClick={onOpenDeliveryRisk}>
-          Open delivery risk
-        </Button>
-      </div>
+      <DashboardLowerThreeCards>
+        <section
+          className="executive-lower-card"
+          data-testid="dashboard-director-org"
+        >
+          <h2 className="executive-lower-card__title">Delivery risk</h2>
+          <p className="executive-lower-card__description">
+            Review cross-branch delivery signals in the canonical table.
+          </p>
+          <div className="executive-lower-card__cta">
+            <Button type="button" variant="secondary" onClick={onOpenDeliveryRisk}>
+              Open delivery risk
+            </Button>
+          </div>
+        </section>
+      </DashboardLowerThreeCards>
     </>
   );
 }
