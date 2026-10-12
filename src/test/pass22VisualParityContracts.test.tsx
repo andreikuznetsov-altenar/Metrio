@@ -97,7 +97,9 @@ describe("PASS 22 visual parity contracts", () => {
     const employee = source("src/pages/home/dashboard/EmployeeExecutiveDashboard.tsx");
     const director = source("src/pages/home/dashboard/DirectorExecutiveDashboard.tsx");
 
-    expect(employee).toContain('className="executive-dashboard__span-4"');
+    expect(employee).toMatch(
+      /span-12">\s*<DashboardYourManagerCard/,
+    );
     expect(director).toContain("<DashboardMetricsPair>");
     expect(director).toContain("<DashboardLowerThreeCards>");
     expect(director).not.toContain('className="executive-secondary-line executive-dashboard__span-12"');

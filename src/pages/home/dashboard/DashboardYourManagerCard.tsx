@@ -1,4 +1,6 @@
+import { Button } from "../../../components/Button/Button";
 import { PersonIdentity } from "../../../components/PersonIdentity/PersonIdentity";
+import { openExternalUrl } from "../../../platform/openExternal";
 import type { ResolvedEmployee } from "../../../services/bamboo/orgResolver";
 import "./dashboard-your-manager.css";
 
@@ -48,9 +50,14 @@ export function DashboardYourManagerCard({
           avatarSize="lg"
         />
         {manager.workEmail ? (
-          <a className="dashboard-your-manager__link" href={`mailto:${manager.workEmail}`}>
+          <Button
+            variant="secondary"
+            size="small"
+            onClick={() => void openExternalUrl(`mailto:${manager.workEmail}`)}
+            aria-label={`Email ${manager.displayName}`}
+          >
             {manager.workEmail}
-          </a>
+          </Button>
         ) : null}
       </div>
     </section>

@@ -116,7 +116,7 @@ export function UpcomingTimeOffSection({
                 View my work
               </Button>
               <Button
-                variant="ghost"
+                variant="secondary"
                 onClick={() => void openExternalUrl(bambooEmployeePortalUrl())}
               >
                 Open BambooHR

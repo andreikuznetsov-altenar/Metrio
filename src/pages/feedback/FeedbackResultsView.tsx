@@ -20,22 +20,24 @@ export function FeedbackResultsView({
       <div className="ds-metric-grid ds-metric-grid--four">
         <MetricCard label="Sent" value={sentCount} />
         <MetricCard label="Responses" value={metrics.respondentCount} />
-        <MetricCard
-          label="Response rate"
-          value={`${responseRate}%`}
-          hint={FEEDBACK_HELP.responseRate}
-        />
+        <MetricCard label="Response rate" value={`${responseRate}%`} />
         <MetricCard
           label="Survey index"
-          value={metrics.overallStatus}
-          hint={FEEDBACK_HELP.surveyIndex}
-          status={
+          value={
             <Badge variant={surveyIndexBadgeVariant(metrics.overallStatus)}>
               {metrics.overallStatus}
             </Badge>
           }
         />
       </div>
+      <p className="ds-metric-grid__help" data-testid="feedback-metric-help">
+        <span>
+          <strong>Response rate:</strong> {FEEDBACK_HELP.responseRate}
+        </span>
+        <span>
+          <strong>Survey index:</strong> {FEEDBACK_HELP.surveyIndex}
+        </span>
+      </p>
 
       {metrics.scaleQuestions.length > 0 && (
         <div className="ds-feedback-results-list">

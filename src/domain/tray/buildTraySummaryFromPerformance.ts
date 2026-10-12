@@ -1,4 +1,4 @@
-import type { DeliveryRiskRow, TeamPerformanceSnapshot } from "../performance";
+import type { DeliveryRiskRow, MetricCardData, TeamPerformanceSnapshot } from "../performance";
 import type { ScopeHealthSummary } from "../home/executiveDashboardModel";
 import { canonicalTeamEfficiencyIndexValue } from "../home/buildDashboardKpis";
 import { buildScopeHealthSummary } from "../home/executiveDashboardModel";
@@ -17,6 +17,8 @@ export interface TrayPerformanceSummaryInput {
   homeRole: HomeRoleVariant;
   teamSnapshot: TeamPerformanceSnapshot | null;
   employeeActiveSummaryValue?: string;
+  /** Person-level metric cards (same source as IC Dashboard / Performance Efficiency). */
+  employeeMetrics?: readonly MetricCardData[] | null;
   deliveryRisk: DeliveryRiskRow[];
   scopeHealthEvidence: Parameters<typeof buildScopeHealthSummary>[1];
 }
@@ -44,8 +46,19 @@ export function scopeHealthForTray(input: TrayPerformanceSummaryInput): ScopeHea
   return buildScopeHealthSummary(input.homeRole, input.scopeHealthEvidence);
 }
 
+const NUMERIC_INDEX = /^\d+(?:\.\d+)?%$/;
+
+/** Tray indexes are always numeric percentages; anything else renders as an em dash. */
+function numericIndexOrDash(value: string): string {
+  return NUMERIC_INDEX.test(value.trim()) ? value.trim() : "—";
+}
+
 function trayIndexValue(input: TrayPerformanceSummaryInput): string {
-  return canonicalTeamEfficiencyIndexValue(input.teamSnapshot?.summary ?? []);
+  const summary =
+    trayRoleFromHome(input.homeRole) === "employee"
+      ? (input.employeeMetrics ?? input.teamSnapshot?.summary ?? [])
+      : (input.teamSnapshot?.summary ?? []);
+  return numericIndexOrDash(canonicalTeamEfficiencyIndexValue(summary));
 }
 
 export function buildTraySummaryFromPerformance(

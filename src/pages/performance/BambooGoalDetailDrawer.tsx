@@ -385,8 +385,8 @@ export function BambooGoalDetailDrawer({
                 </Button>
 
                 {!detail.hasMilestones ? (
-                  <div className="bamboo-goal-form__field">
-                    <span>Progress ({percent}%)</span>
+                  <div className="field">
+                    <span className="field__label">Progress ({percent}%)</span>
                     <input
                       type="range"
                       min={0}

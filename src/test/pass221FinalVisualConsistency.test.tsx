@@ -19,6 +19,7 @@ describe("PASS 22.1 final visual consistency contracts", () => {
 
     expect(component).toContain("dashboard-your-manager executive-panel");
     expect(component).toContain("<PersonIdentity");
+    expect(component).toMatch(/variant="secondary"[\s\S]{0,300}workEmail/);
     expect(cssBlock(css, ".dashboard-your-manager")).not.toContain("padding:");
   });
 
@@ -37,7 +38,12 @@ describe("PASS 22.1 final visual consistency contracts", () => {
 
     expect(performance).not.toMatch(/variant="ghost"[\s\S]{0,160}Open/);
     expect(dashboard).not.toMatch(/variant="ghost"[\s\S]{0,160}Open/);
-    expect(performance).toMatch(/variant="secondary"[\s\S]{0,160}Open/);
+    expect(performance).toMatch(/variant="secondary"[\s\S]{0,240}Open/);
+    expect(performance).toContain("openOnboardingResourceTarget(resource.target)");
+    expect(source("src/components/ResourceRow/ResourceRow.tsx")).toMatch(
+      /variant="secondary"[\s\S]{0,200}Open/,
+    );
+    expect(source("src/components/ResourceRow/ResourceRow.css")).not.toContain("resource-row__action");
     expect(dashboard).toMatch(/variant="secondary"[\s\S]{0,160}Open/);
   });
 
@@ -51,7 +57,7 @@ describe("PASS 22.1 final visual consistency contracts", () => {
 
     expect(timeline).toContain("--task-journey-marker-halo: 3px");
     expect(timeline).toContain("padding: 0 0 0 var(--task-journey-marker-halo)");
-    expect(currentDot).toContain("box-shadow: 0 0 0 3px");
+    expect(currentDot).toMatch(/box-shadow:\s*0 0 0 var\(--task-journey-marker-halo\)/);
   });
 
   it("keeps director scope horizontal and compacts adjacent overview modules", () => {
@@ -62,6 +68,7 @@ describe("PASS 22.1 final visual consistency contracts", () => {
     expect(component).toContain("performance-scope-strip");
     expect(component).toContain("View all teams");
     expect(scope).toContain("display: flex");
+    expect(scope).toContain("flex-direction: row");
     expect(scope).toContain("align-items: center");
     expect(scope).toContain("justify-content: space-between");
     expect(component).toContain("performance-director-compact-grid");
@@ -99,5 +106,64 @@ describe("PASS 22.1 final visual consistency contracts", () => {
     expect(trigger).toContain("box-sizing: border-box");
     expect(trigger).toContain("border: 1px solid var(--color-border)");
     expect(trigger).not.toMatch(/min-height:\s*(?:auto|\d+px)/);
+  });
+
+  it("moves long Feedback metric explanations out of equal-height metric cards", () => {
+    const results = source("src/pages/feedback/FeedbackResultsView.tsx");
+    const css = source("src/pages/feedback/feedback-ds.css");
+
+    expect(results).not.toMatch(/<MetricCard[^>]*hint=/);
+    expect(results).toContain("ds-metric-grid__help");
+    expect(css).toContain(".ds-metric-grid__help");
+    expect(cssBlock(css, ".feedback-latest-run__actions")).toContain("justify-content: flex-start");
+  });
+
+  it("keeps the stacked DatePicker trigger on the canonical field size (no flex collapse)", () => {
+    const css = source("src/components/DatePicker/MetrioDatePicker.css");
+    const stacked = cssBlock(css, ".metrio-date-picker--stacked .metrio-date-picker__trigger");
+    const goalCss = source("src/pages/performance/goal-detail-drawer.css");
+    const detail = source("src/pages/performance/BambooGoalDetailDrawer.tsx");
+
+    expect(stacked).toContain("flex: 0 0 auto");
+    expect(goalCss).not.toMatch(/metrio-date-picker/);
+    expect(detail).toContain("<MetrioDatePicker");
+    expect(detail).toContain('layout="stacked"');
+    expect(detail).toContain('className="field__label">Progress');
+    expect(detail).not.toContain("bamboo-goal-form__field");
+  });
+
+  it("keeps Director availability and adjacent compact modules on bounded surfaces", () => {
+    const component = source("src/pages/performance/director/DirectorOverviewView.tsx");
+    const grid = component.slice(component.indexOf("performance-director-compact-grid"));
+
+    expect(grid).toContain('data-testid="director-upcoming-availability"');
+    expect((grid.match(/performance-section--compact-surface/g) ?? []).length).toBeGreaterThanOrEqual(4);
+    expect(component).not.toMatch(/variant="ghost"[\s\S]{0,80}onOpenSignal/);
+  });
+
+  it("reuses person identity primitives for name + role displays", () => {
+    const manager = source("src/pages/home/dashboard/DashboardYourManagerCard.tsx");
+    const header = source("src/pages/performance/PersonIdentityHeader.tsx");
+    const people = source("src/pages/performance/TeamPeopleView.tsx");
+    const leadership = source("src/pages/performance/director/LeadershipBranchesPerformanceView.tsx");
+
+    expect(manager).toContain("<PersonIdentity");
+    expect(people).toContain("<PersonIdentity");
+    expect(leadership).toContain("<PersonIdentity");
+    expect(header).toContain("<PersonAvatar");
+  });
+
+  it("does not give any role view its own page container geometry", () => {
+    const css = source("src/pages/performance/performance-dashboard.css");
+    const rolePages = [
+      "src/pages/performance/director/DirectorOverviewView.tsx",
+      "src/pages/performance/director/DirectorPerformanceOverview.tsx",
+      "src/pages/performance/EmployeePerformanceOverview.tsx",
+    ].map(source);
+
+    for (const page of rolePages) {
+      expect(page).not.toMatch(/style=\{\{[^}]*(?:maxWidth|width|padding)/);
+    }
+    expect(css).not.toMatch(/\.performance-(?:director|manager|employee)-(?:page|container|shell)\s*\{/);
   });
 });

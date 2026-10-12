@@ -1041,6 +1041,17 @@
   color: var(--color-text-secondary);
 }
 
+.performance-section--compact-surface .performance-inline-empty {
+  margin: 0;
+}
+
+.performance-inline-empty--surface {
+  margin: 0;
+  padding: var(--space-3) var(--space-4);
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius-control);
+}
+
 .performance-attention-empty {
   display: flex;
   align-items: center;
@@ -1162,11 +1173,18 @@
 .performance-director-compact-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr));
+  align-items: start;
   gap: var(--space-3);
 }
 
 .performance-director-compact-grid .performance-section {
   min-width: 0;
+}
+
+.performance-section--compact-surface ul.executive-resources-card__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
 }
 
 .performance-director-capacity strong {
@@ -1175,6 +1193,8 @@
 
 .performance-scope-strip {
   display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   gap: var(--space-3);
@@ -1182,6 +1202,11 @@
   border-radius: var(--radius-card);
   border: 1px solid var(--color-border-subtle);
   background: var(--color-surface-secondary);
+}
+
+.performance-scope-strip > div {
+  min-width: 0;
+  text-align: left;
 }
 
 .performance-scope-strip__eyebrow {
@@ -1384,4 +1409,18 @@
 .performance-capacity-mix__measured {
   font-size: 12px;
   color: var(--color-text-tertiary);
+}
+
+/* Resources module: dense title → subtitle → rows rhythm (no empty vertical bands). */
+.performance-section.executive-resources-card {
+  gap: var(--space-1);
+}
+
+.performance-section.executive-resources-card > .executive-panel__title,
+.performance-section.executive-resources-card > .performance-section__subtitle {
+  margin: 0;
+}
+
+.performance-section.executive-resources-card .executive-resources-card__list {
+  gap: 0;
 }

@@ -190,3 +190,48 @@ describe("PASS 22.1 tray index parity", () => {
     expect(model.indexValue).not.toMatch(/scope|healthy|signal|risk/i);
   });
 });
+
+describe("PASS 22.1 tray Personal index numeric", () => {
+  const baseEvidence = {
+    role: "employee" as const,
+    focusCount: 0,
+    deliveryRiskCount: 0,
+    selfWorkload: "Light" as const,
+  };
+
+  it("uses the person-level Efficiency metric (IC Dashboard source) for employee scope", () => {
+    const model = buildTraySummaryFromPerformance(
+      {
+        homeRole: "employee",
+        teamSnapshot: null,
+        employeeMetrics: [
+          { label: "Efficiency", value: "82%", status: "Healthy", statusVariant: "success" },
+        ],
+        deliveryRisk: [],
+        scopeHealthEvidence: baseEvidence,
+      } as never,
+      0,
+    );
+
+    expect(model.indexLabel).toBe("Personal index");
+    expect(model.indexValue).toBe("82%");
+    expect(model.indexValue).toMatch(/^\d+(?:\.\d+)?%$/);
+  });
+
+  it("never renders prose as an index value", () => {
+    const model = buildTraySummaryFromPerformance(
+      {
+        homeRole: "employee",
+        teamSnapshot: null,
+        employeeMetrics: [
+          { label: "Efficiency", value: "Your scope looks healthy" },
+        ],
+        deliveryRisk: [],
+        scopeHealthEvidence: baseEvidence,
+      } as never,
+      0,
+    );
+
+    expect(model.indexValue).toBe("—");
+  });
+});

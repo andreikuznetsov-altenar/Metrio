@@ -33,11 +33,6 @@
   width: min(180px, 100%);
 }
 
-.person-brief__period .select-trigger,
-.person-brief__actions .btn {
-  min-height: var(--control-height-default);
-}
-
 .person-brief__actions {
   display: flex;
   flex-wrap: wrap;

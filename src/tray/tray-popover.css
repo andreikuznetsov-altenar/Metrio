@@ -71,11 +71,6 @@
   text-align: right;
 }
 
-.tray-popover__value--text {
-  font-weight: 500;
-  max-width: 11rem;
-}
-
 .tray-popover__divider {
   flex-shrink: 0;
   height: 1px;

@@ -39,5 +39,6 @@ export function buildIssueAttributionIndex(
 export function targetScopeLabel(reviewTarget: string): string {
   if (reviewTarget === "sprint") return "Sprint target";
   if (reviewTarget === "org") return "Org target";
+  if (reviewTarget === "personal") return "Personal target";
   return "Team target";
 }

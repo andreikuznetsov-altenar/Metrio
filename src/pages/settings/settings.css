@@ -204,12 +204,6 @@
   color: var(--color-text-tertiary);
 }
 
-.settings-field .input,
-.settings-field .select-trigger {
-  min-height: var(--control-height-default);
-  height: var(--control-height-default);
-}
-
 .settings-number-field {
   display: flex;
   align-items: center;

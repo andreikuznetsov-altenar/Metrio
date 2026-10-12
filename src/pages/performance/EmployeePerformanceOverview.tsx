@@ -37,8 +37,7 @@ import { summarizeChangesWhileAway } from "../../domain/availability/changedWhil
 import { isUpcomingLeaveState } from "../../domain/availability/leaveCalendar";
 import { PerformanceStatusBanner } from "./PerformanceStatusBanner";
 import { EmployeeGoalsView } from "./EmployeeGoalsView";
-import { openExternalUrl } from "../../platform/openExternal";
-import type { OnboardingResource } from "../../domain/onboarding/resourceTypes";
+import { openOnboardingResourceTarget } from "../../platform/openOnboardingResource";
 import "./goal-detail-drawer.css";
 import { buildMetricDrilldownRequest } from "./analyticsDrilldownModel";
 import "../../components/KpiCard/kpi-card.css";
@@ -57,18 +56,6 @@ function sortCurrentWorkRows(rows: PersonWorkRowData[]): PersonWorkRowData[] {
     return 4;
   };
   return [...rows].sort((a, b) => rank(a) - rank(b));
-}
-
-function resourceUrl(resource: OnboardingResource): string | null {
-  switch (resource.target.kind) {
-    case "external":
-    case "jira_project":
-    case "confluence_page":
-    case "confluence_space":
-      return resource.target.url;
-    default:
-      return null;
-  }
 }
 
 export function EmployeePerformanceOverview({ personId }: EmployeePerformanceOverviewProps) {
@@ -236,9 +223,7 @@ export function EmployeePerformanceOverview({ personId }: EmployeePerformanceOve
                 {onboardingMatched.preview.length} recommended links for your role
               </p>
               <div className="executive-resources-card__list">
-                {onboardingMatched.preview.slice(0, 3).map((resource) => {
-                  const url = resourceUrl(resource);
-                  return (
+                {onboardingMatched.preview.slice(0, 3).map((resource) => (
                     <div key={resource.id} className="executive-resources-card__row">
                       <div className="executive-resources-card__text">
                         <span className="executive-resources-card__title">{resource.title}</span>
@@ -248,19 +233,17 @@ export function EmployeePerformanceOverview({ personId }: EmployeePerformanceOve
                           </span>
                         ) : null}
                       </div>
-                      {url ? (
-                        <Button
-                          type="button"
-                          variant="secondary"
-                          size="small"
-                          onClick={() => void openExternalUrl(url)}
-                        >
-                          Open
-                        </Button>
-                      ) : null}
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        size="small"
+                        aria-label={`Open ${resource.title}`}
+                        onClick={() => void openOnboardingResourceTarget(resource.target)}
+                      >
+                        Open
+                      </Button>
                     </div>
-                  );
-                })}
+                  ))}
                 <div className="executive-resources-card__row">
                   <div className="executive-resources-card__text">
                     <span className="executive-resources-card__title">Resource library</span>

@@ -56,7 +56,7 @@ export function FeedbackCycleDetailView({
       {tab === 'overview' && latest && latestMetrics ? (
         <div className="feedback-cycle-overview">
           <Section title="Overview" variant="plain">
-            <div className="ds-metric-grid ds-metric-grid--three">
+            <div className="ds-metric-grid ds-metric-grid--three" data-testid="feedback-cycle-kpis">
               <MetricCard
                 label="Recipients"
                 value={latest.recipients.filter((r) => r.selected).length}
@@ -73,29 +73,29 @@ export function FeedbackCycleDetailView({
           </Section>
 
           <Section title="Latest run" variant="plain">
-            <div className="feedback-latest-run">
-              <div className="feedback-latest-run__grid">
+            <div className="feedback-latest-run" data-testid="feedback-latest-run">
+              <dl className="feedback-latest-run__grid">
                 <div>
-                  <span>Status</span>
-                  <strong>{runStatusLabel(deriveRunPhase(latest))}</strong>
+                  <dt>Status</dt>
+                  <dd>{runStatusLabel(deriveRunPhase(latest))}</dd>
                 </div>
                 <div>
-                  <span>Created</span>
-                  <strong>{new Date(latest.createdAt).toLocaleString()}</strong>
+                  <dt>Created</dt>
+                  <dd>{new Date(latest.createdAt).toLocaleString()}</dd>
                 </div>
                 <div>
-                  <span>Sent</span>
-                  <strong>{sentCount}</strong>
+                  <dt>Sent</dt>
+                  <dd>{sentCount}</dd>
                 </div>
                 <div>
-                  <span>Responses</span>
-                  <strong>{latestMetrics.respondentCount}</strong>
+                  <dt>Responses</dt>
+                  <dd>{latestMetrics.respondentCount}</dd>
                 </div>
                 <div>
-                  <span>Google Form state</span>
-                  <strong>{latest.responderUri ? 'Ready' : 'Not ready'}</strong>
+                  <dt>Google Form state</dt>
+                  <dd>{latest.responderUri ? 'Ready' : 'Not ready'}</dd>
                 </div>
-              </div>
+              </dl>
               <div className="feedback-latest-run__actions">
                 {latest.responderUri ? (
                   <Button

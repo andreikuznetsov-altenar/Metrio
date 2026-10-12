@@ -36,6 +36,7 @@ export function buildTrayContextFromPerformance(
       homeRole,
       teamSnapshot: teamOverview,
       employeeActiveSummaryValue: activeValue,
+      employeeMetrics: employee?.metrics ?? null,
       deliveryRisk,
       scopeHealthEvidence: {
         role: homeRole,

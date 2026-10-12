@@ -98,7 +98,7 @@ export function DirectorOverviewView({
       <section className="performance-section" aria-label="Teams needing attention">
       <h3 className="performance-section__title">Teams needing attention</h3>
       {model.teamsNeedingAttention.length === 0 ? (
-        <p className="performance-inline-empty">
+        <p className="performance-inline-empty performance-inline-empty--surface">
           No high-priority organization signals in this period.
         </p>
       ) : (
@@ -158,18 +158,22 @@ export function DirectorOverviewView({
       )}
       </section>
 
-      <div className="performance-director-compact-grid">
+      <div className="performance-director-compact-grid" data-testid="director-compact-grid">
         {model.teamCapacity.some((row) => row.awayNextWeek > 0) ? (
           <section
             className="performance-section performance-section--compact-surface"
             aria-label="Upcoming team availability"
+            data-testid="director-upcoming-availability"
           >
             <h3 className="performance-section__title">Upcoming team availability</h3>
-            <ul className="performance-director-capacity" data-testid="director-team-capacity">
+            <ul
+              className="executive-resources-card__list"
+              data-testid="director-team-capacity"
+            >
               {model.teamCapacity
                 .filter((row) => row.awayNextWeek > 0)
                 .map((row) => (
-                  <li key={row.teamId}>
+                  <li key={row.teamId} className="executive-resources-card__row">
                     <strong>{row.teamName}</strong>
                     <span>{row.label}</span>
                   </li>
@@ -192,39 +196,45 @@ export function DirectorOverviewView({
             ))}
           </ul>
         </section>
+
+        {model.newStarterSummary.total > 0 ? (
+          <section
+            className="performance-section performance-section--compact-surface"
+            aria-label="New starters"
+          >
+            <h3 className="performance-section__title">New starters</h3>
+            <p className="performance-inline-empty">
+              {model.newStarterSummary.total} new starters in authorized scope
+              {model.newStarterSummary.byTeam.length
+                ? ` · ${model.newStarterSummary.byTeam
+                    .map((row) => `${row.count} in ${row.teamName}`)
+                    .join(", ")}`
+                : ""}
+            </p>
+          </section>
+        ) : null}
+
+        {model.feedbackSummary.pendingRecipients > 0 ||
+        model.feedbackSummary.deliveryFailures > 0 ? (
+          <section
+            className="performance-section performance-section--compact-surface"
+            aria-label="Feedback"
+          >
+            <h3 className="performance-section__title">Feedback</h3>
+            <p className="performance-inline-empty">
+              {model.feedbackSummary.pendingRecipients} pending responses
+              {model.feedbackSummary.deliveryFailures
+                ? ` · ${model.feedbackSummary.deliveryFailures} delivery failures`
+                : ""}
+            </p>
+          </section>
+        ) : null}
       </div>
-
-      {model.newStarterSummary.total > 0 ? (
-        <section className="performance-section" aria-label="New starters">
-          <h3 className="performance-section__title">New starters</h3>
-          <p className="performance-inline-empty">
-            {model.newStarterSummary.total} new starters in authorized scope
-            {model.newStarterSummary.byTeam.length
-              ? ` · ${model.newStarterSummary.byTeam
-                  .map((row) => `${row.count} in ${row.teamName}`)
-                  .join(", ")}`
-              : ""}
-          </p>
-        </section>
-      ) : null}
-
-      {model.feedbackSummary.pendingRecipients > 0 ||
-      model.feedbackSummary.deliveryFailures > 0 ? (
-        <section className="performance-section" aria-label="Feedback">
-          <h3 className="performance-section__title">Feedback</h3>
-          <p className="performance-inline-empty">
-            {model.feedbackSummary.pendingRecipients} pending responses
-            {model.feedbackSummary.deliveryFailures
-              ? ` · ${model.feedbackSummary.deliveryFailures} delivery failures`
-              : ""}
-          </p>
-        </section>
-      ) : null}
 
       <section className="performance-section" aria-label="Signals">
       <h3 className="performance-section__title">Signals</h3>
       {topSignals.length === 0 ? (
-        <p className="performance-inline-empty">
+        <p className="performance-inline-empty performance-inline-empty--surface">
           No high-priority organization signals in this period.
         </p>
       ) : (
@@ -238,7 +248,7 @@ export function DirectorOverviewView({
                 <div>{signal.title}</div>
                 <div className="performance-inline-empty">{signal.description}</div>
               </div>
-              <Button variant="ghost" onClick={() => onOpenSignal(signal)}>
+              <Button variant="secondary" size="small" onClick={() => onOpenSignal(signal)}>
                 Open
               </Button>
             </li>

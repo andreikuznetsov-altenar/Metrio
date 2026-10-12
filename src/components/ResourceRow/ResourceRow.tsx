@@ -1,6 +1,6 @@
-import { ExternalLink, FileText, LayoutGrid } from "lucide-react";
+import { FileText, LayoutGrid } from "lucide-react";
 import type { OnboardingResourceSource } from "../../domain/onboarding/resourceTypes";
-import { Tooltip } from "../Tooltip/Tooltip";
+import { Button } from "../Button/Button";
 import "./ResourceRow.css";
 
 export interface ResourceRowProps {
@@ -53,17 +53,15 @@ export function ResourceRow({
           {subtitle ? ` · ${subtitle}` : ""}
         </span>
       </div>
-      <Tooltip content={externalLabel}>
-        <button
-          type="button"
-          className="resource-row__action"
-          aria-label={`${externalLabel}: ${title}`}
-          disabled={disabled}
-          onClick={onOpen}
-        >
-          <ExternalLink size={16} strokeWidth={1.75} />
-        </button>
-      </Tooltip>
+      <Button
+        variant="secondary"
+        size="small"
+        aria-label={`${externalLabel}: ${title}`}
+        disabled={disabled}
+        onClick={onOpen}
+      >
+        Open
+      </Button>
     </div>
   );
 }

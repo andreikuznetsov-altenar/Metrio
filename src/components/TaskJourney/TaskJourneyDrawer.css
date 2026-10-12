@@ -107,6 +107,7 @@
 }
 
 .task-journey-timeline {
+  /* .metrio-scroll clips overflow-x: the halo gutter keeps the marker ring inside it. */
   --task-journey-marker-halo: 3px;
   --task-journey-marker-size: 0.5rem;
   list-style: none;
@@ -136,7 +137,8 @@
 
 .task-journey-timeline__item--current .task-journey-timeline__dot {
   background: var(--metrio-accent, #2563eb);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--metrio-accent, #2563eb) 25%, transparent);
+  box-shadow: 0 0 0 var(--task-journey-marker-halo)
+    color-mix(in srgb, var(--metrio-accent, #2563eb) 25%, transparent);
 }
 
 .task-journey-timeline__title {
@@ -160,7 +162,7 @@
 
 .task-journey-timeline__connector {
   position: absolute;
-  left: 0.2rem;
+  left: calc(var(--task-journey-marker-size) / 2 - 0.5px);
   top: 1rem;
   bottom: 0;
   width: 1px;

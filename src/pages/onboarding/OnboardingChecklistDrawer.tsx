@@ -59,7 +59,7 @@ function ChecklistItemRow({
         <div className="onboarding-checklist-item__actions">
           {item.target ? (
             <Button
-              variant="ghost"
+              variant="secondary"
               onClick={() => void openOnboardingResourceTarget(item.target!)}
             >
               Open

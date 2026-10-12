@@ -323,10 +323,6 @@
   width: min(168px, 100%);
 }
 
-.history-period-select .select-trigger {
-  min-height: var(--control-height-default);
-}
-
 .person-detail-drawer__history-group + .person-detail-drawer__history-group {
   margin-top: var(--space-6);
 }

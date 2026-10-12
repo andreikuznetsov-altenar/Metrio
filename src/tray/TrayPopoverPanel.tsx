@@ -50,9 +50,7 @@ export function TrayPopoverPanel({ summary }: { summary: TraySummaryModel }) {
           {summary.indexAvailable ? (
             <div className="tray-popover__row">
               <span>{summary.indexLabel}</span>
-              <span className="tray-popover__value tray-popover__value--text">
-                {summary.indexValue}
-              </span>
+              <span className="tray-popover__value">{summary.indexValue}</span>
             </div>
           ) : null}
         </section>
