@@ -891,6 +891,7 @@
 
 .feedback-latest-run__grid dd {
   margin: 0;
+  text-wrap: balance;
   font-size: 13px;
   font-weight: 600;
   color: var(--color-text-primary);
