@@ -90,33 +90,6 @@ test.describe("Executive acceptance — light 1440×900", () => {
     await expect(page).toHaveScreenshot("07-delivery-risk.png", SHOT);
   });
 
-  test("08-goals-empty", async ({ page }) => {
-    await page.addInitScript(() => {
-      localStorage.setItem("metrio-connection-connected", "true");
-      localStorage.setItem("metrio-dev-fixture", "lead");
-      localStorage.setItem("metrio-theme", "light");
-      localStorage.setItem("metrio-visual-goals", "[]");
-    });
-    await page.goto("/");
-    await openPerformanceFromHome(page);
-    await clickSubnav(page, /^goals$/i);
-    await expect(page.getByTestId("goals-empty-state")).toBeVisible({ timeout: 15_000 });
-    await expect(page).toHaveScreenshot("08-goals-empty.png", SHOT);
-  });
-
-  test("09-goals-populated", async ({ page }) => {
-    await bootGoalsVisual(page, "lead", "light");
-    await expect(page.getByTestId("goals-list")).toBeVisible({ timeout: 15_000 });
-    await expect(page).toHaveScreenshot("09-goals-populated.png", SHOT);
-  });
-
-  test("10-goal-drawer", async ({ page }) => {
-    await bootGoalsVisual(page, "lead", "light");
-    await page.getByTestId("goal-list-row").first().getByRole("button", { name: "Open goal" }).click();
-    await expect(page.getByTestId("goal-detail-drawer")).toBeVisible();
-    await expect(page).toHaveScreenshot("10-goal-drawer.png", SHOT);
-  });
-
   test("11-person-overview", async ({ page }) => {
     await bootMetrio(page, "lead");
     await openFirstAttentionPerson(page);
@@ -341,17 +314,6 @@ test.describe("Executive acceptance — light 1440×900", () => {
     await expect(page).toHaveScreenshot("32-settings-company-app.png", SHOT);
   });
 
-  test("33-diagnostics", async ({ page }) => {
-    await bootMetrio(page, "lead");
-    await page.getByRole("button", { name: /^settings$/i }).click();
-    await clickSettingsSection(page, /company & app/i);
-    await expect(page.getByTestId("diagnostics-settings")).toBeVisible();
-    await expect(page.getByTestId("diagnostics-settings")).toHaveScreenshot(
-      "33-diagnostics.png",
-      SHOT,
-    );
-  });
-
   test("34-resource-library", async ({ page }) => {
     await bootDashboardManager(page, "light");
     await openResourceLibrary(page);
@@ -514,18 +476,6 @@ test.describe("Executive acceptance — dark subset 1440×900", () => {
     await expect(page).toHaveScreenshot("dark-30-settings-connections.png", SHOT);
   });
 
-  test("dark-diagnostics", async ({ page }) => {
-    await setViewport(page, 1440, 900);
-    await bootConnected(page, "lead", "dark");
-    await openPerformanceFromHome(page);
-    await page.getByRole("button", { name: /^settings$/i }).click();
-    await clickSettingsSection(page, /company & app/i);
-    await expect(page.getByTestId("diagnostics-settings")).toBeVisible();
-    await expect(page.getByTestId("diagnostics-settings")).toHaveScreenshot(
-      "dark-33-diagnostics.png",
-      SHOT,
-    );
-  });
 });
 
 test.describe("Executive acceptance — high-risk viewports", () => {

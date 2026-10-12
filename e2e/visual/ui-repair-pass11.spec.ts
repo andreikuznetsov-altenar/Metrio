@@ -7,6 +7,7 @@ import {
   bootMetrioWithFlags,
   clickSubnav,
   expectPerformanceTab,
+  openDirectReportPersonBrief,
   openFirstAttentionPerson,
   openPerformanceFromHome,
   setViewport,
@@ -308,21 +309,23 @@ test.describe("UI Repair Pass 11 visual acceptance", () => {
       .getByRole("button", { name: /^brief$/i })
       .click();
     await expect(page.locator(".drawer-root__backdrop")).toHaveCount(1);
-    await expect(page.locator("[data-drawer-panel='secondary']")).toBeVisible();
-    await page.getByRole("button", { name: /close brief/i }).click();
-    await expect(page.locator("[data-drawer-panel='primary']")).toBeVisible();
+    await expect(
+      page.locator('[data-person-drawer-view="brief"].person-drawer-view--active'),
+    ).toBeVisible();
+    await page.getByRole("button", { name: /^profile$/i }).click();
+    await expect(
+      page.locator('[data-person-drawer-view="profile"].person-drawer-view--active'),
+    ).toBeVisible();
     await expect(page.locator(".drawer-root__backdrop")).toHaveCount(1);
   });
 
   test("person-current-recent-parity", async ({ page }) => {
     await setViewport(page, 1440, 900);
     await bootMetrio(page);
-    await openFirstAttentionPerson(page);
-    await page
-      .locator(".drawer--person-detail")
-      .getByRole("button", { name: /^brief$/i })
-      .click();
-    await expect(page.locator("[data-drawer-panel='secondary']")).toBeVisible();
+    await openDirectReportPersonBrief(page, "person-01");
+    await expect(
+      page.locator('[data-person-drawer-view="brief"].person-drawer-view--active'),
+    ).toBeVisible();
     await expect(page.getByRole("heading", { name: /current work/i })).toBeVisible();
     const current = page.locator(".person-brief__work-list").first();
     await expect(current).toHaveScreenshot("person-brief-current-work.png", SHOT);

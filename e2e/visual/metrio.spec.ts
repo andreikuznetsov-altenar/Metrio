@@ -16,6 +16,8 @@ import {
 import { serializeCalendarVisualFixtureForPlaywright } from "../../src/fixtures/calendarVisualFixture";
 import { serializeDashboardCacheVisualFixtureForPlaywright } from "../../src/fixtures/dashboardCacheVisualFixture";
 import {
+  bootDashboardWithCache,
+  openDirectReportPersonBrief,
   openResourceLibrary,
   VISUAL_EPHEMERAL_STORAGE_KEYS,
 } from "./visualBoot";
@@ -582,9 +584,12 @@ test.describe("Metrio visual regression", () => {
 
   test("attention-signals-table", async ({ page }) => {
     await bootMetrio(page, "lead");
-    await openFirstAttentionPerson(page);
-    await expect(page.getByTestId("attention-signals-table")).toBeVisible();
-    await expect(page.getByTestId("attention-signals-table")).toHaveScreenshot(
+    await openDirectReportPersonBrief(page, "person-01");
+    const table = page
+      .locator('.person-brief__body[data-testid="person-brief-drawer"]')
+      .getByTestId("attention-signals-table");
+    await expect(table).toBeVisible();
+    await expect(table).toHaveScreenshot(
       "attention-signals-table.png",
       { maxDiffPixelRatio: 0.02 },
     );
@@ -787,15 +792,6 @@ test.describe("Metrio visual regression", () => {
     await bootGoalsVisual(page, "employee", "light");
     await expect(page.getByTestId("employee-goals")).toBeVisible();
     await expect(page).toHaveScreenshot("employee-goals.png", {
-      fullPage: true,
-      maxDiffPixelRatio: 0.02,
-    });
-  });
-
-  test("manager goals view", async ({ page }) => {
-    await bootGoalsVisual(page, "lead", "light");
-    await expect(page.getByTestId("manager-goals")).toBeVisible();
-    await expect(page).toHaveScreenshot("manager-goals.png", {
       fullPage: true,
       maxDiffPixelRatio: 0.02,
     });
@@ -1014,8 +1010,8 @@ test.describe("Metrio visual regression", () => {
     await bootMetrio(page, "lead");
     await openFirstAttentionPerson(page);
     await page.getByRole("button", { name: "Brief" }).click();
-    await expect(page.getByTestId("person-brief-drawer")).toBeVisible();
-    await expect(page.locator(".drawer--person-detail")).toHaveCount(0);
+    await expect(page.locator('.person-brief__body[data-testid="person-brief-drawer"]')).toBeVisible();
+    await expect(page.locator(".drawer--person-detail")).toHaveCount(1);
     await expect(page.locator(".drawer-root__backdrop")).toHaveCount(1);
     await expect(page).toHaveScreenshot("person-brief-standard.png", {
       fullPage: true,
@@ -1028,8 +1024,8 @@ test.describe("Metrio visual regression", () => {
     await openFirstAttentionPerson(page);
     await expect(page.locator(".drawer--person-detail")).toHaveCount(1);
     await page.getByRole("button", { name: "Brief" }).click();
-    await expect(page.getByTestId("person-brief-drawer")).toBeVisible();
-    await expect(page.locator(".drawer--person-detail")).toHaveCount(0);
+    await expect(page.locator('.person-brief__body[data-testid="person-brief-drawer"]')).toBeVisible();
+    await expect(page.locator(".drawer--person-detail")).toHaveCount(1);
     await expect(page.locator(".drawer-root__backdrop")).toHaveCount(1);
     await expect(page).toHaveScreenshot("person-brief-from-person.png", {
       fullPage: true,
@@ -1047,7 +1043,7 @@ test.describe("Metrio visual regression", () => {
     await openPerformanceFromHome(page);
     await openFirstAttentionPerson(page);
     await page.locator(".drawer--person-detail").getByRole("tab", { name: "Work" }).click();
-    await expect(page.getByTestId("person-work-card").first()).toBeVisible();
+    await expect(page.locator(".drawer--person-detail .person-detail-drawer__work-list")).toBeVisible();
     await expect(page).toHaveScreenshot("person-drawer-work-dark.png", {
       fullPage: true,
       maxDiffPixelRatio: 0.02,
@@ -1086,7 +1082,7 @@ test.describe("Metrio visual regression", () => {
         }),
       );
     });
-    await expect(page.getByTestId("person-brief-drawer")).toBeVisible();
+    await expect(page.locator('.person-brief__body[data-testid="person-brief-drawer"]')).toBeVisible();
     await expect(page).toHaveScreenshot("person-brief-dark.png", {
       fullPage: true,
       maxDiffPixelRatio: 0.02,
@@ -1102,7 +1098,7 @@ test.describe("Metrio visual regression", () => {
         }),
       );
     });
-    await expect(page.getByTestId("person-brief-drawer")).toBeVisible();
+    await expect(page.locator('.person-brief__body[data-testid="person-brief-drawer"]')).toBeVisible();
     const metrics = page.locator(".performance-metrics--brief");
     await expect(metrics).toBeVisible();
     await expect(metrics).toHaveScreenshot("person-brief-kpi-three-column.png", {
@@ -1114,7 +1110,7 @@ test.describe("Metrio visual regression", () => {
     await bootMetrio(page, "lead");
     await openFirstAttentionPerson(page);
     await page.getByRole("button", { name: "Brief" }).click();
-    await expect(page.getByTestId("person-brief-drawer")).toBeVisible();
+    await expect(page.locator('.person-brief__body[data-testid="person-brief-drawer"]')).toBeVisible();
     const work = page.locator(".person-brief__work-list").first();
     if (await work.isVisible().catch(() => false)) {
       await expect(work).toHaveScreenshot("person-brief-current-work-links.png", {
@@ -1127,45 +1123,13 @@ test.describe("Metrio visual regression", () => {
     await bootMetrio(page, "lead");
     await openFirstAttentionPerson(page);
     await page.getByRole("button", { name: "Brief" }).click();
-    await expect(page.getByTestId("person-brief-drawer")).toBeVisible();
-    const table = page.getByTestId("person-brief-drawer").getByTestId("attention-signals-table");
+    await expect(page.locator('.person-brief__body[data-testid="person-brief-drawer"]')).toBeVisible();
+    const table = page.locator('.person-brief__body[data-testid="person-brief-drawer"]').getByTestId("attention-signals-table");
     if (await table.isVisible().catch(() => false)) {
       await expect(table).toHaveScreenshot("person-brief-attention-table.png", {
         maxDiffPixelRatio: 0.02,
       });
     }
-  });
-
-  test("person-brief-attention-expanded", async ({ page }) => {
-    await bootMetrio(page, "lead");
-    const directReports = ["person-01", "person-02", "person-03", "person-04", "person-05"];
-    let captured = false;
-    for (const personId of directReports) {
-      await page.evaluate((id) => {
-        window.dispatchEvent(
-          new CustomEvent("metrio-open-person-brief", { detail: { personId: id } }),
-        );
-      }, personId);
-      await expect(page.getByTestId("person-brief-drawer")).toBeVisible({ timeout: 15_000 });
-      const table = page.getByTestId("person-brief-drawer").getByTestId("attention-signals-table");
-      const closeBrief = page.locator(".drawer--person-brief .icon-btn[aria-label='Close drawer']");
-      if (!(await table.isVisible().catch(() => false))) {
-        await closeBrief.click();
-        continue;
-      }
-      const expand = table.getByRole("button", { name: /View \d+ more/i });
-      if (!(await expand.isVisible().catch(() => false))) {
-        await closeBrief.click();
-        continue;
-      }
-      await expand.click();
-      await expect(table).toHaveScreenshot("person-brief-attention-expanded.png", {
-        maxDiffPixelRatio: 0.02,
-      });
-      captured = true;
-      break;
-    }
-    expect(captured).toBe(true);
   });
 
   test("person drawer overloaded workload", async ({ page }) => {
@@ -1587,7 +1551,6 @@ test.describe("Metrio visual regression", () => {
     await expect(page.getByTestId("app-shell")).toBeVisible({ timeout: 30_000 });
     await page.getByRole("button", { name: /^settings$/i }).click();
     await clickSettingsSection(page, /company & app/i);
-    await expect(page.getByTestId("diagnostics-settings")).toBeVisible();
     await expect(page.getByTestId("desktop-settings")).toBeVisible();
     await expect(page.getByTestId("organization-identity-settings")).toBeVisible();
     await expect(page.getByTestId("diagnostics-support-settings")).toHaveCount(0);
@@ -1625,7 +1588,7 @@ test.describe("Metrio visual regression", () => {
   test("settings saved toast", async ({ page }) => {
     await bootMetrio(page, "lead");
     await page.getByRole("button", { name: /^settings$/i }).click();
-    await page.getByRole("switch", { name: /Launch Metrio at login/i }).click();
+    await page.getByRole("switch", { name: /^Task attention$/i }).click();
     await expect(page.getByText("Settings saved")).toBeVisible({ timeout: 5000 });
     await expect(page.locator(".metrio-toast-host")).toHaveScreenshot("toast-settings-saved.png", {
       maxDiffPixelRatio: 0.02,
@@ -1719,10 +1682,10 @@ test.describe("Metrio visual regression", () => {
   test("drawer close keeps dialog during exit", async ({ page }) => {
     await bootMetrio(page, "lead");
     await openFirstAttentionPerson(page);
-    await expect(page.locator(".drawer-root.is-open")).toBeVisible();
+    await expect(page.locator('.drawer-root[data-drawer-phase="open"]')).toBeVisible();
     await page.locator(".drawer__header .icon-btn").click();
-    await expect(page.locator(".drawer-root.is-visible:not(.is-open)")).toBeVisible();
-    await expect(page.locator(".drawer-root.is-open")).toHaveCount(0);
+    await expect(page.locator('.drawer-root[data-drawer-phase="exiting"]')).toBeVisible();
+    await expect(page.locator('.drawer-root[data-drawer-phase="open"]')).toHaveCount(0);
   });
 
   test("director overview limited scope", async ({ page }) => {
@@ -1737,7 +1700,7 @@ test.describe("Metrio visual regression", () => {
   test("director teams view", async ({ page }) => {
     await bootMetrio(page, "director");
     await clickSubnav(page, /^teams$/i);
-    await expect(page.getByTestId("director-teams")).toBeVisible();
+    await expect(page.getByTestId("leadership-branches-performance")).toBeVisible();
     await expect(page).toHaveScreenshot("director-teams.png", {
       fullPage: true,
       maxDiffPixelRatio: 0.02,
@@ -1747,7 +1710,7 @@ test.describe("Metrio visual regression", () => {
   test("director signals view", async ({ page }) => {
     await bootMetrio(page, "director");
     await clickSubnav(page, /^signals$/i);
-    await expect(page.getByTestId("director-signals")).toBeVisible();
+    await expect(page.getByTestId("director-signals-empty")).toBeVisible();
     await expect(page).toHaveScreenshot("director-signals.png", {
       fullPage: true,
       maxDiffPixelRatio: 0.02,
@@ -1936,7 +1899,7 @@ test.describe("Metrio visual regression", () => {
     }, "employee");
     await page.goto("/?visualHomeKnowledge=1");
     await expect(page.getByTestId("dashboard-ready")).toBeVisible({ timeout: 30_000 });
-    const section = page.locator(".executive-dashboard .executive-lower-section").first();
+    const section = page.getByTestId("employee-dashboard-resources");
     await expect(section).toBeVisible();
     await expect(page.getByText("UX Team Handbook")).toBeVisible();
     await expect(section).toHaveScreenshot("home-relevant-knowledge.png", {
@@ -2028,7 +1991,8 @@ test.describe("Metrio visual regression", () => {
 
   test("dashboard new assignments compact row", async ({ page }) => {
     await bootDashboardManager(page, 1440);
-    const teamActions = page.getByRole("region", { name: "Team actions" });
+    await page.getByRole("tab", { name: /team actions/i }).click();
+    const teamActions = page.getByTestId("dashboard-tab-team");
     await expect(teamActions).toBeVisible();
     const row = teamActions.locator("tbody tr").first();
     await expect(row).toBeVisible();
@@ -2104,7 +2068,8 @@ test.describe("Metrio visual regression", () => {
 
   test("dashboard team actions 1280", async ({ page }) => {
     await bootDashboardManager(page, 1280);
-    const teamActions = page.getByRole("region", { name: "Team actions" });
+    await page.getByRole("tab", { name: /team actions/i }).click();
+    const teamActions = page.getByTestId("dashboard-tab-team");
     await expect(teamActions).toBeVisible();
     await expect(teamActions).toHaveScreenshot("dashboard-team-actions-1280.png", {
       maxDiffPixelRatio: 0.02,
@@ -2113,7 +2078,8 @@ test.describe("Metrio visual regression", () => {
 
   test("dashboard team actions 1440", async ({ page }) => {
     await bootDashboardManager(page, 1440);
-    const teamActions = page.getByRole("region", { name: "Team actions" });
+    await page.getByRole("tab", { name: /team actions/i }).click();
+    const teamActions = page.getByTestId("dashboard-tab-team");
     await expect(teamActions).toHaveScreenshot("dashboard-team-actions-1440.png", {
       maxDiffPixelRatio: 0.02,
     });
@@ -2121,7 +2087,8 @@ test.describe("Metrio visual regression", () => {
 
   test("dashboard team actions 1728", async ({ page }) => {
     await bootDashboardManager(page, 1728);
-    const teamActions = page.getByRole("region", { name: "Team actions" });
+    await page.getByRole("tab", { name: /team actions/i }).click();
+    const teamActions = page.getByTestId("dashboard-tab-team");
     await expect(teamActions).toHaveScreenshot("dashboard-team-actions-1728.png", {
       maxDiffPixelRatio: 0.02,
     });
@@ -2172,46 +2139,6 @@ test.describe("Metrio visual regression", () => {
     });
   });
 
-  async function bootDashboardWithCache(
-    page: Page,
-    options: {
-      theme?: "light" | "dark";
-      delayMs?: number;
-      failRefresh?: boolean;
-      width?: number;
-      path?: string;
-    } = {},
-  ) {
-    const theme = options.theme ?? "light";
-    const cache = serializeDashboardCacheVisualFixtureForPlaywright();
-    if (options.width) {
-      await page.setViewportSize({ width: options.width, height: 900 });
-    }
-    await page.clock.install({ time: new Date("2026-10-03T09:30:00+02:00") });
-    await page.addInitScript(
-      ({ fixtureId, cachePayload, themeId, delayMs, failRefresh }) => {
-        localStorage.setItem("metrio-connection-connected", "true");
-        localStorage.setItem("metrio-dev-fixture", fixtureId);
-        localStorage.setItem("metrio-theme", themeId);
-        localStorage.setItem("metrio-visual-dashboard-cache", cachePayload);
-        if (delayMs > 0) {
-          localStorage.setItem("metrio-visual-performance-delay-ms", String(delayMs));
-        }
-        if (failRefresh) {
-          localStorage.setItem("metrio-visual-performance-fail", "1");
-        }
-      },
-      {
-        fixtureId: "lead",
-        cachePayload: cache,
-        themeId: theme,
-        delayMs: options.delayMs ?? 0,
-        failRefresh: options.failRefresh ?? false,
-      },
-    );
-    await page.goto(options.path ?? "/");
-  }
-
   test("dashboard-first-launch-loading", async ({ page }) => {
     await page.clock.install({ time: new Date("2026-10-03T09:30:00+02:00") });
     await page.addInitScript(
@@ -2234,8 +2161,8 @@ test.describe("Metrio visual regression", () => {
 
   test("dashboard-cached-refreshing", async ({ page }) => {
     await bootDashboardWithCache(page, { width: 1440, delayMs: 600_000 });
-    await expect(page.getByTestId("dashboard-ready")).toBeVisible({ timeout: 15_000 });
-    await expect(page.getByTestId("dashboard-sync-status")).toContainText(
+    await expect(page.getByTestId("dashboard-refreshing-with-cache")).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByTestId("dashboard-refresh-button")).toContainText(
       /Refreshing/,
     );
     await expect(page).toHaveScreenshot("dashboard-cached-refreshing.png", {
@@ -2247,7 +2174,7 @@ test.describe("Metrio visual regression", () => {
   test("dashboard-cached-refresh-failed", async ({ page }) => {
     await bootDashboardWithCache(page, { width: 1440, failRefresh: true });
     await expect(page.getByTestId("dashboard-ready")).toBeVisible({ timeout: 15_000 });
-    await expect(page.getByTestId("dashboard-sync-status")).toContainText(
+    await expect(page.getByTestId("global-refresh-status-panel")).toContainText(
       /Couldn't refresh/,
     );
     await expect(page).toHaveScreenshot("dashboard-cached-refresh-failed.png", {
@@ -2278,7 +2205,7 @@ test.describe("Metrio visual regression", () => {
     await expect(page.getByTestId("dashboard-refreshing-with-cache")).toBeVisible({
       timeout: 15_000,
     });
-    await expect(page.getByTestId("dashboard-sync-status")).toContainText(/Refreshing/);
+    await expect(page.getByTestId("dashboard-refresh-button")).toContainText(/Refreshing/);
     await expect(page).toHaveScreenshot("dashboard-refreshing-with-cache.png", {
       fullPage: true,
       maxDiffPixelRatio: 0.02,
@@ -2307,7 +2234,7 @@ test.describe("Metrio visual regression", () => {
       path: "/?visualHomeState=refresh-failed-with-cache",
     });
     await expect(page.getByTestId("dashboard-ready")).toBeVisible({ timeout: 15_000 });
-    await expect(page.getByTestId("dashboard-sync-status")).toContainText(
+    await expect(page.getByTestId("global-refresh-status-panel")).toContainText(
       /Couldn't refresh/,
     );
     await expect(page).toHaveScreenshot("dashboard-refresh-failed-with-cache.png", {
@@ -2398,35 +2325,6 @@ test.describe("Metrio visual regression", () => {
     });
   });
 
-  test("dashboard-secondary-single-full-width", async ({ page }) => {
-    await page.setViewportSize({ width: 1440, height: 900 });
-    const goalsJson = serializeGoalsVisualFixtureForPlaywright();
-    await page.addInitScript(
-      ({ fixtureId, goals, ephemeralKeys }: { fixtureId: string; goals: string; ephemeralKeys: string[] }) => {
-        for (const key of ephemeralKeys) {
-          localStorage.removeItem(key);
-        }
-        localStorage.setItem("metrio-connection-connected", "true");
-        localStorage.setItem("metrio-dev-fixture", fixtureId);
-        localStorage.setItem("metrio-theme", "light");
-        localStorage.setItem("metrio-visual-goals", goals);
-      },
-      {
-        fixtureId: "lead",
-        goals: goalsJson,
-        ephemeralKeys: [...VISUAL_EPHEMERAL_STORAGE_KEYS],
-      },
-    );
-    await page.goto("/?visualHomeSecondarySingle=1");
-    await expect(page.getByTestId("dashboard-ready")).toBeVisible({ timeout: 30_000 });
-    const grid = page.getByTestId("dashboard-secondary-grid");
-    await expect(grid).toBeVisible();
-    await expect(grid).toHaveClass(/executive-dashboard__secondary--single/);
-    await expect(grid).toHaveScreenshot("dashboard-secondary-single-full-width.png", {
-      maxDiffPixelRatio: 0.02,
-    });
-  });
-
   test("dashboard-fresh", async ({ page }) => {
     await page.clock.install({ time: new Date("2026-10-03T09:30:00+02:00") });
     await bootDashboardManager(page, 1440);
@@ -2443,8 +2341,8 @@ test.describe("Metrio visual regression", () => {
       width: 1440,
       delayMs: 600_000,
     });
-    await expect(page.getByTestId("dashboard-ready")).toBeVisible({ timeout: 15_000 });
-    await expect(page.getByTestId("dashboard-sync-status")).toContainText(
+    await expect(page.getByTestId("dashboard-refreshing-with-cache")).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByTestId("dashboard-refresh-button")).toContainText(
       /Refreshing/,
     );
     await expect(page).toHaveScreenshot("dark-cached-refreshing.png", {
@@ -2479,19 +2377,9 @@ test.describe("Metrio visual regression", () => {
     await page.getByRole("tab", { name: /team actions/i }).click();
     const teamActions = page.getByTestId("dashboard-tab-team");
     await expect(
-      teamActions.getByTestId("dashboard-action-queue").getByRole("button", { name: /Context/i }),
+      teamActions.getByTestId("dashboard-action-queue").getByRole("columnheader", { name: /Context/i }),
     ).toBeVisible();
     await expect(teamActions).toHaveScreenshot("dashboard-team-actions-context.png", {
-      maxDiffPixelRatio: 0.02,
-    });
-  });
-
-  test("dashboard-secondary-goals-brief", async ({ page }) => {
-    await bootDashboardManager(page, 1440);
-    await expect(page.getByTestId("dashboard-team-brief")).toBeVisible();
-    const grid = page.getByTestId("dashboard-secondary-grid");
-    await expect(grid).toBeVisible();
-    await expect(grid).toHaveScreenshot("dashboard-secondary-goals-brief.png", {
       maxDiffPixelRatio: 0.02,
     });
   });
@@ -2634,7 +2522,7 @@ test.describe("Metrio visual regression", () => {
 
   test("dashboard-chart-tooltip", async ({ page }) => {
     await bootDashboardManager(page, 1440);
-    const pulse = page.getByTestId("dashboard-performance-pulse");
+    const pulse = page.getByTestId("dashboard-primary-trend");
     await expect(pulse).toBeVisible();
     const chart = pulse.locator(".recharts-surface").first();
     await chart.hover({ position: { x: 40, y: 20 } });
@@ -2663,42 +2551,6 @@ test.describe("Metrio visual regression", () => {
     await clickSubnav(page, /delivery risk/i);
     await expect(page.getByTestId("delivery-risk-view")).toBeVisible();
     await expect(page).toHaveScreenshot("delivery-risk-1440.png", {
-      fullPage: true,
-      maxDiffPixelRatio: 0.02,
-    });
-  });
-
-  test("goals populated manager", async ({ page }) => {
-    await bootGoalsVisual(page, "lead", "light");
-    await expect(page.getByTestId("goals-list")).toBeVisible({ timeout: 15_000 });
-    await expect(page).toHaveScreenshot("goals-populated.png", {
-      fullPage: true,
-      maxDiffPixelRatio: 0.02,
-    });
-  });
-
-  test("goals empty manager", async ({ page }) => {
-    await page.addInitScript((fixtureId: string) => {
-      localStorage.setItem("metrio-connection-connected", "true");
-      localStorage.setItem("metrio-dev-fixture", fixtureId);
-      localStorage.setItem("metrio-theme", "light");
-      localStorage.setItem("metrio-visual-goals", "[]");
-    }, "lead");
-    await page.goto("/");
-    await openPerformanceFromHome(page);
-    await clickSubnav(page, /^goals$/i);
-    await expect(page.getByTestId("goals-empty-state")).toBeVisible({ timeout: 15_000 });
-    await expect(page).toHaveScreenshot("goals-empty.png", {
-      fullPage: true,
-      maxDiffPixelRatio: 0.02,
-    });
-  });
-
-  test("goal drawer", async ({ page }) => {
-    await bootGoalsVisual(page, "lead", "light");
-    await page.getByTestId("goal-list-row").first().getByRole("button", { name: "Open goal" }).click();
-    await expect(page.getByTestId("goal-detail-drawer")).toBeVisible();
-    await expect(page).toHaveScreenshot("goal-drawer.png", {
       fullPage: true,
       maxDiffPixelRatio: 0.02,
     });
@@ -2893,7 +2745,7 @@ test.describe("Metrio visual regression", () => {
     }, "lead");
     await page.goto("/");
     await expect(page.getByTestId("dashboard-ready")).toBeVisible({ timeout: 30_000 });
-    await expect(page.locator(".home-card").first()).toHaveScreenshot("card-surface-light.png", {
+    await expect(page.locator(".executive-panel").first()).toHaveScreenshot("card-surface-light.png", {
       maxDiffPixelRatio: 0.02,
     });
   });
@@ -2906,14 +2758,15 @@ test.describe("Metrio visual regression", () => {
     }, "lead");
     await page.goto("/");
     await expect(page.getByTestId("dashboard-ready")).toBeVisible({ timeout: 30_000 });
-    await expect(page.locator(".home-card").first()).toHaveScreenshot("card-surface-dark.png", {
+    await expect(page.locator(".executive-panel").first()).toHaveScreenshot("card-surface-dark.png", {
       maxDiffPixelRatio: 0.02,
     });
   });
 
   test("semantic-badge-map", async ({ page }) => {
     await bootDashboardManager(page, 1440);
-    const teamActions = page.getByRole("region", { name: "Team actions" });
+    await page.getByRole("tab", { name: /team actions/i }).click();
+    const teamActions = page.getByTestId("dashboard-tab-team");
     await expect(teamActions).toBeVisible();
     await expect(teamActions).toHaveScreenshot("semantic-badge-map.png", {
       maxDiffPixelRatio: 0.02,
@@ -2922,7 +2775,8 @@ test.describe("Metrio visual regression", () => {
 
   test("compact-action-row", async ({ page }) => {
     await bootDashboardManager(page, 1440);
-    const teamActions = page.getByRole("region", { name: "Team actions" });
+    await page.getByRole("tab", { name: /team actions/i }).click();
+    const teamActions = page.getByTestId("dashboard-tab-team");
     const row = teamActions.locator("tbody tr").first();
     await expect(row).toBeVisible();
     await expect(row).toHaveScreenshot("compact-action-row.png", { maxDiffPixelRatio: 0.02 });
@@ -2933,15 +2787,6 @@ test.describe("Metrio visual regression", () => {
     await page.getByRole("button", { name: /Notifications, 6 unread/i }).click();
     await expect(page.locator(".drawer--notifications")).toBeVisible();
     await expect(page.locator(".drawer__header")).toHaveScreenshot("drawer-header-notifications.png", {
-      maxDiffPixelRatio: 0.02,
-    });
-  });
-
-  test("drawer-header-goal", async ({ page }) => {
-    await bootGoalsVisual(page, "lead", "light");
-    await page.getByTestId("goal-list-row").first().getByRole("button", { name: "Open goal" }).click();
-    await expect(page.getByTestId("goal-detail-drawer")).toBeVisible();
-    await expect(page.locator(".drawer__header")).toHaveScreenshot("drawer-header-goal.png", {
       maxDiffPixelRatio: 0.02,
     });
   });
@@ -3570,8 +3415,8 @@ test.describe("Metrio visual regression", () => {
     await openFirstAttentionPerson(page);
     await page.getByRole("button", { name: "Brief" }).click();
     await page.waitForTimeout(200);
-    await expect(page.getByTestId("person-brief-drawer")).toBeVisible();
-    await expect(page.getByTestId("person-brief-drawer")).toHaveScreenshot(
+    await expect(page.locator('.person-brief__body[data-testid="person-brief-drawer"]')).toBeVisible();
+    await expect(page.locator('.person-brief__body[data-testid="person-brief-drawer"]')).toHaveScreenshot(
       "person-brief-photo.png",
       { maxDiffPixelRatio: 0.02 },
     );

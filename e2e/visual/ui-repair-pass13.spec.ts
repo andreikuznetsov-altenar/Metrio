@@ -307,7 +307,7 @@ test.describe("UI Repair Pass 13 acceptance", () => {
   test("drawer-person-brief-transition", async ({ page }) => {
     await bootMetrio(page);
     await openDirectReportPersonBrief(page);
-    await expect(page.getByTestId("person-brief-drawer")).toBeVisible();
+    await expect(page.locator('.person-brief__body[data-testid="person-brief-drawer"]')).toBeVisible();
     await expect(page.locator(".drawer-root__backdrop")).toHaveCount(1);
   });
 

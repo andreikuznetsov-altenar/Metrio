@@ -308,7 +308,7 @@ export async function openDirectReportPersonBrief(
       new CustomEvent("metrio-open-person-brief", { detail: { personId: id } }),
     );
   }, personId);
-  await expect(page.locator(".drawer--person-brief")).toBeVisible({ timeout: 15_000 });
+  await expect(page.locator('.drawer--person-detail [data-person-drawer-view="brief"].person-drawer-view--active')).toBeVisible({ timeout: 15_000 });
 }
 
 export async function expectPerformanceTab(page: Page, label: RegExp) {

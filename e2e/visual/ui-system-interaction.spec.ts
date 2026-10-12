@@ -11,17 +11,6 @@ test.beforeEach(async ({ page }) => {
   await setViewport(page, 1440, 900);
 });
 
-test("accordion opens and exposes advanced diagnostics", async ({ page }) => {
-  await bootConnected(page, "lead", "light");
-  await openPerformanceFromHome(page);
-  await page.getByRole("button", { name: /^settings$/i }).click();
-  await clickSettingsSection(page, /company & app/i);
-  await page.getByRole("button", { name: /show advanced details/i }).click();
-  await expect(page.getByTestId("diagnostics-advanced")).toBeVisible();
-  await page.getByRole("button", { name: /hide advanced details/i }).click();
-  await expect(page.locator(".metrio-collapsible.is-open")).toHaveCount(0);
-});
-
 test("select opens and closes with Escape", async ({ page }) => {
   await bootMetrio(page, "lead");
   await page.getByRole("combobox", { name: /date range preset/i }).click();

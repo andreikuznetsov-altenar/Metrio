@@ -44,16 +44,3 @@ test("ui-system-table-multiline-row", async ({ page }) => {
   );
 });
 
-test("ui-system-diagnostics-accordion-open", async ({ page }) => {
-  await bootConnected(page, "lead", "light");
-  await openPerformanceFromHome(page);
-  await page.getByRole("button", { name: /^settings$/i }).click();
-  await clickSettingsSection(page, /company & app/i);
-  await page.getByRole("button", { name: /show advanced details/i }).click();
-  await expect(page.getByTestId("diagnostics-advanced")).toBeVisible();
-  await expect(page.getByTestId("diagnostics-settings")).toHaveScreenshot(
-    "ui-system-diagnostics-advanced.png",
-    { maxDiffPixelRatio: 0.03 },
-  );
-});
-

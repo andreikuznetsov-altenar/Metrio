@@ -6,6 +6,7 @@ import {
   bootMetrioFeedback,
   bootNotifications,
   clickSettingsSection,
+  openDirectReportPersonBrief,
   openFirstAttentionPerson,
   openPerformanceFromHome,
   serializeOnboardingChecklistVisualFixtureForPlaywright,
@@ -54,10 +55,10 @@ test.describe("UI Repair Pass 10 visual acceptance", () => {
 
   test("dashboard-my-focus-sort-none", async ({ page }) => {
     await setViewport(page, 1440, 900);
-    await bootDashboardManager(page);
-    await page.getByRole("tab", { name: /team actions/i }).click();
+    await bootConnected(page, "employee");
+    await page.getByRole("tab", { name: /my focus/i }).click();
     const workHeader = page
-      .getByTestId("dashboard-tab-team")
+      .getByTestId("dashboard-tab-focus")
       .getByTestId("dashboard-action-queue")
       .locator("thead th")
       .first()
@@ -67,10 +68,10 @@ test.describe("UI Repair Pass 10 visual acceptance", () => {
 
   test("dashboard-my-focus-sort-asc", async ({ page }) => {
     await setViewport(page, 1440, 900);
-    await bootDashboardManager(page);
-    await page.getByRole("tab", { name: /team actions/i }).click();
+    await bootConnected(page, "employee");
+    await page.getByRole("tab", { name: /my focus/i }).click();
     const workHeader = page
-      .getByTestId("dashboard-tab-team")
+      .getByTestId("dashboard-tab-focus")
       .getByTestId("dashboard-action-queue")
       .locator("thead th")
       .first()
@@ -81,10 +82,10 @@ test.describe("UI Repair Pass 10 visual acceptance", () => {
 
   test("dashboard-my-focus-sort-desc", async ({ page }) => {
     await setViewport(page, 1440, 900);
-    await bootDashboardManager(page);
-    await page.getByRole("tab", { name: /team actions/i }).click();
+    await bootConnected(page, "employee");
+    await page.getByRole("tab", { name: /my focus/i }).click();
     const workHeader = page
-      .getByTestId("dashboard-tab-team")
+      .getByTestId("dashboard-tab-focus")
       .getByTestId("dashboard-action-queue")
       .locator("thead th")
       .first()
@@ -143,8 +144,12 @@ test.describe("UI Repair Pass 10 visual acceptance", () => {
   test("person-attention-signals-alignment", async ({ page }) => {
     await setViewport(page, 1440, 900);
     await bootMetrio(page);
-    await openFirstAttentionPerson(page);
-    await expect(page.getByTestId("attention-signals-table")).toHaveScreenshot(
+    await openDirectReportPersonBrief(page, "person-01");
+    await expect(
+      page
+        .locator('.person-brief__body[data-testid="person-brief-drawer"]')
+        .getByTestId("attention-signals-table"),
+    ).toHaveScreenshot(
       "person-attention-signals-alignment.png",
       SHOT,
     );
