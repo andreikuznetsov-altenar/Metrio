@@ -1,7 +1,7 @@
 import { formatDuration } from "../jira/dates";
 import { getEfficiencyStatus } from "../jira/kpi";
 import type { Person } from "../people/types";
-import type { ReportParams } from "../jira/types";
+import type { KpiData, ReportParams } from "../jira/types";
 import { buildCanonicalKpiForPersonScope } from "../jira/scopedCanonicalKpi";
 import type { MetricCardData } from "../performance";
 import type { DeliveryRiskItem } from "../radar/types";
@@ -89,8 +89,9 @@ function scopeLabel(scope: AuthorizedPeopleScope): string {
 function buildSummaryMetrics(
   persons: Person[],
   params: ReportParams,
+  summaryKpi?: KpiData,
 ): MetricCardData[] {
-  const kpi = buildCanonicalKpiForPersonScope({ persons, params });
+  const kpi = summaryKpi ?? buildCanonicalKpiForPersonScope({ persons, params });
   const firstPassRate =
     kpi.completedCount > 0
       ? Math.round((kpi.firstPassAcceptedCount / kpi.completedCount) * 100)
@@ -159,6 +160,7 @@ export function buildOrganizationModel(input: {
   feedback: FeedbackActionSummary;
   orgHierarchy?: OrgHierarchyScope | null;
   bambooRoster?: ResolvedEmployee[];
+  summaryKpi?: KpiData;
 }): OrganizationOverviewModel {
   const persons = input.snapshot.persons.filter((person) =>
     input.scope.personIds.includes(person.id),
@@ -225,7 +227,7 @@ export function buildOrganizationModel(input: {
   return {
     scope: input.scope,
     scopeLabel: scopeLabel(input.scope),
-    summary: buildSummaryMetrics(persons, input.params),
+    summary: buildSummaryMetrics(persons, input.params, input.summaryKpi),
     teamTrends: buildTeamTrends(teams, input.params),
     teamsNeedingAttention,
     signals,

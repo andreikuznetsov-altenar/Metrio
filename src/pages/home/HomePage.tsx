@@ -205,6 +205,7 @@ export function HomePage() {
       feedback: summarizeFeedbackActions(surveyData),
       orgHierarchy: currentUser.orgHierarchy ?? null,
       bambooRoster,
+      summaryKpi: data.reportData.teamKpi,
     });
   }, [data, org, currentUser.person.role, currentUser.orgHierarchy, surveyData]);
 

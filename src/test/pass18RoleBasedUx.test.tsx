@@ -13,6 +13,7 @@ import {
   buildDocPerformanceFetchResult,
   getDocFixtureUser,
 } from "../fixtures/docFixtureData";
+import { buildOrganizationModel } from "../domain/organization/buildOrganizationModel";
 import type { OrganizationOverviewModel } from "../domain/organization/organizationTypes";
 
 vi.mock("../platform/openExternal", () => ({
@@ -203,5 +204,28 @@ describe("PASS 18 role-based UX", () => {
     expect(directorResult.reportData.teamKpi.efficiencyIndex).toBe(91);
     expect(directorResult.reportData.teamKpi.completedCount).toBe(76);
     expect(directorResult.reportData.teamKpi.backflowCount).toBe(7);
+
+    const managerModel = buildOrganizationModel({
+      snapshot: managerResult.teamSnapshot,
+      params: managerResult.reportParams,
+      scope: {
+        mode: "organization",
+        personIds: managerResult.teamSnapshot.persons.map((person) => person.id),
+        source: "authorized_org",
+      },
+      feedback: {
+        preparedNotSent: false,
+        pendingResponseCount: 0,
+        deliveryFailureCount: 0,
+        feedbackRequestedCount: 0,
+      },
+      summaryKpi: managerResult.reportData.teamKpi,
+    });
+    expect(managerModel.summary.map((metric) => metric.value)).toEqual([
+      "88%",
+      "84%",
+      "31",
+      "4",
+    ]);
   });
 });

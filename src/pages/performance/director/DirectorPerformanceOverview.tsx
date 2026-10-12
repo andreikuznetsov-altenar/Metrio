@@ -92,6 +92,7 @@ export function DirectorPerformanceOverview({
       feedback: summarizeFeedbackActions(surveyData),
       orgHierarchy: currentUser.orgHierarchy ?? null,
       bambooRoster: rosterFromOrgResolution(orgForScope),
+      summaryKpi: data.reportData.teamKpi,
     });
   }, [data, org, currentUser.person.role, currentUser.orgHierarchy, surveyData]);
 
