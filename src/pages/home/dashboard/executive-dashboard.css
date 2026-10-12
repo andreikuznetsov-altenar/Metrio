@@ -444,13 +444,6 @@
   background: var(--color-surface);
 }
 
-.executive-employee-summary-card__title {
-  margin: 0;
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--color-text-secondary);
-}
-
 .executive-employee-summary-card__stats {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));

@@ -226,7 +226,7 @@ export function EmployeePerformanceOverview({ personId }: EmployeePerformanceOve
           ) : null}
           {selfBamboo && (!selfBamboo.hireDate || !isNewStarter(selfBamboo.hireDate)) ? (
             <section className="performance-section executive-panel executive-resources-card" aria-label="Resources">
-              <h3 className="performance-section__title">Resources</h3>
+              <h3 className="executive-panel__title">Resources</h3>
               <p className="performance-section__subtitle">
                 {onboardingMatched.preview.length} recommended links for your role
               </p>
@@ -293,22 +293,28 @@ export function EmployeePerformanceOverview({ personId }: EmployeePerformanceOve
             }}
           />
 
-          <h3 className="performance-section__title">Performance</h3>
-          <PersonPerformanceMetrics
-            kpis={snapshot.metrics}
-            cycleTime={snapshot.cycleTime}
-            onOpenMetric={openMetricDrilldown}
-          />
+          <section className="performance-section" aria-label="Performance">
+            <h3 className="performance-section__title">Performance</h3>
+            <PersonPerformanceMetrics
+              kpis={snapshot.metrics}
+              cycleTime={snapshot.cycleTime}
+              onOpenMetric={openMetricDrilldown}
+            />
+          </section>
 
-          <h3 className="performance-section__title">Current work</h3>
-          {currentWork.length === 0 ? (
-            <p className="performance-inline-empty">No active work in this period.</p>
-          ) : (
-            <EmployeeCurrentWorkList rows={currentWork} />
-          )}
+          <section className="performance-section" aria-label="Current work">
+            <h3 className="performance-section__title">Current work</h3>
+            {currentWork.length === 0 ? (
+              <p className="performance-inline-empty">No active work in this period.</p>
+            ) : (
+              <EmployeeCurrentWorkList rows={currentWork} />
+            )}
+          </section>
 
-          <h3 className="performance-section__title">Needs attention</h3>
-          <GroupedAttentionList items={snapshot.attention} />
+          <section className="performance-section" aria-label="Needs attention">
+            <h3 className="performance-section__title">Needs attention</h3>
+            <GroupedAttentionList items={snapshot.attention} />
+          </section>
 
           {selfPerson ? (
             <UpcomingTimeOffSection

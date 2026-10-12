@@ -49,7 +49,7 @@ describe("PASS 18 role-based UX", () => {
     expect(feedbackPage).toContain("appNavigate({ route: 'home' })");
   });
 
-  it("renders employee dashboard as three equal work modules plus separate resources", () => {
+  it("renders employee dashboard work modules with the shared Lead panel primitive", () => {
     render(
       <DashboardEmployeeWorkSummary
         trends={[{ label: "Completed", value: "6", chartSeries: [] }]}
@@ -86,9 +86,12 @@ describe("PASS 18 role-based UX", () => {
 
     expect(screen.getByTestId("employee-dashboard-work-summary")).toBeInTheDocument();
     expect(screen.getByTestId("employee-dashboard-work-summary")).not.toHaveClass("executive-panel");
-    expect(screen.getByTestId("employee-dashboard-trend-card")).toBeInTheDocument();
-    expect(screen.getByTestId("employee-dashboard-current-work-card")).toBeInTheDocument();
-    expect(screen.getByTestId("employee-dashboard-delivery-quality-card")).toBeInTheDocument();
+    expect(screen.getByTestId("employee-dashboard-trend-card")).toHaveClass("executive-panel");
+    expect(screen.getByTestId("employee-dashboard-current-work-card")).toHaveClass("executive-panel");
+    expect(screen.getByTestId("employee-dashboard-delivery-quality-card")).toHaveClass("executive-panel");
+    expect(
+      screen.getByTestId("employee-dashboard-trend-card").querySelector(".executive-panel__title"),
+    ).toHaveTextContent("Trend");
     expect(screen.getByTestId("employee-dashboard-resources")).toHaveTextContent("Design handbook");
   });
 
@@ -141,9 +144,14 @@ describe("PASS 18 role-based UX", () => {
 
     render(<DirectorOverviewView model={model} onOpenSignal={vi.fn()} onOpenTeams={vi.fn()} />);
 
-    expect(screen.getByTestId("director-scope-header")).toBeInTheDocument();
+    expect(screen.getByTestId("director-overview")).toHaveClass("performance-section-stack");
+    expect(screen.getByTestId("director-scope-header")).toHaveClass("performance-scope-strip");
+    expect(screen.getByTestId("director-scope-header")).not.toHaveClass("performance-org-scope-card");
     expect(screen.getByTestId("director-kpi-row")).toHaveTextContent("Efficiency");
     expect(screen.getByText("Efficiency").closest(".performance-metric-card")).toBeTruthy();
+    expect(screen.getByText("Organization summary").closest(".performance-section")).toBeTruthy();
+    expect(screen.getByText("Organization summary").closest(".performance-org-section")).toBeFalsy();
+    expect(screen.getByText("Teams needing attention").closest(".performance-section")).toBeTruthy();
     expect(screen.getByText("Teams needing attention")).toBeInTheDocument();
     expect(screen.getByText("Heavy: 1")).toBeInTheDocument();
     expect(screen.getByText("Balanced: 2")).toBeInTheDocument();

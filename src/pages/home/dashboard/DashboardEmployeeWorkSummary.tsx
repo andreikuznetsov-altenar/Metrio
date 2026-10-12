@@ -46,8 +46,8 @@ export function DashboardEmployeeWorkSummary({
         data-testid="employee-dashboard-work-summary"
       >
         <div className="executive-employee-summary__grid">
-          <article className="executive-employee-summary-card" data-testid="employee-dashboard-trend-card">
-            <h2 className="executive-employee-summary-card__title">Trend</h2>
+          <article className="executive-panel executive-employee-summary-card" data-testid="employee-dashboard-trend-card">
+            <h2 className="executive-panel__title">Trend</h2>
             {trend ? (
               <>
                 <TrendValue trend={trend} />
@@ -72,8 +72,8 @@ export function DashboardEmployeeWorkSummary({
               </p>
             )}
           </article>
-          <article className="executive-employee-summary-card" data-testid="employee-dashboard-current-work-card">
-            <h2 className="executive-employee-summary-card__title">Current work</h2>
+          <article className="executive-panel executive-employee-summary-card" data-testid="employee-dashboard-current-work-card">
+            <h2 className="executive-panel__title">Current work</h2>
             <dl className="executive-employee-summary-card__stats">
               <div>
                 <dt>Active</dt>
@@ -89,8 +89,8 @@ export function DashboardEmployeeWorkSummary({
               </div>
             </dl>
           </article>
-          <article className="executive-employee-summary-card" data-testid="employee-dashboard-delivery-quality-card">
-            <h2 className="executive-employee-summary-card__title">Delivery quality</h2>
+          <article className="executive-panel executive-employee-summary-card" data-testid="employee-dashboard-delivery-quality-card">
+            <h2 className="executive-panel__title">Delivery quality</h2>
             <dl className="executive-employee-summary-card__stats">
               <div>
                 <dt>First pass</dt>

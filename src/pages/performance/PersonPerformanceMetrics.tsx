@@ -20,7 +20,11 @@ export function PersonPerformanceMetrics({
 }: PersonPerformanceMetricsProps) {
   return (
     <div className="person-performance-metrics">
-      <PersonAnalyticsMetricGrid metrics={kpis} onOpenMetric={onOpenMetric} />
+      <PersonAnalyticsMetricGrid
+        metrics={kpis}
+        className="performance-metrics"
+        onOpenMetric={onOpenMetric}
+      />
       <PersonCycleTimeCard segments={cycleTime} />
       {showActiveSummary && activeWorkCount != null ? (
         <p className="person-performance-metrics__active" data-testid="person-active-summary">

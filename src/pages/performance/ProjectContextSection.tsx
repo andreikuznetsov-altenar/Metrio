@@ -49,8 +49,8 @@ export function ProjectContextSection() {
   const docs = graph.knowledgeByProject.get(project.key) ?? [];
 
   return (
-    <section className="project-context" data-testid="project-context" aria-label="Project context">
-      <h3 className="performance-section__title">{project.key}</h3>
+    <section className="project-context performance-section executive-panel" data-testid="project-context" aria-label="Project context">
+      <h3 className="executive-panel__title">{project.key}</h3>
       <p className="performance-employee-context">
         {project.activeTaskCount} active tasks
         {docs.length ? ` · ${docs.length} relevant docs` : ""}

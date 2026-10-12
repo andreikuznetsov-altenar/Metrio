@@ -72,21 +72,19 @@ export function DirectorOverviewView({
   );
 
   return (
-    <div className="performance-org-overview" data-testid="director-overview">
-      <section className="performance-org-scope-card" data-testid="director-scope-header">
+    <div className="performance-section-stack" data-testid="director-overview">
+      <section className="performance-section performance-scope-strip" data-testid="director-scope-header">
         <div>
-          <p className="performance-org-scope-card__eyebrow">Performance scope</p>
-          <h3 className="performance-org-scope-card__title">{model.scopeLabel}</h3>
+          <p className="performance-scope-strip__eyebrow">Performance scope</p>
+          <h3 className="performance-scope-strip__title">{model.scopeLabel}</h3>
         </div>
         <Button variant="secondary" onClick={onOpenTeams}>
           View all teams
         </Button>
       </section>
 
-      <section className="performance-org-section" aria-label="Organization summary">
-        <div className="performance-org-section__header">
-          <h3 className="performance-section__title">Organization summary</h3>
-        </div>
+      <section className="performance-section" aria-label="Organization summary">
+        <h3 className="performance-section__title">Organization summary</h3>
         <div className="performance-metrics" data-testid="director-kpi-row">
         {model.summary.map((metric) => (
           <Card key={metric.label} className="performance-metric-card">
@@ -97,10 +95,8 @@ export function DirectorOverviewView({
         </div>
       </section>
 
-      <section className="performance-org-section" aria-label="Teams needing attention">
-      <div className="performance-org-section__header">
-        <h3 className="performance-section__title">Teams needing attention</h3>
-      </div>
+      <section className="performance-section" aria-label="Teams needing attention">
+      <h3 className="performance-section__title">Teams needing attention</h3>
       {model.teamsNeedingAttention.length === 0 ? (
         <p className="performance-inline-empty">
           No high-priority organization signals in this period.
@@ -163,10 +159,8 @@ export function DirectorOverviewView({
       </section>
 
       {model.teamCapacity.some((row) => row.awayNextWeek > 0) ? (
-        <section className="performance-org-section" aria-label="Upcoming team availability">
-          <div className="performance-org-section__header">
-            <h3 className="performance-section__title">Upcoming team availability</h3>
-          </div>
+        <section className="performance-section" aria-label="Upcoming team availability">
+          <h3 className="performance-section__title">Upcoming team availability</h3>
           <ul className="performance-director-capacity" data-testid="director-team-capacity">
             {model.teamCapacity
               .filter((row) => row.awayNextWeek > 0)
@@ -180,13 +174,11 @@ export function DirectorOverviewView({
         </section>
       ) : null}
 
-      <section className="performance-org-section" aria-label="Team trends">
-      <div className="performance-org-section__header">
-        <h3 className="performance-section__title">Team trends</h3>
-      </div>
-      <ul className="performance-director-trends">
+      <section className="performance-section" aria-label="Team trends">
+      <h3 className="performance-section__title">Team trends</h3>
+      <ul className="executive-resources-card__list">
         {model.teamTrends.map((trend) => (
-          <li key={trend.teamId}>
+          <li key={trend.teamId} className="executive-resources-card__row">
             <strong>{trend.teamName}</strong>
             <span>{trend.label}</span>
           </li>
@@ -195,10 +187,8 @@ export function DirectorOverviewView({
       </section>
 
       {model.newStarterSummary.total > 0 ? (
-        <section className="performance-org-section" aria-label="New starters">
-          <div className="performance-org-section__header">
-            <h3 className="performance-section__title">New starters</h3>
-          </div>
+        <section className="performance-section" aria-label="New starters">
+          <h3 className="performance-section__title">New starters</h3>
           <p className="performance-inline-empty">
             {model.newStarterSummary.total} new starters in authorized scope
             {model.newStarterSummary.byTeam.length
@@ -212,10 +202,8 @@ export function DirectorOverviewView({
 
       {model.feedbackSummary.pendingRecipients > 0 ||
       model.feedbackSummary.deliveryFailures > 0 ? (
-        <section className="performance-org-section" aria-label="Feedback">
-          <div className="performance-org-section__header">
-            <h3 className="performance-section__title">Feedback</h3>
-          </div>
+        <section className="performance-section" aria-label="Feedback">
+          <h3 className="performance-section__title">Feedback</h3>
           <p className="performance-inline-empty">
             {model.feedbackSummary.pendingRecipients} pending responses
             {model.feedbackSummary.deliveryFailures
@@ -225,10 +213,8 @@ export function DirectorOverviewView({
         </section>
       ) : null}
 
-      <section className="performance-org-section" aria-label="Signals">
-      <div className="performance-org-section__header">
-        <h3 className="performance-section__title">Signals</h3>
-      </div>
+      <section className="performance-section" aria-label="Signals">
+      <h3 className="performance-section__title">Signals</h3>
       {topSignals.length === 0 ? (
         <p className="performance-inline-empty">
           No high-priority organization signals in this period.
