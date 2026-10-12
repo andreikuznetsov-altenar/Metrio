@@ -166,4 +166,22 @@ describe("PASS 22.1 final visual consistency contracts", () => {
     }
     expect(css).not.toMatch(/\.performance-(?:director|manager|employee)-(?:page|container|shell)\s*\{/);
   });
+
+  it("PASS 22.1 packaged-QA follow-ups: shared subnav, secondary signal actions, compact recommendations", () => {
+    const subnav = source("src/pages/performance/director/DirectorPerformanceSubnav.tsx");
+    const signals = source("src/pages/performance/director/DirectorSignalsView.tsx");
+    const recs = source("src/pages/home/dashboard/DashboardRecommendations.tsx");
+    const project = source("src/pages/performance/ProjectContextSection.tsx");
+    const model = source("src/domain/home/executiveDashboardModel.ts");
+    const css = source("src/pages/performance/performance-dashboard.css");
+
+    expect(subnav).toContain("<PageSubnav");
+    expect(subnav).not.toContain('<nav className="performance-subnav"');
+    expect(signals).toMatch(/variant="secondary"[\s\S]{0,60}onOpen/);
+    expect(cssBlock(css, ".performance-director-signals li > div")).toContain("flex: 1");
+    expect(recs).toContain("items.length === 1 ? 3");
+    expect(project).toContain("docs.length > 0 ?");
+    expect(model).toContain("teamsNeedAttentionLabel");
+    expect(model).toContain('"team needs"');
+  });
 });

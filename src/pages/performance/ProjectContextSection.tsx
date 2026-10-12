@@ -36,7 +36,10 @@ export function ProjectContextSection() {
 
   if (graph.status === "unavailable") {
     return (
-      <p className="performance-inline-empty" data-testid="knowledge-unavailable">
+      <p
+        className="performance-inline-empty performance-inline-empty--surface"
+        data-testid="knowledge-unavailable"
+      >
         Knowledge unavailable
       </p>
     );
@@ -55,19 +58,21 @@ export function ProjectContextSection() {
         {project.activeTaskCount} active tasks
         {docs.length ? ` · ${docs.length} relevant docs` : ""}
       </p>
-      <ul className="project-context__docs">
-        {docs.slice(0, 3).map((link) => (
-          <li key={link.id}>
-            <KnowledgeContextRow
-              item={toContextItem(link)}
-              onOpen={(url) => void openExternalUrl(url)}
-            />
-            <span className="performance-inline-empty">
-              {confidenceLabel(link.confidence)}
-            </span>
-          </li>
-        ))}
-      </ul>
+      {docs.length > 0 ? (
+        <ul className="project-context__docs">
+          {docs.slice(0, 3).map((link) => (
+            <li key={link.id}>
+              <KnowledgeContextRow
+                item={toContextItem(link)}
+                onOpen={(url) => void openExternalUrl(url)}
+              />
+              <span className="performance-inline-empty">
+                {confidenceLabel(link.confidence)}
+              </span>
+            </li>
+          ))}
+        </ul>
+      ) : null}
       <div className="project-context__actions">
         <Button
           type="button"

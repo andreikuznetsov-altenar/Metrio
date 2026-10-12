@@ -14,6 +14,12 @@ import { FeedbackEmptyState } from './FeedbackEmptyState';
 
 type CycleTab = 'overview' | 'trends' | 'runs';
 
+function formatRunCreated(iso: string): string {
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return iso;
+  return date.toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' });
+}
+
 export function FeedbackCycleDetailView({
   cycle,
   data,
@@ -81,7 +87,7 @@ export function FeedbackCycleDetailView({
                 </div>
                 <div>
                   <dt>Created</dt>
-                  <dd>{new Date(latest.createdAt).toLocaleString()}</dd>
+                  <dd>{formatRunCreated(latest.createdAt)}</dd>
                 </div>
                 <div>
                   <dt>Sent</dt>

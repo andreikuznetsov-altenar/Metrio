@@ -110,6 +110,10 @@ function countOverloaded(workload: WorkloadRow[]): number {
   ).length;
 }
 
+function teamsNeedAttentionLabel(count: number): string {
+  return `${count} ${count === 1 ? "team needs" : "teams need"} attention`;
+}
+
 export function buildScopeHealthSummary(
   role: HomeRoleVariant,
   evidence: DashboardScopeHealthEvidence,
@@ -165,7 +169,7 @@ export function buildScopeHealthSummary(
     if (critical) {
       return {
         severity: "critical",
-        line: `${teamsNeedingAttention} teams need attention · ${deliveryRiskCount} delivery risks`,
+        line: `${teamsNeedAttentionLabel(teamsNeedingAttention)} · ${deliveryRiskCount} delivery risks`,
         tooltip: "Organization health aggregates team signals and delivery risk across authorized scope.",
       };
     }
@@ -262,7 +266,7 @@ function buildAttentionItems(input: {
   if (input.role === "director" && (input.teamsNeedingAttention ?? 0) > 0) {
     items.push({
       id: "org-teams",
-      title: `${input.teamsNeedingAttention} teams need attention`,
+      title: teamsNeedAttentionLabel(input.teamsNeedingAttention ?? 0),
       severity: "critical",
       viewTarget: { kind: "performance", view: "overview" },
       scrollTargetId: "performance-section-team-attention",

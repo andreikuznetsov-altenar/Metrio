@@ -237,7 +237,7 @@ export function EmployeePerformanceOverview({ personId }: EmployeePerformanceOve
                         type="button"
                         variant="secondary"
                         size="small"
-                        aria-label={`Open ${resource.title}`}
+                        aria-label={`Open resource: ${resource.title}`}
                         onClick={() => void openOnboardingResourceTarget(resource.target)}
                       >
                         Open

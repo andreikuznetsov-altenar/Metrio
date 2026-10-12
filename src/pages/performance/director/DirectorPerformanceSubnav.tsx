@@ -1,4 +1,5 @@
 import type { DirectorPerformanceView } from "../../../domain/performance";
+import { PageSubnav } from "../../../shell/PageSubnav";
 
 const ITEMS: { id: DirectorPerformanceView; label: string }[] = [
   { id: "overview", label: "Overview" },
@@ -18,21 +19,11 @@ export function DirectorPerformanceSubnav({
   onChange,
 }: DirectorPerformanceSubnavProps) {
   return (
-    <nav className="performance-subnav" aria-label="Director performance views">
-      {ITEMS.map((item) => (
-        <button
-          key={item.id}
-          type="button"
-          className={
-            activeView === item.id
-              ? "performance-subnav__link is-active"
-              : "performance-subnav__link"
-          }
-          onClick={() => onChange(item.id)}
-        >
-          {item.label}
-        </button>
-      ))}
-    </nav>
+    <PageSubnav
+      items={ITEMS}
+      activeId={activeView}
+      onChange={onChange}
+      ariaLabel="Director performance views"
+    />
   );
 }

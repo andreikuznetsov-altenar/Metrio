@@ -31,7 +31,8 @@ export function DashboardDirectorTeamHealthVisual({
         ))}
       </ul>
       <p className="executive-secondary-line">
-        {organization.teamsNeedingAttention} teams need attention · {organization.signalCount}{" "}
+        {organization.teamsNeedingAttention}{" "}
+        {organization.teamsNeedingAttention === 1 ? "team needs" : "teams need"} attention · {organization.signalCount}{" "}
         org signals
       </p>
       <div className="home-card__actions">

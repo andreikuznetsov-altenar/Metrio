@@ -58,6 +58,16 @@ test.describe("PASS 22.1 geometry", () => {
     expect(Math.abs(action.y + action.height / 2 - (strip.y + strip.height / 2))).toBeLessThan(6);
   });
 
+  test("Director subnav shows the same active indicator as other roles", async ({ page }) => {
+    await bootOrgRoleScenario(page, "mom");
+    await openPerformanceFromHome(page);
+    await page.locator(".performance-subnav__link").filter({ hasText: "Overview" }).click();
+    const indicator = await box(page, ".performance-subnav__indicator");
+    const active = await box(page, ".performance-subnav__link.is-active");
+    expect(indicator.width).toBeGreaterThan(20);
+    expect(Math.abs(indicator.x - active.x)).toBeLessThan(2);
+  });
+
   test("IC performance context strip and Resources use canonical surfaces", async ({ page }) => {
     await bootOrgRoleScenario(page, "ic");
     await openPerformanceFromHome(page);

@@ -136,7 +136,7 @@ export function DashboardRecommendations({
         style={
           useCarousel
             ? undefined
-            : ({ "--recommendation-count": Math.min(items.length, 3) } as CSSProperties)
+            : ({ "--recommendation-count": items.length === 1 ? 3 : Math.min(items.length, 3) } as CSSProperties)
         }
       >
         {items.map((item) => {

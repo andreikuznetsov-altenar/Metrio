@@ -1374,6 +1374,15 @@
   background: var(--color-surface-secondary);
 }
 
+.performance-director-signals li > div {
+  flex: 1;
+  min-width: 0;
+}
+
+.performance-director-signals li > .btn {
+  flex-shrink: 0;
+}
+
 .performance-director-team-meta {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));

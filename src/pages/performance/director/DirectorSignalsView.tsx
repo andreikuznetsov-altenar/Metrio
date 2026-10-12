@@ -27,7 +27,7 @@ export function DirectorSignalsView({ signals, onOpen }: DirectorSignalsViewProp
             <div>{signal.title}</div>
             <div className="performance-inline-empty">{signal.description}</div>
           </div>
-          <Button variant="ghost" onClick={() => onOpen(signal)}>
+          <Button variant="secondary" size="small" onClick={() => onOpen(signal)}>
             Open
           </Button>
         </li>
