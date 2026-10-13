@@ -11,6 +11,8 @@ import { openExternalUrl } from '../../platform/openExternal';
 import { Badge, Button, MetricCard, Section } from './design-system';
 import { FeedbackResultsView } from './FeedbackResultsView';
 import { FeedbackEmptyState } from './FeedbackEmptyState';
+import { MetaList, MetaRow } from '../../components/MetaList/MetaList';
+import { runPhaseBadgeVariant } from './feedbackUi';
 
 type CycleTab = 'overview' | 'trends' | 'runs';
 
@@ -80,28 +82,19 @@ export function FeedbackCycleDetailView({
 
           <Section title="Latest run" variant="plain">
             <div className="feedback-latest-run" data-testid="feedback-latest-run">
-              <dl className="feedback-latest-run__grid">
-                <div>
-                  <dt>Status</dt>
-                  <dd>{runStatusLabel(deriveRunPhase(latest))}</dd>
-                </div>
-                <div>
-                  <dt>Created</dt>
-                  <dd>{formatRunCreated(latest.createdAt)}</dd>
-                </div>
-                <div>
-                  <dt>Sent</dt>
-                  <dd>{sentCount}</dd>
-                </div>
-                <div>
-                  <dt>Responses</dt>
-                  <dd>{latestMetrics.respondentCount}</dd>
-                </div>
-                <div>
-                  <dt>Google Form state</dt>
-                  <dd>{latest.responderUri ? 'Ready' : 'Not ready'}</dd>
-                </div>
-              </dl>
+              <MetaList className="meta-list--plain" testId="feedback-latest-run-meta">
+                <MetaRow label="Status">
+                  <Badge variant={runPhaseBadgeVariant(deriveRunPhase(latest))}>
+                    {runStatusLabel(deriveRunPhase(latest))}
+                  </Badge>
+                </MetaRow>
+                <MetaRow label="Created">{formatRunCreated(latest.createdAt)}</MetaRow>
+                <MetaRow label="Sent">{sentCount}</MetaRow>
+                <MetaRow label="Responses">{latestMetrics.respondentCount}</MetaRow>
+                <MetaRow label="Google Form state">
+                  {latest.responderUri ? 'Ready' : 'Not ready'}
+                </MetaRow>
+              </MetaList>
               <div className="feedback-latest-run__actions">
                 {latest.responderUri ? (
                   <Button
@@ -180,8 +173,10 @@ export function FeedbackCycleDetailView({
                 <li key={run.id} className="feedback-run-list__item">
                   <div className="feedback-run-list__content">
                     <div className="feedback-run-list__title">
-                      {new Date(run.createdAt).toLocaleString()}
-                      <Badge variant="neutral">{runStatusLabel(deriveRunPhase(run))}</Badge>
+                      {formatRunCreated(run.createdAt)}
+                      <Badge variant={runPhaseBadgeVariant(deriveRunPhase(run))}>
+                        {runStatusLabel(deriveRunPhase(run))}
+                      </Badge>
                     </div>
                     <div className="feedback-run-list__meta">
                       <span>Recipients: {progress.total}</span>

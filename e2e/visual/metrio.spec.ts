@@ -216,6 +216,7 @@ test.describe("Metrio visual regression", () => {
     await bootMetrio(page, "lead");
     await page.getByRole("button", { name: /View Completed details/i }).click();
     await expect(page.locator(".drawer--analytics")).toBeVisible();
+    await expect(page.locator('.drawer-root[data-drawer-phase="open"]')).toBeVisible();
     await expect(page.getByRole("dialog")).toContainText("Completed");
     await expect(page).toHaveScreenshot("analytics-completed-drawer.png", {
       fullPage: true,
@@ -227,6 +228,7 @@ test.describe("Metrio visual regression", () => {
     await bootMetrio(page, "lead");
     await page.getByRole("button", { name: /View Efficiency details/i }).click();
     await expect(page.locator(".drawer--analytics")).toBeVisible();
+    await expect(page.locator('.drawer-root[data-drawer-phase="open"]')).toBeVisible();
     await expect(page.getByRole("dialog")).toContainText("Efficiency");
     await expect(page).toHaveScreenshot("analytics-efficiency-drawer.png", {
       fullPage: true,
@@ -2060,6 +2062,7 @@ test.describe("Metrio visual regression", () => {
     await bootMetrio(page, "lead");
     await page.getByRole("button", { name: /View Completed details/i }).click();
     await expect(page.locator(".drawer--analytics")).toBeVisible();
+    await expect(page.locator('.drawer-root[data-drawer-phase="open"]')).toBeVisible();
     await expect(page.getByText("No completed work in this period.")).toHaveCount(0);
     await expect(page).toHaveScreenshot("analytics-completed-drawer-trust.png", {
       fullPage: true,
@@ -2616,6 +2619,7 @@ test.describe("Metrio visual regression", () => {
     await bootMetrio(page, "lead");
     await page.getByRole("button", { name: /View Completed details/i }).first().click();
     await expect(page.locator(".drawer--analytics")).toBeVisible();
+    await expect(page.locator('.drawer-root[data-drawer-phase="open"]')).toBeVisible();
     await expect(page.getByText("No completed work in this period.")).toHaveCount(0);
     await expect(page).toHaveScreenshot("person-completed-one-with-evidence.png", {
       fullPage: true,
@@ -2633,6 +2637,7 @@ test.describe("Metrio visual regression", () => {
     if (await completed.count()) {
       await completed.first().click();
       await expect(page.locator(".drawer--analytics")).toBeVisible();
+    await expect(page.locator('.drawer-root[data-drawer-phase="open"]')).toBeVisible();
     }
     await expect(page).toHaveScreenshot("person-completed-zero.png", {
       fullPage: true,
@@ -2644,6 +2649,7 @@ test.describe("Metrio visual regression", () => {
     await bootMetrio(page, "lead");
     await page.getByRole("button", { name: /View First pass details/i }).click();
     await expect(page.locator(".drawer--analytics")).toBeVisible();
+    await expect(page.locator('.drawer-root[data-drawer-phase="open"]')).toBeVisible();
     await expect(page).toHaveScreenshot("team-first-pass-evidence.png", {
       fullPage: true,
       maxDiffPixelRatio: 0.02,
@@ -2654,6 +2660,7 @@ test.describe("Metrio visual regression", () => {
     await bootMetrio(page, "lead");
     await page.getByRole("button", { name: /View Backflows details/i }).click();
     await expect(page.locator(".drawer--analytics")).toBeVisible();
+    await expect(page.locator('.drawer-root[data-drawer-phase="open"]')).toBeVisible();
     await expect(page).toHaveScreenshot("team-backflow-events.png", {
       fullPage: true,
       maxDiffPixelRatio: 0.02,
@@ -2664,6 +2671,7 @@ test.describe("Metrio visual regression", () => {
     await bootMetrio(page, "lead");
     await page.getByRole("button", { name: /View Completed details/i }).click();
     await expect(page.locator(".drawer--analytics")).toBeVisible();
+    await expect(page.locator('.drawer-root[data-drawer-phase="open"]')).toBeVisible();
     await expect(page).toHaveScreenshot("analytics-aggregate-only.png", {
       fullPage: true,
       maxDiffPixelRatio: 0.02,
@@ -2689,6 +2697,7 @@ test.describe("Metrio visual regression", () => {
     await bootMetrio(page, "lead");
     await page.getByRole("button", { name: /View Completed details/i }).click();
     await expect(page.locator(".drawer--analytics")).toBeVisible();
+    await expect(page.locator('.drawer-root[data-drawer-phase="open"]')).toBeVisible();
     await expect(page).toHaveScreenshot("human-duration-short.png", {
       fullPage: true,
       maxDiffPixelRatio: 0.02,
@@ -2723,6 +2732,7 @@ test.describe("Metrio visual regression", () => {
     await openPerformanceFromHome(page);
     await page.getByRole("button", { name: /View Completed details/i }).click();
     await expect(page.locator(".drawer--analytics")).toBeVisible();
+    await expect(page.locator('.drawer-root[data-drawer-phase="open"]')).toBeVisible();
     await expect(page).toHaveScreenshot("dark-analytics-aggregate.png", {
       fullPage: true,
       maxDiffPixelRatio: 0.02,
@@ -2805,6 +2815,7 @@ test.describe("Metrio visual regression", () => {
     await bootMetrio(page, "lead");
     await page.getByRole("button", { name: /View Completed details/i }).click();
     await expect(page.locator(".drawer--analytics")).toBeVisible();
+    await expect(page.locator('.drawer-root[data-drawer-phase="open"]')).toBeVisible();
     await expect(page.locator(".drawer__header")).toHaveScreenshot("drawer-header-analytics.png", {
       maxDiffPixelRatio: 0.02,
     });

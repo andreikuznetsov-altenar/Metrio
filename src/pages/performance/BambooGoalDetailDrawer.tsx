@@ -1,6 +1,12 @@
 import { useEffect, useState } from "react";
 import { ExternalLink } from "lucide-react";
+import { Badge, type BadgeVariant } from "../../components/Badge/Badge";
 import { Button } from "../../components/Button/Button";
+import { InfoBlock } from "../../components/InfoBlock/InfoBlock";
+import { MetaList, MetaRow } from "../../components/MetaList/MetaList";
+import { PersonIdentity } from "../../components/PersonIdentity/PersonIdentity";
+import type { Person } from "../../domain/people/types";
+import { formatPerformanceDateDisplay } from "../../domain/performance/performanceDateRange";
 import { Input } from "../../components/Input/Input";
 import { Drawer } from "../../components/Drawer/Drawer";
 import { MetrioDatePicker } from "../../components/DatePicker/MetrioDatePicker";
@@ -35,10 +41,22 @@ function formatStatus(goal: BambooGoal): string {
   }
 }
 
+function statusVariant(goal: BambooGoal): BadgeVariant {
+  switch (goal.status) {
+    case "in_progress":
+      return "info";
+    case "completed":
+      return "success";
+    default:
+      return "neutral";
+  }
+}
+
 export function BambooGoalDetailDrawer({
   open,
   goal,
   ownerEmployeeId,
+  owner,
   onClose,
   onChanged,
   onDeleted,
@@ -46,6 +64,8 @@ export function BambooGoalDetailDrawer({
   open: boolean;
   goal: BambooGoal | null;
   ownerEmployeeId: string;
+  /** Goal owner shown with the canonical person identity. */
+  owner?: Person | null;
   onClose: () => void;
   onChanged: () => void;
   onDeleted?: (goalId: string) => void;
@@ -264,49 +284,46 @@ export function BambooGoalDetailDrawer({
         onClose={onClose}
         ariaLabel="Goal detail"
         size="person"
+        header={detail ? <h2 className="goal-drawer__title">{detail.title}</h2> : undefined}
         testId="bamboo-goal-detail-drawer"
       >
         {detail ? (
           <div className="bamboo-goal-detail" data-testid="bamboo-goal-detail">
-            <h2>{detail.title}</h2>
-
-            <dl className="bamboo-goal-detail__summary" data-testid="bamboo-goal-summary">
-              <div>
-                <dt>Status</dt>
-                <dd>{formatStatus(detail)}</dd>
-              </div>
-              <div>
-                <dt>Progress</dt>
-                <dd>{detail.percentComplete}%</dd>
-              </div>
-              <div>
-                <dt>Due date</dt>
-                <dd>{detail.dueDate || "No due date"}</dd>
-              </div>
+            <MetaList testId="bamboo-goal-summary">
+              <MetaRow label="Status">
+                <Badge variant={statusVariant(detail)}>{formatStatus(detail)}</Badge>
+              </MetaRow>
+              <MetaRow label="Progress">{detail.percentComplete}%</MetaRow>
+              <MetaRow label="Due date">
+                {detail.dueDate ? formatPerformanceDateDisplay(detail.dueDate) : "No due date"}
+              </MetaRow>
               {detail.completionDate ? (
-                <div>
-                  <dt>Completed</dt>
-                  <dd>{detail.completionDate}</dd>
-                </div>
+                <MetaRow label="Completed">
+                  {formatPerformanceDateDisplay(detail.completionDate)}
+                </MetaRow>
               ) : null}
-              <div>
-                <dt>Owner</dt>
-                <dd data-testid="bamboo-goal-owner">{ownerEmployeeId}</dd>
-              </div>
+              <MetaRow label="Owner" testId="bamboo-goal-owner">
+                {owner ? (
+                  <PersonIdentity
+                    person={owner}
+                    personId={owner.id}
+                    bambooEmployeeId={ownerEmployeeId}
+                    displayName={owner.bamboo.displayName}
+                    avatarSize="sm"
+                  />
+                ) : (
+                  ownerEmployeeId
+                )}
+              </MetaRow>
               {detail.alignsWithOptionId ? (
-                <div>
-                  <dt>Alignment</dt>
-                  <dd data-testid="bamboo-goal-alignment-value">
-                    {detail.alignsWithOptionId}
-                  </dd>
-                </div>
+                <MetaRow label="Alignment" testId="bamboo-goal-alignment-value">
+                  {detail.alignsWithOptionId}
+                </MetaRow>
               ) : null}
-            </dl>
+            </MetaList>
 
             {detail.description ? (
-              <p className="bamboo-goal-detail__description" data-testid="bamboo-goal-description-view">
-                {detail.description}
-              </p>
+              <InfoBlock testId="bamboo-goal-description-view">{detail.description}</InfoBlock>
             ) : null}
 
             <div className="bamboo-goal-detail__toolbar">

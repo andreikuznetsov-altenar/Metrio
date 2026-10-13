@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { format } from 'date-fns';
 import { Badge } from '../Badge/Badge';
 import { Button } from '../Button/Button';
@@ -18,6 +18,7 @@ import { loadPreferences } from '../../platform/preferences';
 import { openExternalUrl } from '../../platform/openExternal';
 import { resolveJiraBaseUrl } from '../../config/product';
 import { useOptionalPersonNavigation } from '../../app/PersonNavigationContext';
+import { MetaList, MetaRow } from '../MetaList/MetaList';
 import './TaskJourneyDrawer.css';
 
 function formatTimelineDate(iso: string): string {
@@ -100,21 +101,6 @@ function OwnerLink({
     );
   }
   return <span>{name}</span>;
-}
-
-function DiagnosticRow({
-  label,
-  value,
-}: {
-  label: string;
-  value: ReactNode;
-}) {
-  return (
-    <div className="task-journey-drawer__diag-row">
-      <span className="task-journey-drawer__diag-label">{label}</span>
-      <span className="task-journey-drawer__diag-value">{value}</span>
-    </div>
-  );
 }
 
 export interface TaskJourneyDrawerProps {
@@ -232,29 +218,23 @@ export function TaskJourneyDrawer({
           <section className="task-journey-drawer__section" aria-label="Why this needs attention">
             <h3 className="task-journey-drawer__section-title">Why this needs attention</h3>
             <p className="task-journey-drawer__attention-lead">{journey.problem.headline}</p>
-            <div className="task-journey-drawer__diag-block" data-testid="task-journey-diagnostic-block">
-              <DiagnosticRow label="Reason" value={journey.problem.primaryReason} />
-              <DiagnosticRow label="Current stage" value={currentStageLine} />
+            <MetaList testId="task-journey-diagnostic-block">
+              <MetaRow label="Reason">{journey.problem.primaryReason}</MetaRow>
+              <MetaRow label="Current stage">{currentStageLine}</MetaRow>
               {journey.problem.targetReviewDays ? (
-                <DiagnosticRow
-                  label="Target"
-                  value={`${journey.problem.targetReviewDays} days`}
-                />
+                <MetaRow label="Target">{`${journey.problem.targetReviewDays} days`}</MetaRow>
               ) : null}
               {journey.problem.lastActivityLabel ? (
-                <DiagnosticRow label="Last activity" value={journey.problem.lastActivityLabel} />
+                <MetaRow label="Last activity">{journey.problem.lastActivityLabel}</MetaRow>
               ) : null}
-              <DiagnosticRow
-                label="Current owner"
-                value={
-                  <OwnerLink
-                    name={journey.currentOwner.name}
-                    personId={journey.currentOwner.personId}
-                    onOpenPerson={openPerson}
-                  />
-                }
-              />
-            </div>
+              <MetaRow label="Current owner">
+                <OwnerLink
+                  name={journey.currentOwner.name}
+                  personId={journey.currentOwner.personId}
+                  onOpenPerson={openPerson}
+                />
+              </MetaRow>
+            </MetaList>
           </section>
 
           <section className="task-journey-drawer__section" aria-label="Task path">

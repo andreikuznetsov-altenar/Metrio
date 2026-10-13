@@ -14,7 +14,15 @@ export interface WorkProject {
   jiraUrl: string;
   relevance: "assigned" | "recent" | "accessible";
   activeTaskCount: number;
+  /** Active issues counted in `activeTaskCount` (assigned relevance only). */
+  activeIssues?: WorkProjectIssue[];
   linkedSpaceKey?: string;
+}
+
+export interface WorkProjectIssue {
+  issueKey: string;
+  title: string;
+  status: string;
 }
 
 export interface WorkInitiative {

@@ -230,9 +230,9 @@ describe("PASS 15.5E Bamboo Goals canonical", () => {
     expect(within(detail).getByText("In progress")).toBeInTheDocument();
     expect(within(detail).getByTestId("bamboo-goal-summary")).toHaveTextContent("40%");
     expect(within(detail).getByTestId("bamboo-goal-summary")).toHaveTextContent(
-      "2026-12-31",
+      "31 Dec 2026",
     );
-    expect(within(detail).getByTestId("bamboo-goal-owner")).toHaveTextContent("42");
+    expect(within(detail).getByTestId("bamboo-goal-owner")).toHaveTextContent(/Owner/);
     expect(within(detail).getByTestId("bamboo-edit-title")).toHaveValue("Bamboo QA Goal");
     expect(within(detail).getByTestId("bamboo-edit-title").className).toContain(
       "metrio-field",

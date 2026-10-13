@@ -27,6 +27,14 @@ export function discoverRelevantProjects(input: {
     const name =
       findProjectName(input.accessibleProjects, key) ?? `${key} project`;
     const jiraUrl = `${input.jiraBaseUrl.replace(/\/+$/, "")}/browse/${key}`;
+    const activeIssue =
+      activeDelta > 0
+        ? {
+            issueKey: issue.issueKey,
+            title: issue.issueSummary,
+            status: issue.currentStatus ?? "",
+          }
+        : null;
     if (!existing) {
       byKey.set(key, {
         id: key,
@@ -35,6 +43,7 @@ export function discoverRelevantProjects(input: {
         jiraUrl,
         relevance,
         activeTaskCount: activeDelta,
+        activeIssues: activeIssue ? [activeIssue] : [],
         linkedSpaceKey: key,
       });
       return;
@@ -43,6 +52,9 @@ export function discoverRelevantProjects(input: {
       existing.relevance = relevance;
     }
     existing.activeTaskCount += activeDelta;
+    if (activeIssue) {
+      (existing.activeIssues ??= []).push(activeIssue);
+    }
   };
 
   for (const issue of input.activeIssues) {

@@ -19,6 +19,12 @@
   background: var(--color-surface-secondary);
 }
 
+.segmented-control:not(.segmented-control--full-width) {
+  /* Hug the options; never stretch to a flex-column parent. */
+  width: fit-content;
+  max-width: 100%;
+}
+
 .segmented-control__indicator {
   position: absolute;
   top: 3px;

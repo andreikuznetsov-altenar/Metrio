@@ -54,6 +54,13 @@ export class BambooPermissionError extends ApiError {
   }
 }
 
+function goalMatchesFilter(goal: BambooGoal, filter: BambooGoalStatusFilter): boolean {
+  if (filter === 'status-all') return true;
+  if (filter === 'status-completed') return goal.status === 'completed';
+  if (filter === 'status-closed') return goal.status === 'closed';
+  return goal.status === 'in_progress';
+}
+
 async function invokeBamboo<T>(command: string, args: Record<string, unknown>): Promise<T> {
   try {
     return await invoke<T>(command, args);
@@ -167,9 +174,16 @@ export class BambooClient {
       const { buildDocBambooGoals } = await import('../../fixtures/docFixtureData');
       return buildDocBambooGoals(employeeId, filter);
     }
-    // Browser visual-fixture builds have no native Bamboo bridge: show the empty goals state.
+    // Browser visual-fixture builds have no native Bamboo bridge: show the empty goals state,
+    // or the goals a test seeded in localStorage (`metrio-visual-bamboo-goals`).
     if (import.meta.env.VITE_VISUAL_FIXTURE === '1') {
-      return [];
+      try {
+        const raw = globalThis.localStorage?.getItem('metrio-visual-bamboo-goals');
+        const parsed = raw ? (JSON.parse(raw) as BambooGoal[]) : [];
+        return parsed.filter((goal) => goalMatchesFilter(goal, filter));
+      } catch {
+        return [];
+      }
     }
 
     const result = await invokeBamboo<unknown>('bamboo_list_goals', {
@@ -195,6 +209,9 @@ export class BambooClient {
     if (docMode.enabled) {
       const { getDocBambooGoal } = await import('../../fixtures/docFixtureData');
       return getDocBambooGoal(employeeId, goalId);
+    }
+    if (import.meta.env.VITE_VISUAL_FIXTURE === '1') {
+      return null;
     }
 
     const result = await invokeBamboo<unknown>('bamboo_get_goal_aggregate', {

@@ -166,3 +166,7 @@ export function formatGoogleOAuthError(message: string): string {
   if (lower.includes('drive')) return 'Google Drive permission was denied. Reconnect and allow Drive access.';
   return message;
 }
+
+export function runPhaseBadgeVariant(phase: 'draft' | 'active' | 'stopped'): BadgeVariant {
+  return phase === 'active' ? 'success' : 'neutral';
+}

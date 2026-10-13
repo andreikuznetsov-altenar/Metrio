@@ -1,0 +1,10 @@
+.info-block {
+  padding: var(--space-3);
+  border: 1px solid var(--color-banner-info-border);
+  border-radius: var(--radius-control);
+  background: var(--color-banner-info-bg);
+  color: var(--color-text-primary);
+  font-size: 13px;
+  line-height: 1.45;
+  white-space: pre-wrap;
+}

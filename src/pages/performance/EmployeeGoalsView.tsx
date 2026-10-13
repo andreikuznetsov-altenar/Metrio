@@ -252,6 +252,7 @@ export function EmployeeGoalsView({ personId }: { personId: string }) {
         open={selected != null}
         goal={selected}
         ownerEmployeeId={bambooEmployeeId}
+        owner={person}
         onClose={() => setSelected(null)}
         onChanged={() => void onWriteSuccess()}
         onDeleted={(goalId) => {
