@@ -217,6 +217,9 @@ describe("PASS 23 scheduling and error copy", () => {
     expect(describeUpdateError(new Error("error sending request: dns"), "check")).toMatch(/update server/);
     expect(describeUpdateError(new Error("None of the fallback platforms were found"), "check")).toMatch(/for this Mac/);
     expect(describeUpdateError(new Error("invalid json in manifest"), "check")).toMatch(/invalid/);
+    expect(
+      describeUpdateError(new Error("Could not fetch a valid release JSON from the remote"), "check"),
+    ).toMatch(/isn't available right now/);
     expect(describeUpdateError(new Error("disk full"), "install")).toBe("Update couldn't be installed.");
     expect(describeUpdateError("weird", "check")).toBe("Unable to check for updates.");
   });

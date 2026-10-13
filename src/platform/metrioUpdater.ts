@@ -88,6 +88,9 @@ export function describeUpdateError(error: unknown, phase: UpdateErrorPhase): st
   if (phase === "install") {
     return "Update couldn't be installed.";
   }
+  if (/valid release json|release json/i.test(reason)) {
+    return "Update information isn't available right now. Try again later.";
+  }
   if (/network|dns|offline|timed? ?out|connect|unreachable|resolve|fetch|request|http/i.test(reason)) {
     return "Couldn't reach the update server. Check your connection and try again.";
   }
