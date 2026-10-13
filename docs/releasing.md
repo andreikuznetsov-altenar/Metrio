@@ -7,8 +7,9 @@ Tauri updater (`https://github.com/andreikuznetsov-altenar/Metrio/releases/lates
 
 ## Normal release
 
-Push product code to `main`. (Automatic starts from `main` are enabled separately — see *Status*.)
-Until then, or whenever you want to force one, use the manual fallback.
+Push product code to `main`. The workflow plans every push and releases the next patch version
+when the push can change the packaged app. Docs-only pushes (and the generated release commit)
+release nothing.
 
 ## Manual fallback
 
@@ -17,8 +18,9 @@ Or: `gh workflow run release-macos.yml`.
 
 ## Status
 
-The workflow currently starts **only** from `workflow_dispatch`. Push-to-`main` automation is added
-after the first CI-produced release has been verified end to end (including an over-the-air update).
+Automatic releases are **enabled**: the workflow starts on every push to `main` (ignoring
+`docs/**` and `*.md`) and on manual dispatch. The first release produced this way, v0.1.4, was
+verified with a real over-the-air update from v0.1.3.
 
 ## What a run does
 
@@ -78,7 +80,7 @@ again: the same version is reused. No tag or release is left behind by a failed 
 ## Disabling automatic releases temporarily
 
 `gh workflow disable release-macos.yml` (re-enable with `gh workflow enable release-macos.yml`), or
-put `[skip release]` in the HEAD commit message of a push.
+put `[skip release]` in the HEAD commit message of a push. Docs/tests/CI-only pushes never release anyway.
 
 ## Updater key warning
 

@@ -336,6 +336,21 @@ describe("generated-report handling before the release commit", () => {
   }, 60_000);
 });
 
+describe("automatic trigger safety", () => {
+  it("the commit that enables the push trigger (workflow + docs + tests only) does not release", () => {
+    const decision = shouldRelease({
+      changedFiles: [".github/workflows/release-macos.yml", "docs/releasing.md", "src/test/releaseAutomation.test.ts"],
+      headMessage: "CI Enable automatic Metrio releases from main",
+    });
+    expect(decision.release).toBe(false);
+  });
+
+  it("the generated release commit never re-triggers a release, even with its version files changed", () => {
+    const files = ["package.json", "package-lock.json", "src-tauri/tauri.conf.json", "src-tauri/Cargo.toml", "src-tauri/Cargo.lock", "src/config/build.ts", "CHANGELOG.md"];
+    expect(shouldRelease({ changedFiles: files, headMessage: releaseCommitMessage("0.1.5") }).release).toBe(false);
+  });
+});
+
 describe("notarization credential handling (stubbed notarytool)", () => {
   const UUID = "12345678-abcd-4ef0-9abc-0123456789ab";
   const P8 = "-----BEGIN PRIVATE KEY-----\nLINE1\n  indented line  \nLINE3\n-----END PRIVATE KEY-----\n";
@@ -412,7 +427,8 @@ describe("release workflow structure", () => {
 
   it("is the single release owner: no tag trigger, serialized, minimal permissions", () => {
     expect(workflow).not.toMatch(/tags:/);
-    expect(workflow).not.toMatch(/^\s+push:/m);
+    // automatic starts: pushes to main only; manual dispatch stays as the fallback
+    expect(workflow).toMatch(/^  push:\n    branches: \[main\]/m);
     expect(workflow).toMatch(/workflow_dispatch:/);
     expect(workflow).toMatch(/group: metrio-release-main\n\s+cancel-in-progress: false/);
     expect(workflow).toMatch(/^permissions:\n\s+contents: write\n/m);

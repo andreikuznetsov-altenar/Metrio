@@ -2,7 +2,8 @@ name: Release macOS
 
 # The single owner of Metrio releases: version bump, release commit, signed + notarized build,
 # updater archive, DMG, latest.json, tag and GitHub Release all happen in this one workflow.
-# There is deliberately NO `v*` tag trigger: the tag is created here, so a tag push can never
+# Triggers: push to main (planned, usually a no-op for docs/test/CI-only pushes) and manual
+# workflow_dispatch. There is deliberately NO `v*` tag trigger: the tag is created here, so a tag push can never
 # start a competing build. See docs/releasing.md.
 #
 # Required repository secrets (names only; values never appear in this file):
@@ -10,6 +11,13 @@ name: Release macOS
 #   Developer ID signing:     APPLE_CERTIFICATE (base64 .p12), APPLE_CERTIFICATE_PASSWORD
 #   Notarization (API key):   APPLE_API_ISSUER, APPLE_API_KEY (key id), APPLE_API_KEY_CONTENT (.p8 text)
 on:
+  # Every push to main is planned; only pushes that can change the packaged app release
+  # (docs-only pushes and the generated "[skip release]" commit never do).
+  push:
+    branches: [main]
+    paths-ignore:
+      - "docs/**"
+      - "**/*.md"
   workflow_dispatch:
     inputs:
       force:
