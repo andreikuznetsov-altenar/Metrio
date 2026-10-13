@@ -12,7 +12,8 @@ vi.mock("../app/PerformanceDataContext", () => ({
   usePerformanceData: () => ({ data: { teamSnapshot: { persons: [] } } }),
 }));
 
-vi.mock("../platform/preferences", () => ({
+vi.mock("../platform/preferences", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("../platform/preferences")>()),
   loadPreferences: async () => ({}),
 }));
 
