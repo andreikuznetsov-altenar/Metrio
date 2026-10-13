@@ -267,9 +267,9 @@ jobs:
           git push origin "refs/tags/$TAG"
           echo "METRIO_TAG_PUSHED=$TAG" >> "$GITHUB_ENV"
 
-          # Compact user-facing notes: product commit subjects only, no CI/release internals.
-          RANGE="${PREVIOUS_TAG:+$PREVIOUS_TAG..}$RELEASE_SHA"
-          { echo "Metrio $RELEASE_VERSION"; echo; git log "$RANGE" --no-merges --pretty='- %s' | grep -v '^- RELEASE ' | head -30; } > "$RUNNER_TEMP/notes.md"
+          # Compact user-facing notes: product commit subjects only (RELEASE/CI/TEST/DOCS are filtered).
+          node scripts/generate-release-notes.mjs --version "$RELEASE_VERSION" --to "$RELEASE_SHA" \
+            ${PREVIOUS_TAG:+--from "$PREVIOUS_TAG"} > "$RUNNER_TEMP/notes.md"
 
           # latest.json is the switch clients follow, so it is uploaded LAST, after the
           # binaries are re-downloaded and compared byte-for-byte.

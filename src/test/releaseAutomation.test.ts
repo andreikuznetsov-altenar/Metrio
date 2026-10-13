@@ -6,6 +6,8 @@ import { describe, expect, it } from "vitest";
 import {
   SKIP_RELEASE_MARKER,
   applyVersion,
+  buildReleaseNotes,
+  isInternalCommitSubject,
   bumpPatch,
   buildLatestManifest,
   checkProvenance,
@@ -333,6 +335,63 @@ describe("generated-report handling before the release commit", () => {
     expect(restore).toBeGreaterThan(gate);
     expect(restore).toBeLessThan(bump);
     expect(wf).not.toMatch(/git restore \./);
+  }, 60_000);
+});
+
+describe("user-facing release notes", () => {
+  it("drops internal release/CI/test/docs commits and keeps product subjects", () => {
+    for (const internal of [
+      "RELEASE Metrio v0.1.5 [skip release]",
+      "CI Enable automatic Metrio releases from main",
+      "CI: harden notarization",
+      "TEST Pin Playwright visual clock and re-record snapshots",
+      "DOCS Refresh PASS22.2 screenshots",
+      "DOCS: nothing",
+      "Merge branch 'main' into x",
+      "Anything [skip release]",
+      "",
+    ]) {
+      expect(isInternalCommitSubject(internal), internal).toBe(true);
+    }
+    for (const product of [
+      "PASS24 Preserve updater install diagnostics",
+      "PASS22.2 Align remaining surfaces with Lead design system",
+      "Fix goal drawer due date picker layering",
+      "CIty map fix",
+    ]) {
+      expect(isInternalCommitSubject(product), product).toBe(false);
+    }
+  });
+
+  it("builds compact notes, dedupes, caps the list and has a fallback", () => {
+    const notes = buildReleaseNotes({
+      version: "0.1.5",
+      subjects: ["RELEASE Metrio v0.1.4 [skip release]", "Add dashboard export", "CI Harden", "Add dashboard export", "Fix drawer"],
+    });
+    expect(notes).toBe("Metrio 0.1.5\n\n- Add dashboard export\n- Fix drawer\n");
+    expect(notes).not.toMatch(/RELEASE|CI /);
+    const only = buildReleaseNotes({ version: "0.1.5", subjects: ["CI x", "TEST y"] });
+    expect(only).toContain("Maintenance and stability improvements.");
+    const many = buildReleaseNotes({ version: "1.0.0", subjects: Array.from({ length: 50 }, (_, i) => `Change ${i}`), limit: 30 });
+    expect(many.split("\n").filter((l) => l.startsWith("- "))).toHaveLength(30);
+  });
+
+  it("the CLI reads a git range and the workflow uses it", () => {
+    const repo = mkdtempSync(join(tmpdir(), "metrio-notes-"));
+    mkdirSync(join(repo, "scripts"), { recursive: true });
+    for (const f of ["generate-release-notes.mjs", "release-lib.mjs"]) cpSync(script(f), join(repo, "scripts", f));
+    const git = (...a: string[]) =>
+      execFileSync("git", ["-c", "user.name=t", "-c", "user.email=t@example.com", "-c", "commit.gpgsign=false", ...a], { cwd: repo, encoding: "utf8" }).trim();
+    git("init", "-q", "-b", "main");
+    git("commit", "-q", "--allow-empty", "-m", "Initial product");
+    git("tag", "v1.0.0");
+    for (const m of ["Add search", "CI tweak", "RELEASE Metrio v1.0.1 [skip release]", "Fix sidebar"]) git("commit", "-q", "--allow-empty", "-m", m);
+    const out = execFileSync("node", [join(repo, "scripts/generate-release-notes.mjs"), "--version", "1.0.1", "--to", "HEAD", "--from", "v1.0.0"], { cwd: repo, encoding: "utf8" });
+    expect(out).toBe("Metrio 1.0.1\n\n- Fix sidebar\n- Add search\n");
+    const wf = readFileSync(join(repoRoot, ".github/workflows/release-macos.yml"), "utf8");
+    expect(wf).toContain("scripts/generate-release-notes.mjs");
+    expect(wf).not.toContain("grep -v '^- RELEASE '");
+    expect(shouldRelease({ changedFiles: ["scripts/generate-release-notes.mjs"], headMessage: "CI notes" }).release).toBe(false);
   }, 60_000);
 });
 

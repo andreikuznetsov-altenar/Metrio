@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 const invoke = vi.fn();
 
@@ -9,6 +9,10 @@ vi.mock("@tauri-apps/api/core", () => ({
 import { BambooClient, BambooPermissionError } from "./bambooClient";
 
 describe("BambooClient goals", () => {
+  beforeAll(async () => {
+    await import("../../platform/docFixtures");
+  }, 60_000);
+
   beforeEach(async () => {
     invoke.mockReset();
     const {

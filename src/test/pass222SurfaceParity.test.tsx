@@ -2,7 +2,7 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { render, screen, within } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { beforeAll, describe, expect, it, vi } from "vitest";
 import type { WorkGraphState } from "../app/WorkGraphContext";
 import { discoverRelevantProjects } from "../domain/workGraph/projectDiscovery";
 import type { AuditIssue } from "../domain/jira/types";
@@ -38,6 +38,12 @@ vi.mock("../app/WorkGraphContext", () => ({ useWorkGraph: () => graph }));
 vi.mock("../platform/preferences", () => ({ loadPreferences: async () => ({}) }));
 
 describe("PASS 22.2 surface parity", () => {
+  // Warm the heavy page module once with an explicit hook budget (cold import can exceed 5s
+  // when many suites start together); the table test itself stays under the default timeout.
+  beforeAll(async () => {
+    await import("../pages/performance/ProjectContextSection");
+  }, 60_000);
+
   it("renders the DEMO project active tasks as a canonical table with Jira issue links", async () => {
     const { ProjectContextSection } = await import("../pages/performance/ProjectContextSection");
     render(<ProjectContextSection />);

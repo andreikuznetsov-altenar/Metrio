@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 const invokeMock = vi.hoisted(() => vi.fn());
 
@@ -9,6 +9,14 @@ vi.mock("@tauri-apps/api/core", () => ({
 function json(value: unknown): string {
   return JSON.stringify(value);
 }
+
+// Warm the heavy fixture modules once, with an explicit hook budget, so individual tests are
+// not charged for the cold dynamic import (which exceeds 5s when many suites start together).
+beforeAll(async () => {
+  await import("../platform/docFixtures");
+  await import("../platform/preferences");
+  await import("./docFixtureData");
+}, 60_000);
 
 describe("documentation fixture mode", () => {
   beforeEach(async () => {
@@ -103,5 +111,7 @@ describe("documentation fixture mode", () => {
     for (const value of blocked) {
       expect(payload).not.toContain(value);
     }
-  });
+    // Builds every documentation fixture payload (~1.3s on an idle machine, >5s when the whole
+    // suite runs under heavy CPU contention), so this one test gets an explicit budget.
+  }, 30_000);
 });

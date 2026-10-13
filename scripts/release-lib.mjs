@@ -77,7 +77,7 @@ const NON_RUNTIME_PATTERNS = [
   /^src\/test\//,
   /\.test\.(ts|tsx|mjs|js)$/,
   /^src-tauri\/tests\//,
-  /^scripts\/(release-lib|prepare-release-version|plan-release|verify-build-provenance|verify-updater-tamper)\.mjs$/,
+  /^scripts\/(release-lib|prepare-release-version|plan-release|verify-build-provenance|verify-updater-tamper|generate-release-notes)\.mjs$/,
   /^scripts\/ci\//,
   /^\.gitignore$/,
 ];
@@ -107,6 +107,33 @@ export function shouldRelease({ changedFiles, headMessage = "", force = false })
   const runtime = files.filter((f) => !isNonRuntimeFile(f));
   if (runtime.length === 0) return { release: false, reason: "only documentation/tests/automation changed" };
   return { release: true, reason: `runtime changes: ${runtime.slice(0, 5).join(", ")}${runtime.length > 5 ? ", …" : ""}` };
+}
+
+/** Internal maintenance commits that never belong in user-facing release notes. */
+const INTERNAL_SUBJECT = /^(RELEASE|CI|TEST|TESTS|DOCS?|CHORE|MAINT|BUILD)(\b|:)/;
+
+export function isInternalCommitSubject(subject) {
+  const text = String(subject ?? "").trim();
+  if (!text) return true;
+  if (INTERNAL_SUBJECT.test(text)) return true;
+  if (text.includes(SKIP_RELEASE_MARKER)) return true;
+  if (/^Merge (branch|pull request|remote-tracking)/.test(text)) return true;
+  return false;
+}
+
+/** Compact, user-facing release notes from commit subjects (newest first). */
+export function buildReleaseNotes({ version, subjects, limit = 30 }) {
+  const seen = new Set();
+  const items = [];
+  for (const subject of subjects ?? []) {
+    const text = String(subject).trim();
+    if (isInternalCommitSubject(text) || seen.has(text)) continue;
+    seen.add(text);
+    items.push(`- ${text}`);
+    if (items.length >= limit) break;
+  }
+  const body = items.length > 0 ? items.join("\n") : "- Maintenance and stability improvements.";
+  return `Metrio ${version}\n\n${body}\n`;
 }
 
 export function releaseCommitMessage(version) {
