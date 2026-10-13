@@ -308,6 +308,14 @@ export async function installNativeUpdate(
     onProgress?.({ phase: "done", percent: 100 });
   } catch (error) {
     const message = describeUpdateError(error, "install");
+    recordUpdateDiagnostic(
+      buildUpdateDiagnostic({
+        error,
+        phase: "install",
+        currentVersion: update.currentVersion,
+        target: await readUpdaterTarget(),
+      }),
+    );
     onProgress?.({ phase: "error", percent: null, message });
     throw error;
   }

@@ -16,6 +16,7 @@ import {
   categorizeUpdateError,
   checkForUpdatesNative,
   describeUpdateError,
+  installNativeUpdate,
   readUpdateDiagnostic,
   scheduleUpdateChecks,
 } from "../platform/metrioUpdater";
@@ -353,6 +354,37 @@ describe("PASS 23.2 update result semantics", () => {
     );
     expect(fetchSpy).not.toHaveBeenCalled();
     fetchSpy.mockRestore();
+  });
+
+  it("records a diagnostic for install failures while keeping the calm UI message", async () => {
+    const update = {
+      currentVersion: "0.1.2",
+      version: "0.1.3",
+      downloadAndInstall: vi.fn(async () => {
+        throw new Error("Read-only file system (os error 30)");
+      }),
+    };
+    const progress = vi.fn();
+    await expect(installNativeUpdate(update as never, progress)).rejects.toThrow(/Read-only/);
+    expect(progress).toHaveBeenLastCalledWith({
+      phase: "error",
+      percent: null,
+      message: "Update couldn't be installed.",
+    });
+    expect(readUpdateDiagnostic()).toMatchObject({
+      phase: "install",
+      category: "unknown",
+      currentVersion: "0.1.2",
+      target: "darwin-aarch64",
+      endpoint: UPDATE_ENDPOINT,
+      rawError: "Read-only file system (os error 30)",
+    });
+  });
+
+  it("a successful install records no diagnostic", async () => {
+    const update = { currentVersion: "0.1.2", version: "0.1.3", downloadAndInstall: vi.fn(async () => undefined) };
+    await installNativeUpdate(update as never);
+    expect(readUpdateDiagnostic()).toBeNull();
   });
 
   it("the built-in endpoint constant matches tauri.conf.json", () => {
