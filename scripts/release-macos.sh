@@ -30,16 +30,18 @@ export BUILD_CHANNEL="${BUILD_CHANNEL:-production}"
 export APPLE_SIGNING_IDENTITY="${APPLE_SIGNING_IDENTITY:-Developer ID Application: Andrei Kuznetsov (V36L7T43H8)}"
 
 # Permanent Metrio updater key (separate from Apple signing). Never stored in the repository.
-if [[ -z "${TAURI_SIGNING_PRIVATE_KEY:-}" && -z "${TAURI_SIGNING_PRIVATE_KEY_PATH:-}" ]]; then
-  export TAURI_SIGNING_PRIVATE_KEY_PATH="${METRIO_UPDATER_KEY_PATH:-$HOME/.tauri/metrio-updater.key}"
+if [[ -z "${TAURI_SIGNING_PRIVATE_KEY:-}" ]]; then
+  KEY_PATH="${METRIO_UPDATER_KEY_PATH:-$HOME/.tauri/metrio-updater.key}"
+  if [[ ! -f "$KEY_PATH" ]]; then
+    echo "Updater signing key not found (expected $KEY_PATH)."
+    exit 1
+  fi
+  TAURI_SIGNING_PRIVATE_KEY="$(cat "$KEY_PATH")"
+  export TAURI_SIGNING_PRIVATE_KEY
   if [[ -z "${TAURI_SIGNING_PRIVATE_KEY_PASSWORD:-}" ]]; then
     TAURI_SIGNING_PRIVATE_KEY_PASSWORD="$(security find-generic-password -s metrio-updater-key-password -w 2>/dev/null || true)"
     export TAURI_SIGNING_PRIVATE_KEY_PASSWORD
   fi
-fi
-if [[ ! -f "${TAURI_SIGNING_PRIVATE_KEY_PATH:-/nonexistent}" && -z "${TAURI_SIGNING_PRIVATE_KEY:-}" ]]; then
-  echo "Updater signing key not found (expected ~/.tauri/metrio-updater.key)."
-  exit 1
 fi
 
 npm run tauri build

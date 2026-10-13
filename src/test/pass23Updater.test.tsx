@@ -1,6 +1,8 @@
 // @vitest-environment jsdom
-import { readFileSync } from "node:fs";
-import { resolve } from "node:path";
+import { execFileSync } from "node:child_process";
+import { mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join, resolve } from "node:path";
 import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { UpdateProvider } from "../app/UpdateContext";
@@ -234,5 +236,30 @@ describe("PASS 23 scheduling and error copy", () => {
     const pkg = JSON.parse(source("package.json"));
     expect(pkg.version).toBe("0.1.1");
     expect(source("src-tauri/Cargo.toml")).toMatch(/^version = "0\.1\.1"/m);
+  });
+
+  it("latest.json carries the .sig CONTENT (not a URL) and the GitHub release asset URL", () => {
+    const dir = mkdtempSync(join(tmpdir(), "metrio-updater-"));
+    writeFileSync(join(dir, "Metrio.app.tar.gz"), "archive");
+    writeFileSync(join(dir, "Metrio.app.tar.gz.sig"), "SIGNATURE-CONTENT\n");
+    execFileSync("node", [resolve(process.cwd(), "scripts/generate-update-manifest.mjs"), dir], {
+      env: { ...process.env, METRIO_UPDATER_PLATFORM: "darwin-aarch64" },
+    });
+    const manifest = JSON.parse(readFileSync(join(dir, "latest.json"), "utf8"));
+    expect(manifest.version).toBe("0.1.1");
+    expect(manifest.platforms["darwin-aarch64"].signature).toBe("SIGNATURE-CONTENT");
+    expect(manifest.platforms["darwin-aarch64"].url).toBe(
+      "https://github.com/andreikuznetsov-altenar/Metrio/releases/download/v0.1.1/Metrio.app.tar.gz",
+    );
+  });
+
+  it("release workflow is tag-driven, uses the updater secrets and never inlines secret values", () => {
+    const workflow = source(".github/workflows/release-macos.yml");
+    expect(workflow).toMatch(/tags:\s*\n\s*- "v\*"/);
+    expect(workflow).toContain("secrets.TAURI_SIGNING_PRIVATE_KEY");
+    expect(workflow).toContain("secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD");
+    expect(workflow).toContain("generate-update-manifest.mjs");
+    expect(workflow).toContain("verify-updater-artifacts.mjs");
+    expect(workflow).not.toMatch(/dW50cnVzdGVk|BEGIN [A-Z ]*PRIVATE/);
   });
 });

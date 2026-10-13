@@ -15,7 +15,7 @@ import { fileURLToPath } from "node:url";
 const args = process.argv.slice(2);
 const outFlag = args.indexOf("--out");
 const outDir = outFlag >= 0 ? args[outFlag + 1] : undefined;
-const artifactDir = args.find((a, i) => !a.startsWith("--") && i !== outFlag + 1);
+const artifactDir = args.find((a, i) => !a.startsWith("--") && (outFlag < 0 || i !== outFlag + 1));
 if (!artifactDir) {
   console.error("Usage: node generate-update-manifest.mjs <artifact-dir> [--out <dir>]");
   process.exit(1);

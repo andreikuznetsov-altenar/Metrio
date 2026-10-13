@@ -35,7 +35,7 @@ Metrio updates itself through the Tauri updater using **GitHub Releases**.
    archive with the updater key, generates `latest.json` from the real `.sig`, verifies it
    (`scripts/verify-updater-artifacts.mjs`), and publishes the DMG, `Metrio.app.tar.gz`,
    `Metrio.app.tar.gz.sig` and `latest.json` to the same release.
-3. Local alternative: `npm run release:macos` (uses the local key/password as above).
+3. Local alternative: `npm run release:macos` (reads the key from `~/.tauri/metrio-updater.key` into `TAURI_SIGNING_PRIVATE_KEY` and the password from the Keychain).
 
 `latest.json` follows the Tauri v2 static manifest schema; `signature` is the **content** of the
 `.sig` file, never a URL.
