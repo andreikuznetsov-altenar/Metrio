@@ -167,6 +167,10 @@ export class BambooClient {
       const { buildDocBambooGoals } = await import('../../fixtures/docFixtureData');
       return buildDocBambooGoals(employeeId, filter);
     }
+    // Browser visual-fixture builds have no native Bamboo bridge: show the empty goals state.
+    if (import.meta.env.VITE_VISUAL_FIXTURE === '1') {
+      return [];
+    }
 
     const result = await invokeBamboo<unknown>('bamboo_list_goals', {
       config: this.nativeConfig,
@@ -176,6 +180,9 @@ export class BambooClient {
   }
 
   async canCreateGoals(employeeId: string): Promise<boolean> {
+    if (import.meta.env.VITE_VISUAL_FIXTURE === '1') {
+      return false;
+    }
     const result = await invokeBamboo<unknown>('bamboo_can_create_goals', {
       config: this.nativeConfig,
       params: { employee_id: employeeId },
