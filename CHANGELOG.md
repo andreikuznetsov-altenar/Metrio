@@ -4,6 +4,10 @@ All notable user-facing Metrio changes are documented here. Versions follow [Sem
 
 ## Unreleased
 
+## 0.1.4 — automated release
+
+- Automated release build.
+
 ## 0.1.3 — updater verification release
 
 - Validates automatic update delivery from Metrio 0.1.2.
