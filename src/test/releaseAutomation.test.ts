@@ -282,6 +282,60 @@ describe("integrity gates", () => {
   });
 });
 
+describe("generated-report handling before the release commit", () => {
+  function repoWithReport() {
+    const repo = mkdtempSync(join(tmpdir(), "metrio-clean-"));
+    const git = (...args: string[]) =>
+      execFileSync("git", ["-c", "user.name=t", "-c", "user.email=t@example.com", "-c", "commit.gpgsign=false", ...args], {
+        cwd: repo,
+        encoding: "utf8",
+      }).trim();
+    mkdirSync(join(repo, "docs"), { recursive: true });
+    mkdirSync(join(repo, "src"), { recursive: true });
+    writeFileSync(join(repo, "docs/pass14-legacy-parity-report.md"), "report v1\n");
+    writeFileSync(join(repo, "src/a.ts"), "export {};\n");
+    git("init", "-q", "-b", "main");
+    git("add", "-A");
+    git("commit", "-q", "-m", "init");
+    const run = () => spawnSync("bash", [script("ci/restore-generated-report.sh")], { cwd: repo, encoding: "utf8" });
+    return { repo, git, run };
+  }
+
+  it("restores only the known generated report and then passes", () => {
+    const { repo, git, run } = repoWithReport();
+    writeFileSync(join(repo, "docs/pass14-legacy-parity-report.md"), "regenerated\n");
+    const result = run();
+    expect(result.status).toBe(0);
+    expect(readFileSync(join(repo, "docs/pass14-legacy-parity-report.md"), "utf8")).toBe("report v1\n");
+    expect(git("status", "--porcelain", "--untracked-files=no")).toBe("");
+  }, 60_000);
+
+  it("still fails on any other tracked change, even alongside the generated report", () => {
+    const { repo, run } = repoWithReport();
+    writeFileSync(join(repo, "docs/pass14-legacy-parity-report.md"), "regenerated\n");
+    writeFileSync(join(repo, "src/a.ts"), "export const surprise = 1;\n");
+    const result = run();
+    expect(result.status).not.toBe(0);
+    expect(result.stdout + result.stderr).toMatch(/Unexpected tracked changes/);
+    expect(result.stdout).toContain("src/a.ts");
+    // the unexpected change is left visible, not silently reverted
+    expect(readFileSync(join(repo, "src/a.ts"), "utf8")).toContain("surprise");
+  }, 60_000);
+
+  it("passes on an already clean tree and the workflow runs it right after the test gate", () => {
+    const { run } = repoWithReport();
+    expect(run().status).toBe(0);
+    const wf = readFileSync(join(repoRoot, ".github/workflows/release-macos.yml"), "utf8");
+    const gate = wf.indexOf("- name: Test gate");
+    const restore = wf.indexOf("restore-generated-report.sh");
+    const bump = wf.indexOf("- name: Version bump + release commit");
+    expect(gate).toBeGreaterThan(-1);
+    expect(restore).toBeGreaterThan(gate);
+    expect(restore).toBeLessThan(bump);
+    expect(wf).not.toMatch(/git restore \./);
+  }, 60_000);
+});
+
 describe("release workflow structure", () => {
   const workflow = readFileSync(join(repoRoot, ".github/workflows/release-macos.yml"), "utf8");
   const stepIndex = (needle: string) => {

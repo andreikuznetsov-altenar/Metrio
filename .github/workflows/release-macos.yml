@@ -99,6 +99,10 @@ jobs:
           npm run build
           (cd src-tauri && cargo check && cargo test)
 
+      - name: Restore known generated report, require a clean tree
+        if: steps.plan.outputs.should_release == 'true'
+        run: bash scripts/ci/restore-generated-report.sh
+
       - name: Version bump + release commit
         if: steps.plan.outputs.should_release == 'true'
         id: commit
