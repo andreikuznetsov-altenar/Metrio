@@ -6,6 +6,8 @@ import process from "node:process";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
+// @ts-expect-error plain ESM script without type declarations
+import { resolveBuildCommit } from "./scripts/resolve-build-commit.mjs";
 
 const host = process.env.TAURI_DEV_HOST;
 const rootDir = join(dirname(fileURLToPath(import.meta.url)));
@@ -31,7 +33,10 @@ export default defineConfig(() => ({
       process.env.BUILD_CHANNEL || process.env.VITE_BUILD_CHANNEL || "development",
     ),
     "import.meta.env.VITE_GIT_COMMIT": JSON.stringify(
-      process.env.VITE_GIT_COMMIT || "dev",
+      process.env.BUILD_CHANNEL === "production" ||
+        process.env.BUILD_CHANNEL === "internal-beta"
+        ? resolveBuildCommit({ cwd: rootDir })
+        : process.env.VITE_GIT_COMMIT || "dev",
     ),
   },
   test: {
