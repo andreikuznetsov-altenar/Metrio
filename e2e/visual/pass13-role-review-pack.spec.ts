@@ -1,6 +1,7 @@
 import { mkdir } from "node:fs/promises";
 import { join } from "node:path";
-import { test, expect } from "@playwright/test";
+import { expect } from "@playwright/test";
+import { test } from "./baseTest";
 import {
   bootOrgRoleScenario,
   clickSubnav,

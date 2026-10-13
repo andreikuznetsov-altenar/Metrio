@@ -1,4 +1,5 @@
-import { test, expect } from "@playwright/test";
+import { expect } from "@playwright/test";
+import { test } from "./baseTest";
 
 const TARGET_LOGO_WIDTH = 133;
 const PREVIOUS_LOGO_WIDTH = 200;

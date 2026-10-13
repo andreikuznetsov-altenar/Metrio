@@ -1,4 +1,5 @@
-import { expect, test } from "@playwright/test";
+import { expect } from "@playwright/test";
+import { test } from "./baseTest";
 import { bootDashboardManager, setViewport } from "./visualBoot";
 import { serializeViewPersonRecommendationForPlaywright } from "../../src/fixtures/productRecommendationsVisualFixture";
 

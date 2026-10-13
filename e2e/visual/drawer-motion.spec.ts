@@ -1,4 +1,5 @@
-import { expect, test } from "@playwright/test";
+import { expect } from "@playwright/test";
+import { test } from "./baseTest";
 import { bootMetrio, openDirectReportPersonDrawer } from "./visualBoot";
 
 test.describe("Drawer motion and app-shell geometry", () => {

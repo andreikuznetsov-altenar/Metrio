@@ -2,7 +2,8 @@
  * Executive demo visual acceptance captures (1440×900 primary).
  * Screenshots are the source of truth for docs/executive-demo-visual-acceptance.md.
  */
-import { test, expect } from "@playwright/test";
+import { expect } from "@playwright/test";
+import { test } from "./baseTest";
 import {
   bootConnected,
   bootDashboardManager,
