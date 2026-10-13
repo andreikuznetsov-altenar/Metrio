@@ -30,20 +30,12 @@ export interface UpdateInstallProgress {
 
 const LAST_BACKGROUND_CHECK_KEY = "metrio-update-last-check";
 
+/** First automatic check runs shortly after startup, then on this cadence while the app stays open. */
+export const UPDATE_STARTUP_CHECK_DELAY_MS = 12_000;
+export const UPDATE_CHECK_INTERVAL_MS = 6 * 60 * 60 * 1000;
+
 export function isUpdaterEnabledForChannel(channel: BuildChannel): boolean {
   return channel === "production";
-}
-
-export function shouldRunDailyBackgroundCheck(now = Date.now()): boolean {
-  try {
-    const raw = localStorage.getItem(LAST_BACKGROUND_CHECK_KEY);
-    if (!raw) return true;
-    const last = Date.parse(raw);
-    if (Number.isNaN(last)) return true;
-    return now - last >= 24 * 60 * 60 * 1000;
-  } catch {
-    return false;
-  }
 }
 
 export function markBackgroundCheckRan(at = new Date()): void {
@@ -52,6 +44,60 @@ export function markBackgroundCheckRan(at = new Date()): void {
   } catch {
     // ignore quota errors
   }
+}
+
+export interface UpdateCheckTimers {
+  setTimeout: (handler: () => void, ms: number) => unknown;
+  clearTimeout: (id: unknown) => void;
+  setInterval: (handler: () => void, ms: number) => unknown;
+  clearInterval: (id: unknown) => void;
+}
+
+/**
+ * Non-blocking automatic checks: once shortly after startup, then every
+ * `UPDATE_CHECK_INTERVAL_MS`. A failing check never throws into the app.
+ */
+export function scheduleUpdateChecks(
+  runCheck: () => Promise<void>,
+  timers: UpdateCheckTimers = {
+    setTimeout: (h, ms) => window.setTimeout(h, ms),
+    clearTimeout: (id) => window.clearTimeout(id as number),
+    setInterval: (h, ms) => window.setInterval(h, ms),
+    clearInterval: (id) => window.clearInterval(id as number),
+  },
+): () => void {
+  const safeRun = () => {
+    void runCheck().catch(() => undefined);
+  };
+  const startup = timers.setTimeout(safeRun, UPDATE_STARTUP_CHECK_DELAY_MS);
+  const interval = timers.setInterval(safeRun, UPDATE_CHECK_INTERVAL_MS);
+  return () => {
+    timers.clearTimeout(startup);
+    timers.clearInterval(interval);
+  };
+}
+
+export type UpdateErrorPhase = "check" | "install";
+
+/** Understandable, non-sensitive copy for updater failures. */
+export function describeUpdateError(error: unknown, phase: UpdateErrorPhase): string {
+  const reason = error instanceof Error ? error.message : String(error ?? "");
+  if (/signature|verify|pubkey/i.test(reason)) {
+    return "Update couldn't be verified.";
+  }
+  if (phase === "install") {
+    return "Update couldn't be installed.";
+  }
+  if (/network|dns|offline|timed? ?out|connect|unreachable|resolve|fetch|request|http/i.test(reason)) {
+    return "Couldn't reach the update server. Check your connection and try again.";
+  }
+  if (/platform|target|no .*release|not found|404/i.test(reason)) {
+    return "No update is available for this Mac.";
+  }
+  if (/json|parse|invalid|malformed|manifest/i.test(reason)) {
+    return "Update information was invalid. Try again later.";
+  }
+  return "Unable to check for updates.";
 }
 
 export async function fetchUpdateManifest(
@@ -123,19 +169,10 @@ export async function checkForUpdatesNative(
       nativeUpdate: update,
     };
   } catch (error) {
-    const reason =
-      error instanceof Error ? error.message : "updater_check_failed";
-    if (/signature|verify|pubkey/i.test(reason)) {
-      return {
-        status: "error",
-        currentVersion,
-        message: "Update couldn't be verified.",
-      };
-    }
     return {
       status: "error",
       currentVersion,
-      message: "Unable to check for updates.",
+      message: describeUpdateError(error, "check"),
     };
   }
 }
@@ -174,21 +211,8 @@ export async function installNativeUpdate(
     });
     onProgress?.({ phase: "done", percent: 100 });
   } catch (error) {
-    const reason =
-      error instanceof Error ? error.message : "updater_install_failed";
-    if (/signature|verify|pubkey/i.test(reason)) {
-      onProgress?.({
-        phase: "error",
-        percent: null,
-        message: "Update couldn't be verified.",
-      });
-      throw new Error("signature_verification_failed");
-    }
-    onProgress?.({
-      phase: "error",
-      percent: null,
-      message: "Update couldn't be installed.",
-    });
+    const message = describeUpdateError(error, "install");
+    onProgress?.({ phase: "error", percent: null, message });
     throw error;
   }
 }

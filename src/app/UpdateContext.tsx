@@ -15,9 +15,10 @@ import {
   checkForUpdatesNative,
   checkForUpdatesWithManifest,
   installNativeUpdate,
+  describeUpdateError,
   markBackgroundCheckRan,
   relaunchAfterUpdate,
-  shouldRunDailyBackgroundCheck,
+  scheduleUpdateChecks,
   type UpdateCheckResult,
   type UpdateInstallProgress,
 } from "../platform/metrioUpdater";
@@ -30,6 +31,9 @@ interface UpdateContextValue {
   updaterEnabled: boolean;
   checkForUpdates: () => Promise<void>;
   installUpdate: () => Promise<void>;
+  /** True while an available update should be offered (not dismissed with "Later"). */
+  promptVisible: boolean;
+  dismissPrompt: () => void;
 }
 
 const UpdateContext = createContext<UpdateContextValue | null>(null);
@@ -67,6 +71,7 @@ export function UpdateProvider({ children }: { children: ReactNode }) {
     phase: "idle",
     percent: null,
   });
+  const [promptDismissed, setPromptDismissed] = useState(false);
   const nativeUpdateRef = useRef<Update | null>(null);
 
   const updaterEnabled = isUpdaterAvailableForBuild(buildInfo);
@@ -101,7 +106,7 @@ export function UpdateProvider({ children }: { children: ReactNode }) {
         result = await checkForUpdatesWithManifest(info.version, manifestUrl);
         nativeUpdateRef.current = null;
       }
-    } catch {
+    } catch (error) {
       if (manifestUrl) {
         result = await checkForUpdatesWithManifest(info.version, manifestUrl);
         nativeUpdateRef.current = null;
@@ -109,9 +114,13 @@ export function UpdateProvider({ children }: { children: ReactNode }) {
         result = {
           status: "error",
           currentVersion: info.version,
-          message: "Unable to check for updates.",
+          message: describeUpdateError(error, "check"),
         };
       }
+    }
+    if (result.status === "available") {
+      // A fresh check that finds an update offers it again, even after "Later".
+      setPromptDismissed(false);
     }
     setCheckResult(result);
     markBackgroundCheckRan();
@@ -120,12 +129,10 @@ export function UpdateProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (import.meta.env.MODE === "test") return;
     if (!updaterEnabled) return;
-    if (!shouldRunDailyBackgroundCheck()) return;
-    const timer = window.setTimeout(() => {
-      void runCheck();
-    }, 12_000);
-    return () => window.clearTimeout(timer);
+    return scheduleUpdateChecks(runCheck);
   }, [runCheck, updaterEnabled]);
+
+  const dismissPrompt = useCallback(() => setPromptDismissed(true), []);
 
   const installUpdate = useCallback(async () => {
     const update = nativeUpdateRef.current;
@@ -142,11 +149,11 @@ export function UpdateProvider({ children }: { children: ReactNode }) {
       await installNativeUpdate(update, setInstallProgress);
       setInstallProgress({ phase: "done", percent: 100 });
       await relaunchAfterUpdate();
-    } catch {
+    } catch (error) {
       setInstallProgress({
         phase: "error",
         percent: null,
-        message: "Update couldn't be installed.",
+        message: describeUpdateError(error, "install"),
       });
     }
   }, []);
@@ -159,8 +166,19 @@ export function UpdateProvider({ children }: { children: ReactNode }) {
       updaterEnabled,
       checkForUpdates: runCheck,
       installUpdate,
+      promptVisible: updaterEnabled && checkResult.status === "available" && !promptDismissed,
+      dismissPrompt,
     }),
-    [buildInfo, checkResult, installProgress, updaterEnabled, runCheck, installUpdate],
+    [
+      buildInfo,
+      checkResult,
+      installProgress,
+      updaterEnabled,
+      runCheck,
+      installUpdate,
+      promptDismissed,
+      dismissPrompt,
+    ],
   );
 
   return (

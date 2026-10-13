@@ -1,53 +1,108 @@
 name: Release macOS
 
+# Publishes a signed (+ notarized when API credentials are present) Metrio build and the
+# Tauri updater assets to the SAME GitHub Release for tags like v0.1.2.
+#
+# Required repository secrets
+#   Updater signing (permanent Metrio updater key):
+#     TAURI_SIGNING_PRIVATE_KEY, TAURI_SIGNING_PRIVATE_KEY_PASSWORD
+#   Apple Developer ID signing / notarization (separate from the updater key):
+#     APPLE_CERTIFICATE (base64 .p12), APPLE_CERTIFICATE_PASSWORD, APPLE_SIGNING_IDENTITY,
+#     APPLE_API_ISSUER, APPLE_API_KEY, APPLE_API_KEY_CONTENT (the .p8 file contents)
 on:
-  workflow_dispatch:
-    inputs:
-      version:
-        description: "Semver to release (must match package.json after sync)"
-        required: true
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
 
 jobs:
   release:
     runs-on: macos-14
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }}
+          fetch-depth: 0
+
+      - name: Verify tag matches app version
+        run: |
+          TAG="${GITHUB_REF_NAME#v}"
+          PKG="$(node -p "require('./package.json').version")"
+          CONF="$(node -p "require('./src-tauri/tauri.conf.json').version")"
+          CARGO="$(grep -m1 '^version = ' src-tauri/Cargo.toml | sed -E 's/version = "(.*)"/\1/')"
+          echo "tag=$TAG package=$PKG tauri=$CONF cargo=$CARGO"
+          test "$TAG" = "$PKG" && test "$PKG" = "$CONF" && test "$PKG" = "$CARGO"
 
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
           cache: npm
 
+      - uses: dtolnay/rust-toolchain@stable
+
       - name: Install dependencies
         run: npm ci
 
-      - name: Sync version
-        run: node scripts/sync-app-version.mjs
-
       - name: Test gate
         run: |
+          npx tsc --noEmit
           npm run verify:design-system
           npm test
           npm run build
-          (cd src-tauri && cargo test && cargo check)
+          (cd src-tauri && cargo check && cargo test)
 
-      - name: Build signed app
+      - name: Import Apple Developer ID certificate
         env:
-          BUILD_CHANNEL: production
           APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
           APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+        run: |
+          if [ -z "$APPLE_CERTIFICATE" ]; then echo "APPLE_CERTIFICATE not set"; exit 1; fi
+          KEYCHAIN="$RUNNER_TEMP/metrio-build.keychain-db"
+          KEYCHAIN_PASSWORD="$(openssl rand -base64 24)"
+          echo "$APPLE_CERTIFICATE" | base64 --decode > "$RUNNER_TEMP/certificate.p12"
+          security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN"
+          security set-keychain-settings -lut 21600 "$KEYCHAIN"
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN"
+          security import "$RUNNER_TEMP/certificate.p12" -k "$KEYCHAIN" -P "$APPLE_CERTIFICATE_PASSWORD" -T /usr/bin/codesign
+          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN"
+          security list-keychains -d user -s "$KEYCHAIN" $(security list-keychains -d user | tr -d '"')
+          rm -f "$RUNNER_TEMP/certificate.p12"
+
+      - name: Write App Store Connect API key
+        env:
+          APPLE_API_KEY_CONTENT: ${{ secrets.APPLE_API_KEY_CONTENT }}
+          APPLE_API_KEY: ${{ secrets.APPLE_API_KEY }}
+        run: |
+          if [ -n "$APPLE_API_KEY_CONTENT" ]; then
+            mkdir -p "$HOME/.appstoreconnect/private_keys"
+            echo "$APPLE_API_KEY_CONTENT" > "$HOME/.appstoreconnect/private_keys/AuthKey_${APPLE_API_KEY}.p8"
+            echo "APPLE_API_KEY_PATH=$HOME/.appstoreconnect/private_keys/AuthKey_${APPLE_API_KEY}.p8" >> "$GITHUB_ENV"
+          fi
+
+      - name: Build signed app and updater artifacts
+        env:
+          BUILD_CHANNEL: production
           APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
           APPLE_API_ISSUER: ${{ secrets.APPLE_API_ISSUER }}
           APPLE_API_KEY: ${{ secrets.APPLE_API_KEY }}
-          APPLE_API_KEY_PATH: ${{ secrets.APPLE_API_KEY_PATH }}
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
-          METRIO_UPDATE_ENDPOINT: ${{ secrets.METRIO_UPDATE_ENDPOINT }}
-          METRIO_UPDATE_BASE_URL: ${{ secrets.METRIO_UPDATE_BASE_URL }}
-        run: npm run release:macos
+        run: npm run tauri build
 
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v4
+      - name: Collect release assets and create latest.json
+        run: |
+          mkdir -p release-assets
+          cp src-tauri/target/release/bundle/dmg/*.dmg release-assets/
+          cp src-tauri/target/release/bundle/macos/*.app.tar.gz release-assets/
+          cp src-tauri/target/release/bundle/macos/*.app.tar.gz.sig release-assets/
+          METRIO_RELEASE_TAG="$GITHUB_REF_NAME" node scripts/generate-update-manifest.mjs release-assets
+          node scripts/verify-updater-artifacts.mjs release-assets
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
         with:
-          name: metrio-macos-${{ inputs.version }}
-          path: release-artifacts/**
+          tag_name: ${{ github.ref_name }}
+          files: release-assets/*
+          generate_release_notes: true

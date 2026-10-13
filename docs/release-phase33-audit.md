@@ -57,7 +57,7 @@ No workflows existed at audit start. Added optional `/.github/workflows/release-
 
 **Private GitHub repo constraint:** the desktop app must **not** embed a PAT. Either publish release assets to a **public** releases repo/bucket, or use an internal HTTPS endpoint with anonymous read for update files only.
 
-Placeholder endpoint in repo config is replaced at release time via `METRIO_UPDATE_ENDPOINT` + `scripts/patch-updater-endpoint.mjs`.
+The updater endpoint is now the permanent GitHub Releases manifest; see `docs/release-updater.md`.
 
 ## Recommended next production version
 

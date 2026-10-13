@@ -32,11 +32,11 @@ export function AboutSettingsPanel({ embedded = false }: { embedded?: boolean })
       case "checking":
         return "Checking…";
       case "up-to-date":
-        return "Up to date";
+        return "You're up to date";
       case "available":
         return "Update available";
       case "error":
-        return "Unable to check";
+        return "Failed to check for updates";
       default:
         return "Not checked yet";
     }
@@ -79,87 +79,79 @@ export function AboutSettingsPanel({ embedded = false }: { embedded?: boolean })
         </div>
       </div>
 
-      {updaterAvailable ? (
-        <div className="about-update about-update--compact" aria-live="polite">
-          <div className="about-update__head">
-            <p
-              className={`about-update__status${showUpdaterError ? " about-update__status--error" : ""}`}
-              data-testid="about-update-status"
-            >
-              {statusLabel}
-            </p>
-            {checkResult.status === "available" && checkResult.availableVersion ? (
-              <p className="about-update__version">
-                Version {checkResult.availableVersion}
-              </p>
-            ) : null}
-          </div>
-          {showUpdaterError ? (
-            <p className="about-update__error" role="alert">
-              {checkResult.message}
-            </p>
-          ) : null}
-          {notes.length > 0 ? (
-            <div className="about-update__notes">
-              <h3>What&apos;s new</h3>
-              <ul>
-                {notes.map((line) => (
-                  <li key={line}>{line}</li>
-                ))}
-              </ul>
-            </div>
-          ) : null}
-
-          {installProgress.phase === "downloading" ? (
-            <p className="about-update__progress">
-              Downloading update
-              {installProgress.percent != null ? ` · ${installProgress.percent}%` : "…"}
-            </p>
-          ) : null}
-          {installProgress.phase === "installing" ? (
-            <p className="about-update__progress">Installing update…</p>
-          ) : null}
-          {installProgress.phase === "error" && installProgress.message ? (
-            <p className="about-update__error" role="alert">
-              {installProgress.message}
-            </p>
-          ) : null}
-
-          <div className="about-update__actions">
-            <Button
-              type="button"
-              variant="secondary"
-              onClick={() => void checkForUpdates()}
-              disabled={checkResult.status === "checking"}
-            >
-              Check for updates
-            </Button>
-            {checkResult.status === "available" ? (
-              <Button
-                type="button"
-                variant="primary"
-                onClick={() => void installUpdate()}
-                disabled={
-                  installProgress.phase === "downloading" ||
-                  installProgress.phase === "installing"
-                }
-              >
-                Install update
-              </Button>
-            ) : null}
-            {installProgress.phase === "error" ? (
-              <Button type="button" variant="ghost" onClick={() => void installUpdate()}>
-                Try again
-              </Button>
-            ) : null}
-          </div>
-          {checkResult.status === "available" ? (
-            <p className="about-update__hint">
-              Metrio will restart after the update is installed.
-            </p>
+      <div className="about-update about-update--compact" aria-live="polite" data-testid="about-update">
+        <div className="about-update__head">
+          <p
+            className={`about-update__status${showUpdaterError ? " about-update__status--error" : ""}`}
+            data-testid="about-update-status"
+          >
+            {updaterAvailable ? statusLabel : "Updates are available in release builds"}
+          </p>
+          {checkResult.status === "available" && checkResult.availableVersion ? (
+            <p className="about-update__version">Version {checkResult.availableVersion}</p>
           ) : null}
         </div>
-      ) : null}
+        {showUpdaterError ? (
+          <p className="about-update__error" role="alert">
+            {checkResult.message}
+          </p>
+        ) : null}
+        {notes.length > 0 ? (
+          <div className="about-update__notes">
+            <h3>What&apos;s new</h3>
+            <ul>
+              {notes.map((line) => (
+                <li key={line}>{line}</li>
+              ))}
+            </ul>
+          </div>
+        ) : null}
+
+        {installProgress.phase === "downloading" ? (
+          <p className="about-update__progress">
+            Downloading update
+            {installProgress.percent != null ? ` · ${installProgress.percent}%` : "…"}
+          </p>
+        ) : null}
+        {installProgress.phase === "installing" ? (
+          <p className="about-update__progress">Installing update…</p>
+        ) : null}
+        {installProgress.phase === "error" && installProgress.message ? (
+          <p className="about-update__error" role="alert">
+            {installProgress.message}
+          </p>
+        ) : null}
+
+        <div className="about-update__actions">
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={() => void checkForUpdates()}
+            disabled={!updaterAvailable || checkResult.status === "checking"}
+            data-testid="about-check-updates"
+          >
+            {checkResult.status === "checking" ? "Checking…" : "Check for updates"}
+          </Button>
+          {updaterAvailable && checkResult.status === "available" ? (
+            <Button
+              type="button"
+              variant="primary"
+              onClick={() => void installUpdate()}
+              disabled={
+                installProgress.phase === "downloading" ||
+                installProgress.phase === "installing"
+              }
+            >
+              Update and restart
+            </Button>
+          ) : null}
+        </div>
+        {updaterAvailable && checkResult.status === "available" ? (
+          <p className="about-update__hint">
+            Metrio will restart after the update is installed.
+          </p>
+        ) : null}
+      </div>
     </div>
   );
 }

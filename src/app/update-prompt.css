@@ -1,0 +1,36 @@
+.update-prompt {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.update-prompt__copy {
+  margin: 0;
+  font-size: 14px;
+  color: var(--color-text-primary);
+}
+
+.update-prompt__notes {
+  margin: 0;
+  padding-left: var(--space-4);
+  font-size: 13px;
+  color: var(--color-text-secondary);
+}
+
+.update-prompt__status {
+  margin: 0;
+  font-size: 13px;
+  color: var(--color-text-secondary);
+}
+
+.update-prompt__error {
+  margin: 0;
+  font-size: 13px;
+  color: var(--color-danger);
+}
+
+.update-prompt__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-2);
+}

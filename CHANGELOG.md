@@ -4,6 +4,12 @@ All notable user-facing Metrio changes are documented here. Versions follow [Sem
 
 ## Unreleased
 
+## 0.1.1 — updater migration baseline
+
+- New permanent Tauri updater signing key and GitHub Releases updater endpoint.
+- Update prompt (Update and restart / Later), automatic checks every ~6 hours, manual check in Settings.
+- Installed builds signed with the previous updater key cannot update over the air; install this build manually once.
+
 ### Added
 - Daily briefs and weekly manager digests (deterministic, no LLM).
 - Project cockpit, operational attention rules, command palette, and related Home/Performance improvements across Phases 30–32.

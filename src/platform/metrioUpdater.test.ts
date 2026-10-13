@@ -3,7 +3,6 @@ import {
   checkForUpdatesWithManifest,
   checkUpdateFromManifest,
   isUpdaterEnabledForChannel,
-  shouldRunDailyBackgroundCheck,
 } from "./metrioUpdater";
 
 describe("metrioUpdater", () => {
@@ -58,17 +57,4 @@ describe("metrioUpdater", () => {
     expect(result.status).toBe("error");
   });
 
-  it("background check respects 24h window", () => {
-    const now = Date.parse("2026-03-02T12:00:00.000Z");
-    localStorage.setItem(
-      "metrio-update-last-check",
-      new Date(now - 2 * 60 * 60 * 1000).toISOString(),
-    );
-    expect(shouldRunDailyBackgroundCheck(now)).toBe(false);
-    localStorage.setItem(
-      "metrio-update-last-check",
-      new Date(now - 25 * 60 * 60 * 1000).toISOString(),
-    );
-    expect(shouldRunDailyBackgroundCheck(now)).toBe(true);
-  });
 });

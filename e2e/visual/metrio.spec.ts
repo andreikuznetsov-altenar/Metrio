@@ -1610,7 +1610,8 @@ test.describe("Metrio visual regression", () => {
     await expect(page.getByTestId("about-settings")).toHaveScreenshot("about-card.png", {
       maxDiffPixelRatio: 0.02,
     });
-    await expect(page.getByTestId("about-update-status")).toHaveCount(0);
+    await expect(page.getByTestId("about-update-status")).toHaveText(/release builds/i);
+    await expect(page.getByTestId("about-check-updates")).toBeDisabled();
     await expect(page).toHaveScreenshot("settings-company-app.png", {
       fullPage: true,
       maxDiffPixelRatio: 0.02,

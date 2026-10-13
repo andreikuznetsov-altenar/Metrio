@@ -29,12 +29,17 @@ npm run test:visual
 export BUILD_CHANNEL="${BUILD_CHANNEL:-production}"
 export APPLE_SIGNING_IDENTITY="${APPLE_SIGNING_IDENTITY:-Developer ID Application: Andrei Kuznetsov (V36L7T43H8)}"
 
+# Permanent Metrio updater key (separate from Apple signing). Never stored in the repository.
 if [[ -z "${TAURI_SIGNING_PRIVATE_KEY:-}" && -z "${TAURI_SIGNING_PRIVATE_KEY_PATH:-}" ]]; then
-  echo "WARNING: TAURI_SIGNING_PRIVATE_KEY not set — updater artifacts may be unsigned."
+  export TAURI_SIGNING_PRIVATE_KEY_PATH="${METRIO_UPDATER_KEY_PATH:-$HOME/.tauri/metrio-updater.key}"
+  if [[ -z "${TAURI_SIGNING_PRIVATE_KEY_PASSWORD:-}" ]]; then
+    TAURI_SIGNING_PRIVATE_KEY_PASSWORD="$(security find-generic-password -s metrio-updater-key-password -w 2>/dev/null || true)"
+    export TAURI_SIGNING_PRIVATE_KEY_PASSWORD
+  fi
 fi
-
-if [[ -n "${METRIO_UPDATE_ENDPOINT:-}" ]]; then
-  node scripts/patch-updater-endpoint.mjs "$METRIO_UPDATE_ENDPOINT"
+if [[ ! -f "${TAURI_SIGNING_PRIVATE_KEY_PATH:-/nonexistent}" && -z "${TAURI_SIGNING_PRIVATE_KEY:-}" ]]; then
+  echo "Updater signing key not found (expected ~/.tauri/metrio-updater.key)."
+  exit 1
 fi
 
 npm run tauri build
@@ -78,13 +83,14 @@ fi
 
 UPDATER_DIR="$ROOT/src-tauri/target/release/bundle/macos"
 if compgen -G "$UPDATER_DIR/*.tar.gz" > /dev/null; then
-  for f in "$UPDATER_DIR"/*.tar.gz; do
+  for f in "$UPDATER_DIR"/*.tar.gz "$UPDATER_DIR"/*.tar.gz.sig; do
     cp "$f" "$RELEASE_DIR/"
     shasum -a 256 "$f" >> "$RELEASE_DIR/SHA256SUMS.txt"
   done
 fi
 
 node scripts/generate-update-manifest.mjs "$RELEASE_DIR"
+node scripts/verify-updater-artifacts.mjs "$RELEASE_DIR"
 
 echo "Release artifacts prepared in $RELEASE_DIR"
 echo "Review SHA256SUMS.txt and latest.json before publishing."

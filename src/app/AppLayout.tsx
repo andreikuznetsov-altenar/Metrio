@@ -52,6 +52,7 @@ import { RuntimeShellEffects } from "./RuntimeShellEffects";
 import { TrayMenuEffects } from "./TrayMenuEffects";
 import { TraySummarySyncEffects } from "./TraySummarySyncEffects";
 import { UpdateProvider } from "./UpdateContext";
+import { UpdatePrompt } from "./UpdatePrompt";
 import { UpdateTrayEffects } from "./UpdateTrayEffects";
 import { useCurrentUser } from "./CurrentUserContext";
 import { clearConnection } from "./connectionStorage";
@@ -137,6 +138,7 @@ export function AppLayout() {
     <>
       <RuntimeShellEffects />
       <UpdateProvider>
+      <UpdatePrompt />
       <CompanyConfigProvider>
       <OperationalRulesProvider>
       <PerformanceDataWithRules

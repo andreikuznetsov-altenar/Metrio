@@ -1,7 +1,7 @@
 {
   "name": "metrio",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.1.1",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -18,7 +18,8 @@
     "probe:org-role": "node scripts/org-role-qa.mjs",
     "tauri": "tauri",
     "version:sync": "node scripts/sync-app-version.mjs",
-    "release:macos": "bash scripts/release-macos.sh"
+    "release:macos": "bash scripts/release-macos.sh",
+    "verify:updater": "node scripts/verify-updater-artifacts.mjs src-tauri/target/release/bundle/macos"
   },
   "dependencies": {
     "@radix-ui/react-popover": "^1.1.23",

@@ -57,7 +57,7 @@ describe("UI repair pass 6B — settings", () => {
     expect(screen.getByText(/Feedback/i)).toBeInTheDocument();
   });
 
-  it("shows structured about card with mailto and no review-build updater block", () => {
+  it("shows structured about card with mailto and a disabled update check in review builds", () => {
     render(
       <UpdateProvider>
         <AboutSettingsPanel embedded />
@@ -67,8 +67,10 @@ describe("UI repair pass 6B — settings", () => {
     const mail = screen.getByRole("link", { name: /andrei\.kuznetsov@altenar\.com/i });
     expect(mail).toHaveAttribute("href", "mailto:andrei.kuznetsov@altenar.com");
     expect(screen.getByText(/Created by/i)).toBeInTheDocument();
-    expect(screen.queryByTestId("about-update-status")).toBeNull();
-    expect(screen.queryByText(/Updates are unavailable in this review build/i)).toBeNull();
+    expect(screen.getByTestId("about-update-status")).toHaveTextContent(
+      /Updates are available in release builds/i,
+    );
+    expect(screen.getByTestId("about-check-updates")).toBeDisabled();
     expect(screen.queryByRole("alert")).toBeNull();
   });
 });
