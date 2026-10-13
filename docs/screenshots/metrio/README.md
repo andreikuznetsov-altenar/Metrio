@@ -3,7 +3,7 @@
 These screenshots were captured from the packaged macOS app with `METRIO_DOC_FIXTURES=1`.
 The fixture dataset is synthetic and uses `DEMO-*` work keys only. Normal app launches do not enable this mode.
 
-The packaged app window is fixed at 1180 x 760 points on this machine, producing 2360 x 1520 pixel captures on the Retina display. The tray capture is cropped around the macOS menu bar and Metrio tray popover.
+The packaged app window is fixed at 1180 x 760 points on this machine, producing 2360 x 1520 pixel captures on the Retina display (captured with `screencapture -l <window id>`). The tray capture is the Metrio tray popover window only (no desktop or menu bar content), captured from its own window.
 
 | File | Role | Persona | Surface |
 | --- | --- | --- | --- |
