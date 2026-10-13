@@ -30,14 +30,10 @@ Metrio updates itself through the Tauri updater using **GitHub Releases**.
 
 ## Release flow
 
-1. Bump `version` in `package.json`, run `node scripts/sync-app-version.mjs` (updates `Cargo.toml` and
-   `tauri.conf.json`), update `package-lock.json`, commit, and push `main`.
-2. Tag and push: `git tag vX.Y.Z && git push origin vX.Y.Z`. The *Release macOS* workflow checks the
-   tag equals every version source, builds the exact tag, signs with Developer ID, signs the updater
-   archive with the updater key, generates `latest.json` from the real `.sig`, verifies it
-   (`scripts/verify-updater-artifacts.mjs`), and publishes the DMG, `Metrio.app.tar.gz`,
-   `Metrio.app.tar.gz.sig` and `latest.json` to the same release.
-3. Local alternative: `npm run release:macos` (reads the key from `~/.tauri/metrio-updater.key` into `TAURI_SIGNING_PRIVATE_KEY` and the password from the Keychain).
+Releases are owned by one workflow, **Release macOS** (`.github/workflows/release-macos.yml`); see
+[releasing.md](releasing.md) for the full maintainer guide. Tag pushes do not build anything — the
+workflow creates the tag itself. `npm run release:macos` remains a local, manual alternative (reads the
+key from `~/.tauri/metrio-updater.key` into `TAURI_SIGNING_PRIVATE_KEY` and the password from the Keychain).
 
 `latest.json` follows the Tauri v2 static manifest schema; `signature` is the **content** of the
 `.sig` file, never a URL.

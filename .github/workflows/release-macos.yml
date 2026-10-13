@@ -1,51 +1,97 @@
 name: Release macOS
 
-# Publishes a signed (+ notarized when API credentials are present) Metrio build and the
-# Tauri updater assets to the SAME GitHub Release for tags like v0.1.2.
+# The single owner of Metrio releases: version bump, release commit, signed + notarized build,
+# updater archive, DMG, latest.json, tag and GitHub Release all happen in this one workflow.
+# There is deliberately NO `v*` tag trigger: the tag is created here, so a tag push can never
+# start a competing build. See docs/releasing.md.
 #
-# Required repository secrets
-#   Updater signing (permanent Metrio updater key):
-#     TAURI_SIGNING_PRIVATE_KEY, TAURI_SIGNING_PRIVATE_KEY_PASSWORD
-#   Apple Developer ID signing / notarization (separate from the updater key):
-#     APPLE_CERTIFICATE (base64 .p12), APPLE_CERTIFICATE_PASSWORD, APPLE_SIGNING_IDENTITY,
-#     APPLE_API_ISSUER, APPLE_API_KEY, APPLE_API_KEY_CONTENT (the .p8 file contents)
+# Required repository secrets (names only; values never appear in this file):
+#   Updater (permanent key):  TAURI_SIGNING_PRIVATE_KEY, TAURI_SIGNING_PRIVATE_KEY_PASSWORD
+#   Developer ID signing:     APPLE_CERTIFICATE (base64 .p12), APPLE_CERTIFICATE_PASSWORD
+#   Notarization (API key):   APPLE_API_ISSUER, APPLE_API_KEY (key id), APPLE_API_KEY_CONTENT (.p8 text)
 on:
-  push:
-    tags:
-      - "v*"
+  workflow_dispatch:
+    inputs:
+      force:
+        description: "Release even if only documentation/tests/automation changed"
+        type: boolean
+        default: true
 
 permissions:
   contents: write
 
+# Serialized: never two releases at once, and a release that has started is never cancelled.
+concurrency:
+  group: metrio-release-main
+  cancel-in-progress: false
+
+env:
+  REPO: ${{ github.repository }}
+  SIGNING_IDENTITY: "Developer ID Application: Andrei Kuznetsov (V36L7T43H8)"
+
 jobs:
   release:
     runs-on: macos-14
+    timeout-minutes: 120
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ github.ref }}
+          ref: ${{ github.event.repository.default_branch }}
           fetch-depth: 0
 
-      - name: Verify tag matches app version
+      - name: Plan release (version, should_release)
+        id: plan
+        env:
+          GH_TOKEN: ${{ github.token }}
+          FORCE: ${{ github.event_name == 'workflow_dispatch' && inputs.force }}
         run: |
-          TAG="${GITHUB_REF_NAME#v}"
-          PKG="$(node -p "require('./package.json').version")"
-          CONF="$(node -p "require('./src-tauri/tauri.conf.json').version")"
-          CARGO="$(grep -m1 '^version = ' src-tauri/Cargo.toml | sed -E 's/version = "(.*)"/\1/')"
-          echo "tag=$TAG package=$PKG tauri=$CONF cargo=$CARGO"
-          test "$TAG" = "$PKG" && test "$PKG" = "$CONF" && test "$PKG" = "$CARGO"
+          git fetch --tags --force origin
+          gh release list --limit 200 --json tagName,isDraft,isPrerelease > "$RUNNER_TEMP/releases.json"
+          ARGS=()
+          if [ "$FORCE" = "true" ]; then ARGS+=(--force); fi
+          node scripts/plan-release.mjs --releases "$RUNNER_TEMP/releases.json" "${ARGS[@]}"
+
+      - name: Nothing to release
+        if: steps.plan.outputs.should_release != 'true'
+        run: echo "No release created — ${{ steps.plan.outputs.reason }}"
+
+      - name: Check required secrets are configured (names only)
+        if: steps.plan.outputs.should_release == 'true'
+        env:
+          S1: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          S2: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+          S3: ${{ secrets.APPLE_CERTIFICATE }}
+          S4: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          S5: ${{ secrets.APPLE_API_ISSUER }}
+          S6: ${{ secrets.APPLE_API_KEY }}
+          S7: ${{ secrets.APPLE_API_KEY_CONTENT }}
+        run: |
+          missing=0
+          check() { if [ -z "$2" ]; then echo "::error::Missing repository secret $1"; missing=1; fi; }
+          check TAURI_SIGNING_PRIVATE_KEY "$S1"
+          check TAURI_SIGNING_PRIVATE_KEY_PASSWORD "$S2"
+          check APPLE_CERTIFICATE "$S3"
+          check APPLE_CERTIFICATE_PASSWORD "$S4"
+          check APPLE_API_ISSUER "$S5"
+          check APPLE_API_KEY "$S6"
+          check APPLE_API_KEY_CONTENT "$S7"
+          exit $missing
 
       - uses: actions/setup-node@v4
+        if: steps.plan.outputs.should_release == 'true'
         with:
           node-version: "22"
           cache: npm
 
       - uses: dtolnay/rust-toolchain@stable
+        if: steps.plan.outputs.should_release == 'true'
 
       - name: Install dependencies
+        if: steps.plan.outputs.should_release == 'true'
         run: npm ci
 
       - name: Test gate
+        if: steps.plan.outputs.should_release == 'true'
         run: |
           npx tsc --noEmit
           npm run verify:design-system
@@ -53,56 +99,211 @@ jobs:
           npm run build
           (cd src-tauri && cargo check && cargo test)
 
-      - name: Import Apple Developer ID certificate
+      - name: Version bump + release commit
+        if: steps.plan.outputs.should_release == 'true'
+        id: commit
+        env:
+          VERSION: ${{ steps.plan.outputs.version }}
+        run: |
+          # The test gate must not have modified tracked files; the release commit may only contain version changes.
+          if ! git diff --quiet; then
+            echo "::error::Tracked files changed during the test gate:"; git status --short; exit 1
+          fi
+          node scripts/prepare-release-version.mjs "$VERSION"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add package.json package-lock.json CHANGELOG.md src/config/build.ts \
+                  src-tauri/tauri.conf.json src-tauri/Cargo.toml src-tauri/Cargo.lock
+          if git diff --cached --quiet; then
+            echo "Version sources already at $VERSION (retry of an unreleased version commit)."
+          else
+            git commit -m "RELEASE Metrio v$VERSION [skip release]"
+            git push origin HEAD:refs/heads/main
+          fi
+          git fetch origin main
+          if [ "$(git rev-parse HEAD)" != "$(git rev-parse origin/main)" ]; then
+            echo "::error::main moved during the release; refusing to build a stale commit"
+            exit 1
+          fi
+          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+          echo "RELEASE_SHA=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
+          echo "RELEASE_VERSION=$VERSION" >> "$GITHUB_ENV"
+
+      - name: Import Developer ID certificate into an ephemeral keychain
+        if: steps.plan.outputs.should_release == 'true'
         env:
           APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
           APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
         run: |
-          if [ -z "$APPLE_CERTIFICATE" ]; then echo "APPLE_CERTIFICATE not set"; exit 1; fi
           KEYCHAIN="$RUNNER_TEMP/metrio-build.keychain-db"
           KEYCHAIN_PASSWORD="$(openssl rand -base64 24)"
-          echo "$APPLE_CERTIFICATE" | base64 --decode > "$RUNNER_TEMP/certificate.p12"
+          echo "::add-mask::$KEYCHAIN_PASSWORD"
+          echo "METRIO_KEYCHAIN=$KEYCHAIN" >> "$GITHUB_ENV"
+          printf '%s' "$APPLE_CERTIFICATE" | base64 --decode > "$RUNNER_TEMP/certificate.p12"
           security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN"
           security set-keychain-settings -lut 21600 "$KEYCHAIN"
           security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN"
-          security import "$RUNNER_TEMP/certificate.p12" -k "$KEYCHAIN" -P "$APPLE_CERTIFICATE_PASSWORD" -T /usr/bin/codesign
-          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN"
+          curl -fsSL https://www.apple.com/certificateauthority/DeveloperIDG2CA.cer -o "$RUNNER_TEMP/DeveloperIDG2CA.cer"
+          security import "$RUNNER_TEMP/DeveloperIDG2CA.cer" -k "$KEYCHAIN" -T /usr/bin/codesign || true
+          security import "$RUNNER_TEMP/certificate.p12" -k "$KEYCHAIN" -P "$APPLE_CERTIFICATE_PASSWORD" -T /usr/bin/codesign -T /usr/bin/security
+          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN" >/dev/null
           security list-keychains -d user -s "$KEYCHAIN" $(security list-keychains -d user | tr -d '"')
           rm -f "$RUNNER_TEMP/certificate.p12"
+          security find-identity -v -p codesigning "$KEYCHAIN" | tee "$RUNNER_TEMP/identities.txt"
+          grep -q "$SIGNING_IDENTITY" "$RUNNER_TEMP/identities.txt" || { echo "::error::Expected signing identity not found in keychain"; exit 1; }
 
       - name: Write App Store Connect API key
+        if: steps.plan.outputs.should_release == 'true'
         env:
           APPLE_API_KEY_CONTENT: ${{ secrets.APPLE_API_KEY_CONTENT }}
           APPLE_API_KEY: ${{ secrets.APPLE_API_KEY }}
         run: |
-          if [ -n "$APPLE_API_KEY_CONTENT" ]; then
-            mkdir -p "$HOME/.appstoreconnect/private_keys"
-            echo "$APPLE_API_KEY_CONTENT" > "$HOME/.appstoreconnect/private_keys/AuthKey_${APPLE_API_KEY}.p8"
-            echo "APPLE_API_KEY_PATH=$HOME/.appstoreconnect/private_keys/AuthKey_${APPLE_API_KEY}.p8" >> "$GITHUB_ENV"
-          fi
+          KEY_PATH="$RUNNER_TEMP/AuthKey_${APPLE_API_KEY}.p8"
+          printf '%s' "$APPLE_API_KEY_CONTENT" > "$KEY_PATH"
+          chmod 600 "$KEY_PATH"
+          echo "APPLE_API_KEY_PATH=$KEY_PATH" >> "$GITHUB_ENV"
 
-      - name: Build signed app and updater artifacts
+      - name: Build and Developer ID sign the app (no notarization here)
+        if: steps.plan.outputs.should_release == 'true'
         env:
           BUILD_CHANNEL: production
-          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
-          APPLE_API_ISSUER: ${{ secrets.APPLE_API_ISSUER }}
-          APPLE_API_KEY: ${{ secrets.APPLE_API_KEY }}
+          APPLE_SIGNING_IDENTITY: ${{ env.SIGNING_IDENTITY }}
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
-        run: npm run tauri build
+        run: npm run tauri build -- --bundles app
 
-      - name: Collect release assets and create latest.json
+      - name: Verify build provenance (must match the release commit)
+        if: steps.plan.outputs.should_release == 'true'
+        run: |
+          node scripts/verify-build-provenance.mjs \
+            --app src-tauri/target/release/bundle/macos/Metrio.app \
+            --version "$RELEASE_VERSION" --sha "$RELEASE_SHA"
+
+      - name: Verify Developer ID signature
+        if: steps.plan.outputs.should_release == 'true'
+        run: bash scripts/ci/verify-app-signature.sh src-tauri/target/release/bundle/macos/Metrio.app
+
+      - name: Notarize, staple and Gatekeeper-check the app
+        if: steps.plan.outputs.should_release == 'true'
+        env:
+          APPLE_API_ISSUER: ${{ secrets.APPLE_API_ISSUER }}
+          APPLE_API_KEY: ${{ secrets.APPLE_API_KEY }}
+        run: |
+          APP=src-tauri/target/release/bundle/macos/Metrio.app
+          ditto -c -k --keepParent "$APP" "$RUNNER_TEMP/Metrio-app.zip"
+          bash scripts/ci/notarize.sh "$RUNNER_TEMP/Metrio-app.zip"
+          xcrun stapler staple "$APP"
+          xcrun stapler validate "$APP"
+          spctl -a -vv "$APP" 2>&1 | tee "$RUNNER_TEMP/spctl-app.txt"
+          grep -q "source=Notarized Developer ID" "$RUNNER_TEMP/spctl-app.txt"
+
+      - name: Updater archive from the FINAL stapled app, sign, verify, tamper test
+        if: steps.plan.outputs.should_release == 'true'
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         run: |
           mkdir -p release-assets
-          cp src-tauri/target/release/bundle/dmg/*.dmg release-assets/
-          cp src-tauri/target/release/bundle/macos/*.app.tar.gz release-assets/
-          cp src-tauri/target/release/bundle/macos/*.app.tar.gz.sig release-assets/
-          METRIO_RELEASE_TAG="$GITHUB_REF_NAME" node scripts/generate-update-manifest.mjs release-assets
+          COPYFILE_DISABLE=1 tar -czf release-assets/Metrio.app.tar.gz -C src-tauri/target/release/bundle/macos Metrio.app
+          npx tauri signer sign release-assets/Metrio.app.tar.gz > /dev/null 2>&1
+          test -s release-assets/Metrio.app.tar.gz.sig
           node scripts/verify-updater-artifacts.mjs release-assets
+          node scripts/verify-updater-tamper.mjs release-assets
 
-      - name: Publish GitHub Release
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: ${{ github.ref_name }}
-          files: release-assets/*
-          generate_release_notes: true
+      - name: Build, notarize, staple and Gatekeeper-check the DMG
+        if: steps.plan.outputs.should_release == 'true'
+        env:
+          APPLE_API_ISSUER: ${{ secrets.APPLE_API_ISSUER }}
+          APPLE_API_KEY: ${{ secrets.APPLE_API_KEY }}
+        run: |
+          DMG="release-assets/Metrio_${RELEASE_VERSION}_aarch64.dmg"
+          bash scripts/ci/build-dmg.sh src-tauri/target/release/bundle/macos/Metrio.app "$DMG" "$SIGNING_IDENTITY"
+          bash scripts/ci/notarize.sh "$DMG"
+          xcrun stapler staple "$DMG"
+          xcrun stapler validate "$DMG"
+          spctl -a -t open --context context:primary-signature -vv "$DMG" 2>&1 | tee "$RUNNER_TEMP/spctl-dmg.txt"
+          grep -q "source=Notarized Developer ID" "$RUNNER_TEMP/spctl-dmg.txt"
+          MNT="$RUNNER_TEMP/dmg-mount"; mkdir -p "$MNT"
+          hdiutil attach "$DMG" -nobrowse -readonly -mountpoint "$MNT" >/dev/null
+          spctl -a -vv "$MNT/Metrio.app" 2>&1 | tee "$RUNNER_TEMP/spctl-dmg-app.txt"
+          hdiutil detach "$MNT" >/dev/null
+          grep -q "source=Notarized Developer ID" "$RUNNER_TEMP/spctl-dmg-app.txt"
+
+      - name: Generate and validate latest.json; record hashes
+        if: steps.plan.outputs.should_release == 'true'
+        run: |
+          METRIO_RELEASE_REPO="$REPO" METRIO_RELEASE_TAG="v$RELEASE_VERSION" \
+            METRIO_RELEASE_NOTES="Metrio $RELEASE_VERSION" \
+            node scripts/generate-update-manifest.mjs release-assets
+          node -e 'JSON.parse(require("fs").readFileSync("release-assets/latest.json","utf8"))'
+          node scripts/verify-updater-artifacts.mjs release-assets
+          test "$(node -p 'JSON.parse(require("fs").readFileSync("release-assets/latest.json","utf8")).version')" = "$RELEASE_VERSION"
+          ls -l release-assets
+          (cd release-assets && shasum -a 256 *.dmg *.tar.gz *.sig latest.json | tee "$RUNNER_TEMP/SHA256SUMS.txt")
+
+      - name: Tag, publish release, verify published bytes, then switch clients over
+        if: steps.plan.outputs.should_release == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PREVIOUS_TAG: ${{ steps.plan.outputs.previous_tag }}
+        run: |
+          TAG="v$RELEASE_VERSION"
+          if git ls-remote --exit-code --tags origin "refs/tags/$TAG" >/dev/null 2>&1; then
+            echo "::error::Tag $TAG already exists on origin; refusing to move or reuse it"; exit 1
+          fi
+          git tag -a "$TAG" "$RELEASE_SHA" -m "Metrio $RELEASE_VERSION"
+          git push origin "refs/tags/$TAG"
+          echo "METRIO_TAG_PUSHED=$TAG" >> "$GITHUB_ENV"
+
+          # Compact user-facing notes: product commit subjects only, no CI/release internals.
+          RANGE="${PREVIOUS_TAG:+$PREVIOUS_TAG..}$RELEASE_SHA"
+          { echo "Metrio $RELEASE_VERSION"; echo; git log "$RANGE" --no-merges --pretty='- %s' | grep -v '^- RELEASE ' | head -30; } > "$RUNNER_TEMP/notes.md"
+
+          # latest.json is the switch clients follow, so it is uploaded LAST, after the
+          # binaries are re-downloaded and compared byte-for-byte.
+          gh release create "$TAG" --verify-tag --latest=false --title "Metrio $RELEASE_VERSION" \
+            --notes-file "$RUNNER_TEMP/notes.md" \
+            "release-assets/Metrio_${RELEASE_VERSION}_aarch64.dmg" \
+            release-assets/Metrio.app.tar.gz release-assets/Metrio.app.tar.gz.sig
+          echo "METRIO_RELEASE_CREATED=$TAG" >> "$GITHUB_ENV"
+
+          rm -rf verify-download && mkdir verify-download
+          gh release download "$TAG" --dir verify-download
+          for f in "Metrio_${RELEASE_VERSION}_aarch64.dmg" Metrio.app.tar.gz Metrio.app.tar.gz.sig; do
+            cmp "release-assets/$f" "verify-download/$f"
+            echo "published $f: $(stat -f %z "verify-download/$f") bytes, sha256 $(shasum -a 256 "verify-download/$f" | cut -d' ' -f1)"
+          done
+
+          gh release upload "$TAG" release-assets/latest.json
+          gh release edit "$TAG" --latest
+          echo "METRIO_RELEASE_LATEST=$TAG" >> "$GITHUB_ENV"
+
+      - name: Verify the live endpoint serves the new release
+        if: steps.plan.outputs.should_release == 'true'
+        run: |
+          URL="https://github.com/$REPO/releases/latest/download/latest.json"
+          for i in $(seq 1 30); do
+            curl -fsSL "$URL" -o live-latest.json && \
+              [ "$(node -p 'JSON.parse(require("fs").readFileSync("live-latest.json","utf8")).version')" = "$RELEASE_VERSION" ] && break
+            echo "waiting for $URL to serve $RELEASE_VERSION ($i/30)"; sleep 10
+          done
+          cmp live-latest.json release-assets/latest.json
+          echo "Live latest.json is version $RELEASE_VERSION and byte-identical to the verified manifest."
+
+      - name: Roll back an unpublished release after a failure
+        if: failure() && env.METRIO_TAG_PUSHED != '' && env.METRIO_RELEASE_LATEST == ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # Clients never saw this release (latest.json is uploaded last), so removing the
+          # half-published release/tag is safe. Nothing that reached "latest" is ever touched.
+          if [ -n "${METRIO_RELEASE_CREATED:-}" ]; then
+            gh release delete "$METRIO_RELEASE_CREATED" --yes --cleanup-tag || true
+          fi
+          git push origin ":refs/tags/$METRIO_TAG_PUSHED" || true
+
+      - name: Cleanup signing material
+        if: always()
+        run: |
+          if [ -n "${METRIO_KEYCHAIN:-}" ] && [ -f "$METRIO_KEYCHAIN" ]; then security delete-keychain "$METRIO_KEYCHAIN" || true; fi
+          rm -f "$RUNNER_TEMP"/AuthKey_*.p8 "$RUNNER_TEMP"/certificate.p12 || true

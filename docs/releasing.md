@@ -1,0 +1,93 @@
+# Releasing Metrio
+
+One workflow, **Release macOS** (`.github/workflows/release-macos.yml`), owns every release. It
+bumps the version, builds, Developer ID signs, notarizes, staples, signs the updater archive, builds
+the DMG, writes `latest.json`, tags and publishes. Installed apps then see the update through the
+Tauri updater (`https://github.com/andreikuznetsov-altenar/Metrio/releases/latest/download/latest.json`).
+
+## Normal release
+
+Push product code to `main`. (Automatic starts from `main` are enabled separately — see *Status*.)
+Until then, or whenever you want to force one, use the manual fallback.
+
+## Manual fallback
+
+GitHub → Actions → **Release macOS** → *Run workflow* (`force` releases even when only docs changed).
+Or: `gh workflow run release-macos.yml`.
+
+## Status
+
+The workflow currently starts **only** from `workflow_dispatch`. Push-to-`main` automation is added
+after the first CI-produced release has been verified end to end (including an over-the-air update).
+
+## What a run does
+
+1. **Plan** (`scripts/plan-release.mjs`): lists releases and tags, diffs the files changed since the
+   latest stable tag and decides `should_release`. Docs, `*.md`, tests, e2e, `.github/**` and the
+   release helper scripts alone never release; anything that could change the packaged app does.
+   A HEAD commit containing `[skip release]` never releases (this is the recursion guard).
+2. Tests (`tsc`, design-system check, `npm test`, `npm run build`, `cargo check/test`).
+3. **Version bump** (`scripts/prepare-release-version.mjs X.Y.Z`) of `package.json`,
+   `package-lock.json`, `tauri.conf.json`, `Cargo.toml`, `Cargo.lock`, `src/config/build.ts` and
+   `CHANGELOG.md`, committed as `RELEASE Metrio vX.Y.Z [skip release]` and pushed to `main`. This
+   commit is the release SHA. Pushes made with `GITHUB_TOKEN` do not start workflows, and the marker
+   keeps even a manual run from recursing.
+4. Build with an ephemeral keychain, Developer ID signing, `BUILD_CHANNEL=production`.
+5. **Provenance gate**: Info.plist version, every version source, the commit Cargo baked into the
+   native build and the commit embedded in the frontend must all match the release commit.
+6. Signature check (Developer ID, team `V36L7T43H8`, bundle `com.altenar.metrio`, hardened runtime).
+7. Notarize the **app**, staple, validate, Gatekeeper (`source=Notarized Developer ID`).
+8. `Metrio.app.tar.gz` is created from that **stapled** app and signed with the updater key; the
+   signature is verified and a one-byte-tampered copy must fail.
+9. DMG from the stapled app, signed, notarized, stapled, Gatekeeper-checked.
+10. `latest.json` (`darwin-aarch64`, URL of the release asset, **signature = `.sig` content**).
+11. Tag `vX.Y.Z` on the release SHA; release created **without** `latest.json` and not yet "latest";
+    the assets are downloaded again and compared byte-for-byte; only then `latest.json` is uploaded
+    and the release marked latest. A failure before that point deletes the half-made release and tag;
+    clients never saw it.
+
+## Versioning
+
+Next version = patch bump of the highest of: `package.json`, latest **stable** release, highest
+`vX.Y.Z` tag (withdrawn versions are never reused). If `package.json` is already ahead of every
+tag (a release commit was pushed but publishing failed) that version is **reused** on the retry. A
+manual bump of `package.json` (for example `0.2.0`) is honoured the same way.
+
+## Concurrency
+
+`concurrency: metrio-release-main` with `cancel-in-progress: false`: releases queue and a running
+release is never cancelled. Each run re-plans from the then-current `main` and the release list.
+
+## Required GitHub secrets (names only)
+
+| Purpose | Secret |
+| --- | --- |
+| Updater signing (permanent key) | `TAURI_SIGNING_PRIVATE_KEY`, `TAURI_SIGNING_PRIVATE_KEY_PASSWORD` |
+| Developer ID certificate | `APPLE_CERTIFICATE` (base64 of the `.p12`), `APPLE_CERTIFICATE_PASSWORD` |
+| Notarization (App Store Connect API key) | `APPLE_API_ISSUER`, `APPLE_API_KEY` (key id), `APPLE_API_KEY_CONTENT` (the `.p8` text) |
+
+The run fails immediately, naming any missing secret. Never commit a `.p12`, `.p8` or the updater key.
+
+## Inspecting a failed release
+
+Open the failed run in Actions; the failing step name says which gate stopped it (planning,
+tests, provenance, signature, notarization, updater verification, publishing). Notarization failures
+print Apple's log. If the release commit was pushed but nothing published, just run the workflow
+again: the same version is reused. No tag or release is left behind by a failed publish.
+
+## Disabling automatic releases temporarily
+
+`gh workflow disable release-macos.yml` (re-enable with `gh workflow enable release-macos.yml`), or
+put `[skip release]` in the HEAD commit message of a push.
+
+## Updater key warning
+
+**Do not rotate the updater key casually.** Installed apps trust the public key in
+`src-tauri/tauri.conf.json`; a release signed with any other key cannot be installed by them and
+they would need a manual reinstall. Back up `~/.tauri/metrio-updater.key` and its password.
+
+## Known limitation
+
+An app launched straight from the DMG or Downloads while still quarantined runs from a read-only
+AppTranslocation path and cannot update itself; installing it into Applications and opening it once
+avoids that.
