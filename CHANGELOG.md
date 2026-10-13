@@ -4,6 +4,10 @@ All notable user-facing Metrio changes are documented here. Versions follow [Sem
 
 ## Unreleased
 
+## 0.1.3 — updater verification release
+
+- Validates automatic update delivery from Metrio 0.1.2.
+
 ## 0.1.2 — corrected updater migration baseline
 
 - Replaces the withdrawn 0.1.1 as the manually-installed migration baseline (0.1.1 failed final validation and must not be installed).

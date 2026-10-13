@@ -244,9 +244,9 @@ describe("PASS 23 scheduling and error copy", () => {
     );
     expect(JSON.stringify(conf)).not.toMatch(/secret key|BEGIN/i);
     const pkg = JSON.parse(source("package.json"));
-    expect(pkg.version).toBe("0.1.2");
-    expect(source("src-tauri/Cargo.toml")).toMatch(/^version = "0\.1\.2"/m);
-    expect(source("src/config/build.ts")).toContain("|| '0.1.2'");
+    expect(pkg.version).toBe("0.1.3");
+    expect(source("src-tauri/Cargo.toml")).toMatch(/^version = "0\.1\.3"/m);
+    expect(source("src/config/build.ts")).toContain("|| '0.1.3'");
   });
 
   it("latest.json carries the .sig CONTENT (not a URL) and the GitHub release asset URL", () => {
@@ -261,7 +261,7 @@ describe("PASS 23 scheduling and error copy", () => {
     expect(Object.keys(manifest.platforms)).toEqual(["darwin-aarch64"]);
     expect(manifest.platforms["darwin-aarch64"].signature).toBe("SIGNATURE-CONTENT");
     expect(manifest.platforms["darwin-aarch64"].url).toBe(
-      "https://github.com/andreikuznetsov-altenar/Metrio/releases/download/v0.1.2/Metrio.app.tar.gz",
+      "https://github.com/andreikuznetsov-altenar/Metrio/releases/download/v0.1.3/Metrio.app.tar.gz",
     );
   });
 
