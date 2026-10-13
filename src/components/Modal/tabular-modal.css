@@ -48,3 +48,12 @@
   padding: var(--space-6) var(--space-4);
   min-height: 8rem;
 }
+
+/* Fixed-layout tables need a real width for the action column (the global 0.01% collapses it). */
+.metrio-tabular-modal .performance-table col.col-action {
+  width: 6rem;
+}
+
+.metrio-tabular-modal .performance-table td.performance-table__action-cell {
+  white-space: nowrap;
+}

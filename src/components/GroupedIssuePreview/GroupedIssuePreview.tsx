@@ -26,7 +26,8 @@ export interface GroupedIssuePreviewProps {
   modalTitle?: string;
   modalRows?: TaskListModalRow[];
   issueCatalog?: IssueCatalog;
-  onOpenIssue?: (issueKey: string, url?: string) => void;
+  /** Explicit `Info` action → Metrio task drawer. The Jira key itself always opens Jira externally. */
+  onInfo?: (issueKey: string, url?: string) => void;
   className?: string;
   /** @deprecated Use default policy (1 inline, >1 count). Kept for call-site clarity. */
   display?: "auto" | "count";
@@ -40,7 +41,7 @@ export function GroupedIssuePreview({
   modalTitle = "Tasks",
   modalRows,
   issueCatalog: issueCatalogProp,
-  onOpenIssue,
+  onInfo,
   className,
   personNameForModal,
 }: GroupedIssuePreviewProps) {
@@ -85,7 +86,7 @@ export function GroupedIssuePreview({
       onClose={() => setOpen(false)}
       title={resolvedTitle}
       rows={rows}
-      onOpenIssue={onOpenIssue}
+      onInfo={onInfo}
     />
   );
 
@@ -120,15 +121,18 @@ export function GroupedIssuePreview({
             jiraBaseUrl={jiraBaseUrl}
             browseUrl={href}
             className="grouped-issue-preview__inline-link"
-            onClick={
-              onOpenIssue
-                ? (event) => {
-                    event.preventDefault();
-                    onOpenIssue(key, href);
-                  }
-                : undefined
-            }
           />
+          {onInfo ? (
+            <button
+              type="button"
+              className="grouped-issue-preview__info"
+              data-testid="grouped-issue-info"
+              aria-label={`Task info ${key}`}
+              onClick={() => onInfo(key, href)}
+            >
+              Info
+            </button>
+          ) : null}
         </div>
         {modal}
       </>

@@ -8,9 +8,11 @@ import { RootErrorBoundary } from "./app/RootErrorBoundary";
 import { bootLog, bootLogBuildIdentity } from "./app/bootDiagnostics";
 import { ThemeProvider } from "./theme/ThemeProvider";
 import { applyTheme, getStoredThemePreference } from "./theme/theme";
+import { installExternalNavigationGuard } from "./platform/externalNavigationGuard";
 import "./styles/globals.css";
 
 bootLog("01", "main.tsx loaded");
+installExternalNavigationGuard();
 applyTheme(getStoredThemePreference());
 void bootLogBuildIdentity();
 

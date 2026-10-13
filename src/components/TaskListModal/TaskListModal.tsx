@@ -1,11 +1,12 @@
 import { Badge } from "../Badge/Badge";
+import { Button } from "../Button/Button";
+import { readMotionModalMs } from "../../styles/motion";
+import { useOptionalTaskJourney } from "../../app/TaskJourneyContext";
 import { EmptyState } from "../EmptyState/EmptyState";
 import { TabularModal } from "../Modal/TabularModal";
 import type { TaskListModalRow } from "../../domain/actions/buildTaskListModalRows";
 import { issueStatusBadgeVariant } from "../../domain/jira/issueStatusBadgeVariant";
 import { JiraIssueLink } from "../JiraIssueLink/JiraIssueLink";
-import { buildJiraIssueBrowseUrl } from "../../platform/jiraIssueUrl";
-import { resolveJiraBaseUrl } from "../../config/product";
 import { METRIO_TABLE_CLASS, MetrioTableWrap } from "../Table/MetrioTable";
 import { PerformanceTableColgroup } from "../Table/PerformanceTableColgroup";
 
@@ -14,14 +15,31 @@ export function TaskListModal({
   onClose,
   title,
   rows,
-  onOpenIssue,
+  onInfo: onInfoProp,
 }: {
   open: boolean;
   onClose: () => void;
   title: string;
   rows: TaskListModalRow[];
-  onOpenIssue?: (issueKey: string, url?: string) => void;
+  /**
+   * Opens Metrio's own task information drawer for a row. The Jira key itself ALWAYS opens the real
+   * Jira issue externally; this explicit `Info` action is the only internal entry point.
+   */
+  onInfo?: (issueKey: string, url?: string) => void;
 }) {
+  // Inside the task-journey provider every Tasks modal offers Info (Metrio's own task drawer).
+  const taskJourney = useOptionalTaskJourney();
+  const onInfo =
+    onInfoProp ??
+    (taskJourney ? (issueKey: string) => taskJourney.openTaskJourney(issueKey) : undefined);
+
+  // Info closes this modal first and opens the drawer only after the modal has finished leaving,
+  // so a drawer is never rendered underneath an active modal/scrim and closing it does not reopen us.
+  const openInfo = (issueKey: string, url?: string) => {
+    onClose();
+    window.setTimeout(() => onInfo?.(issueKey, url), readMotionModalMs());
+  };
+
   return (
     <TabularModal open={open} onClose={onClose} title={title} testId="task-list-modal">
         {rows.length === 0 ? (
@@ -34,7 +52,14 @@ export function TaskListModal({
           <MetrioTableWrap className="metrio-scroll metrio-scroll--hidden-thumb">
             <table className={`${METRIO_TABLE_CLASS} performance-table--task-list`}>
               <PerformanceTableColgroup
-                columns={["issueKey", "title", "date", "date", "status"]}
+                columns={[
+                  "issueKey",
+                  "title",
+                  "date",
+                  "date",
+                  "status",
+                  ...(onInfo ? (["action"] as const) : []),
+                ]}
               />
               <thead>
                 <tr>
@@ -43,6 +68,11 @@ export function TaskListModal({
                   <th scope="col">Created</th>
                   <th scope="col">Last status change</th>
                   <th scope="col">Status</th>
+                  {onInfo ? (
+                    <th scope="col" className="performance-table__action-head">
+                      <span className="sr-only">Actions</span>
+                    </th>
+                  ) : null}
                 </tr>
               </thead>
               <tbody>
@@ -53,21 +83,6 @@ export function TaskListModal({
                         issueKey={row.issueKey}
                         browseUrl={row.jiraUrl}
                         className="performance-table__issue-key performance-table__issue-key-link"
-                        onClick={
-                          onOpenIssue
-                            ? (event) => {
-                                event.preventDefault();
-                                onOpenIssue(
-                                  row.issueKey,
-                                  row.jiraUrl ??
-                                    buildJiraIssueBrowseUrl(
-                                      resolveJiraBaseUrl(),
-                                      row.issueKey,
-                                    ),
-                                );
-                              }
-                            : undefined
-                        }
                       />
                     </td>
                     <td className="performance-table__issue-title-cell">
@@ -84,6 +99,20 @@ export function TaskListModal({
                         {row.status}
                       </Badge>
                     </td>
+                    {onInfo ? (
+                      <td className="performance-table__action-cell">
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          size="small"
+                          data-testid="task-list-info"
+                          aria-label={`Task info ${row.issueKey}`}
+                          onClick={() => openInfo(row.issueKey, row.jiraUrl ?? undefined)}
+                        >
+                          Info
+                        </Button>
+                      </td>
+                    ) : null}
                   </tr>
                 ))}
               </tbody>

@@ -8,6 +8,8 @@ export interface PersonPerformanceMetricsProps {
   cycleTime: { label: string; value: string }[];
   activeWorkCount?: number;
   showActiveSummary?: boolean;
+  /** `two-by-two` keeps the four KPI cards as a 2 × 2 grid (narrow drawers); default is one row. */
+  layout?: "row" | "two-by-two";
   onOpenMetric?: (metric: MetricCardData, source: HTMLElement) => void;
 }
 
@@ -16,13 +18,18 @@ export function PersonPerformanceMetrics({
   cycleTime,
   activeWorkCount,
   showActiveSummary = false,
+  layout = "row",
   onOpenMetric,
 }: PersonPerformanceMetricsProps) {
   return (
     <div className="person-performance-metrics">
       <PersonAnalyticsMetricGrid
         metrics={kpis}
-        className="performance-metrics"
+        className={
+          layout === "two-by-two"
+            ? "performance-metrics performance-metrics--two-by-two"
+            : "performance-metrics"
+        }
         onOpenMetric={onOpenMetric}
       />
       <PersonCycleTimeCard segments={cycleTime} />

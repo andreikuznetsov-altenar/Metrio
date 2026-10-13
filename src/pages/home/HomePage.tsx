@@ -834,9 +834,6 @@ export function HomePage() {
         onClose={() => setTrendTaskModal(null)}
         title={trendTaskModal?.title ?? ""}
         rows={trendTaskRows}
-        onOpenIssue={(issueKey) => {
-          void openJiraAssignment(issueKey);
-        }}
       />
     </div>
   );

@@ -1,4 +1,6 @@
 import type { ActionItem, ActionTarget } from "../domain/actions/actionTypes";
+import { resolveJiraBaseUrl } from "../config/product";
+import { buildJiraIssueBrowseUrl } from "../platform/jiraIssueUrl";
 import { openExternalUrl } from "../platform/openExternal";
 
 import type { TeamPerformanceView } from "../domain/performance";
@@ -42,7 +44,7 @@ export function navigateActionTarget(
       handlers.openPerson(target.personId, target.tab);
       return;
     case "jira":
-      void openExternalUrl(buildJiraIssueUrl(target.issueKey));
+      void openExternalUrl(buildJiraIssueBrowseUrl(resolveJiraBaseUrl(), target.issueKey));
       return;
     case "delivery-risk":
       navigatePerformanceView("delivery-risk");
@@ -74,14 +76,6 @@ export function navigateActionTarget(
     default:
       return;
   }
-}
-
-function buildJiraIssueUrl(issueKey: string): string {
-  const base = import.meta.env.VITE_JIRA_BASE_URL || "";
-  if (base) {
-    return `${String(base).replace(/\/$/, "")}/browse/${issueKey}`;
-  }
-  return `https://jira.atlassian.com/browse/${issueKey}`;
 }
 
 export function actionOpenLabel(item: ActionItem): string {

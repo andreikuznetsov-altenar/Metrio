@@ -61,3 +61,21 @@
 .grouped-issue-preview__tasks-link:hover {
   text-decoration: underline;
 }
+
+/* Explicit internal action next to an inline Jira key (the key itself opens Jira externally). */
+.grouped-issue-preview__info {
+  margin-left: var(--space-2);
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--color-text-secondary);
+  font: inherit;
+  font-size: var(--font-size-xs, 12px);
+  cursor: pointer;
+}
+
+.grouped-issue-preview__info:hover,
+.grouped-issue-preview__info:focus-visible {
+  color: var(--color-text-primary);
+  text-decoration: underline;
+}

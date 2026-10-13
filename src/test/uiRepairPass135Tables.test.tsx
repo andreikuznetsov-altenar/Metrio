@@ -8,7 +8,7 @@ describe("UI Repair Pass 13.5 table geometry", () => {
       path.resolve(process.cwd(), "src/components/TaskListModal/TaskListModal.tsx"),
       "utf8",
     );
-    expect(source).toContain('columns={["issueKey", "title", "date", "date", "status"]}');
+    expect(source).toMatch(/"issueKey",\s*"title",\s*"date",\s*"date",\s*"status",\s*\.\.\.\(onInfo \? \(\["action"\] as const\) : \[\]\)/);
   });
 
   it("attention table does not force overflow min-width", () => {

@@ -151,7 +151,7 @@ export function TeamRadarView({ rows, onOpenPerson }: TeamRadarViewProps) {
                         jiraBaseUrl={jiraBaseUrl}
                         persons={teamPersons}
                         modalTitle={`Tasks — ${row.personName}`}
-                        onOpenIssue={openTaskJourney}
+                        onInfo={openTaskJourney}
                       />
                     ) : row.primaryIssueKey && jiraBaseUrl ? (
                       <GroupedIssuePreview
@@ -159,7 +159,7 @@ export function TeamRadarView({ rows, onOpenPerson }: TeamRadarViewProps) {
                         jiraBaseUrl={jiraBaseUrl}
                         persons={teamPersons}
                         modalTitle={`Tasks — ${row.personName}`}
-                        onOpenIssue={openTaskJourney}
+                        onInfo={openTaskJourney}
                       />
                     ) : null}
                     <span className="performance-radar-reason__detail">

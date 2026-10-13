@@ -3,8 +3,6 @@ import { Button } from "../../../components/Button/Button";
 import { GroupedIssuePreview } from "../../../components/GroupedIssuePreview/GroupedIssuePreview";
 import type { ExecutiveAttentionItem } from "../../../domain/home/executiveDashboardModel";
 import { shouldAppendAttentionSubjectTitle } from "../../../domain/home/attentionSubjectDisplay";
-import { buildJiraIssueBrowseUrl } from "../../../platform/jiraIssueUrl";
-import { openExternalUrl } from "../../../platform/openExternal";
 
 const TONE_VARIANT = {
   critical: "danger",
@@ -42,11 +40,6 @@ export function DashboardAttentionNow({
   const visibleItems = items.slice(0, ATTENTION_NOW_MAX_ROWS);
   const critical = items.filter((i) => i.severity === "critical").length;
   const warning = items.filter((i) => i.severity === "warning").length;
-
-  const openJira = (issueKey: string, url?: string) => {
-    const target = url ?? (jiraBaseUrl ? buildJiraIssueBrowseUrl(jiraBaseUrl, issueKey) : undefined);
-    if (target) void openExternalUrl(target);
-  };
 
   return (
     <section
@@ -95,7 +88,6 @@ export function DashboardAttentionNow({
                             issueKeys={keys}
                             jiraBaseUrl={jiraBaseUrl}
                             modalTitle={item.title}
-                            onOpenIssue={openJira}
                           />
                           {shouldAppendAttentionSubjectTitle(item.title, keys) ? (
                             <span className="executive-attention-now__subject-title">

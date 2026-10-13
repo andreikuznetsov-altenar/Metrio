@@ -91,3 +91,8 @@
   padding: 16px;
   color: var(--color-text-muted);
 }
+
+/* Filter tabs and the results table are two separate surfaces: use the canonical section gap. */
+.project-cockpit__section .segmented-control + .performance-table-wrap {
+  margin-top: var(--space-3);
+}

@@ -1,5 +1,6 @@
 mod api;
 mod diagnostics_bundle;
+mod external_navigation;
 mod logs;
 mod persistence;
 mod tray_action;
@@ -579,6 +580,7 @@ fn tray_popover_resize(app: AppHandle, width: f64, height: f64) -> Result<(), St
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
+        .plugin(external_navigation::plugin())
         .plugin(tauri_plugin_autostart::init(
             tauri_plugin_autostart::MacosLauncher::LaunchAgent,
             Some(vec!["--minimized"]),

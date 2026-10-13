@@ -7,6 +7,7 @@ import {
   resolveCatalogIssue,
 } from "../jira/issueCatalog";
 import { format, parseISO } from "date-fns";
+import { buildJiraIssueBrowseUrl } from "../../platform/jiraIssueUrl";
 
 export const TASK_LIST_ISSUE_UNAVAILABLE_TITLE = "Issue details unavailable";
 
@@ -91,7 +92,7 @@ function rowFromIssueKey(
     lastStatusChangeLabel: issue
       ? formatTaskLastStatusChangeLabel(lastStatusChangedAt)
       : "—",
-    jiraUrl: base ? `${base}/browse/${encodeURIComponent(issueKey)}` : undefined,
+    jiraUrl: base ? buildJiraIssueBrowseUrl(base, issueKey) || undefined : undefined,
   };
 }
 

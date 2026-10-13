@@ -41,6 +41,7 @@ vi.mock("../app/PerformanceDataContext", () => ({
 
 vi.mock("../app/TaskJourneyContext", () => ({
   useOpenTaskJourneyFromKey: () => () => undefined,
+  useOptionalTaskJourney: () => null,
 }));
 
 const secondary: TeamSecondarySnapshot = {

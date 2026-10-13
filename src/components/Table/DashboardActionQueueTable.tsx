@@ -28,12 +28,10 @@ function QueueContextCell({
   row,
   jiraBaseUrl,
   teamPersons,
-  onOpenJiraIssue,
 }: {
   row: DashboardQueueRow;
   jiraBaseUrl: string;
   teamPersons: Person[];
-  onOpenJiraIssue?: (issueKey: string, url?: string) => void;
 }) {
   const title = row.contextLines.join(" · ");
   if (!shouldLinkQueueTaskCount(row.item, row.contextLines)) {
@@ -55,7 +53,6 @@ function QueueContextCell({
         jiraBaseUrl={jiraBaseUrl}
         persons={teamPersons}
         modalTitle={row.subject}
-        onOpenIssue={onOpenJiraIssue}
       />
       {extra.length ? (
         <span className="performance-table__context-extra">
@@ -79,6 +76,7 @@ export interface DashboardActionQueueTableProps {
   /** When false, headers are plain text with no sort affordance. */
   sortable?: boolean;
   teamPersons?: Person[];
+  /** @deprecated Jira keys always open Jira externally; kept so existing callers compile. */
   onOpenJiraIssue?: (issueKey: string, url?: string) => void;
 }
 
@@ -93,7 +91,6 @@ export function DashboardActionQueueTable({
   jiraBaseUrl = "",
   sortable = true,
   teamPersons = [],
-  onOpenJiraIssue,
 }: DashboardActionQueueTableProps) {
   const renderWorkLabel = (row: DashboardQueueRow) => (
     <JiraIssueText text={row.subject} jiraBaseUrl={jiraBaseUrl} />
@@ -188,7 +185,6 @@ export function DashboardActionQueueTable({
                   row={row}
                   jiraBaseUrl={jiraBaseUrl}
                   teamPersons={teamPersons}
-                  onOpenJiraIssue={onOpenJiraIssue}
                 />
               </td>
               <td className="performance-table__action" data-testid="dashboard-action-cta-cell">

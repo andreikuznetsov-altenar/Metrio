@@ -345,3 +345,16 @@
 .person-work-row__health {
   align-self: start;
 }
+
+/* Person drawer KPI block: Efficiency / First pass / Completed / Backflows as a balanced 2 × 2 grid. */
+.person-performance-metrics .performance-metrics.performance-metrics--two-by-two {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  column-gap: var(--space-3);
+  row-gap: var(--space-3);
+}
+
+@media (max-width: 420px) {
+  .person-performance-metrics .performance-metrics.performance-metrics--two-by-two {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

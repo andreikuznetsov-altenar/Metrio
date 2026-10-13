@@ -223,13 +223,6 @@ export function DashboardQueuePanel({
         onClose={() => setTasksOpen(false)}
         title={title}
         rows={taskRows}
-        onOpenIssue={
-          onOpenJiraIssue
-            ? (issueKey, url) => {
-                onOpenJiraIssue(issueKey, url);
-              }
-            : undefined
-        }
       />
     </section>
   );

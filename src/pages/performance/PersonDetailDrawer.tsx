@@ -279,6 +279,7 @@ export function PersonDetailDrawer({
             <PersonPerformanceMetrics
               kpis={workspace.performanceKpis}
               cycleTime={workspace.cycleTime}
+              layout="two-by-two"
               onOpenMetric={
                 analytics
                   ? (metric, source) => openPersonDrilldownFromMetric(metric, source)

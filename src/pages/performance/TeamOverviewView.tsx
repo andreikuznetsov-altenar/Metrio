@@ -565,7 +565,7 @@ export function TeamOverviewView({
                             jiraBaseUrl={jiraBaseUrl}
                             persons={teamPersons}
                             personNameForModal={name}
-                            onOpenIssue={openTaskJourney}
+                            onInfo={openTaskJourney}
                           />
                         ) : (
                           "—"
@@ -783,7 +783,7 @@ export function TeamOverviewView({
         onClose={() => setIssueListModal(null)}
         title={issueListModal?.title ?? "Tasks"}
         rows={issueListRows}
-        onOpenIssue={openTaskJourney}
+        onInfo={openTaskJourney}
       />
     </>
   );

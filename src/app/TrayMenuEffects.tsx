@@ -4,7 +4,8 @@ import { logoutSession } from "./logoutSession";
 import { openExternalUrl } from "../platform/openExternal";
 import { clearNotificationHistory } from "../platform/notificationEvents";
 import { acknowledgeTrayJiraIssue, clearTrayUserContext } from "../platform/trayActionCenter";
-import { resolveBambooSubdomain } from "../config/product";
+import { resolveBambooSubdomain, resolveJiraBaseUrl } from "../config/product";
+import { buildJiraIssueBrowseUrl } from "../platform/jiraIssueUrl";
 
 function bambooHomeUrl(): string {
   const subdomain = resolveBambooSubdomain();
@@ -37,7 +38,7 @@ export function TrayMenuEffects({
       const issueKey = event.payload?.issueKey;
       if (!issueKey) return;
       void acknowledgeTrayJiraIssue(issueKey);
-      void openExternalUrl(jiraIssueUrl(issueKey));
+      void openExternalUrl(buildJiraIssueBrowseUrl(resolveJiraBaseUrl(), issueKey));
     })
       .then((fn) => unsubs.push(fn))
       .catch(() => undefined);
@@ -86,12 +87,4 @@ export function TrayMenuEffects({
   }, [onRefresh]);
 
   return null;
-}
-
-function jiraIssueUrl(issueKey: string): string {
-  const base = import.meta.env.VITE_JIRA_BASE_URL || "";
-  if (base) {
-    return `${String(base).replace(/\/$/, "")}/browse/${issueKey}`;
-  }
-  return `https://jira.atlassian.com/browse/${issueKey}`;
 }
