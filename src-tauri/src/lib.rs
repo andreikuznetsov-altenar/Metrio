@@ -247,6 +247,16 @@ fn app_get_build_info() -> BuildInfoResponse {
     }
 }
 
+/// Updater platform key this binary requests from the manifest (e.g. `darwin-aarch64`).
+fn updater_target_label() -> String {
+    tauri_plugin_updater::target().unwrap_or_else(|| "unsupported".to_string())
+}
+
+#[tauri::command]
+fn app_get_updater_target() -> String {
+    updater_target_label()
+}
+
 #[tauri::command]
 fn app_get_doc_fixture_mode() -> DocFixtureModeResponse {
     let enabled = std::env::var("METRIO_DOC_FIXTURES")
@@ -596,6 +606,7 @@ pub fn run() {
             preferences_save,
             storage_get_warnings,
             app_get_build_info,
+            app_get_updater_target,
             app_get_doc_fixture_mode,
             diagnostics_export_file,
             support_bundle_export,
@@ -832,5 +843,20 @@ mod tray_lock_tests {
         for handle in handles {
             handle.join().expect("thread panicked");
         }
+    }
+}
+
+#[cfg(test)]
+mod updater_target_tests {
+    use super::updater_target_label;
+
+    #[test]
+    fn reports_the_platform_key_the_manifest_must_contain() {
+        let label = updater_target_label();
+        #[cfg(all(target_os = "macos", target_arch = "aarch64"))]
+        assert_eq!(label, "darwin-aarch64");
+        #[cfg(all(target_os = "macos", target_arch = "x86_64"))]
+        assert_eq!(label, "darwin-x86_64");
+        assert!(label.contains('-'), "{label}");
     }
 }

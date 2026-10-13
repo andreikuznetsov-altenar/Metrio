@@ -10,10 +10,8 @@ import {
 } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { getBuildInfo, isUpdaterAvailableForBuild, type BuildInfo } from "../config/build";
-import { getUpdateManifestUrl } from "../config/updates";
 import {
   checkForUpdatesNative,
-  checkForUpdatesWithManifest,
   installNativeUpdate,
   describeUpdateError,
   markBackgroundCheckRan,
@@ -96,28 +94,11 @@ export function UpdateProvider({ children }: { children: ReactNode }) {
     }
 
     setCheckResult({ status: "checking", currentVersion: info.version });
-    const manifestUrl = getUpdateManifestUrl(info.channel);
-    let result: UpdateCheckResult;
-    try {
-      result = await checkForUpdatesNative(info.version);
-      nativeUpdateRef.current =
-        result.status === "available" ? (result.nativeUpdate ?? null) : null;
-      if (result.status === "error" && manifestUrl) {
-        result = await checkForUpdatesWithManifest(info.version, manifestUrl);
-        nativeUpdateRef.current = null;
-      }
-    } catch (error) {
-      if (manifestUrl) {
-        result = await checkForUpdatesWithManifest(info.version, manifestUrl);
-        nativeUpdateRef.current = null;
-      } else {
-        result = {
-          status: "error",
-          currentVersion: info.version,
-          message: describeUpdateError(error, "check"),
-        };
-      }
-    }
+    // The Tauri updater is the single source of truth: a failed check is a failed
+    // check, never silently re-evaluated through a second, weaker code path.
+    const result = await checkForUpdatesNative(info.version);
+    nativeUpdateRef.current =
+      result.status === "available" ? (result.nativeUpdate ?? null) : null;
     if (result.status === "available") {
       // A fresh check that finds an update offers it again, even after "Later".
       setPromptDismissed(false);

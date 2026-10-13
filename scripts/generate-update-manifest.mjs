@@ -51,7 +51,7 @@ const manifest = {
   version,
   notes,
   pub_date: new Date().toISOString(),
-  platforms: { [platform]: entry, [`${platform}-app`]: entry },
+  platforms: { [platform]: entry },
 };
 
 const target = join(outDir ?? artifactDir, "latest.json");

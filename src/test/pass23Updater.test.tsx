@@ -11,7 +11,12 @@ import { AboutSettingsPanel } from "../pages/settings/AboutSettingsPanel";
 import {
   UPDATE_CHECK_INTERVAL_MS,
   UPDATE_STARTUP_CHECK_DELAY_MS,
+  UPDATE_ENDPOINT,
+  buildUpdateDiagnostic,
+  categorizeUpdateError,
+  checkForUpdatesNative,
   describeUpdateError,
+  readUpdateDiagnostic,
   scheduleUpdateChecks,
 } from "../platform/metrioUpdater";
 
@@ -215,18 +220,20 @@ describe("PASS 23 scheduling and error copy", () => {
   it("maps updater failures to understandable messages without leaking internals", () => {
     expect(describeUpdateError(new Error("signature mismatch"), "check")).toBe("Update couldn't be verified.");
     expect(describeUpdateError(new Error("error sending request: dns"), "check")).toMatch(/update server/);
-    expect(describeUpdateError(new Error("None of the fallback platforms were found"), "check")).toMatch(/for this Mac/);
+    expect(describeUpdateError(new Error("None of the fallback platforms were found"), "check")).toMatch(/isn't available right now/);
     expect(describeUpdateError(new Error("invalid json in manifest"), "check")).toMatch(/invalid/);
     expect(
       describeUpdateError(new Error("Could not fetch a valid release JSON from the remote"), "check"),
     ).toMatch(/isn't available right now/);
     expect(describeUpdateError(new Error("disk full"), "install")).toBe("Update couldn't be installed.");
-    expect(describeUpdateError("weird", "check")).toBe("Unable to check for updates.");
+    expect(describeUpdateError("weird", "check")).toBe(
+      "Update information isn't available right now. Try again later.",
+    );
   });
 
   it("is configured for the permanent GitHub Releases baseline", () => {
     const conf = JSON.parse(source("src-tauri/tauri.conf.json"));
-    expect(conf.version).toBe("0.1.1");
+    expect(conf.version).toBe(JSON.parse(source("package.json")).version);
     expect(conf.plugins.updater.endpoints).toEqual([
       "https://github.com/andreikuznetsov-altenar/Metrio/releases/latest/download/latest.json",
     ]);
@@ -237,8 +244,9 @@ describe("PASS 23 scheduling and error copy", () => {
     );
     expect(JSON.stringify(conf)).not.toMatch(/secret key|BEGIN/i);
     const pkg = JSON.parse(source("package.json"));
-    expect(pkg.version).toBe("0.1.1");
-    expect(source("src-tauri/Cargo.toml")).toMatch(/^version = "0\.1\.1"/m);
+    expect(pkg.version).toBe("0.1.2");
+    expect(source("src-tauri/Cargo.toml")).toMatch(/^version = "0\.1\.2"/m);
+    expect(source("src/config/build.ts")).toContain("|| '0.1.2'");
   });
 
   it("latest.json carries the .sig CONTENT (not a URL) and the GitHub release asset URL", () => {
@@ -249,10 +257,11 @@ describe("PASS 23 scheduling and error copy", () => {
       env: { ...process.env, METRIO_UPDATER_PLATFORM: "darwin-aarch64" },
     });
     const manifest = JSON.parse(readFileSync(join(dir, "latest.json"), "utf8"));
-    expect(manifest.version).toBe("0.1.1");
+    expect(manifest.version).toBe(JSON.parse(source("package.json")).version);
+    expect(Object.keys(manifest.platforms)).toEqual(["darwin-aarch64"]);
     expect(manifest.platforms["darwin-aarch64"].signature).toBe("SIGNATURE-CONTENT");
     expect(manifest.platforms["darwin-aarch64"].url).toBe(
-      "https://github.com/andreikuznetsov-altenar/Metrio/releases/download/v0.1.1/Metrio.app.tar.gz",
+      "https://github.com/andreikuznetsov-altenar/Metrio/releases/download/v0.1.2/Metrio.app.tar.gz",
     );
   });
 
@@ -264,5 +273,90 @@ describe("PASS 23 scheduling and error copy", () => {
     expect(workflow).toContain("generate-update-manifest.mjs");
     expect(workflow).toContain("verify-updater-artifacts.mjs");
     expect(workflow).not.toMatch(/dW50cnVzdGVk|BEGIN [A-Z ]*PRIVATE/);
+  });
+});
+
+describe("PASS 23.2 update result semantics", () => {
+  beforeEach(() => {
+    mocks.check.mockReset();
+    mocks.invoke.mockReset();
+    mocks.invoke.mockImplementation(async (command: string) =>
+      command === "app_get_updater_target" ? "darwin-aarch64" : RELEASE_INFO,
+    );
+    localStorage.clear();
+  });
+  afterEach(() => cleanup());
+
+  it("treats a null plugin result (installed == latest) as up to date, never an error", async () => {
+    mocks.check.mockResolvedValue(null);
+    const result = await checkForUpdatesNative("0.1.1");
+    expect(result).toEqual({ status: "up-to-date", currentVersion: "0.1.1" });
+    expect(readUpdateDiagnostic()).toBeNull();
+  });
+
+  it("reports a newer remote version as update available", async () => {
+    mocks.check.mockResolvedValue(availableUpdate("0.1.2"));
+    const result = await checkForUpdatesNative("0.1.1");
+    expect(result.status).toBe("available");
+    expect(result.availableVersion).toBe("0.1.2");
+  });
+
+  it("a thrown plugin error is check_failed with a diagnostic, not 'up to date'", async () => {
+    mocks.check.mockRejectedValue(new Error("network request failed"));
+    const result = await checkForUpdatesNative("0.1.1");
+    expect(result.status).toBe("error");
+    expect(result.message).not.toMatch(/up to date/i);
+    const diagnostic = readUpdateDiagnostic();
+    expect(diagnostic).toMatchObject({
+      phase: "check",
+      category: "network",
+      currentVersion: "0.1.1",
+      endpoint: UPDATE_ENDPOINT,
+      target: "darwin-aarch64",
+    });
+    expect(diagnostic?.rawError).toContain("network request failed");
+  });
+
+  it("an unsupported target is a diagnostic error with calm UI copy", async () => {
+    const error = new Error(
+      "None of the fallback platforms `[\"darwin-riscv64\"]` were found in the response `platforms` object",
+    );
+    mocks.check.mockRejectedValue(error);
+    const result = await checkForUpdatesNative("0.1.1");
+    expect(result.status).toBe("error");
+    expect(result.message).toBe("Update information isn't available right now. Try again later.");
+    expect(categorizeUpdateError(error)).toBe("target_unsupported");
+    expect(readUpdateDiagnostic()?.category).toBe("target_unsupported");
+  });
+
+  it("diagnostics are truncated and contain no key or credential material", () => {
+    const diagnostic = buildUpdateDiagnostic({
+      error: new Error("x".repeat(2000)),
+      phase: "check",
+      currentVersion: "0.1.2",
+      target: "darwin-aarch64",
+    });
+    expect(diagnostic.rawError.length).toBe(500);
+    expect(Object.keys(diagnostic).sort()).toEqual(
+      ["at", "category", "currentVersion", "endpoint", "phase", "rawError", "target"],
+    );
+  });
+
+  it("the UI shows 'You're up to date' for 0.1.1 vs 0.1.1 and never falls back to a second check path", async () => {
+    mocks.check.mockResolvedValue(null);
+    const fetchSpy = vi.spyOn(globalThis, "fetch");
+    renderApp();
+    await waitFor(() => expect(screen.getByTestId("about-check-updates")).toBeEnabled());
+    fireEvent.click(screen.getByTestId("about-check-updates"));
+    await waitFor(() =>
+      expect(screen.getByTestId("about-update-status")).toHaveTextContent("You're up to date"),
+    );
+    expect(fetchSpy).not.toHaveBeenCalled();
+    fetchSpy.mockRestore();
+  });
+
+  it("the built-in endpoint constant matches tauri.conf.json", () => {
+    const conf = JSON.parse(source("src-tauri/tauri.conf.json"));
+    expect(conf.plugins.updater.endpoints).toEqual([UPDATE_ENDPOINT]);
   });
 });

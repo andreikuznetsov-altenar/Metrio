@@ -94,13 +94,97 @@ export function describeUpdateError(error: unknown, phase: UpdateErrorPhase): st
   if (/network|dns|offline|timed? ?out|connect|unreachable|resolve|fetch|request|http/i.test(reason)) {
     return "Couldn't reach the update server. Check your connection and try again.";
   }
-  if (/platform|target|no .*release|not found|404/i.test(reason)) {
-    return "No update is available for this Mac.";
-  }
   if (/json|parse|invalid|malformed|manifest/i.test(reason)) {
     return "Update information was invalid. Try again later.";
   }
-  return "Unable to check for updates.";
+  // Includes missing platform entries: a failure is never presented as "no update".
+  return "Update information isn't available right now. Try again later.";
+}
+
+export type UpdateErrorCategory =
+  | "signature"
+  | "network"
+  | "manifest_unavailable"
+  | "target_unsupported"
+  | "manifest_invalid"
+  | "unknown";
+
+/** Coarse, non-sensitive classification of a raw updater error for diagnostics. */
+export function categorizeUpdateError(error: unknown): UpdateErrorCategory {
+  const reason = error instanceof Error ? error.message : String(error ?? "");
+  if (/signature|verify|pubkey/i.test(reason)) return "signature";
+  if (/valid release json|release json/i.test(reason)) return "manifest_unavailable";
+  if (/network|dns|offline|timed? ?out|connect|unreachable|resolve|fetch|request|http/i.test(reason)) {
+    return "network";
+  }
+  if (/platform|target|unsupported/i.test(reason)) return "target_unsupported";
+  if (/json|parse|invalid|malformed|manifest/i.test(reason)) return "manifest_invalid";
+  return "unknown";
+}
+
+/** Same endpoint as `plugins.updater.endpoints` in tauri.conf.json (asserted by a test). */
+export const UPDATE_ENDPOINT =
+  "https://github.com/andreikuznetsov-altenar/Metrio/releases/latest/download/latest.json";
+
+export interface UpdateDiagnostic {
+  at: string;
+  phase: UpdateErrorPhase;
+  category: UpdateErrorCategory;
+  currentVersion: string;
+  endpoint: string;
+  target: string | null;
+  /** Raw plugin error, truncated. Never contains keys or credentials. */
+  rawError: string;
+}
+
+const UPDATE_DIAGNOSTIC_KEY = "metrio-update-diagnostic";
+
+export function buildUpdateDiagnostic(input: {
+  error: unknown;
+  phase: UpdateErrorPhase;
+  currentVersion: string;
+  target: string | null;
+  at?: Date;
+}): UpdateDiagnostic {
+  const raw = input.error instanceof Error ? input.error.message : String(input.error ?? "");
+  return {
+    at: (input.at ?? new Date()).toISOString(),
+    phase: input.phase,
+    category: categorizeUpdateError(input.error),
+    currentVersion: input.currentVersion,
+    endpoint: UPDATE_ENDPOINT,
+    target: input.target,
+    rawError: raw.slice(0, 500),
+  };
+}
+
+/** Keeps the last failure for support; normal UI only ever shows the short message. */
+export function recordUpdateDiagnostic(diagnostic: UpdateDiagnostic): void {
+  console.warn("[metrio-updater]", JSON.stringify(diagnostic));
+  try {
+    localStorage.setItem(UPDATE_DIAGNOSTIC_KEY, JSON.stringify(diagnostic));
+  } catch {
+    // ignore quota / unavailable storage
+  }
+}
+
+export function readUpdateDiagnostic(): UpdateDiagnostic | null {
+  try {
+    const raw = localStorage.getItem(UPDATE_DIAGNOSTIC_KEY);
+    return raw ? (JSON.parse(raw) as UpdateDiagnostic) : null;
+  } catch {
+    return null;
+  }
+}
+
+async function readUpdaterTarget(): Promise<string | null> {
+  try {
+    const { invoke } = await import("@tauri-apps/api/core");
+    const target = await invoke<unknown>("app_get_updater_target");
+    return typeof target === "string" ? target : null;
+  } catch {
+    return null;
+  }
 }
 
 export async function fetchUpdateManifest(
@@ -161,6 +245,7 @@ export async function checkForUpdatesNative(
   try {
     const { check } = await import("@tauri-apps/plugin-updater");
     const update = await check();
+    // `null` is the plugin's success result for "no newer version" — not an error.
     if (!update) {
       return { status: "up-to-date", currentVersion };
     }
@@ -172,6 +257,14 @@ export async function checkForUpdatesNative(
       nativeUpdate: update,
     };
   } catch (error) {
+    recordUpdateDiagnostic(
+      buildUpdateDiagnostic({
+        error,
+        phase: "check",
+        currentVersion,
+        target: await readUpdaterTarget(),
+      }),
+    );
     return {
       status: "error",
       currentVersion,
