@@ -336,6 +336,72 @@ describe("generated-report handling before the release commit", () => {
   }, 60_000);
 });
 
+describe("notarization credential handling (stubbed notarytool)", () => {
+  const UUID = "12345678-abcd-4ef0-9abc-0123456789ab";
+  const P8 = "-----BEGIN PRIVATE KEY-----\nLINE1\n  indented line  \nLINE3\n-----END PRIVATE KEY-----\n";
+
+  function run(env: Record<string, string | undefined>) {
+    const dir = mkdtempSync(join(tmpdir(), "metrio-notary-"));
+    const bin = join(dir, "bin");
+    mkdirSync(bin);
+    const argsFile = join(dir, "xcrun-args.txt");
+    writeFileSync(
+      join(bin, "xcrun"),
+      `#!/bin/bash\nprintf '%s\\n' "$@" >> "${argsFile}"\nif [ "$2" = "submit" ] || [ "$1 $2" = "notarytool submit" ]; then echo '{"id":"sub-1","status":"Accepted"}'; fi\n`,
+      { mode: 0o755 },
+    );
+    const keyPath = join(dir, "AuthKey.p8");
+    writeFileSync(keyPath, P8);
+    const upload = join(dir, "Metrio.zip");
+    writeFileSync(upload, "zip");
+    const result = spawnSync("bash", [script("ci/notarize.sh"), upload], {
+      encoding: "utf8",
+      env: { PATH: `${bin}:${process.env.PATH}`, APPLE_API_KEY_PATH: keyPath, ...env } as Record<string, string>,
+    });
+    const args = existsSync(argsFile) ? readFileSync(argsFile, "utf8") : "";
+    return { result, args, keyPath };
+  }
+
+  it("normalizes an issuer with a trailing newline", () => {
+    const { result, args } = run({ APPLE_API_ISSUER: `${UUID}\n`, APPLE_API_KEY: "ABCD123456" });
+    expect(result.status).toBe(0);
+    expect(args).toContain(`--issuer\n${UUID}\n`);
+    expect(result.stdout).toContain("Accepted");
+  });
+
+  it("normalizes surrounding spaces/tabs/CR on both issuer and key id", () => {
+    const { result, args } = run({ APPLE_API_ISSUER: `  \t${UUID} \r\n`, APPLE_API_KEY: "  ABCD123456\n" });
+    expect(result.status).toBe(0);
+    expect(args).toContain(`--issuer\n${UUID}\n`);
+    expect(args).toContain("--key-id\nABCD123456\n");
+  });
+
+  it("rejects a malformed issuer before notarytool runs, without echoing its value", () => {
+    const secret = "not-a-uuid-SECRETISH";
+    const { result, args } = run({ APPLE_API_ISSUER: secret, APPLE_API_KEY: "ABCD123456" });
+    expect(result.status).not.toBe(0);
+    expect(result.stderr).toContain("APPLE_API_ISSUER");
+    expect(result.stdout + result.stderr).not.toContain(secret);
+    expect(args).toBe("");
+    const missing = run({ APPLE_API_KEY: "ABCD123456" });
+    expect(missing.result.status).not.toBe(0);
+    expect(missing.args).toBe("");
+  });
+
+  it("rejects an empty key id before notarytool runs", () => {
+    const { result, args } = run({ APPLE_API_ISSUER: UUID, APPLE_API_KEY: " \n" });
+    expect(result.status).not.toBe(0);
+    expect(result.stderr).toContain("APPLE_API_KEY");
+    expect(args).toBe("");
+  });
+
+  it("never rewrites the .p8 private key content", () => {
+    const { result, keyPath } = run({ APPLE_API_ISSUER: UUID, APPLE_API_KEY: "ABCD123456" });
+    expect(result.status).toBe(0);
+    expect(readFileSync(keyPath, "utf8")).toBe(P8);
+  });
+});
+
 describe("release workflow structure", () => {
   const workflow = readFileSync(join(repoRoot, ".github/workflows/release-macos.yml"), "utf8");
   const stepIndex = (needle: string) => {
