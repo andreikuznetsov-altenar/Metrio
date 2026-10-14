@@ -80,3 +80,13 @@ describe("PASS36 availability module", () => {
     expect(drawer).toMatch(/workspace\.timeOff\s*\?\s*\(/);
   });
 });
+
+describe("PASS36 availability detail", () => {
+  it("never repeats the date inside the card", async () => {
+    const { availabilityDetail } = await import("../domain/availability/availabilityDetail");
+    expect(availabilityDetail("20–24 Oct", "20–24 Oct · starts in 6 days")).toBe("starts in 6 days");
+    expect(availabilityDetail("20–24 Oct", "20–24 Oct")).toBe("");
+    expect(availabilityDetail("30–30 Oct 2026", "Vacation")).toBe("Vacation");
+    expect(availabilityDetail("30 Oct", undefined)).toBe("");
+  });
+});

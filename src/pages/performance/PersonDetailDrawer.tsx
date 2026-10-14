@@ -1,5 +1,6 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { Card } from "../../components/Card/Card";
+import { availabilityDetail } from "../../domain/availability/availabilityDetail";
 import { Button } from "../../components/Button/Button";
 import { DrawerPanelPlaceholder } from "../../components/Drawer/DrawerPanelPlaceholder";
 import { DrawerStack } from "../../components/Drawer/DrawerStack";
@@ -348,9 +349,9 @@ export function PersonDetailDrawer({
                         <span className="person-detail-drawer__availability-date">
                           {entry.rangeLabel}
                         </span>
-                        {entry.note ? (
+                        {availabilityDetail(entry.rangeLabel, entry.note) ? (
                           <span className="person-detail-drawer__availability-type">
-                            {entry.note}
+                            {availabilityDetail(entry.rangeLabel, entry.note)}
                           </span>
                         ) : null}
                       </Card>
