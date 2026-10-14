@@ -266,12 +266,8 @@
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
-  margin: var(--space-3) 0;
-}
-
-/* The goal title lives in the drawer header; the body starts directly below it. */
-.bamboo-goal-detail {
-  margin-top: 0;
+  /* The drawer body already owns the canonical bottom inset: no extra trailing margin. */
+  margin: 0;
 }
 
 .bamboo-goal-form__field {

@@ -171,14 +171,43 @@ pub fn report_history_copy_to_path(
     Ok(())
 }
 
+/// Removes one report: its stored PDF first (no orphan files), then its index entry.
+/// If the file cannot be deleted the entry is kept and an error is returned, so the UI never
+/// shows a report as gone while its data is still on disk. Other reports are never touched.
+fn remove_report_entry(
+    reports_path: &Path,
+    file: &mut ReportHistoryFile,
+    id: &str,
+) -> Result<(), String> {
+    let index = file
+        .reports
+        .iter()
+        .position(|entry| entry.id == id)
+        .ok_or_else(|| "Report not found".to_string())?;
+    let storage_name = file.reports[index].storage_name.clone();
+    if storage_name.is_empty()
+        || storage_name.contains('/')
+        || storage_name.contains('\\')
+        || storage_name.contains("..")
+    {
+        return Err("Invalid stored report name".to_string());
+    }
+    let storage_path = reports_path.join(&storage_name);
+    match fs::remove_file(&storage_path) {
+        Ok(()) => {}
+        // A missing file is already "removed"; only the stale index entry is left to clean up.
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => {}
+        Err(e) => return Err(format!("Couldn't delete the report file: {}", e)),
+    }
+    file.reports.remove(index);
+    Ok(())
+}
+
 #[tauri::command]
 pub fn report_history_remove(app: AppHandle, id: String) -> Result<(), String> {
     let mut file = load_history_file(&app)?;
-    let before = file.reports.len();
-    file.reports.retain(|entry| entry.id != id);
-    if file.reports.len() == before {
-        return Err("Report not found".to_string());
-    }
+    let reports_path = reports_dir(&app)?;
+    remove_report_entry(&reports_path, &mut file, &id)?;
     save_history_file(&app, &file)?;
     Ok(())
 }
@@ -201,6 +230,50 @@ mod tests {
         let first = unique_storage_name(&dir, "Metrio_Report_2026-10-07_15-02.pdf");
         assert_eq!(first, "Metrio_Report_2026-10-07_15-02_2.pdf");
 
+        let _ = fs::remove_dir_all(&dir);
+    }
+
+    fn entry(id: &str, storage: &str) -> ReportHistoryEntry {
+        ReportHistoryEntry {
+            id: id.to_string(),
+            created_at: "2026-10-01T10:00:00Z".to_string(),
+            filename: storage.to_string(),
+            storage_name: storage.to_string(),
+        }
+    }
+
+    #[test]
+    fn remove_deletes_the_file_and_only_that_entry() {
+        let dir = std::env::temp_dir().join(format!("metrio-report-remove-{}", std::process::id()));
+        let _ = fs::remove_dir_all(&dir);
+        fs::create_dir_all(&dir).expect("dir");
+        fs::write(dir.join("a.pdf"), b"%PDF-a").expect("a");
+        fs::write(dir.join("b.pdf"), b"%PDF-b").expect("b");
+        let mut file = ReportHistoryFile {
+            schema_version: 1,
+            reports: vec![entry("a", "a.pdf"), entry("b", "b.pdf")],
+        };
+        remove_report_entry(&dir, &mut file, "a").expect("remove");
+        assert!(!dir.join("a.pdf").exists(), "stored PDF must be deleted (no orphan)");
+        assert!(dir.join("b.pdf").exists(), "unrelated report file must survive");
+        assert_eq!(file.reports.len(), 1);
+        assert_eq!(file.reports[0].id, "b");
+        let _ = fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn remove_tolerates_a_missing_file_and_rejects_unknown_ids_and_bad_names() {
+        let dir = std::env::temp_dir().join(format!("metrio-report-remove2-{}", std::process::id()));
+        let _ = fs::remove_dir_all(&dir);
+        fs::create_dir_all(&dir).expect("dir");
+        let mut file = ReportHistoryFile {
+            schema_version: 1,
+            reports: vec![entry("gone", "gone.pdf"), entry("evil", "../escape.pdf")],
+        };
+        remove_report_entry(&dir, &mut file, "gone").expect("stale entry is cleaned up");
+        assert!(remove_report_entry(&dir, &mut file, "nope").is_err());
+        assert!(remove_report_entry(&dir, &mut file, "evil").is_err());
+        assert_eq!(file.reports.len(), 1, "a rejected name must not drop the entry");
         let _ = fs::remove_dir_all(&dir);
     }
 }

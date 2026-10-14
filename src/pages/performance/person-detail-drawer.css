@@ -121,6 +121,13 @@
   grid-template-areas: "stack";
   min-width: 0;
   position: relative;
+  /*
+   * An absolutely positioned (inactive) view still extends the scrollable overflow of the
+   * enclosing scroller even when it is invisible. Clip the block axis to this container's own box,
+   * whose height is set only by the ACTIVE view, so hidden views can never add blank scroll area.
+   */
+  overflow-x: visible;
+  overflow-y: clip;
 }
 
 .person-drawer-view {

@@ -183,7 +183,7 @@ test.describe("Executive acceptance — light 1440×900", () => {
     await bootFeedbackDisconnected(page, "light");
     await page.getByRole("button", { name: /^feedback$/i }).click();
     await expect(page.getByTestId("feedback-v2-page")).toBeVisible({ timeout: 15_000 });
-    await expect(page.getByTestId("feedback-cycles-empty")).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByTestId("feedback-cycles-empty-hint")).toBeVisible({ timeout: 15_000 });
     await expect(page.getByText("Google Forms is not connected.")).toBeVisible();
   });
 

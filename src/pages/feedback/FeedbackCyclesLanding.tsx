@@ -1,9 +1,7 @@
 import { useMemo } from 'react';
-import { Repeat } from 'lucide-react';
 import type { SurveyDataFile } from '../../domain/survey/types';
 import { buildCycleCardModel } from '../../domain/feedbackV2/cycleCards';
 import { Badge, Button } from './design-system';
-import { FeedbackEmptyState } from './FeedbackEmptyState';
 
 export function FeedbackCyclesLanding({
   data,
@@ -41,6 +39,11 @@ export function FeedbackCyclesLanding({
         <p className="feedback-cycles-intro__description">
           Run team surveys with your personal Google Apps Script bridge.
         </p>
+        {cycles.length === 0 ? (
+          <p className="feedback-cycles-intro__hint" data-testid="feedback-cycles-empty-hint">
+            No cycles yet — create a survey to collect structured feedback from your team.
+          </p>
+        ) : null}
         {canManage ? (
           <div className="feedback-cycles-intro__actions">
             <Button type="button" onClick={onNewSurvey} data-testid="feedback-new-survey">
@@ -50,19 +53,7 @@ export function FeedbackCyclesLanding({
         ) : null}
       </section>
 
-      {cycles.length === 0 ? (
-        <FeedbackEmptyState
-          testId="feedback-cycles-empty"
-          icon={Repeat}
-          title="No feedback cycles yet"
-          description="Create a survey to collect structured feedback from your team."
-          primary={
-            canManage
-              ? { label: 'New survey', onClick: onNewSurvey, variant: 'primary' }
-              : undefined
-          }
-        />
-      ) : (
+      {cycles.length > 0 ? (
         <ul className="feedback-cycles__list">
           {cards.map(({ cycle, card }) => {
             const phase = card.currentRunPhase;
@@ -157,7 +148,7 @@ export function FeedbackCyclesLanding({
             );
           })}
         </ul>
-      )}
+      ) : null}
     </div>
   );
 }

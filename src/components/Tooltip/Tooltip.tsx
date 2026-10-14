@@ -3,6 +3,12 @@ import { useLayoutEffect, useState, type ReactElement, type ReactNode } from "re
 import { getAppTooltipPortalRoot } from "./tooltipPortal";
 import "./Tooltip.css";
 
+/**
+ * Gap between trigger and tooltip. There is no arrow: it was 6px with a 5px caret filling it, so the
+ * tooltip now sits ~2px closer while keeping a small clear gap from the info icon.
+ */
+export const TOOLTIP_SIDE_OFFSET = 4;
+
 export interface TooltipProps {
   content: ReactNode;
   children: ReactElement;
@@ -38,11 +44,10 @@ export function Tooltip({
           data-testid="metrio-tooltip"
           side={side}
           align={align}
-          sideOffset={6}
+          sideOffset={TOOLTIP_SIDE_OFFSET}
           collisionPadding={8}
         >
           {content}
-          <TooltipPrimitive.Arrow className="tooltip__arrow" />
         </TooltipPrimitive.Content>
       </TooltipPrimitive.Portal>
     </TooltipPrimitive.Root>

@@ -849,7 +849,7 @@ test.describe("Metrio visual regression", () => {
     test.setTimeout(60_000);
     await bootMetrioFeedbackDisconnected(page, "light");
     await page.getByRole("button", { name: /^feedback$/i }).click();
-    await expect(page.getByTestId("feedback-cycles-empty")).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByTestId("feedback-cycles-empty-hint")).toBeVisible({ timeout: 15_000 });
     await expect(page.getByRole("dialog", { name: "Set up Google Forms" })).toBeVisible();
   });
 
@@ -868,7 +868,7 @@ test.describe("Metrio visual regression", () => {
     test.setTimeout(60_000);
     await bootMetrioFeedbackDisconnected(page, "light");
     await page.getByRole("button", { name: /^feedback$/i }).click();
-    await expect(page.getByTestId("feedback-cycles-empty")).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByTestId("feedback-cycles-empty-hint")).toBeVisible({ timeout: 15_000 });
   });
 
   test("feedback setup drawer short viewport", async ({ page }) => {
@@ -2825,14 +2825,14 @@ test.describe("Metrio visual regression", () => {
   test("empty-state-light", async ({ page }) => {
     test.setTimeout(60_000);
     await openFeedbackDisconnectedState(page);
-    await expect(page.getByTestId("feedback-cycles-empty")).toBeVisible();
+    await expect(page.getByTestId("feedback-cycles-empty-hint")).toBeVisible();
   });
 
   test("empty-state-dark", async ({ page }) => {
     test.setTimeout(60_000);
     await bootMetrioFeedbackDisconnected(page, "dark");
     await page.getByRole("button", { name: /^feedback$/i }).click();
-    await expect(page.getByTestId("feedback-cycles-empty")).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByTestId("feedback-cycles-empty-hint")).toBeVisible({ timeout: 15_000 });
     await expect(page.getByRole("dialog", { name: "Set up Google Forms" })).toBeVisible();
   });
 

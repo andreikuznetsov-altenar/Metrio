@@ -23,10 +23,6 @@
   animation: tooltip-in var(--motion-popover) var(--transition-easing);
 }
 
-.tooltip__arrow {
-  fill: var(--color-surface);
-}
-
 @keyframes tooltip-in {
   from {
     opacity: 0;

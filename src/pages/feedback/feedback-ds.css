@@ -974,3 +974,10 @@
   border-radius: var(--radius-control);
   font-size: 13px;
 }
+
+.feedback-cycles-intro__hint {
+  margin: var(--space-2) 0 0;
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--color-text-secondary);
+}
