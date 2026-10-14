@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { useSmoothWheelScroll } from "../../platform/useSmoothWheelScroll";
 import "./ui.css";
 
 export interface ScrollAreaProps {
@@ -15,5 +16,9 @@ export function ScrollArea({ children, className }: ScrollAreaProps) {
   ]
     .filter(Boolean)
     .join(" ");
-  return <div className={classes}>{children}</div>;
+  const ref = useSmoothWheelScroll<HTMLDivElement>();
+  return (
+    <div ref={ref} className={classes}>{children}
+    </div>
+  );
 }

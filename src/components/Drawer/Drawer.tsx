@@ -2,6 +2,7 @@ import { useEffect, useId, type ReactNode } from "react";
 import { IconButton } from "../IconButton/IconButton";
 import { useDrawerSurfaceLifecycle } from "./useDrawerSurfaceLifecycle";
 import { portalDrawerSurface } from "./drawerPortal";
+import { useSmoothWheelScroll } from "../../platform/useSmoothWheelScroll";
 import "./Drawer.css";
 
 function CloseIcon() {
@@ -55,6 +56,7 @@ export function Drawer({
   testId,
 }: DrawerProps) {
   const titleId = useId();
+  const bodyRef = useSmoothWheelScroll<HTMLDivElement>();
   const { mounted, phase, panelRef, backdropRef } = useDrawerSurfaceLifecycle(open, onClosed);
 
   useEffect(() => {
@@ -107,7 +109,7 @@ export function Drawer({
             </IconButton>
           </div>
         </div>
-        <div className="drawer__body metrio-scroll metrio-scroll--visible-thumb">
+        <div ref={bodyRef} className="drawer__body metrio-scroll metrio-scroll--visible-thumb">
           {children}
         </div>
         {footer ? <div className="drawer__footer">{footer}</div> : null}

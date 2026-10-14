@@ -2,6 +2,7 @@ import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { IconButton } from "../IconButton/IconButton";
 import { readMotionModalMs } from "../../styles/motion";
 import { portalModalSurface } from "./modalPortal";
+import { useSmoothWheelScroll } from "../../platform/useSmoothWheelScroll";
 import "./Modal.css";
 
 function CloseIcon() {
@@ -36,6 +37,7 @@ export function Modal({
   className,
 }: ModalProps) {
   const titleId = useId();
+  const bodyRef = useSmoothWheelScroll<HTMLDivElement>();
   const panelRef = useRef<HTMLDivElement>(null);
   const [mounted, setMounted] = useState(open);
   const [visible, setVisible] = useState(open);
@@ -131,7 +133,7 @@ export function Modal({
             <CloseIcon />
           </IconButton>
         </header>
-        <div className="metrio-modal__body metrio-scroll metrio-scroll--hidden-thumb">
+        <div ref={bodyRef} className="metrio-modal__body metrio-scroll metrio-scroll--hidden-thumb">
           {children}
         </div>
       </div>
