@@ -92,7 +92,7 @@
 /*
  * Canonical scrollbar for ANY scroller (tables, drawers, modals, popovers, main screens):
  *  - 8px lane; transparent track (no rail)
- *  - visible thumb exactly 4px (transparent border-right/bottom takes the other 4px)
+ *  - visible thumb exactly 4px wide with true 2px semicircular caps (2px transparent border all round)
  *  - 8px empty space at both ends of the track: the start/end scrollbar buttons are invisible
  *    8px spacers (no arrow, no background, no border, no hover). The inset therefore belongs to
  *    scrollbar geometry only; page content is never padded.
@@ -109,24 +109,18 @@
 
 ::-webkit-scrollbar-thumb {
   background: var(--scrollbar-thumb);
-  border: 0 solid transparent;
+  /* 2px transparent inset on ALL four sides: the painted core is 4px wide and owns a TRUE
+   * 2px-radius semicircular cap. (Side-only borders left the inner radius 2px horizontally but 4px
+   * vertically, i.e. an elongated ellipse.) The outer 8px lane box clamps this radius to 4px, so the
+   * inner (painted) radius is exactly 4px - 2px = 2px. */
+  border: var(--metrio-scrollbar-side-inset, 2px) solid transparent;
   background-clip: padding-box;
   border-radius: var(--radius-round);
-  min-height: 32px;
-  min-width: 32px;
+  min-height: 36px;
+  min-width: 36px;
 }
 
-/* Symmetric centring: 8px lane = 2px empty | 4px painted thumb | 2px empty (both axes). The thumb is
- * painted only inside the transparent borders (background-clip), never flush to a lane edge. */
-::-webkit-scrollbar-thumb:vertical {
-  border-left-width: var(--metrio-scrollbar-side-inset, 2px);
-  border-right-width: var(--metrio-scrollbar-side-inset, 2px);
-}
-
-::-webkit-scrollbar-thumb:horizontal {
-  border-top-width: var(--metrio-scrollbar-side-inset, 2px);
-  border-bottom-width: var(--metrio-scrollbar-side-inset, 2px);
-}
+/* Symmetric centring: 8px lane = 2px empty | 4px painted capsule | 2px empty, on both axes. */
 
 ::-webkit-scrollbar-thumb:hover {
   background: var(--scrollbar-thumb-hover);
@@ -143,7 +137,8 @@
 ::-webkit-scrollbar-button:vertical:end:increment {
   display: block;
   width: 8px;
-  height: var(--metrio-scrollbar-end-inset, 8px);
+  /* The thumb's own 2px transparent cap inset counts toward the 8px visible end inset. */
+  height: calc(var(--metrio-scrollbar-end-inset, 8px) - var(--metrio-scrollbar-side-inset, 2px));
   background: transparent;
   border: 0;
 }
@@ -151,7 +146,7 @@
 ::-webkit-scrollbar-button:horizontal:start:decrement,
 ::-webkit-scrollbar-button:horizontal:end:increment {
   display: block;
-  width: var(--metrio-scrollbar-end-inset, 8px);
+  width: calc(var(--metrio-scrollbar-end-inset, 8px) - var(--metrio-scrollbar-side-inset, 2px));
   height: 8px;
   background: transparent;
   border: 0;

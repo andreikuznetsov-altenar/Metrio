@@ -2,7 +2,7 @@ import { useEffect, useId, type ReactNode } from "react";
 import { IconButton } from "../IconButton/IconButton";
 import { useDrawerSurfaceLifecycle } from "./useDrawerSurfaceLifecycle";
 import { portalDrawerSurface } from "./drawerPortal";
-import { useSmoothWheelScroll } from "../../platform/useSmoothWheelScroll";
+import { useSmoothScroll } from "../../platform/useSmoothScroll";
 import "./Drawer.css";
 
 function CloseIcon() {
@@ -56,7 +56,7 @@ export function Drawer({
   testId,
 }: DrawerProps) {
   const titleId = useId();
-  const bodyRef = useSmoothWheelScroll<HTMLDivElement>();
+  const bodyRef = useSmoothScroll<HTMLDivElement>();
   const { mounted, phase, panelRef, backdropRef } = useDrawerSurfaceLifecycle(open, onClosed);
 
   useEffect(() => {

@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { useSmoothWheelScroll } from "../../platform/useSmoothWheelScroll";
+import { useSmoothScroll } from "../../platform/useSmoothScroll";
 
 /** Shared table surface classes — keep in sync with `ui-interaction-system.css`. */
 export const METRIO_TABLE_CLASS =
@@ -12,7 +12,7 @@ export interface MetrioTableWrapProps {
 }
 
 export function MetrioTableWrap({ children, className, testId }: MetrioTableWrapProps) {
-  const ref = useSmoothWheelScroll<HTMLDivElement>();
+  const ref = useSmoothScroll<HTMLDivElement>();
   return (
     <div
       ref={ref}

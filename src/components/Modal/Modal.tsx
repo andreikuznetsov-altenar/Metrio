@@ -2,7 +2,7 @@ import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { IconButton } from "../IconButton/IconButton";
 import { readMotionModalMs } from "../../styles/motion";
 import { portalModalSurface } from "./modalPortal";
-import { useSmoothWheelScroll } from "../../platform/useSmoothWheelScroll";
+import { useSmoothScroll } from "../../platform/useSmoothScroll";
 import "./Modal.css";
 
 function CloseIcon() {
@@ -37,7 +37,7 @@ export function Modal({
   className,
 }: ModalProps) {
   const titleId = useId();
-  const bodyRef = useSmoothWheelScroll<HTMLDivElement>();
+  const bodyRef = useSmoothScroll<HTMLDivElement>();
   const panelRef = useRef<HTMLDivElement>(null);
   const [mounted, setMounted] = useState(open);
   const [visible, setVisible] = useState(open);

@@ -3,7 +3,7 @@ import { IconButton } from "../IconButton/IconButton";
 import type { DrawerSize } from "./Drawer";
 import { useDrawerSurfaceLifecycle } from "./useDrawerSurfaceLifecycle";
 import { portalDrawerSurface } from "./drawerPortal";
-import { useSmoothWheelScroll } from "../../platform/useSmoothWheelScroll";
+import { useSmoothScroll } from "../../platform/useSmoothScroll";
 import "./Drawer.css";
 
 function CloseIcon() {
@@ -60,7 +60,7 @@ export function DrawerStack({
   testId,
 }: DrawerStackProps) {
   const titleId = useId();
-  const bodyRef = useSmoothWheelScroll<HTMLDivElement>();
+  const bodyRef = useSmoothScroll<HTMLDivElement>();
   const { mounted, phase, panelRef, backdropRef } = useDrawerSurfaceLifecycle(open, onClosed);
 
   useEffect(() => {

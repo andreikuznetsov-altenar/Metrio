@@ -14,19 +14,19 @@ afterEach(() => {
 describe("PASS33 scrollbar end insets (central CSS contract)", () => {
   it("lane 8px, 4px visible thumb, transparent track, invisible 8px end spacers", () => {
     expect(css).toMatch(/::-webkit-scrollbar\s*\{\s*width:\s*8px;\s*height:\s*8px;/);
-    expect(css).toMatch(/::-webkit-scrollbar-thumb:vertical\s*\{[^}]*border-left-width:\s*var\(--metrio-scrollbar-side-inset, 2px\)[^}]*border-right-width:\s*var\(--metrio-scrollbar-side-inset, 2px\)/);
-    expect(css).toMatch(/::-webkit-scrollbar-thumb:horizontal\s*\{[^}]*border-top-width:\s*var\(--metrio-scrollbar-side-inset, 2px\)[^}]*border-bottom-width:\s*var\(--metrio-scrollbar-side-inset, 2px\)/);
-    // thumb is never given a one-sided border (PASS35: symmetric 2 | 4 | 2 centring)
+    // PASS37.2: equal transparent inset on all four sides -> 4px painted core with a true 2px cap radius
+    expect(css).toMatch(/::-webkit-scrollbar-thumb\s*\{[^}]*border:\s*var\(--metrio-scrollbar-side-inset, 2px\) solid transparent[^}]*border-radius:\s*var\(--radius-round\)/);
+    expect(css).not.toMatch(/::-webkit-scrollbar-thumb:(vertical|horizontal)\s*\{[^}]*border-(left|right|top|bottom)-width/);
     expect(css).not.toMatch(/::-webkit-scrollbar-thumb\s*\{[^}]*border-(right|bottom)-width/);
     expect(tokens).toMatch(/--metrio-scrollbar-side-inset:\s*2px/);
     const v = css.match(/::-webkit-scrollbar-button:vertical:start:decrement,\s*\n::-webkit-scrollbar-button:vertical:end:increment\s*\{[^}]*\}/)![0];
     expect(v).toMatch(/display:\s*block/);
-    expect(v).toMatch(/height:\s*var\(--metrio-scrollbar-end-inset, 8px\)/);
+    expect(v).toMatch(/height:\s*calc\(var\(--metrio-scrollbar-end-inset, 8px\) - var\(--metrio-scrollbar-side-inset, 2px\)\)/);
     expect(v).toMatch(/background:\s*transparent/);
     expect(v).toMatch(/border:\s*0/);
     expect(v).not.toMatch(/(background-image|content|:hover)/);
     const h = css.match(/::-webkit-scrollbar-button:horizontal:start:decrement,\s*\n::-webkit-scrollbar-button:horizontal:end:increment\s*\{[^}]*\}/)![0];
-    expect(h).toMatch(/width:\s*var\(--metrio-scrollbar-end-inset, 8px\)/);
+    expect(h).toMatch(/width:\s*calc\(var\(--metrio-scrollbar-end-inset, 8px\) - var\(--metrio-scrollbar-side-inset, 2px\)\)/);
     expect(tokens).toMatch(/--metrio-scrollbar-end-inset:\s*8px/);
     // the non-spacer button positions stay hidden
     expect(css).toMatch(/::-webkit-scrollbar-button\s*\{[^}]*display:\s*none/);

@@ -1,5 +1,5 @@
 import type { HTMLAttributes, ReactNode } from "react";
-import { useSmoothWheelScroll } from "../../platform/useSmoothWheelScroll";
+import { useSmoothScroll } from "../../platform/useSmoothScroll";
 import "./ScrollArea.css";
 
 export interface ScrollAreaProps extends HTMLAttributes<HTMLDivElement> {
@@ -9,7 +9,7 @@ export interface ScrollAreaProps extends HTMLAttributes<HTMLDivElement> {
 export function ScrollArea({ children, className, ...props }: ScrollAreaProps) {
   const classes = ["scroll-area", "metrio-scroll", className].filter(Boolean).join(" ");
 
-  const ref = useSmoothWheelScroll<HTMLDivElement>();
+  const ref = useSmoothScroll<HTMLDivElement>();
 
   return (
     <div ref={ref} className={classes} {...props}>
