@@ -56,6 +56,23 @@ describe("native titlebar surface", () => {
     expect(src("src-tauri/src/lib.rs")).toContain("set_background_color");
     const conf = JSON.parse(src("src-tauri/tauri.conf.json"));
     expect(conf.app.windows[0].backgroundColor).toMatch(/^#[0-9a-f]{6}$/i);
+    // Native startup: a transparent titlebar shows the window background on EVERY macOS SDK
+    // behavior (CI builds link an older SDK, where the background alone left the titlebar white).
+    expect(conf.app.windows[0].titleBarStyle).toBe("Transparent");
+  });
+
+  it("the chrome sync runs for the production path (not gated on fixture/demo mode)", () => {
+    const provider = src("src/theme/ThemeProvider.tsx");
+    const effect = provider.slice(provider.indexOf("syncWindowChrome(preference, resolved)") - 120);
+    expect(effect).not.toMatch(/DocFixture|METRIO_DOC|VISUAL_FIXTURE/);
+    expect(src("src/platform/windowChrome.ts")).not.toMatch(/DocFixture|METRIO_DOC|VISUAL_FIXTURE/);
+  });
+
+  it("the window startup color equals the light chrome token (no white flash before React)", () => {
+    const conf = JSON.parse(src("src-tauri/tauri.conf.json"));
+    const tokens = src("src/styles/tokens.css");
+    const light = /--color-surface-secondary:\s*(#[0-9a-f]{6})/i.exec(tokens)?.[1]?.toLowerCase();
+    expect(conf.app.windows[0].backgroundColor.toLowerCase()).toBe(light);
   });
 
   it("the app defines no titlebar/drag-region hover shadow or hover background", () => {

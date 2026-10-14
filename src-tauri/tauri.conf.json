@@ -18,7 +18,8 @@
         "width": 1180,
         "height": 760,
         "resizable": false,
-        "backgroundColor": "#f1f3f6"
+        "backgroundColor": "#f1f3f6",
+        "titleBarStyle": "Transparent"
       }
     ],
     "security": {
