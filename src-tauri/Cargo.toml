@@ -1,6 +1,6 @@
 [package]
 name = "metrio"
-version = "0.1.5"
+version = "0.1.6"
 description = "Metrio — Jira performance and team feedback desktop app"
 authors = ["Altenar"]
 edition = "2021"
