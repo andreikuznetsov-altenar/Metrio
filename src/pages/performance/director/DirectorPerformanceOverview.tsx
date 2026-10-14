@@ -116,6 +116,7 @@ export function DirectorPerformanceOverview({
           descendantIds: branch.descendantIds,
           persons: data.teamSnapshot.persons,
           deliveryRisk: model.deliveryRisk,
+          params: data.reportParams,
         }),
       ]),
     );

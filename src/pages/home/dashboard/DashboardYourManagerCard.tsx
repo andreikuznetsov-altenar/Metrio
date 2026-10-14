@@ -1,4 +1,3 @@
-import { Button } from "../../../components/Button/Button";
 import { PersonIdentity } from "../../../components/PersonIdentity/PersonIdentity";
 import { openExternalUrl } from "../../../platform/openExternal";
 import type { ResolvedEmployee } from "../../../services/bamboo/orgResolver";
@@ -50,14 +49,17 @@ export function DashboardYourManagerCard({
           avatarSize="lg"
         />
         {manager.workEmail ? (
-          <Button
-            variant="secondary"
-            size="small"
-            onClick={() => void openExternalUrl(`mailto:${manager.workEmail}`)}
-            aria-label={`Email ${manager.displayName}`}
-          >
-            {manager.workEmail}
-          </Button>
+          <div className="dashboard-your-manager__contact">
+            <button
+              type="button"
+              className="metrio-text-link dashboard-your-manager__email"
+              data-testid="dashboard-your-manager-email"
+              onClick={() => void openExternalUrl(`mailto:${manager.workEmail}`)}
+              aria-label={`Email ${manager.displayName}`}
+            >
+              {manager.workEmail}
+            </button>
+          </div>
         ) : null}
       </div>
     </section>

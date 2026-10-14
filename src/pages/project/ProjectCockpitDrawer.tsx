@@ -20,6 +20,7 @@ import { JiraIssueLink } from "../../components/JiraIssueLink/JiraIssueLink";
 import { DependencyDetailDrawer } from "./DependencyDetailDrawer";
 import type { ProjectDependencyRow } from "../../domain/dependencies/dependencyTypes";
 import type { WorkDependency } from "../../domain/dependencies/dependencyTypes";
+import { ScopeStrip } from "../../components/ScopeStrip/ScopeStrip";
 import { METRIO_TABLE_CLASS, MetrioTableWrap, TableClampCell } from "../../components/Table/MetrioTable";
 import { SortableTableHeader } from "../../components/Table/SortableTableHeader";
 import { useTableSort } from "../../components/Table/useTableSort";
@@ -217,18 +218,16 @@ export function ProjectCockpitDrawer({
         />
       ) : (
         <div className="project-cockpit__body" data-testid="project-cockpit">
-          <section className="project-cockpit__section">
-            <h3>Summary</h3>
-            <p>
-              {model.summary.active} active · {model.summary.inReview} in review ·{" "}
-              {model.summary.completedInPeriod} completed in period ·{" "}
-              {model.summary.problematic} at risk
-            </p>
-          </section>
+          <ScopeStrip
+            className="project-cockpit__summary"
+            eyebrow="Summary"
+            title={`${model.summary.active} active · ${model.summary.inReview} in review · ${model.summary.completedInPeriod} completed in period · ${model.summary.problematic} at risk`}
+            data-testid="project-cockpit-summary"
+          />
 
-          <section className="project-cockpit__section">
-            <h3>Delivery (period)</h3>
-            <ul className="project-cockpit__kpi-list">
+          <section className="project-cockpit__section" data-testid="project-cockpit-delivery">
+            <p className="performance-scope-strip__eyebrow">Delivery (period)</p>
+            <ul className="project-cockpit__metric-list">
               {model.kpis.map((kpi) => (
                 <li key={kpi.label}>
                   <span>{kpi.label}</span>

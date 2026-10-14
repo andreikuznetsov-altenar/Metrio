@@ -59,7 +59,7 @@ describe("documentation fixture mode", () => {
     expect(outcome.ok).toBe(true);
     if (!outcome.ok) return;
     expect(outcome.source).toBe("file");
-    expect(outcome.prefs.workEmail).toBe("maria.camilleri@metrio.example");
+    expect(outcome.prefs.workEmail).toBe("maria.camilleri@altenar.com");
     expect(outcome.prefs.teamDetection?.employee?.displayName).toBe("Maria Camilleri");
     expect(invokeMock).not.toHaveBeenCalledWith("preferences_load");
   });
@@ -114,4 +114,16 @@ describe("documentation fixture mode", () => {
     // Builds every documentation fixture payload (~1.3s on an idle machine, >5s when the whole
     // suite runs under heavy CPU contention), so this one test gets an explicit budget.
   }, 30_000);
+});
+
+describe("fixture email domain contract", () => {
+  it("every fixture-visible email uses @altenar.com (never a fake domain)", async () => {
+    const { readFileSync } = await import("node:fs");
+    const { resolve } = await import("node:path");
+    const text = readFileSync(resolve(process.cwd(), "src/fixtures/docFixtureData.ts"), "utf8");
+    const emails = text.match(/[A-Za-z0-9._-]+@[A-Za-z0-9.-]+/g) ?? [];
+    expect(emails.length).toBeGreaterThan(5);
+    for (const email of emails) expect(email.endsWith("@altenar.com")).toBe(true);
+    expect(text).not.toMatch(/northgate-play\.com|@metrio\.example|metr\.io/);
+  });
 });

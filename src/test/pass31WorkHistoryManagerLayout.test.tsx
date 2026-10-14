@@ -133,6 +133,8 @@ describe("PASS31 Expandable teams", () => {
     personId: id,
     displayName: name,
     jobTitle: "Product Designer",
+    scopeLabel: "Team member",
+    children: [],
     performanceLabel: "Healthy · 92% first pass",
     attentionLabel: "—",
     deliveryRiskCount: 0,

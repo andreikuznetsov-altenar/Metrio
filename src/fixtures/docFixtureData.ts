@@ -60,7 +60,7 @@ const PEOPLE: Record<
 > = {
   "doc-maria": {
     name: "Maria Camilleri",
-    email: "maria.camilleri@metrio.example",
+    email: "maria.camilleri@altenar.com",
     title: "Junior UI/UX Designer",
     department: "Design",
     supervisorId: "doc-andrei",
@@ -69,7 +69,7 @@ const PEOPLE: Record<
   },
   "doc-eleni": {
     name: "Eleni Papadopoulou",
-    email: "eleni.papadopoulou@metrio.example",
+    email: "eleni.papadopoulou@altenar.com",
     title: "Senior Product Designer",
     department: "Design",
     supervisorId: "doc-andrei",
@@ -78,7 +78,7 @@ const PEOPLE: Record<
   },
   "doc-andrei": {
     name: "Andrei Morozov",
-    email: "andrei.morozov@metrio.example",
+    email: "andrei.morozov@altenar.com",
     title: "UX Team Lead",
     department: "Design",
     supervisorId: "doc-andreas",
@@ -87,7 +87,7 @@ const PEOPLE: Record<
   },
   "doc-andreas": {
     name: "Andreas Georgiou",
-    email: "andreas.georgiou@metrio.example",
+    email: "andreas.georgiou@altenar.com",
     title: "Design Manager",
     department: "Design",
     supervisorId: "doc-nikolai",
@@ -96,7 +96,7 @@ const PEOPLE: Record<
   },
   "doc-nikolai": {
     name: "Nikolai Petrov",
-    email: "nikolai.petrov@metrio.example",
+    email: "nikolai.petrov@altenar.com",
     title: "Director of Product Design",
     department: "Product Design",
     role: "director",
@@ -104,7 +104,7 @@ const PEOPLE: Record<
   },
   "doc-luca": {
     name: "Luca Borg",
-    email: "luca.borg@metrio.example",
+    email: "luca.borg@altenar.com",
     title: "Product Designer",
     department: "Design",
     supervisorId: "doc-andrei",
@@ -113,7 +113,7 @@ const PEOPLE: Record<
   },
   "doc-sofia": {
     name: "Sofia Ivanova",
-    email: "sofia.ivanova@metrio.example",
+    email: "sofia.ivanova@altenar.com",
     title: "Design Operations Specialist",
     department: "Design",
     supervisorId: "doc-giorgos",
@@ -122,7 +122,7 @@ const PEOPLE: Record<
   },
   "doc-giorgos": {
     name: "Giorgos Ioannou",
-    email: "giorgos.ioannou@metrio.example",
+    email: "giorgos.ioannou@altenar.com",
     title: "UX Research Lead",
     department: "Research",
     supervisorId: "doc-andreas",
@@ -131,7 +131,7 @@ const PEOPLE: Record<
   },
   "doc-anna": {
     name: "Anna Markova",
-    email: "anna.markova@metrio.example",
+    email: "anna.markova@altenar.com",
     title: "Senior UX Researcher",
     department: "Research",
     supervisorId: "doc-giorgos",
@@ -140,7 +140,7 @@ const PEOPLE: Record<
   },
   "doc-mark": {
     name: "Mark Vella",
-    email: "mark.vella@metrio.example",
+    email: "mark.vella@altenar.com",
     title: "Product Designer",
     department: "Design",
     supervisorId: "doc-giorgos",
@@ -466,7 +466,7 @@ export function buildDocPreferences(
     },
     google: {
       ...base.google,
-      accountEmail: "feedback.coordinator@metrio.example",
+      accountEmail: "feedback.coordinator@altenar.com",
       formsConnected: true,
       gmailConnected: true,
       calendarConnected: true,

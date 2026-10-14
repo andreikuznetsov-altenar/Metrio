@@ -29,6 +29,7 @@ import { ResourceLibrary } from "../onboarding/ResourceLibrary";
 import { isNewStarter } from "../../domain/onboarding/newStarter";
 import { Button } from "../../components/Button/Button";
 import { ProjectContextSection } from "./ProjectContextSection";
+import { ScopeStrip } from "../../components/ScopeStrip/ScopeStrip";
 import { PersonPerformanceMetrics } from "./PersonPerformanceMetrics";
 import { EmployeeCurrentWorkList } from "./EmployeeCurrentWorkList";
 import { UpcomingTimeOffSection } from "./UpcomingTimeOffSection";
@@ -202,12 +203,7 @@ export function EmployeePerformanceOverview({ personId }: EmployeePerformanceOve
           aria-label="Performance overview"
           data-testid="performance-view-overview"
         >
-          <section className="performance-section performance-scope-strip" aria-label="Performance scope">
-            <div>
-              <p className="performance-scope-strip__eyebrow">Performance scope</p>
-              <h3 className="performance-scope-strip__title">{workspace.contextLine}</h3>
-            </div>
-          </section>
+          <ScopeStrip className="performance-section" eyebrow="Performance scope" title={workspace.contextLine} />
 
           {selfBamboo && selfBamboo.hireDate && isNewStarter(selfBamboo.hireDate) ? (
             <GettingStartedSection

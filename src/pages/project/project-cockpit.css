@@ -96,3 +96,49 @@
 .project-cockpit__section .segmented-control + .performance-table-wrap {
   margin-top: var(--space-3);
 }
+
+/* Delivery (period): one bounded module, label left / value right, separators between rows only. */
+.project-cockpit__section[data-testid="project-cockpit-delivery"] {
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-card);
+  background: var(--color-surface-secondary);
+  padding: var(--space-2) var(--space-3);
+}
+
+.project-cockpit__section[data-testid="project-cockpit-delivery"] .performance-scope-strip__eyebrow {
+  margin: 0 0 var(--space-1);
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-text-tertiary);
+}
+
+.project-cockpit__metric-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.project-cockpit__metric-list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  min-height: 2.25rem;
+  font-size: 0.875rem;
+}
+
+.project-cockpit__metric-list li + li {
+  border-top: 1px solid color-mix(in srgb, var(--color-border) 65%, transparent);
+}
+
+.project-cockpit__metric-list strong {
+  font-variant-numeric: tabular-nums;
+}
+
+.project-cockpit__section[data-testid="project-cockpit-delivery"] .project-cockpit__signals {
+  margin-top: var(--space-2);
+  padding-top: var(--space-2);
+  border-top: 1px solid color-mix(in srgb, var(--color-border) 65%, transparent);
+}

@@ -25,20 +25,129 @@ const BRANCH_COLLAPSE_MS = 220;
 function CollapsibleCell({
   open,
   className,
+  depth,
   children,
 }: {
   open: boolean;
   className?: string;
+  depth?: number;
   children: ReactNode;
 }) {
   return (
-    <td className={className}>
+    <td className={className} data-depth={depth}>
       <div className={open ? "performance-branch-collapse is-open" : "performance-branch-collapse"}>
         <div className="performance-branch-collapse__inner">
           <div className="performance-branch-collapse__content">{children}</div>
         </div>
       </div>
     </td>
+  );
+}
+
+interface BranchTreeState {
+  expanded: Set<string>;
+  mounted: Set<string>;
+  shown: Set<string>;
+  toggle: (id: string) => void;
+}
+
+function ExpandToggle({
+  name,
+  open,
+  onToggle,
+}: {
+  name: string;
+  open: boolean;
+  onToggle: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      className="performance-branch-toggle"
+      aria-expanded={open}
+      aria-label={`${open ? "Collapse" : "Expand"} ${name}'s team`}
+      data-testid="leadership-branch-toggle"
+      onClick={onToggle}
+    >
+      {open ? (
+        <Minus size={16} strokeWidth={1.8} aria-hidden data-icon="minus" />
+      ) : (
+        <Plus size={16} strokeWidth={1.8} aria-hidden data-icon="plus" />
+      )}
+    </button>
+  );
+}
+
+/** Rows below a leader. Sub-leads get their own toggle and expand one level further (same component). */
+function BranchMemberRows({
+  members,
+  depth,
+  isShown,
+  state,
+}: {
+  members: LeadershipBranchMemberRow[];
+  depth: number;
+  isShown: boolean;
+  state: BranchTreeState;
+}) {
+  return (
+    <>
+      {members.map((member) => {
+        const hasChildren = member.children.length > 0;
+        const open = state.expanded.has(member.personId);
+        return (
+          <Fragment key={member.personId}>
+            <tr
+              className={
+                isShown
+                  ? "performance-branch-member-row performance-branch-member-row--open"
+                  : "performance-branch-member-row"
+              }
+              data-testid="leadership-branch-member-row"
+              data-depth={depth}
+            >
+              <CollapsibleCell
+                open={isShown}
+                className="performance-branch-member-row__person"
+                depth={depth}
+              >
+                <PersonIdentity
+                  personId={member.personId}
+                  displayName={member.displayName}
+                  role={member.jobTitle}
+                  avatarSize="sm"
+                />
+              </CollapsibleCell>
+              <CollapsibleCell open={isShown}>{member.scopeLabel}</CollapsibleCell>
+              <CollapsibleCell open={isShown}>{member.performanceLabel}</CollapsibleCell>
+              <CollapsibleCell open={isShown}>{member.attentionLabel}</CollapsibleCell>
+              <CollapsibleCell open={isShown}>{member.deliveryRiskCount}</CollapsibleCell>
+              <CollapsibleCell open={isShown}>
+                <CapacityBadgeMix parts={member.capacityParts} ariaLabel="Capacity" />
+              </CollapsibleCell>
+              <CollapsibleCell open={isShown}>{member.availabilityLabel}</CollapsibleCell>
+              <CollapsibleCell open={isShown} className="performance-branch-action-col">
+                {hasChildren ? (
+                  <ExpandToggle
+                    name={member.displayName}
+                    open={open}
+                    onToggle={() => state.toggle(member.personId)}
+                  />
+                ) : null}
+              </CollapsibleCell>
+            </tr>
+            {hasChildren && state.mounted.has(member.personId) ? (
+              <BranchMemberRows
+                members={member.children}
+                depth={depth + 1}
+                isShown={state.shown.has(member.personId) && isShown}
+                state={state}
+              />
+            ) : null}
+          </Fragment>
+        );
+      })}
+    </>
   );
 }
 
@@ -305,57 +414,23 @@ export function LeadershipBranchesPerformanceView({
                     {membersByLeaderId ? (
                       <td className="performance-branch-action-col">
                         {members.length > 0 ? (
-                          <button
-                            type="button"
-                            className="performance-branch-toggle"
-                            aria-expanded={isOpen}
-                            aria-label={`${isOpen ? "Collapse" : "Expand"} ${row.leaderName}'s team`}
-                            data-testid="leadership-branch-toggle"
-                            onClick={() => toggleExpanded(row.leaderId)}
-                          >
-                            {isOpen ? (
-                              <Minus size={16} strokeWidth={1.8} aria-hidden data-icon="minus" />
-                            ) : (
-                              <Plus size={16} strokeWidth={1.8} aria-hidden data-icon="plus" />
-                            )}
-                          </button>
+                          <ExpandToggle
+                            name={row.leaderName}
+                            open={isOpen}
+                            onToggle={() => toggleExpanded(row.leaderId)}
+                          />
                         ) : null}
                       </td>
                     ) : null}
                   </tr>
-                  {isMounted
-                    ? members.map((member) => (
-                        <tr
-                          key={`${row.leaderId}-${member.personId}`}
-                          className={
-                            isShown
-                              ? "performance-branch-member-row performance-branch-member-row--open"
-                              : "performance-branch-member-row"
-                          }
-                          data-testid="leadership-branch-member-row"
-                        >
-                          <CollapsibleCell open={isShown} className="performance-branch-member-row__person">
-                            <PersonIdentity
-                              personId={member.personId}
-                              displayName={member.displayName}
-                              role={member.jobTitle}
-                              avatarSize="sm"
-                            />
-                          </CollapsibleCell>
-                          <CollapsibleCell open={isShown}>Team member</CollapsibleCell>
-                          <CollapsibleCell open={isShown}>{member.performanceLabel}</CollapsibleCell>
-                          <CollapsibleCell open={isShown}>{member.attentionLabel}</CollapsibleCell>
-                          <CollapsibleCell open={isShown}>{member.deliveryRiskCount}</CollapsibleCell>
-                          <CollapsibleCell open={isShown}>
-                            <CapacityBadgeMix parts={member.capacityParts} ariaLabel="Capacity" />
-                          </CollapsibleCell>
-                          <CollapsibleCell open={isShown}>{member.availabilityLabel}</CollapsibleCell>
-                          <CollapsibleCell open={isShown} className="performance-branch-action-col">
-                            {null}
-                          </CollapsibleCell>
-                        </tr>
-                      ))
-                    : null}
+                  {isMounted ? (
+                    <BranchMemberRows
+                      members={members}
+                      depth={1}
+                      isShown={isShown}
+                      state={{ expanded, mounted, shown, toggle: toggleExpanded }}
+                    />
+                  ) : null}
                 </Fragment>
               );
             })}

@@ -170,22 +170,34 @@
   grid-template-columns: repeat(var(--recommendation-count, 1), minmax(0, 1fr));
 }
 
+/*
+ * Carousel with a deliberate edge peek. Two cards are fully visible; a sliver of the neighbouring
+ * card stays visible on every side that has more content, so the row reads as scrollable:
+ *   start:        [card][card][ next-peek ]
+ *   intermediate: [prev-peek][card][card][next-peek]
+ *   end:          [prev-peek][card][card]
+ * Card width = (viewport - 2 peeks - 3 gaps) / 2; scroll-padding keeps the previous card's peek
+ * on screen after snapping. Position 0 and the last position clamp, so there is never a fake peek.
+ */
 .executive-recommendations__list--carousel {
+  --carousel-peek: clamp(1.5rem, 4%, 3rem);
+  --carousel-gap: var(--space-2);
   display: flex;
-  gap: var(--space-2);
+  gap: var(--carousel-gap);
   grid-template-columns: none;
   overflow-x: auto;
   overflow-y: hidden;
   scroll-snap-type: x mandatory;
+  scroll-padding-inline-start: calc(var(--carousel-peek) + var(--carousel-gap));
   scroll-behavior: smooth;
   overscroll-behavior-x: contain;
   max-width: 100%;
 }
 
 .executive-recommendations__list--carousel .executive-recommendations__item {
-  flex: 0 0 calc((100% - (2 * var(--space-3))) / 3);
-  width: calc((100% - (2 * var(--space-3))) / 3);
-  max-width: calc((100% - (2 * var(--space-3))) / 3);
+  flex: 0 0 calc((100% - 2 * var(--carousel-peek) - 3 * var(--carousel-gap)) / 2);
+  width: calc((100% - 2 * var(--carousel-peek) - 3 * var(--carousel-gap)) / 2);
+  max-width: calc((100% - 2 * var(--carousel-peek) - 3 * var(--carousel-gap)) / 2);
   scroll-snap-align: start;
   min-height: 0;
 }
@@ -196,9 +208,9 @@
   }
 
   .executive-recommendations__list--carousel .executive-recommendations__item {
-    flex-basis: 100%;
-    width: 100%;
-    max-width: 100%;
+    flex-basis: calc(100% - 2 * var(--carousel-peek) - 2 * var(--carousel-gap));
+    width: calc(100% - 2 * var(--carousel-peek) - 2 * var(--carousel-gap));
+    max-width: calc(100% - 2 * var(--carousel-peek) - 2 * var(--carousel-gap));
   }
 }
 

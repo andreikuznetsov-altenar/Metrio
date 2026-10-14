@@ -119,10 +119,10 @@ describe("PASS 22 visual parity contracts", () => {
     const employeePerformance = source(
       "src/pages/performance/EmployeePerformanceOverview.tsx",
     );
-    const css = source("src/pages/performance/performance-dashboard.css");
+    const css = source("src/components/ScopeStrip/ScopeStrip.css");
 
-    expect(employeePerformance).toContain("performance-scope-strip");
-    expect(employeePerformance).toContain("performance-scope-strip__eyebrow");
+    expect(employeePerformance).toContain("<ScopeStrip");
+    expect(employeePerformance).toContain('eyebrow="Performance scope"');
     expect(css).toContain(".performance-scope-strip");
     expect(css).toContain("border: 1px solid var(--color-border-subtle)");
     expect(css).toContain("border-radius: var(--radius-card)");

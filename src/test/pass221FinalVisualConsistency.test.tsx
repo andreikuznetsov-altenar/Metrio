@@ -19,16 +19,18 @@ describe("PASS 22.1 final visual consistency contracts", () => {
 
     expect(component).toContain("dashboard-your-manager executive-panel");
     expect(component).toContain("<PersonIdentity");
-    expect(component).toMatch(/variant="secondary"[\s\S]{0,300}workEmail/);
+    // PASS34: the email is a plain inline text link, not a button control.
+    expect(component).toMatch(/metrio-text-link[\s\S]{0,300}workEmail/);
+    expect(component).not.toMatch(/variant="secondary"/);
     expect(cssBlock(css, ".dashboard-your-manager")).not.toContain("padding:");
   });
 
   it("uses canonical scope strip for employee performance context", () => {
     const component = source("src/pages/performance/EmployeePerformanceOverview.tsx");
 
-    expect(component).toContain("performance-section performance-scope-strip");
-    expect(component).toContain("performance-scope-strip__eyebrow");
-    expect(component).toContain("performance-scope-strip__title");
+    expect(component).toContain("<ScopeStrip");
+    expect(component).toContain('eyebrow="Performance scope"');
+    expect(source("src/components/ScopeStrip/ScopeStrip.tsx")).toContain("performance-scope-strip__title");
     expect(component).not.toContain("performance-employee-context");
   });
 
@@ -63,9 +65,9 @@ describe("PASS 22.1 final visual consistency contracts", () => {
   it("keeps director scope horizontal and compacts adjacent overview modules", () => {
     const component = source("src/pages/performance/director/DirectorOverviewView.tsx");
     const css = source("src/pages/performance/performance-dashboard.css");
-    const scope = cssBlock(css, ".performance-scope-strip");
+    const scope = cssBlock(source("src/components/ScopeStrip/ScopeStrip.css"), ".performance-scope-strip");
 
-    expect(component).toContain("performance-scope-strip");
+    expect(component).toContain("<ScopeStrip");
     expect(component).toContain("View all teams");
     expect(scope).toContain("display: flex");
     expect(scope).toContain("flex-direction: row");

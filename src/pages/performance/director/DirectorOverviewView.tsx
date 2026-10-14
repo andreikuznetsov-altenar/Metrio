@@ -4,6 +4,7 @@ import type { OrganizationSignal } from "../../../domain/organization/organizati
 import { Button } from "../../../components/Button/Button";
 import { Badge } from "../../../components/Badge/Badge";
 import { Card } from "../../../components/Card/Card";
+import { ScopeStrip } from "../../../components/ScopeStrip/ScopeStrip";
 import { METRIO_TABLE_CLASS, MetrioTableWrap } from "../../../components/Table/MetrioTable";
 import { SortableTableHeader } from "../../../components/Table/SortableTableHeader";
 import { useTableSort } from "../../../components/Table/useTableSort";
@@ -73,15 +74,17 @@ export function DirectorOverviewView({
 
   return (
     <div className="performance-section-stack" data-testid="director-overview">
-      <section className="performance-section performance-scope-strip" data-testid="director-scope-header">
-        <div>
-          <p className="performance-scope-strip__eyebrow">Performance scope</p>
-          <h3 className="performance-scope-strip__title">{model.scopeLabel}</h3>
-        </div>
-        <Button variant="secondary" onClick={onOpenTeams}>
-          View all teams
-        </Button>
-      </section>
+      <ScopeStrip
+        className="performance-section"
+        eyebrow="Performance scope"
+        title={model.scopeLabel}
+        data-testid="director-scope-header"
+        action={
+          <Button variant="secondary" onClick={onOpenTeams}>
+            View all teams
+          </Button>
+        }
+      />
 
       <section className="performance-section" aria-label="Organization summary">
         <h3 className="performance-section__title">Organization summary</h3>
@@ -238,19 +241,24 @@ export function DirectorOverviewView({
           No high-priority organization signals in this period.
         </p>
       ) : (
-        <ul className="performance-director-signals">
+        <ul className="performance-scope-strip-list">
           {topSignals.map((signal) => (
             <li key={signal.id}>
-              <Badge variant={signal.severity === "danger" ? "danger" : "warning"}>
-                {signal.severity}
-              </Badge>
-              <div>
-                <div>{signal.title}</div>
-                <div className="performance-inline-empty">{signal.description}</div>
-              </div>
-              <Button variant="secondary" size="small" onClick={() => onOpenSignal(signal)}>
-                Open
-              </Button>
+              <ScopeStrip
+                ariaLabel={signal.title}
+                leading={
+                  <Badge variant={signal.severity === "danger" ? "danger" : "warning"}>
+                    {signal.severity}
+                  </Badge>
+                }
+                title={signal.title}
+                description={signal.description}
+                action={
+                  <Button variant="secondary" size="small" onClick={() => onOpenSignal(signal)}>
+                    Open
+                  </Button>
+                }
+              />
             </li>
           ))}
         </ul>

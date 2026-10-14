@@ -1,6 +1,7 @@
 import type { OrganizationSignal } from "../../../domain/organization/organizationTypes";
 import { Badge } from "../../../components/Badge/Badge";
 import { Button } from "../../../components/Button/Button";
+import { ScopeStrip } from "../../../components/ScopeStrip/ScopeStrip";
 
 export interface DirectorSignalsViewProps {
   signals: OrganizationSignal[];
@@ -17,19 +18,24 @@ export function DirectorSignalsView({ signals, onOpen }: DirectorSignalsViewProp
   }
 
   return (
-    <ul className="performance-director-signals" data-testid="director-signals">
+    <ul className="performance-scope-strip-list" data-testid="director-signals">
       {signals.map((signal) => (
         <li key={signal.id}>
-          <Badge variant={signal.severity === "info" ? "neutral" : "warning"}>
-            {signal.severity}
-          </Badge>
-          <div>
-            <div>{signal.title}</div>
-            <div className="performance-inline-empty">{signal.description}</div>
-          </div>
-          <Button variant="secondary" size="small" onClick={() => onOpen(signal)}>
-            Open
-          </Button>
+          <ScopeStrip
+            ariaLabel={signal.title}
+            leading={
+              <Badge variant={signal.severity === "info" ? "neutral" : "warning"}>
+                {signal.severity}
+              </Badge>
+            }
+            title={signal.title}
+            description={signal.description}
+            action={
+              <Button variant="secondary" size="small" onClick={() => onOpen(signal)}>
+                Open
+              </Button>
+            }
+          />
         </li>
       ))}
     </ul>
