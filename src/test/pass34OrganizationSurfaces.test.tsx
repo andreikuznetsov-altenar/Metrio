@@ -187,3 +187,13 @@ describe("PASS34 expandable hierarchy", () => {
     expect(perfCss).toMatch(/\.performance-branch-member-row__person\[data-depth="2"\]/);
   });
 });
+
+describe("PASS34 hierarchy table geometry", () => {
+  it("leader column keeps the lion's share so indented names never wrap mid-word", () => {
+    const view = read("src/pages/performance/director/LeadershipBranchesPerformanceView.tsx");
+    const cols = [...view.matchAll(/<col style=\{\{ width: "([\d.]+)%" \}\} \/>/g)].map((m) => Number(m[1]));
+    expect(cols[0]).toBeGreaterThanOrEqual(24);
+    expect(cols.reduce((a, b) => a + b, 0)).toBe(100);
+    expect(perfCss).toMatch(/performance-branch-member-row__person \.performance-branch-collapse__content\s*\{[^}]*var\(--space-3\)/);
+  });
+});

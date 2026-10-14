@@ -327,6 +327,17 @@ export function LeadershipBranchesPerformanceView({
       <h3 className="performance-section__title">Leadership branches</h3>
       <MetrioTableWrap>
         <table className={METRIO_TABLE_CLASS}>
+          {/* Leader column gets the lion's share so indented member names never wrap mid-word. */}
+          <colgroup>
+            <col style={{ width: "24%" }} />
+            <col style={{ width: "11%" }} />
+            <col style={{ width: "15%" }} />
+            <col style={{ width: "11%" }} />
+            <col style={{ width: "9%" }} />
+            <col style={{ width: "16%" }} />
+            <col style={{ width: "14%" }} />
+            {membersByLeaderId ? <col style={{ width: "3.25rem" }} /> : null}
+          </colgroup>
           <thead>
             <tr>
               <SortableTableHeader
