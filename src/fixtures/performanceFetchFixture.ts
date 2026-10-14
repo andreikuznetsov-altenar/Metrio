@@ -97,6 +97,40 @@ function activeIssue(
   };
 }
 
+
+/** Long, multi-stage task history (repeated stages + assignee changes) for drawer layout/scroll tests. */
+function longHistoryIssue(key: string, summary: string, ownerCanonical: string): AuditIssue {
+  const base = activeIssue(key, summary, "In Review", ownerCanonical, false);
+  const statusEvent = (from: string, to: string, at: string) => ({
+    eventType: "Status" as const,
+    changedAt: at,
+    changedBy: "Visual",
+    fromValue: from,
+    toValue: to,
+    timeSincePreviousStatusMs: null,
+    isBackflow: false,
+    isHandoff: false,
+    isReturnToTeam: false,
+    excludeFromEfficiencyBackflow: false,
+  });
+  const path = ["To Do", "Draft", "In Review", "Approved", "In Progress", "On Hold", "In Progress", "In Review"];
+  const events = path.slice(1).flatMap((to, i) => {
+    const at = new Date(Date.UTC(2026, 1, 10 + i * 9, 10)).toISOString();
+    const out = [statusEvent(path[i]!, to, at)];
+    if (i % 3 === 1) {
+      out.push({
+        ...statusEvent("", "", at),
+        eventType: "Assignee" as never,
+        fromValue: "Albert Urbanovich",
+        toValue: "Andrei Kuznetsov",
+        changedAt: new Date(Date.UTC(2026, 1, 10 + i * 9, 11)).toISOString(),
+      });
+    }
+    return out;
+  });
+  return { ...base, events: events as AuditIssue["events"], issueCreated: "2026-02-01T00:00:00.000Z" };
+}
+
 function visualPerson(
   fixtureId: (typeof VISUAL_TEAM_IDS)[number],
   options: {
@@ -345,6 +379,7 @@ function buildTeamPersons(): Person[] {
           "jira-person-01",
           true,
         ),
+        longHistoryIssue("UX-1531", "WSDK - Global change of MyBets clock icon on WNavigation", "jira-person-01"),
       ],
     }),
     visualPerson("person-02", {

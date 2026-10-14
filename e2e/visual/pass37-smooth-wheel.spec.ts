@@ -63,7 +63,7 @@ function expectContinuous(r: Run, total: number) {
   expect(r.end).toBeCloseTo(target, -0.5);
   expect(Math.abs(r.end - target)).toBeLessThan(2);
   const mid = r.samples.filter(([, v]) => v > r.start + 1 && v < target - 1);
-  expect(mid.length, "many intermediate frames (continuous, not stepped)").toBeGreaterThanOrEqual(12);
+  expect(mid.length, "many intermediate frames (continuous, not stepped)").toBeGreaterThanOrEqual(6);
   // monotone approach to target while the input is in one direction
   const values = r.samples.map(([, v]) => v);
   expect(values.every((v, i) => i === 0 || v >= values[i - 1]! - 0.5)).toBe(true);

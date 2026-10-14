@@ -177,6 +177,8 @@ function issue(
     created?: string;
     /** When the issue entered its current status (defaults to a recent fixed date). */
     enteredAt?: string;
+    /** Earlier stages (oldest first) before the current status: long task-path / scroll fixtures. */
+    priorPath?: string[];
   } = {},
 ): AuditIssue {
   const person = PEOPLE[owner];
@@ -199,20 +201,22 @@ function issue(
     currentAssigneeCanonical: canonical(owner),
     currentAssigneeAccountId: canonical(owner),
     currentAssigneeDisplayName: person.name,
-    events: [
-      {
-        eventType: "Status",
-        changedAt: options.enteredAt ?? "2026-09-18T10:00:00.000Z",
+    events: (() => {
+      const entered = new Date(options.enteredAt ?? "2026-09-18T10:00:00.000Z").getTime();
+      const path = [...(options.priorPath ?? ["To Do"]), status];
+      return path.slice(1).map((to, i) => ({
+        eventType: "Status" as const,
+        changedAt: new Date(entered - (path.length - 2 - i) * 9 * 86_400_000).toISOString(),
         changedBy: person.name,
-        fromValue: "To Do",
-        toValue: status,
+        fromValue: path[i]!,
+        toValue: to,
         timeSincePreviousStatusMs: null,
-        isBackflow: options.backflow ?? false,
+        isBackflow: i === path.length - 2 ? (options.backflow ?? false) : false,
         isHandoff: false,
         isReturnToTeam: false,
         excludeFromEfficiencyBackflow: false,
-      },
-    ],
+      }));
+    })(),
     rangeEvents: [],
   };
 }
@@ -225,6 +229,7 @@ const ISSUES: AuditIssue[] = [
   // Stale (>30d) Review: exercises the "Mark complete" action against the mock transition layer.
   issue("DEMO-201", "doc-eleni", "Performance trend chart review", "In Review", {
     enteredAt: "2026-07-20T10:00:00.000Z",
+    priorPath: ["To Do", "Draft", "In Review", "Approved", "In Progress", "On Hold", "In Progress"],
   }),
   issue("DEMO-202", "doc-eleni", "Notification drawer recovery", "On Hold"),
   issue("DEMO-203", "doc-eleni", "PDF KPI alignment", "Done", { backflow: true }),

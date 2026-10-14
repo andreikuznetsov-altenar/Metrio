@@ -19,6 +19,7 @@ import { openExternalUrl } from '../../platform/openExternal';
 import { resolveJiraBaseUrl } from '../../config/product';
 import { useOptionalPersonNavigation } from '../../app/PersonNavigationContext';
 import { MetaList, MetaRow } from '../MetaList/MetaList';
+import { taskPathTagStyle } from '../../domain/task-journey/taskPathTagStyle';
 import { StaleCompletionAction } from './StaleCompletionAction';
 import type { IssueCompletionService } from '../../services/jira/issueCompletionService';
 import type { VerifiedIssueState } from '../../domain/jira/applyVerifiedIssueState';
@@ -229,7 +230,7 @@ export function TaskJourneyDrawer({
       }
     >
       {journey ? (
-        <div className="metrio-scroll metrio-scroll--hidden-thumb" data-testid="task-journey-drawer">
+        <div className="task-journey-drawer__content" data-testid="task-journey-drawer">
           <section className="task-journey-drawer__section" aria-label="Why this needs attention">
             <h3 className="task-journey-drawer__section-title">Why this needs attention</h3>
             <p className="task-journey-drawer__attention-lead">{journey.problem.headline}</p>
@@ -257,7 +258,31 @@ export function TaskJourneyDrawer({
             {journey.historyNotice ? (
               <p className="task-journey-drawer__notice">{journey.historyNotice}</p>
             ) : null}
-            <p className="task-journey-drawer__path">{journey.compressedPath}</p>
+            <ul
+              className="task-journey-path"
+              aria-label={`Task path: ${journey.compressedPath}`}
+              data-testid="task-journey-path"
+            >
+              {journey.pathStages.map((stage, index) => {
+                const style = taskPathTagStyle(issue as AuditIssue, stage.status);
+                return (
+                  <li key={`${stage.status}-${index}`} className="task-journey-path__item">
+                    <Badge
+                      variant={style.variant}
+                      className={[
+                        'task-journey-path__tag',
+                        style.muted ? 'task-journey-path__tag--muted' : '',
+                      ]
+                        .filter(Boolean)
+                        .join(' ')}
+                      data-testid="task-journey-path-tag"
+                    >
+                      {stage.isBackflow ? `↩ ${stage.status}` : stage.status}
+                    </Badge>
+                  </li>
+                );
+              })}
+            </ul>
             <ol className="task-journey-timeline">
               {journey.timeline.map((entry, index) => (
                 <TimelineItem key={`${entry.kind}-${entry.changedAt}-${index}`} entry={entry} />

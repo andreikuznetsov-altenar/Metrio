@@ -93,9 +93,10 @@ describe('TaskJourneyDrawer', () => {
       />,
     );
 
-    expect(
-      within(screen.getByTestId('task-journey-drawer')).getByText('In Review'),
-    ).toBeInTheDocument();
+    // The path is a tag group (one tag per stage, no arrow text), not a text line.
+    const tags = within(screen.getByTestId('task-journey-path')).getAllByTestId('task-journey-path-tag');
+    expect(tags.map((t) => t.textContent)).toEqual(['In Progress', 'In Review']);
+    expect(screen.getByTestId('task-journey-path').textContent).not.toContain('→');
     expect(screen.queryByText(/Current status:/i)).not.toBeInTheDocument();
     expect(screen.getByTestId('task-journey-stage-duration')).toBeInTheDocument();
     expect(screen.getByTestId('task-journey-diagnostic-block')).toBeInTheDocument();

@@ -85,6 +85,28 @@ function isScrollableOverflow(el: HTMLElement): boolean {
   return overflowY === "auto" || overflowY === "scroll";
 }
 
+const NESTED_SCROLL_MIN_OVERFLOW_PX = 2;
+
+/**
+ * A descendant between the pointer and the owner that GENUINELY scrolls in this direction
+ * (textarea, an independent list...) owns the event natively. Strict on purpose: rounding-level
+ * overflow (a wrapper that is 1px taller than its box) must never capture the wheel and starve the
+ * real owner, so only overflow of more than 2px that can still move counts.
+ */
+function independentChildOwns(event: Event, owner: HTMLElement, dir: number): boolean {
+  const path = typeof event.composedPath === "function" ? event.composedPath() : [];
+  for (const node of path) {
+    if (node === owner) return false;
+    if (!(node instanceof HTMLElement)) continue;
+    const overflowY = getComputedStyle(node).overflowY;
+    if (overflowY !== "auto" && overflowY !== "scroll") continue;
+    const room = node.scrollHeight - node.clientHeight;
+    if (room <= NESTED_SCROLL_MIN_OVERFLOW_PX) continue;
+    if (dir > 0 ? node.scrollTop < room - 0.5 : node.scrollTop > 0.5) return true;
+  }
+  return false;
+}
+
 /**
  * Decide whether Lenis may take this event. `false` → Lenis ignores it and WebKit scrolls natively.
  */
@@ -99,6 +121,7 @@ function createGuard(el: HTMLElement, getLenis: () => Lenis | undefined) {
       if (!isScrollableOverflow(el)) return false;
       const max = el.scrollHeight - el.clientHeight;
       if (max <= BOUNDARY_EPSILON_PX) return false; // nothing to scroll: native propagation
+      if (independentChildOwns(event, el, deltaY > 0 ? 1 : -1)) return false;
       const lenis = getLenis();
       if (!lenis) return false;
       const target = lenis.targetScroll;
@@ -123,7 +146,9 @@ function create(el: HTMLElement): Lenis | null {
       wheelMultiplier: SMOOTH_SCROLL_WHEEL_MULTIPLIER,
       smoothWheel: true,
       syncTouch: false,
-      allowNestedScroll: true,
+      // Nested routing is done by `createGuard` (strict); Lenis' own heuristic is cached for 2s and
+      // treats a rounding-level overflow as a nested scroller, which starved the real owner.
+      allowNestedScroll: false,
       // Drawers swap content in place; measure scrollHeight directly instead of observing a node.
       naiveDimensions: true,
       autoResize: false,

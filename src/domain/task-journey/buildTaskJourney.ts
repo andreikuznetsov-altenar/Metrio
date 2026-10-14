@@ -16,7 +16,7 @@ import {
 import { taskHealthThresholdsFromRules } from '../operationalRules/normalizeOperationalRules';
 import { resolveWorkflowProfile } from '../workflows/resolveWorkflowProfile';
 import { resolveWorkflowStage } from '../workflows/resolveWorkflowStage';
-import { compressStatusPath } from './compressStatusPath';
+import { compressStatusPath, taskPathStages, type TaskPathStage } from './compressStatusPath';
 import { getFullIssueEventsSorted, getFullStatusEventsSorted } from './issueEvents';
 import { resolveIssueCurrentOwner, type IssueCurrentOwner } from './resolveIssueCurrentOwner';
 
@@ -73,6 +73,8 @@ export interface TaskJourney {
   currentCanonicalStage: string;
   currentOwner: IssueCurrentOwner;
   compressedPath: string;
+  /** Same path as structured stages (rendered as tags). */
+  pathStages: TaskPathStage[];
   historyComplete: boolean;
   historyNotice: string | null;
   problem: TaskJourneyProblem;
@@ -347,6 +349,7 @@ export function buildTaskJourney(input: BuildTaskJourneyInput): TaskJourney {
     currentCanonicalStage,
     currentOwner,
     compressedPath: compressStatusPath(issue),
+    pathStages: taskPathStages(issue),
     historyComplete,
     historyNotice,
     problem: buildProblemBlock(issue, input.params, now, rules, extraReason),
