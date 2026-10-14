@@ -29,7 +29,7 @@
  * .drawer (column, height 100%) → .drawer__header (flex-shrink 0)
  * → .drawer__body (flex 1, min-height 0, overflow-y auto, metrio-scroll--hidden-thumb)
  * → optional .drawer__footer (flex-shrink 0).
- * Notification Center uses .drawer--notifications + inner .notification-center__main scroll.
+ * Notification Center renders inside the same shared .drawer__body scroll owner (no inner scroller).
  */
 .drawer {
   position: absolute;
@@ -70,10 +70,12 @@
   padding-top: 0;
 }
 
+/* The ONE vertical scroll owner of every drawer. Padding lives here, so the scrollbar lane is at the
+ * body's outer right edge (outside the padding) and the content wrapper never scrolls itself. */
 .drawer__body {
   flex: 1 1 auto;
   min-height: 0;
-  overflow-y: auto;
+  overflow-y: scroll;
   overflow-x: hidden;
   padding: var(--drawer-body-padding);
 }

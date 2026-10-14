@@ -297,9 +297,8 @@ describe("PASS 14.12 scrollbar policy contracts", () => {
     expect(read("src/components/Modal/Modal.tsx")).toContain(
       "metrio-scroll--hidden-thumb",
     );
-    expect(read("src/shell/NotificationCenter.tsx")).toContain(
-      "metrio-scroll--visible-thumb",
-    );
+    // PASS36: Notifications renders inside the shared Drawer body (the one scroll owner).
+    expect(read("src/shell/NotificationCenter.tsx")).toContain("<Drawer");
     expect(read("src/components/TaskListModal/TaskListModal.tsx")).toContain(
       "metrio-scroll--hidden-thumb",
     );

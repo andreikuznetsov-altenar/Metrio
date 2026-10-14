@@ -25,8 +25,10 @@ describe("UI Repair Pass 13.7B side panels and motion", () => {
   });
 
   it("notification scroll region uses stable side-panel scrollbar", () => {
+    // PASS36: Notifications has no scroller of its own; the shared Drawer body (metrio-scroll) scrolls.
     const source = read("src/shell/NotificationCenter.tsx");
-    expect(source).toContain("metrio-scroll");
+    expect(source).toContain("<Drawer");
+    expect(read("src/components/Drawer/Drawer.tsx")).toContain("metrio-scroll");
     const css = read("src/styles/ui-interaction-system.css");
     expect(css).toContain("--metrio-scrollbar-size");
     expect(css).toContain("scrollbar-gutter: auto");

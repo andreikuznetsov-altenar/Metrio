@@ -18,6 +18,7 @@ import {
   type ComponentType,
 } from "react";
 import { Drawer } from "../components/Drawer/Drawer";
+import { scrollToInstant } from "../platform/scrollBehavior";
 import { Button } from "../components/Button/Button";
 import { IconButton } from "../components/IconButton/IconButton";
 import { PersonAvatar } from "../components/PersonAvatar/PersonAvatar";
@@ -177,7 +178,8 @@ export function NotificationCenter({
       setConfirmClear(false);
       setMenuOpen(false);
       requestAnimationFrame(() => {
-        scrollRef.current?.scrollTo({ top: 0, behavior: "instant" as ScrollBehavior });
+        const scroller = scrollRef.current?.closest<HTMLElement>(".drawer__body");
+        if (scroller) scrollToInstant(scroller, 0);
       });
     }
   }, [open, refresh]);
@@ -304,7 +306,7 @@ export function NotificationCenter({
         </div>
         <div
           ref={scrollRef}
-          className="notification-center__main metrio-scroll metrio-scroll--visible-thumb"
+          className="notification-center__main"
           data-testid="notification-scroll-viewport"
         >
         {dismissError ? (
@@ -432,7 +434,7 @@ export function NotificationCenter({
                             ) : null}
                             <Button
                               type="button"
-                              variant="ghost"
+                              variant="danger"
                               size="compact"
                               className="notification-center__dismiss"
                               data-testid="notification-delete"

@@ -1,4 +1,5 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { Card } from "../../components/Card/Card";
 import { Button } from "../../components/Button/Button";
 import { DrawerPanelPlaceholder } from "../../components/Drawer/DrawerPanelPlaceholder";
 import { DrawerStack } from "../../components/Drawer/DrawerStack";
@@ -340,14 +341,22 @@ export function PersonDetailDrawer({
             {workspace.timeOff ? (
               <>
                 <h3 className="person-detail-drawer__section-title">Availability</h3>
-                <div className="person-detail-drawer__time-off">
-                  <div>{workspace.timeOff.rangeLabel}</div>
-                  {workspace.timeOff.note ? (
-                    <div className="person-detail-drawer__time-off-note">
-                      {workspace.timeOff.note}
-                    </div>
-                  ) : null}
-                </div>
+                <ul className="person-detail-drawer__availability-list" data-testid="person-availability">
+                  {[workspace.timeOff].map((entry) => (
+                    <li key={`${entry.startDate ?? ""}-${entry.rangeLabel}`}>
+                      <Card className="person-detail-drawer__availability-card">
+                        <span className="person-detail-drawer__availability-date">
+                          {entry.rangeLabel}
+                        </span>
+                        {entry.note ? (
+                          <span className="person-detail-drawer__availability-type">
+                            {entry.note}
+                          </span>
+                        ) : null}
+                      </Card>
+                    </li>
+                  ))}
+                </ul>
               </>
             ) : null}
 

@@ -58,7 +58,7 @@ describe("canonical thumb-only scrollbars (root cause: standard scrollbar proper
 
   it("drawer bodies keep the PASS28 contract: single owner, auto overflow, hidden thumb", () => {
     const drawer = src("src/components/Drawer/Drawer.css");
-    expect(drawer).toMatch(/\.drawer__body\s*\{[^}]*overflow-y:\s*auto/);
+    expect(drawer).toMatch(/\.drawer__body\s*\{[^}]*overflow-y:\s*scroll/); // PASS36: lane always reserved
     expect(drawer).toMatch(/\.drawer__body\s*\{[^}]*min-height:\s*0/);
   });
 });

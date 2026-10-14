@@ -22,32 +22,13 @@ afterEach(() => {
 });
 
 describe("Notification drawer scroll geometry", () => {
-  it("CSS contract: drawer body keeps zero bottom padding; scroll viewport owns canonical bottom inset", () => {
-    const css = readFileSync(
-      resolve(process.cwd(), "src/shell/notification-center.css"),
-      "utf8",
-    );
-    expect(css).toMatch(
-      /\.drawer--notifications\s+\.drawer__body[\s\S]*?padding-bottom:\s*0/,
-    );
-    expect(css).not.toMatch(
-      /\.drawer--notification\s+\.drawer__body[\s\S]*?overflow:\s*hidden/,
-    );
-    expect(css).toMatch(
-      /\.notification-center__main\s*\{[\s\S]*?flex:\s*1\s+1\s+auto/,
-    );
-    expect(css).toMatch(
-      /\.notification-center__main\s*\{[\s\S]*?min-height:\s*0/,
-    );
-    expect(css).toMatch(
-      /\.notification-center__main\s*\{[\s\S]*?overflow-y:\s*auto/,
-    );
-    expect(css).toMatch(
-      /\.notification-center__main\s*\{[\s\S]*?padding-bottom:\s*var\(--drawer-body-padding\)/,
-    );
-    expect(css).not.toMatch(
-      /\.notification-center__card:last-child[\s\S]*margin-bottom/,
-    );
+  it("CSS contract (PASS36): the drawer body is the ONLY scroll owner; Notifications adds none", () => {
+    const css = readFileSync(resolve(process.cwd(), "src/shell/notification-center.css"), "utf8");
+    // no Notification-specific scroller / body override: nothing may declare overflow
+    expect(css).not.toMatch(/overflow(-y|-x)?\s*:\s*(auto|scroll)/);
+    expect(css).not.toMatch(/\.drawer--notifications\s+\.drawer__body/);
+    expect(css).toMatch(/\.notification-center__filters\s*\{[^}]*position:\s*sticky/);
+    expect(css).not.toMatch(/\.notification-center__card:last-child[\s\S]*margin-bottom/);
   });
 
   it("scroll viewport uses the visible-thumb class and remains the scroll container", () => {
@@ -65,9 +46,10 @@ describe("Notification drawer scroll geometry", () => {
       />,
     );
     const viewport = screen.getByTestId("notification-scroll-viewport");
-    expect(viewport.className).toContain("metrio-scroll");
-    expect(viewport.className).toContain("metrio-scroll--visible-thumb");
+    // PASS36: a plain content wrapper — the surrounding .drawer__body is the scroll owner.
     expect(viewport.className).toContain("notification-center__main");
+    expect(viewport.className).not.toContain("metrio-scroll");
+    expect(viewport.closest(".drawer__body")?.className).toContain("metrio-scroll--visible-thumb");
 
     const drawerBody = document.querySelector(
       ".drawer--notifications .drawer__body, .drawer--notification .drawer__body",

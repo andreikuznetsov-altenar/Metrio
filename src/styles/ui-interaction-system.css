@@ -209,13 +209,16 @@
 }
 
 /*
- * Drawers / side panels: ONE vertical scroll owner that shows the canonical 4px thumb (with the
- * 8px end insets from the global scrollbar) only when its content really overflows. A short
- * drawer therefore has no scrollbar and no lane; a long one has exactly one.
+ * Drawers / side panels: ONE vertical scroll owner (the drawer body) whose scrollbar lane sits at
+ * the drawer's outermost right edge and is ALWAYS reserved. The canonical 4px thumb (2|4|2 in the
+ * 8px lane, 8px end insets) is only painted while the content overflows; a short drawer shows no
+ * thumb but its content keeps exactly the same x-position and width.
  */
 .metrio-scroll--visible-thumb {
   overflow-x: hidden;
-  overflow-y: auto;
+  /* `scroll` (not `auto`) keeps the 8px lane reserved at all times so content never changes width
+   * when a thumb appears or disappears. The thumb itself is only painted while content overflows. */
+  overflow-y: scroll;
   overscroll-behavior: contain;
 }
 

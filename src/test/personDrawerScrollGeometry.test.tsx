@@ -19,7 +19,7 @@ describe("Person drawer scroll geometry", () => {
 
   it("shared drawer body owns scroll and uses canonical body padding token", () => {
     const drawerCss = read("src/components/Drawer/Drawer.css");
-    expect(drawerCss).toMatch(/\.drawer__body[\s\S]*overflow-y:\s*auto/);
+    expect(drawerCss).toMatch(/\.drawer__body[\s\S]*overflow-y:\s*scroll/); // PASS36: lane always reserved
     expect(drawerCss).toMatch(
       /\.drawer__body[\s\S]*padding:\s*var\(--drawer-body-padding\)/,
     );

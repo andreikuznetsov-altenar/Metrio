@@ -334,13 +334,30 @@
   margin-top: var(--space-6);
 }
 
-.person-detail-drawer__time-off {
+/* Availability: one bounded Card per leave period, 8px apart. */
+.person-detail-drawer__availability-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.person-detail-drawer__availability-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: var(--space-3);
+}
+
+.person-detail-drawer__availability-date {
   font-size: 13px;
+  font-weight: 600;
   color: var(--color-text-primary);
 }
 
-.person-detail-drawer__time-off-note {
-  margin-top: var(--space-1);
+.person-detail-drawer__availability-type {
   font-size: 12px;
   color: var(--color-text-secondary);
 }

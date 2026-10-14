@@ -33,7 +33,7 @@ describe("PASS33 scrollbar end insets (central CSS contract)", () => {
   });
 
   it("drawers use the canonical visible thumb with auto overflow (short drawer: no scrollbar)", () => {
-    expect(css).toMatch(/\.metrio-scroll--visible-thumb\s*\{[^}]*overflow-y:\s*auto/);
+    expect(css).toMatch(/\.metrio-scroll--visible-thumb\s*\{[\s\S]*?overflow-y:\s*scroll/);
     for (const file of ["src/components/Drawer/Drawer.tsx", "src/components/Drawer/DrawerStack.tsx"]) {
       expect(src(file)).toContain("metrio-scroll--visible-thumb");
     }
@@ -74,6 +74,6 @@ describe("PASS33 canonical smooth scrolling (no JS wheel layer)", () => {
   it("deterministic resets do not animate: drawer view restore uses the instant helper", () => {
     expect(src("src/pages/performance/PersonDetailDrawer.tsx")).toContain("scrollToInstant(body");
     expect(src("src/pages/performance/PersonDetailDrawer.tsx")).not.toMatch(/body\.scrollTop\s*=/);
-    expect(src("src/shell/NotificationCenter.tsx")).toContain('behavior: "instant"');
+    expect(src("src/shell/NotificationCenter.tsx")).toContain("scrollToInstant(");
   });
 });

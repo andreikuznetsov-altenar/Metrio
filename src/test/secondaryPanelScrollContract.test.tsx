@@ -18,9 +18,8 @@ afterEach(() => {
 describe("Secondary panel scroll contract", () => {
   it("CSS: notification width token does not disable drawer body scroll globally", () => {
     const css = read("src/shell/notification-center.css");
-    expect(css).toMatch(
-      /\.drawer--notifications\s+\.drawer__body[\s\S]*overflow:\s*hidden/,
-    );
+    // PASS36: Notifications has no body override at all (the shared drawer body scrolls).
+    expect(css).not.toMatch(/\.drawer--notifications\s+\.drawer__body/);
     expect(css).not.toMatch(
       /\.drawer--notification\s+\.drawer__body[\s\S]*overflow:\s*hidden/,
     );
@@ -30,7 +29,7 @@ describe("Secondary panel scroll contract", () => {
     const css = read("src/components/Drawer/Drawer.css");
     expect(css).toMatch(/\.drawer__body[\s\S]*flex:\s*1\s+1\s+auto/);
     expect(css).toMatch(/\.drawer__body[\s\S]*min-height:\s*0/);
-    expect(css).toMatch(/\.drawer__body[\s\S]*overflow-y:\s*auto/);
+    expect(css).toMatch(/\.drawer__body[\s\S]*overflow-y:\s*scroll/);
     expect(read("src/components/Drawer/Drawer.tsx")).toContain(
       "metrio-scroll--visible-thumb",
     );
@@ -64,7 +63,7 @@ describe("Secondary panel scroll contract", () => {
     const drawer = screen.getByRole("dialog");
     const body = drawer.querySelector(".drawer__body") as HTMLElement;
     expect(body).toBeTruthy();
-    expect(getComputedStyle(body).overflowY).toBe("auto");
+    expect(getComputedStyle(body).overflowY).toBe("scroll");
 
     Object.defineProperty(body, "clientHeight", { value: 200, configurable: true });
     Object.defineProperty(body, "scrollHeight", { value: 800, configurable: true });
