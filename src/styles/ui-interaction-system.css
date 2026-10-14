@@ -154,12 +154,18 @@
   height: 0;
 }
 
+/*
+ * Main-screen scroll owner. `overflow-y: scroll` (not auto) keeps the 8px scrollbar lane
+ * permanently reserved, so content never shifts horizontally when a scrollbar becomes
+ * necessary. The lane is a transparent track; only the 4px thumb is ever visible, and only
+ * while the content actually overflows. This works in engines/SDKs where `scrollbar-gutter`
+ * is ignored (apps linked against an older macOS SDK).
+ */
 .metrio-scroll--primary {
   overflow-x: hidden;
-  overflow-y: auto;
+  overflow-y: scroll;
   overscroll-behavior: contain;
   scroll-behavior: smooth;
-  scrollbar-gutter: auto;
 }
 
 @supports not selector(::-webkit-scrollbar) {
@@ -179,9 +185,14 @@
   background: transparent;
 }
 
+/* Lane = inset + size; the thumb's transparent border-right/bottom leaves exactly `size` (4px)
+ * visible. The global thumb rule's left/top border must be reset here, otherwise the visible
+ * thumb shrinks to 2px. */
 .metrio-scroll--primary::-webkit-scrollbar-thumb {
   background: var(--scrollbar-thumb);
-  border-right: var(--metrio-scrollbar-inset, 4px) solid transparent;
+  border: 0 solid transparent;
+  border-right-width: var(--metrio-scrollbar-inset, 4px);
+  border-bottom-width: var(--metrio-scrollbar-inset, 4px);
   background-clip: padding-box;
   border-radius: var(--radius-round);
   min-height: 32px;

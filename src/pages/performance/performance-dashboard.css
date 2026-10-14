@@ -1495,46 +1495,78 @@
   height: 100%;
 }
 
-/* Leadership branches: chevron expand + member rows */
-.performance-branch-chevron-col {
-  width: 44px;
+/* Leadership branches: plus/minus toggle + animated member rows */
+.performance-branch-action-col {
+  width: 52px;
   text-align: right;
 }
 
-.performance-branch-chevron {
+.performance-branch-toggle {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 32px;
+  width: var(--control-height-compact);
   height: var(--control-height-compact);
+  padding: 0;
   border: 0;
   border-radius: var(--radius-control, 8px);
   background: transparent;
   color: var(--color-text-secondary);
   cursor: pointer;
+  transition: background var(--motion-hover) var(--transition-easing),
+    color var(--motion-hover) var(--transition-easing);
 }
 
-.performance-branch-chevron:hover {
+.performance-branch-toggle:hover {
   background: var(--color-surface-secondary);
   color: var(--color-text-primary);
 }
 
-.performance-branch-chevron__icon {
-  transition: transform 0.15s ease;
-  transform: rotate(-90deg);
+.performance-branch-toggle:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
 }
 
-.performance-branch-chevron__icon.is-open {
-  transform: rotate(0deg);
-}
-
-.performance-branch-member-row > td {
+/* Member rows: height is animated inside each cell (rows themselves cannot transition).
+ * Horizontal cell padding stays canonical so columns align with the lead row. */
+.performance-table-wrap .performance-table .performance-branch-member-row > td {
+  padding: 0;
+  border: 0;
   background: color-mix(in srgb, var(--color-surface-secondary) 70%, transparent);
   font-size: 13px;
   color: var(--color-text-secondary);
 }
 
-.performance-branch-member-row > td.performance-branch-member-row__person {
-  padding-left: 40px;
+.performance-branch-collapse {
+  display: grid;
+  grid-template-rows: 0fr;
+  opacity: 0;
+  transition: grid-template-rows var(--motion-standard) var(--ease-exit),
+    opacity var(--motion-standard) var(--ease-exit);
+}
+
+.performance-branch-collapse.is-open {
+  grid-template-rows: 1fr;
+  opacity: 1;
+  transition-timing-function: var(--ease-enter);
+}
+
+.performance-branch-collapse__inner {
+  min-height: 0;
+  overflow: hidden;
+}
+
+.performance-branch-collapse__content {
+  padding: 0.625rem 0.75rem;
+}
+
+/* One continuous separator per member row (cells are vertically centered, so per-cell
+ * borders would sit at different heights). */
+.performance-table-wrap .performance-table .performance-branch-member-row--open > td {
+  border-bottom: 1px solid color-mix(in srgb, var(--color-border) 55%, transparent);
+}
+
+.performance-branch-member-row__person .performance-branch-collapse__content {
+  padding-left: calc(var(--performance-table-edge-inset, var(--space-3)) + 2px);
   box-shadow: inset 3px 0 0 var(--color-border);
 }

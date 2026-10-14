@@ -1,5 +1,5 @@
-import { Fragment, useMemo, useState } from "react";
-import { ChevronDown } from "lucide-react";
+import { Fragment, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { Minus, Plus } from "lucide-react";
 import type { LeadershipBranchMemberRow } from "../../../domain/organization/leadershipBranchMemberRows";
 import type { LeadershipBranchPerformanceRow } from "../../../domain/organization/leadershipBranchPerformanceRows";
 import { Button } from "../../../components/Button/Button";
@@ -18,6 +18,29 @@ const COLUMNS = [
   { id: "capacity", type: "text" as const },
   { id: "availability", type: "text" as const },
 ];
+
+/** Must match --motion-standard (200ms) plus a small safety margin. */
+const BRANCH_COLLAPSE_MS = 220;
+
+function CollapsibleCell({
+  open,
+  className,
+  children,
+}: {
+  open: boolean;
+  className?: string;
+  children: ReactNode;
+}) {
+  return (
+    <td className={className}>
+      <div className={open ? "performance-branch-collapse is-open" : "performance-branch-collapse"}>
+        <div className="performance-branch-collapse__inner">
+          <div className="performance-branch-collapse__content">{children}</div>
+        </div>
+      </div>
+    </td>
+  );
+}
 
 export interface LeadershipBranchesPerformanceViewProps {
   rows: LeadershipBranchPerformanceRow[];
@@ -66,14 +89,60 @@ export function LeadershipBranchesPerformanceView({
   surfaceTestId = "leadership-branches-performance",
   membersByLeaderId,
 }: LeadershipBranchesPerformanceViewProps) {
+  // `expanded` = logical state (drives icon / aria). `mounted` keeps member rows in the DOM
+  // while the close transition runs; `shown` flips one frame after mount so opening animates.
   const [expanded, setExpanded] = useState<Set<string>>(() => new Set());
-  const toggleExpanded = (leaderId: string) =>
-    setExpanded((current) => {
-      const next = new Set(current);
-      if (next.has(leaderId)) next.delete(leaderId);
-      else next.add(leaderId);
+  const [mounted, setMounted] = useState<Set<string>>(() => new Set());
+  const [shown, setShown] = useState<Set<string>>(() => new Set());
+  const timers = useRef(new Map<string, number>());
+
+  useEffect(() => {
+    const pending = timers.current;
+    return () => {
+      pending.forEach((id) => window.clearTimeout(id));
+      pending.clear();
+    };
+  }, []);
+
+  const toggleExpanded = (leaderId: string) => {
+    const pending = timers.current.get(leaderId);
+    if (pending !== undefined) window.clearTimeout(pending);
+    const reduced =
+      typeof window.matchMedia === "function" &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const update = (set: Set<string>, add: boolean) => {
+      const next = new Set(set);
+      if (add) next.add(leaderId);
+      else next.delete(leaderId);
       return next;
-    });
+    };
+    if (!expanded.has(leaderId)) {
+      setExpanded((current) => update(current, true));
+      setMounted((current) => update(current, true));
+      if (reduced) {
+        setShown((current) => update(current, true));
+      } else {
+        // Let the collapsed state paint first so the height transition actually runs.
+        const id = window.setTimeout(() => {
+          timers.current.delete(leaderId);
+          setShown((current) => update(current, true));
+        }, 16);
+        timers.current.set(leaderId, id);
+      }
+    } else {
+      setExpanded((current) => update(current, false));
+      setShown((current) => update(current, false));
+      const id = window.setTimeout(
+        () => {
+          timers.current.delete(leaderId);
+          setMounted((current) => update(current, false));
+        },
+        reduced ? 0 : BRANCH_COLLAPSE_MS,
+      );
+      timers.current.set(leaderId, id);
+    }
+  };
+
   const getValue = useMemo(
     () => (row: LeadershipBranchPerformanceRow, columnId: string) => {
       switch (columnId) {
@@ -194,7 +263,7 @@ export function LeadershipBranchesPerformanceView({
                 onToggle={toggleSort}
               />
               {membersByLeaderId ? (
-                <th aria-label="Expand team" className="performance-branch-chevron-col" />
+                <th aria-label="Expand team" className="performance-branch-action-col" />
               ) : null}
             </tr>
           </thead>
@@ -202,6 +271,8 @@ export function LeadershipBranchesPerformanceView({
             {sortedRows.map((row) => {
               const members = membersByLeaderId?.[row.leaderId] ?? [];
               const isOpen = expanded.has(row.leaderId);
+              const isMounted = mounted.has(row.leaderId);
+              const isShown = shown.has(row.leaderId);
               return (
                 <Fragment key={row.leaderId}>
                   <tr className={isOpen ? "performance-branch-row performance-branch-row--open" : "performance-branch-row"}>
@@ -232,52 +303,56 @@ export function LeadershipBranchesPerformanceView({
                     </td>
                     <td>{row.availabilityLabel}</td>
                     {membersByLeaderId ? (
-                      <td className="performance-branch-chevron-col">
+                      <td className="performance-branch-action-col">
                         {members.length > 0 ? (
                           <button
                             type="button"
-                            className="performance-branch-chevron"
+                            className="performance-branch-toggle"
                             aria-expanded={isOpen}
                             aria-label={`${isOpen ? "Collapse" : "Expand"} ${row.leaderName}'s team`}
+                            data-testid="leadership-branch-toggle"
                             onClick={() => toggleExpanded(row.leaderId)}
                           >
-                            <ChevronDown
-                              size={18}
-                              strokeWidth={1.8}
-                              className={isOpen ? "performance-branch-chevron__icon is-open" : "performance-branch-chevron__icon"}
-                            />
+                            {isOpen ? (
+                              <Minus size={16} strokeWidth={1.8} aria-hidden data-icon="minus" />
+                            ) : (
+                              <Plus size={16} strokeWidth={1.8} aria-hidden data-icon="plus" />
+                            )}
                           </button>
                         ) : null}
                       </td>
                     ) : null}
                   </tr>
-                  {isOpen
+                  {isMounted
                     ? members.map((member) => (
                         <tr
                           key={`${row.leaderId}-${member.personId}`}
-                          className="performance-branch-member-row"
+                          className={
+                            isShown
+                              ? "performance-branch-member-row performance-branch-member-row--open"
+                              : "performance-branch-member-row"
+                          }
                           data-testid="leadership-branch-member-row"
                         >
-                          <td className="performance-branch-member-row__person">
+                          <CollapsibleCell open={isShown} className="performance-branch-member-row__person">
                             <PersonIdentity
                               personId={member.personId}
                               displayName={member.displayName}
                               role={member.jobTitle}
                               avatarSize="sm"
                             />
-                          </td>
-                          <td>Team member</td>
-                          <td>{member.performanceLabel}</td>
-                          <td>{member.attentionLabel}</td>
-                          <td>{member.deliveryRiskCount}</td>
-                          <td>
-                            <CapacityBadgeMix
-                              parts={member.capacityParts}
-                              ariaLabel="Capacity"
-                            />
-                          </td>
-                          <td>{member.availabilityLabel}</td>
-                          <td className="performance-branch-chevron-col" />
+                          </CollapsibleCell>
+                          <CollapsibleCell open={isShown}>Team member</CollapsibleCell>
+                          <CollapsibleCell open={isShown}>{member.performanceLabel}</CollapsibleCell>
+                          <CollapsibleCell open={isShown}>{member.attentionLabel}</CollapsibleCell>
+                          <CollapsibleCell open={isShown}>{member.deliveryRiskCount}</CollapsibleCell>
+                          <CollapsibleCell open={isShown}>
+                            <CapacityBadgeMix parts={member.capacityParts} ariaLabel="Capacity" />
+                          </CollapsibleCell>
+                          <CollapsibleCell open={isShown}>{member.availabilityLabel}</CollapsibleCell>
+                          <CollapsibleCell open={isShown} className="performance-branch-action-col">
+                            {null}
+                          </CollapsibleCell>
                         </tr>
                       ))
                     : null}

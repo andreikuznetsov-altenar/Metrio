@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { readFileSync } from "node:fs";
 import { describe, expect, it, vi } from "vitest";
-import { render, screen, within } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { TooltipProvider } from "../components/Tooltip/Tooltip";
 import { DashboardRecommendations } from "../pages/home/dashboard/DashboardRecommendations";
@@ -167,6 +167,6 @@ describe("PASS31 Expandable teams", () => {
     const leadIdx = rows.findIndex((r) => within(r).queryByText("Andrei Kuznetsov"));
     expect(within(rows[leadIdx + 1]).getByText("Maya Bennett")).toBeTruthy();
     await userEvent.click(open);
-    expect(screen.queryByText("Maya Bennett")).toBeNull();
+    await waitFor(() => expect(screen.queryByText("Maya Bennett")).toBeNull());
   });
 });

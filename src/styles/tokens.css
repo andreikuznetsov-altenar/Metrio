@@ -209,5 +209,6 @@
     --motion-drawer: 0ms;
     --motion-drawer-open: 0ms;
     --motion-drawer-close: 0ms;
+    --motion-standard: 0ms;
   }
 }
