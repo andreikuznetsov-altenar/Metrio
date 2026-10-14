@@ -27,7 +27,8 @@
 /*
  * Secondary panel scroll contract:
  * .drawer (column, height 100%) → .drawer__header (flex-shrink 0)
- * → .drawer__body (flex 1, min-height 0, overflow-y auto, metrio-scroll--hidden-thumb)
+ * → .drawer__body (flex 1, min-height 0, overflow-y scroll = permanently reserved 8px lane,
+ *   metrio-scroll--visible-thumb)
  * → optional .drawer__footer (flex-shrink 0).
  * Notification Center renders inside the same shared .drawer__body scroll owner (no inner scroller).
  */
