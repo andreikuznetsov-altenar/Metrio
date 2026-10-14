@@ -22,8 +22,8 @@ use std::time::Duration;
 use api::confluence::{confluence_search_pages, confluence_test_connection};
 use api::jira::{
     jira_fetch_changelog, jira_fetch_changelogs_batch, jira_fetch_remotelinks_batch,
-    jira_get_issue, jira_list_projects, jira_search_issues, jira_search_users,
-    jira_test_connection,
+    jira_get_issue, jira_get_transitions, jira_list_projects, jira_search_issues, jira_search_users,
+    jira_test_connection, jira_transition_issue,
 };
 use api::kpi_snapshot_store::{kpi_snapshot_load, kpi_snapshot_save};
 use api::pdf_export::{
@@ -650,6 +650,8 @@ pub fn run() {
             jira_search_issues,
             jira_fetch_changelog,
             jira_get_issue,
+            jira_get_transitions,
+            jira_transition_issue,
             jira_search_users,
             jira_fetch_changelogs_batch,
             jira_list_projects,

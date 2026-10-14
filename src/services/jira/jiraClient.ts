@@ -263,6 +263,23 @@ export class JiraClient {
     });
   }
 
+  /** Transitions Jira currently allows for this issue (with required-field metadata). */
+  async fetchIssueTransitions(issueKey: string): Promise<unknown> {
+    return invokeJira('jira_get_transitions', {
+      config: this.nativeConfig,
+      issueKey,
+    });
+  }
+
+  /** Executes one exact Jira transition by id. Sends nothing but the transition id. */
+  async transitionIssue(issueKey: string, transitionId: string): Promise<void> {
+    await invokeJira('jira_transition_issue', {
+      config: this.nativeConfig,
+      issueKey,
+      transitionId,
+    });
+  }
+
   async resolveTeamUsersForAudit(requestedUsers: string[]) {
     return Promise.all(
       requestedUsers.map(async (inputUser) => {

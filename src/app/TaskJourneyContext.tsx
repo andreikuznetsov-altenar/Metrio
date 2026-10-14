@@ -3,6 +3,7 @@ import {
   useCallback,
   useContext,
   useMemo,
+  useEffect,
   useState,
   type ReactNode,
 } from 'react';
@@ -10,6 +11,14 @@ import type { AuditIssue } from '../domain/jira/types';
 import { resolveCatalogIssue } from '../domain/jira/issueCatalog';
 import { TaskJourneyDrawer } from '../components/TaskJourney/TaskJourneyDrawer';
 import { useOptionalPerformanceData } from './PerformanceDataContext';
+import {
+  getIssueCompletionService,
+  type IssueCompletionService,
+} from '../services/jira/issueCompletionService';
+import {
+  applyVerifiedIssueState,
+  type VerifiedIssueState,
+} from '../domain/jira/applyVerifiedIssueState';
 import { useOperationalRules } from './OperationalRulesContext';
 
 interface TaskJourneyContextValue {
@@ -24,6 +33,32 @@ export function TaskJourneyProvider({ children }: { children: ReactNode }) {
   const { rules } = useOperationalRules();
   const [issue, setIssue] = useState<AuditIssue | null>(null);
   const [open, setOpen] = useState(false);
+  const [completionService, setCompletionService] = useState<IssueCompletionService | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    void getIssueCompletionService()
+      .then((service) => {
+        if (!cancelled) setCompletionService(service);
+      })
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const applyVerifiedIssue = performance?.applyVerifiedIssue;
+  const handleIssueVerified = useCallback(
+    (verified: VerifiedIssueState) => {
+      applyVerifiedIssue?.(verified);
+      setIssue((current) =>
+        current && current.issueKey === verified.issueKey
+          ? applyVerifiedIssueState(current, verified)
+          : current,
+      );
+    },
+    [applyVerifiedIssue],
+  );
 
   const catalog = performance?.issueCatalog;
   const params = performance?.data?.reportData.params;
@@ -67,6 +102,8 @@ export function TaskJourneyProvider({ children }: { children: ReactNode }) {
           rules={rules}
           persons={persons}
           dependencyBlockerKey={dependencyBlockerKey}
+          completionService={completionService ?? undefined}
+          onIssueVerified={handleIssueVerified}
           onClose={closeTaskJourney}
         />
       ) : null}

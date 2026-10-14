@@ -57,6 +57,8 @@ import {
   saveDashboardCache,
   type DashboardCacheIdentity,
 } from "../platform/dashboard/dashboardCache";
+import { applyVerifiedIssueUpdate } from "../services/performance/applyIssueUpdate";
+import type { VerifiedIssueState } from "../domain/jira/applyVerifiedIssueState";
 import { buildIssueCatalog, type IssueCatalog } from "../domain/jira/issueCatalog";
 import { PerformanceIssueCatalogProvider } from "./PerformanceIssueCatalogContext";
 import { TaskJourneyProvider } from "./TaskJourneyContext";
@@ -83,6 +85,11 @@ export interface PerformanceDataContextValue {
    */
   refreshFailedWithUsableCache: boolean;
   refresh: () => Promise<void>;
+  /**
+   * Applies Jira-CONFIRMED issue state (after a verified transition + re-fetch) to every copy of
+   * the issue and rebuilds all derived views at once. No global refresh needed.
+   */
+  applyVerifiedIssue: (verified: VerifiedIssueState) => void;
   refreshing: boolean;
   contentLoadingActive: boolean;
   contentOverlayVisible: boolean;
@@ -540,6 +547,40 @@ export function PerformanceDataProvider({
     };
   }, [enabled]);
 
+  const applyVerifiedIssue = useCallback(
+    (verified: VerifiedIssueState) => {
+      const current = dataRef.current;
+      if (!current) return;
+      const next = applyVerifiedIssueUpdate(current, verified);
+      const models = buildPerformanceViewModels(
+        next,
+        selfPersonId,
+        dateRangeKeyFromPerformanceRange(dateRange),
+        dateRange,
+        reviewTarget,
+        operationalRules,
+      );
+      dataRef.current = next;
+      setData(next);
+      setViewModels(models);
+      registerKpiReconciliationDataSource(next, reviewTarget);
+      void saveDashboardCache({
+        schemaVersion: DASHBOARD_CACHE_SCHEMA_VERSION,
+        savedAt: new Date().toISOString(),
+        sourceLastUpdatedAt: next.lastUpdatedAt,
+        identity: {
+          selfPersonId,
+          role: userRole,
+          datasetKey,
+          workEmail:
+            next.identityResolution.find((r) => r.matched)?.workEmail || undefined,
+        },
+        fetchResult: next,
+      }).catch(() => undefined);
+    },
+    [selfPersonId, dateRange, reviewTarget, operationalRules, userRole, datasetKey],
+  );
+
   const loadingMessage =
     status === "loading" || status === "refreshing"
       ? "Fetching team data…"
@@ -577,6 +618,7 @@ export function PerformanceDataProvider({
       stale,
       refreshFailedWithUsableCache,
       refresh,
+      applyVerifiedIssue,
       refreshing,
       contentLoadingActive,
       contentOverlayVisible,
@@ -598,6 +640,7 @@ export function PerformanceDataProvider({
       stale,
       refreshFailedWithUsableCache,
       refresh,
+      applyVerifiedIssue,
       refreshing,
       contentLoadingActive,
       contentOverlayVisible,

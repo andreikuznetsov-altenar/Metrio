@@ -21,6 +21,33 @@ function collectScopeEmployees(org: OrgResolutionResult): ResolvedEmployee[] {
   return [];
 }
 
+export function summarizeTeam(
+  persons: Person[],
+  params: AuditReportData['params'] | undefined,
+): TeamSnapshot['summary'] {
+  return {
+    available: persons.filter((p) => p.availability.state === 'available').length,
+    onVacation: persons.filter((p) => p.availability.state === 'on_vacation').length,
+    vacationSoon: persons.filter(
+      (p) => p.availability.state === 'vacation_soon' || p.availability.state === 'vacation_tomorrow',
+    ).length,
+    highWorkload: persons.filter(
+      (p) =>
+        p.availability.state === 'available' &&
+        (p.workload?.level === 'high' || p.workload?.level === 'overloaded'),
+    ).length,
+    problematic: persons.reduce((sum, p) => {
+      if (!params) return sum;
+      return (
+        sum +
+        p.ownedIssues.filter(
+          (i) => classifyTaskHealth({ issue: i, params }).status === 'problematic',
+        ).length
+      );
+    }, 0),
+  };
+}
+
 export function buildTeamSnapshot(
   org: OrgResolutionResult,
   reportData: AuditReportData | null,
@@ -64,27 +91,7 @@ export function buildTeamSnapshot(
     };
   });
 
-  const summary = {
-    available: persons.filter((p) => p.availability.state === 'available').length,
-    onVacation: persons.filter((p) => p.availability.state === 'on_vacation').length,
-    vacationSoon: persons.filter(
-      (p) => p.availability.state === 'vacation_soon' || p.availability.state === 'vacation_tomorrow',
-    ).length,
-    highWorkload: persons.filter(
-      (p) =>
-        p.availability.state === 'available' &&
-        (p.workload?.level === 'high' || p.workload?.level === 'overloaded'),
-    ).length,
-    problematic: persons.reduce((sum, p) => {
-      if (!reportData?.params) return sum;
-      return (
-        sum +
-        p.ownedIssues.filter(
-          (i) => classifyTaskHealth({ issue: i, params: reportData.params }).status === 'problematic',
-        ).length
-      );
-    }, 0),
-  };
+  const summary = summarizeTeam(persons, reportData?.params);
 
   return { persons, mode: org.mode, summary };
 }

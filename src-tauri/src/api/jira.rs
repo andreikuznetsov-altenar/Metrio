@@ -263,6 +263,62 @@ pub async fn jira_get_issue(config: JiraConfig, issue_key: String, fields: Strin
 }
 
 #[tauri::command]
+pub async fn jira_get_transitions(
+    config: JiraConfig,
+    issue_key: String,
+) -> Result<Value, ApiError> {
+    let endpoint = format!(
+        "/rest/api/3/issue/{}/transitions?expand=transitions.fields",
+        urlencoding::encode(&issue_key)
+    );
+    jira_request(&config, &endpoint, reqwest::Method::GET, None).await
+}
+
+/// True when the process runs in a documentation/presentation fixture mode. Fixture data is
+/// illustrative; it must never be able to write to a live Jira.
+fn fixture_mode_forbids_jira_writes() -> bool {
+    ["METRIO_DOC_FIXTURES", "METRIO_PRESENTATION_FIXTURES"].iter().any(|name| {
+        std::env::var(name)
+            .map(|v| matches!(v.trim().to_ascii_lowercase().as_str(), "1" | "true" | "yes" | "on"))
+            .unwrap_or(false)
+    })
+}
+
+fn transition_request_body(transition_id: &str) -> Value {
+    serde_json::json!({ "transition": { "id": transition_id } })
+}
+
+/// Executes ONE exact Jira transition. Sends only the transition id: no fields, resolution or
+/// comment are ever fabricated. Not retried (non-idempotent).
+#[tauri::command]
+pub async fn jira_transition_issue(
+    config: JiraConfig,
+    issue_key: String,
+    transition_id: String,
+) -> Result<Value, ApiError> {
+    if fixture_mode_forbids_jira_writes() {
+        return Err(ApiError::new(
+            "fixture_mode_write_blocked",
+            "Jira writes are disabled in fixture mode.",
+        ));
+    }
+    if transition_id.trim().is_empty() || issue_key.trim().is_empty() {
+        return Err(ApiError::new("invalid_request", "Missing issue key or transition id."));
+    }
+    let endpoint = format!(
+        "/rest/api/3/issue/{}/transitions",
+        urlencoding::encode(&issue_key)
+    );
+    jira_request(
+        &config,
+        &endpoint,
+        reqwest::Method::POST,
+        Some(transition_request_body(transition_id.trim())),
+    )
+    .await
+}
+
+#[tauri::command]
 pub async fn jira_search_users(config: JiraConfig, query: String) -> Result<Value, ApiError> {
     let endpoint = format!(
         "/rest/api/3/user/search?query={}",
@@ -539,5 +595,12 @@ mod tests {
         assert_eq!(parse_retry_after_secs(&headers), Some(5));
         headers.insert(RETRY_AFTER, "2".parse().unwrap());
         assert_eq!(parse_retry_after_secs(&headers), Some(2));
+    }
+
+    #[test]
+    fn transition_body_carries_only_the_transition_id() {
+        let body = transition_request_body("41");
+        assert_eq!(body, serde_json::json!({ "transition": { "id": "41" } }));
+        assert!(body.get("fields").is_none());
     }
 }

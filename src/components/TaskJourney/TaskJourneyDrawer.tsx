@@ -19,6 +19,9 @@ import { openExternalUrl } from '../../platform/openExternal';
 import { resolveJiraBaseUrl } from '../../config/product';
 import { useOptionalPersonNavigation } from '../../app/PersonNavigationContext';
 import { MetaList, MetaRow } from '../MetaList/MetaList';
+import { StaleCompletionAction } from './StaleCompletionAction';
+import type { IssueCompletionService } from '../../services/jira/issueCompletionService';
+import type { VerifiedIssueState } from '../../domain/jira/applyVerifiedIssueState';
 import './TaskJourneyDrawer.css';
 
 function formatTimelineDate(iso: string): string {
@@ -111,6 +114,9 @@ export interface TaskJourneyDrawerProps {
   persons?: Person[];
   dependencyBlockerKey?: string;
   changelogUnavailable?: boolean;
+  /** Enables the stale Review/Hold "Mark complete" action. Absent = action never shown. */
+  completionService?: IssueCompletionService;
+  onIssueVerified?: (verified: VerifiedIssueState) => void;
   onClose: () => void;
 }
 
@@ -122,6 +128,8 @@ export function TaskJourneyDrawer({
   persons,
   dependencyBlockerKey,
   changelogUnavailable,
+  completionService,
+  onIssueVerified,
   onClose,
 }: TaskJourneyDrawerProps) {
   const [jiraBaseUrl, setJiraBaseUrl] = useState('');
@@ -209,6 +217,13 @@ export function TaskJourneyDrawer({
             >
               Open in Jira
             </Button>
+            {issue && completionService && onIssueVerified ? (
+              <StaleCompletionAction
+                issue={issue}
+                service={completionService}
+                onVerified={onIssueVerified}
+              />
+            ) : null}
           </div>
         ) : undefined
       }

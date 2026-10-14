@@ -91,3 +91,8 @@ export function useToast(): ToastContextValue {
   }
   return ctx;
 }
+
+/** Toast access for surfaces that may render outside a ToastProvider (tests, standalone). */
+export function useOptionalToast(): ToastContextValue | null {
+  return useContext(ToastContext);
+}

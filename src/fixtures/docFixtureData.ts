@@ -175,6 +175,8 @@ function issue(
     project?: string;
     backflow?: boolean;
     created?: string;
+    /** When the issue entered its current status (defaults to a recent fixed date). */
+    enteredAt?: string;
   } = {},
 ): AuditIssue {
   const person = PEOPLE[owner];
@@ -200,7 +202,7 @@ function issue(
     events: [
       {
         eventType: "Status",
-        changedAt: "2026-09-18T10:00:00.000Z",
+        changedAt: options.enteredAt ?? "2026-09-18T10:00:00.000Z",
         changedBy: person.name,
         fromValue: "To Do",
         toValue: status,
@@ -220,7 +222,10 @@ const ISSUES: AuditIssue[] = [
   issue("DEMO-102", "doc-maria", "Goal detail mobile audit", "In Review"),
   issue("DEMO-103", "doc-maria", "Feedback setup empty state", "Done"),
   issue("DEMO-104", "doc-maria", "Settings icon pass", "To Do"),
-  issue("DEMO-201", "doc-eleni", "Performance trend chart review", "In Review"),
+  // Stale (>30d) Review: exercises the "Mark complete" action against the mock transition layer.
+  issue("DEMO-201", "doc-eleni", "Performance trend chart review", "In Review", {
+    enteredAt: "2026-07-20T10:00:00.000Z",
+  }),
   issue("DEMO-202", "doc-eleni", "Notification drawer recovery", "On Hold"),
   issue("DEMO-203", "doc-eleni", "PDF KPI alignment", "Done", { backflow: true }),
   issue("DEMO-301", "doc-luca", "Risk table action spacing", "In Progress"),
