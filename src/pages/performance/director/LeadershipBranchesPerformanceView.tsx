@@ -1,4 +1,6 @@
-import { useMemo } from "react";
+import { Fragment, useMemo, useState } from "react";
+import { ChevronDown } from "lucide-react";
+import type { LeadershipBranchMemberRow } from "../../../domain/organization/leadershipBranchMemberRows";
 import type { LeadershipBranchPerformanceRow } from "../../../domain/organization/leadershipBranchPerformanceRows";
 import { Button } from "../../../components/Button/Button";
 import { Badge } from "../../../components/Badge/Badge";
@@ -23,6 +25,8 @@ export interface LeadershipBranchesPerformanceViewProps {
   onSelectLeader: (leaderId: string) => void;
   onBack: () => void;
   surfaceTestId?: string;
+  /** Team members per branch leader; enables the chevron expand/collapse rows. */
+  membersByLeaderId?: Record<string, LeadershipBranchMemberRow[]>;
 }
 
 export function CapacityBadgeMix({
@@ -60,7 +64,16 @@ export function LeadershipBranchesPerformanceView({
   onSelectLeader,
   onBack,
   surfaceTestId = "leadership-branches-performance",
+  membersByLeaderId,
 }: LeadershipBranchesPerformanceViewProps) {
+  const [expanded, setExpanded] = useState<Set<string>>(() => new Set());
+  const toggleExpanded = (leaderId: string) =>
+    setExpanded((current) => {
+      const next = new Set(current);
+      if (next.has(leaderId)) next.delete(leaderId);
+      else next.add(leaderId);
+      return next;
+    });
   const getValue = useMemo(
     () => (row: LeadershipBranchPerformanceRow, columnId: string) => {
       switch (columnId) {
@@ -180,39 +193,97 @@ export function LeadershipBranchesPerformanceView({
                 sort={sort}
                 onToggle={toggleSort}
               />
+              {membersByLeaderId ? (
+                <th aria-label="Expand team" className="performance-branch-chevron-col" />
+              ) : null}
             </tr>
           </thead>
           <tbody>
-            {sortedRows.map((row) => (
-              <tr key={row.leaderId}>
-                <td>
-                  <button
-                    type="button"
-                    className="performance-table__person-button performance-table__person-button--with-avatar performance-leader-cell"
-                    onClick={() => onSelectLeader(row.leaderId)}
-                  >
-                    <PersonIdentity
-                      personId={row.leaderId}
-                      displayName={row.leaderName}
-                      role={row.leaderTitle}
-                      avatarSize="sm"
-                    />
-                  </button>
-                </td>
-                <td>{row.peopleCount} people</td>
-                <td>{row.performanceLabel}</td>
-                <td>{row.attentionLabel}</td>
-                <td>{row.deliveryRiskCount}</td>
-                <td>
-                  <CapacityBadgeMix
-                    parts={row.capacityParts}
-                    measuredLabel={row.capacityMeasuredLabel}
-                    ariaLabel={row.capacityLabel}
-                  />
-                </td>
-                <td>{row.availabilityLabel}</td>
-              </tr>
-            ))}
+            {sortedRows.map((row) => {
+              const members = membersByLeaderId?.[row.leaderId] ?? [];
+              const isOpen = expanded.has(row.leaderId);
+              return (
+                <Fragment key={row.leaderId}>
+                  <tr className={isOpen ? "performance-branch-row performance-branch-row--open" : "performance-branch-row"}>
+                    <td>
+                      <button
+                        type="button"
+                        className="performance-table__person-button performance-table__person-button--with-avatar performance-leader-cell"
+                        onClick={() => onSelectLeader(row.leaderId)}
+                      >
+                        <PersonIdentity
+                          personId={row.leaderId}
+                          displayName={row.leaderName}
+                          role={row.leaderTitle}
+                          avatarSize="sm"
+                        />
+                      </button>
+                    </td>
+                    <td>{row.peopleCount} people</td>
+                    <td>{row.performanceLabel}</td>
+                    <td>{row.attentionLabel}</td>
+                    <td>{row.deliveryRiskCount}</td>
+                    <td>
+                      <CapacityBadgeMix
+                        parts={row.capacityParts}
+                        measuredLabel={row.capacityMeasuredLabel}
+                        ariaLabel={row.capacityLabel}
+                      />
+                    </td>
+                    <td>{row.availabilityLabel}</td>
+                    {membersByLeaderId ? (
+                      <td className="performance-branch-chevron-col">
+                        {members.length > 0 ? (
+                          <button
+                            type="button"
+                            className="performance-branch-chevron"
+                            aria-expanded={isOpen}
+                            aria-label={`${isOpen ? "Collapse" : "Expand"} ${row.leaderName}'s team`}
+                            onClick={() => toggleExpanded(row.leaderId)}
+                          >
+                            <ChevronDown
+                              size={18}
+                              strokeWidth={1.8}
+                              className={isOpen ? "performance-branch-chevron__icon is-open" : "performance-branch-chevron__icon"}
+                            />
+                          </button>
+                        ) : null}
+                      </td>
+                    ) : null}
+                  </tr>
+                  {isOpen
+                    ? members.map((member) => (
+                        <tr
+                          key={`${row.leaderId}-${member.personId}`}
+                          className="performance-branch-member-row"
+                          data-testid="leadership-branch-member-row"
+                        >
+                          <td className="performance-branch-member-row__person">
+                            <PersonIdentity
+                              personId={member.personId}
+                              displayName={member.displayName}
+                              role={member.jobTitle}
+                              avatarSize="sm"
+                            />
+                          </td>
+                          <td>Team member</td>
+                          <td>{member.performanceLabel}</td>
+                          <td>{member.attentionLabel}</td>
+                          <td>{member.deliveryRiskCount}</td>
+                          <td>
+                            <CapacityBadgeMix
+                              parts={member.capacityParts}
+                              ariaLabel="Capacity"
+                            />
+                          </td>
+                          <td>{member.availabilityLabel}</td>
+                          <td className="performance-branch-chevron-col" />
+                        </tr>
+                      ))
+                    : null}
+                </Fragment>
+              );
+            })}
           </tbody>
         </table>
       </MetrioTableWrap>

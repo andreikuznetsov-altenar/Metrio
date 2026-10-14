@@ -179,7 +179,8 @@ describe("PASS 22.1 final visual consistency contracts", () => {
     expect(subnav).not.toContain('<nav className="performance-subnav"');
     expect(signals).toMatch(/variant="secondary"[\s\S]{0,60}onOpen/);
     expect(cssBlock(css, ".performance-director-signals li > div")).toContain("flex: 1");
-    expect(recs).toContain("items.length === 1 ? 3");
+    expect(recs).toContain("items.length === 1 ? 1");
+    expect(recs).toContain("executive-recommendations__list--single");
     expect(project).toContain("docs.length > 0 ?");
     expect(model).toContain("teamsNeedAttentionLabel");
     expect(model).toContain('"team needs"');

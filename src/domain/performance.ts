@@ -215,7 +215,6 @@ export function isDirectorRole(role: string): boolean {
 export type DirectorPerformanceView =
   | "overview"
   | "teams"
-  | "people"
   | "signals"
   | "delivery";
 

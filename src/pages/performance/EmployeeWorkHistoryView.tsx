@@ -71,11 +71,18 @@ export function EmployeeWorkHistoryView({
   const visibleRows = flatRows.slice(0, visibleCount);
 
   return (
-    <section aria-label="Work history">
-      <div className="performance-section-head">
-        <h3 className="performance-section__title performance-section__title--inline">
-          Work history
-        </h3>
+    <section aria-label="Work history" className="work-history">
+      <div className="work-history__controls">
+        <SegmentedControl
+          ariaLabel="History outcome filter"
+          value={filter}
+          onChange={setFilter}
+          options={[
+            { value: "all", label: "All" },
+            { value: "first_pass", label: "First pass" },
+            { value: "rework", label: "Rework" },
+          ]}
+        />
         <Select
           className="history-period-select"
           aria-label="History period"
@@ -88,17 +95,6 @@ export function EmployeeWorkHistoryView({
           onChange={(event) => setPeriod(event.target.value as HistoryPeriod)}
         />
       </div>
-
-      <SegmentedControl
-        ariaLabel="History outcome filter"
-        value={filter}
-        onChange={setFilter}
-        options={[
-          { value: "all", label: "All" },
-          { value: "first_pass", label: "First pass" },
-          { value: "rework", label: "Rework" },
-        ]}
-      />
 
       {flatRows.length === 0 ? (
         <p className="performance-inline-empty" role="status">
@@ -117,7 +113,7 @@ export function EmployeeWorkHistoryView({
                 <p className="performance-subsection__summary">
                   {formatWorkHistoryGroupSummary(group)}
                 </p>
-                <div className="person-detail-drawer__history-list">
+                <div className="person-detail-drawer__history-list work-history__list">
                   {groupRows.map(({ row }) => (
                       <AnalyticsIssueRow
                         key={`${group.label}-${row.key}-${row.completedOn}`}
@@ -134,6 +130,7 @@ export function EmployeeWorkHistoryView({
                           personId,
                           personName,
                         )}
+                        variant="card"
                         showOutcome
                         hidePerson
                         metaLine={formatWorkHistoryRowMeta(row)}

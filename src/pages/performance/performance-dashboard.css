@@ -1198,7 +1198,7 @@
 .performance-director-compact-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr));
-  align-items: start;
+  align-items: stretch;
   gap: var(--space-3);
 }
 
@@ -1457,4 +1457,84 @@
 
 .performance-section.executive-resources-card .executive-resources-card__list {
   gap: 0;
+}
+
+/* Work history (employee) — single control row, card list */
+.work-history__controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin: 0 0 var(--space-6);
+}
+
+.work-history__controls .history-period-select {
+  width: 168px;
+  flex-shrink: 0;
+}
+
+.work-history .person-detail-drawer__history-group .performance-subsection__title {
+  margin-bottom: var(--space-1);
+}
+
+.work-history .person-detail-drawer__history-group .performance-subsection__summary {
+  margin-bottom: var(--space-5);
+}
+
+.work-history__list {
+  gap: 8px;
+}
+
+.work-history__list .analytics-issue-row--card,
+.work-history__list .analytics-issue-row--card:last-child {
+  border-bottom: 1px solid var(--color-border);
+}
+
+/* Equal-height side-by-side compact cards */
+.performance-director-compact-grid > .performance-section {
+  height: 100%;
+}
+
+/* Leadership branches: chevron expand + member rows */
+.performance-branch-chevron-col {
+  width: 44px;
+  text-align: right;
+}
+
+.performance-branch-chevron {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: var(--control-height-compact);
+  border: 0;
+  border-radius: var(--radius-control, 8px);
+  background: transparent;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+}
+
+.performance-branch-chevron:hover {
+  background: var(--color-surface-secondary);
+  color: var(--color-text-primary);
+}
+
+.performance-branch-chevron__icon {
+  transition: transform 0.15s ease;
+  transform: rotate(-90deg);
+}
+
+.performance-branch-chevron__icon.is-open {
+  transform: rotate(0deg);
+}
+
+.performance-branch-member-row > td {
+  background: color-mix(in srgb, var(--color-surface-secondary) 70%, transparent);
+  font-size: 13px;
+  color: var(--color-text-secondary);
+}
+
+.performance-branch-member-row > td.performance-branch-member-row__person {
+  padding-left: 40px;
+  box-shadow: inset 3px 0 0 var(--color-border);
 }

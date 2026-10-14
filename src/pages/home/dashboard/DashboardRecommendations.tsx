@@ -131,18 +131,21 @@ export function DashboardRecommendations({
         className={
           useCarousel
             ? "executive-recommendations__list executive-recommendations__list--carousel metrio-scroll metrio-scroll--hidden-thumb"
-            : "executive-recommendations__list"
+            : items.length === 1
+              ? "executive-recommendations__list executive-recommendations__list--single"
+              : "executive-recommendations__list"
         }
         style={
           useCarousel
             ? undefined
-            : ({ "--recommendation-count": items.length === 1 ? 3 : Math.min(items.length, 3) } as CSSProperties)
+            : ({ "--recommendation-count": items.length === 1 ? 1 : Math.min(items.length, 3) } as CSSProperties)
         }
       >
         {items.map((item) => {
           const presented = presentProductRecommendation(item, surface);
           return (
             <li key={item.id} className="executive-recommendations__item">
+              <div className="executive-recommendations__body">
               <div className="executive-recommendations__head">
                 <Badge variant={SEVERITY_VARIANT[item.severity]}>
                   {SEVERITY_LABEL[item.severity]}
@@ -154,6 +157,7 @@ export function DashboardRecommendations({
               <p className="executive-recommendations__copy">
                 <JiraIssueText text={item.explanation} />
               </p>
+              </div>
               <Button
                 type="button"
                 variant="secondary"

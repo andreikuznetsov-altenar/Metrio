@@ -22,7 +22,7 @@ export interface LeadershipBranchPerformanceRow {
   availabilityLabel: string;
 }
 
-function capacityParts(capacity: BranchCapacitySummary): BranchCapacityPart[] {
+export function capacityParts(capacity: BranchCapacitySummary): BranchCapacityPart[] {
   return [
     { label: "Overloaded", value: capacity.overloaded },
     { label: "Heavy", value: capacity.heavy },

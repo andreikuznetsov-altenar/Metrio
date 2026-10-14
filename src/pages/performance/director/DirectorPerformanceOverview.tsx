@@ -27,6 +27,7 @@ import { DirectorPerformanceSubnav } from "./DirectorPerformanceSubnav";
 import { DirectorSignalsView } from "./DirectorSignalsView";
 import { DirectorTeamsView } from "./DirectorTeamsView";
 import { LeadershipBranchesPerformanceView } from "./LeadershipBranchesPerformanceView";
+import { buildLeadershipBranchMemberRows } from "../../../domain/organization/leadershipBranchMemberRows";
 import { buildLeadershipBranchPerformanceRows } from "../../../domain/organization/leadershipBranchPerformanceRows";
 import "../../../components/KpiCard/kpi-card.css";
 import "../performance-dashboard.css";
@@ -103,6 +104,22 @@ export function DirectorPerformanceOverview({
         : [],
     [model],
   );
+
+  const membersByLeaderId = useMemo(() => {
+    const branches = currentUser.orgHierarchy?.topLevelManagerBranches ?? [];
+    if (!model || !data || branches.length === 0) return undefined;
+    return Object.fromEntries(
+      branches.map((branch) => [
+        branch.managerId,
+        buildLeadershipBranchMemberRows({
+          leaderId: branch.managerId,
+          descendantIds: branch.descendantIds,
+          persons: data.teamSnapshot.persons,
+          deliveryRisk: model.deliveryRisk,
+        }),
+      ]),
+    );
+  }, [model, data, currentUser.orgHierarchy]);
 
   const deliveryRows = useMemo(() => {
     if (!model) return [];
@@ -188,22 +205,6 @@ export function DirectorPerformanceOverview({
         </div>
       ) : null}
 
-      {paintedView === "people" ? (
-        <div data-testid="performance-view-people">
-          {leadershipBranchRows.length > 0 ? (
-            <LeadershipBranchesPerformanceView
-              rows={leadershipBranchRows}
-              selectedLeaderId={selectedTeamId}
-              onSelectLeader={setSelectedTeamId}
-              onBack={() => setSelectedTeamId(undefined)}
-              surfaceTestId="leadership-branches-people"
-            />
-          ) : (
-            <p className="performance-inline-empty">No leadership branches in scope.</p>
-          )}
-        </div>
-      ) : null}
-
       {paintedView === "teams" ? (
         <div data-testid="performance-view-teams">
           {leadershipBranchRows.length > 0 ? (
@@ -212,6 +213,7 @@ export function DirectorPerformanceOverview({
               selectedLeaderId={selectedTeamId}
               onSelectLeader={setSelectedTeamId}
               onBack={() => setSelectedTeamId(undefined)}
+              membersByLeaderId={membersByLeaderId}
             />
           ) : (
             <DirectorTeamsView
