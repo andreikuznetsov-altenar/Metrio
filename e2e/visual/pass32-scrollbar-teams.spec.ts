@@ -84,8 +84,9 @@ test("primary scrollbar: 4px visible thumb, transparent track, no buttons", asyn
   }
   const thumbPixels = row.filter(Boolean).length;
   expect(thumbPixels).toBe(4); // visible thumb is exactly 4px
-  // Track lane (8px) is transparent: the pixels beside the thumb equal the page background.
-  expect(row.slice(-4).every((v) => !v)).toBe(true);
+  // Lane = last 8 of the 12 sampled columns: 2 empty | 4 thumb | 2 empty (centred), transparent track.
+  const lane = row.slice(-8);
+  expect(lane).toEqual([false, false, true, true, true, true, false, false]);
   const css = await page.evaluate(() => {
     const style = (pseudo: string) => {
       const el = document.querySelector(".metrio-scroll--primary")!;
@@ -127,8 +128,17 @@ async function thumbExtent(page: import("@playwright/test").Page, selector: stri
   }
   const mid = Math.floor((first + last) / 2);
   let width = 0;
-  for (let x = x0; x < x0 + 8; x += 1) if (lit(x, mid)) width += 1;
-  return { topInset: first - top, bottomInset: bottom - 1 - last, width };
+  let firstCol = -1;
+  let lastCol = -1;
+  for (let x = x0; x < x0 + 8; x += 1) {
+    if (lit(x, mid)) {
+      width += 1;
+      if (firstCol < 0) firstCol = x;
+      lastCol = x;
+    }
+  }
+  // empty pixels between the thumb and each side of the 8px lane (PASS35: 2 | 4 | 2)
+  return { topInset: first - top, bottomInset: bottom - 1 - last, width, leftGap: firstCol - x0, rightGap: x0 + 7 - lastCol };
 }
 
 for (const width of [1280, 1440, 1728]) {
@@ -147,6 +157,8 @@ for (const width of [1280, 1440, 1728]) {
     const atTop = await thumbExtent(page, sel);
     expect(Math.abs(atTop.topInset - 8)).toBeLessThanOrEqual(1);
     expect(atTop.width).toBe(4);
+    expect(atTop.leftGap).toBe(2);
+    expect(atTop.rightGap).toBe(2);
     await page.locator(sel).first().evaluate((el) => {
       el.scrollTop = el.scrollHeight;
     });
@@ -202,6 +214,8 @@ test("long drawer: 4px thumb with 8px end insets", async ({ page }) => {
   const atTop = await thumbExtent(page, sel);
   expect(Math.abs(atTop.topInset - 8)).toBeLessThanOrEqual(1);
   expect(atTop.width).toBe(4);
+  expect(atTop.leftGap).toBe(2);
+  expect(atTop.rightGap).toBe(2);
   await page.locator(sel).evaluate((el) => {
     el.scrollTop = el.scrollHeight;
   });

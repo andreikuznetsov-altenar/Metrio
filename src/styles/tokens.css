@@ -89,6 +89,7 @@
   --metrio-scrollbar-size: 4px;
   --metrio-scrollbar-inset: 4px;
   --metrio-scrollbar-end-inset: 8px;
+  --metrio-scrollbar-side-inset: 2px;
 
   /* Layout */
   --app-header-height: 56px;

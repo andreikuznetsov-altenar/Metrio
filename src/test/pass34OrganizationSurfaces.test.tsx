@@ -197,3 +197,25 @@ describe("PASS34 hierarchy table geometry", () => {
     expect(perfCss).toMatch(/performance-branch-member-row__person \.performance-branch-collapse__content\s*\{[^}]*var\(--space-3\)/);
   });
 });
+
+describe("PASS35 hierarchy fallback", () => {
+  it("members without a resolvable supervisor attach to the branch leader instead of vanishing", () => {
+    const mk = (id: string, sup?: string) =>
+      ({
+        id,
+        bamboo: { id, displayName: id, firstName: id, lastName: "", workEmail: `${id}@altenar.com`, jobTitle: "Designer", supervisorId: sup, hireDate: "2024-01-01", status: "Active" },
+        jira: null, identity: { matchedBy: "email", warnings: [] },
+        availability: { state: "available", label: "Available", isHoliday: false },
+        workload: testWorkload({ level: "normal", capacityLoadPercent: 50 }), personalWorkload: null,
+        performance: testKpi({ completedCount: 5, firstPassAcceptedCount: 5, efficiencyIndex: 90 }), issues: [], ownedIssues: [],
+      }) as Person;
+    const rows = buildLeadershipBranchMemberRows({
+      leaderId: "lead",
+      descendantIds: ["lead", "a", "b"],
+      persons: [mk("lead"), mk("a"), mk("b", "lead")],
+      deliveryRisk: [],
+      params: { dateFrom: "2026-07-14", dateTo: "2026-10-14", targetReviewDays: 3, users: [], projects: [], teamScope: "full" } as never,
+    });
+    expect(rows.map((r) => r.displayName).sort()).toEqual(["a", "b"]);
+  });
+});

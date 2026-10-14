@@ -164,7 +164,7 @@ describe("PASS32 Canonical scrollbar CSS contract", () => {
     expect(sysCss).toMatch(/\.metrio-scroll--primary\s*\{[^}]*overflow-y:\s*scroll/);
     // PASS33 moved the 4px-thumb border geometry into the shared global thumb rules.
     expect(sysCss).toMatch(/::-webkit-scrollbar-thumb\s*\{[^}]*border:\s*0 solid transparent/);
-    expect(sysCss).toMatch(/::-webkit-scrollbar-thumb:vertical\s*\{[^}]*border-right-width:\s*var\(--metrio-scrollbar-inset, 4px\)/);
+    expect(sysCss).toMatch(/::-webkit-scrollbar-thumb:vertical\s*\{[^}]*border-left-width:\s*var\(--metrio-scrollbar-side-inset, 2px\)[^}]*border-right-width:\s*var\(--metrio-scrollbar-side-inset, 2px\)/);
     expect(sysCss).toMatch(/::-webkit-scrollbar-thumb\s*\{[^}]*background-clip:\s*padding-box/);
     expect(sysCss).toMatch(/\.metrio-scroll--primary::-webkit-scrollbar\s*\{[^}]*width:\s*calc\(var\(--metrio-scrollbar-inset, 4px\) \+ var\(--metrio-scrollbar-size, 4px\)\)/);
     expect(sysCss).toMatch(/\.metrio-scroll--primary::-webkit-scrollbar-track,[\s\S]*?background:\s*transparent/);

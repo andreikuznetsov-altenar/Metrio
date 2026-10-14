@@ -14,10 +14,11 @@ afterEach(() => {
 describe("PASS33 scrollbar end insets (central CSS contract)", () => {
   it("lane 8px, 4px visible thumb, transparent track, invisible 8px end spacers", () => {
     expect(css).toMatch(/::-webkit-scrollbar\s*\{\s*width:\s*8px;\s*height:\s*8px;/);
-    expect(css).toMatch(/::-webkit-scrollbar-thumb:vertical\s*\{[^}]*border-right-width:\s*var\(--metrio-scrollbar-inset, 4px\)/);
-    expect(css).toMatch(/::-webkit-scrollbar-thumb:horizontal\s*\{[^}]*border-bottom-width:\s*var\(--metrio-scrollbar-inset, 4px\)/);
-    // thumb is never given a vertical-end border (that would skew the 8px/8px symmetry)
-    expect(css).not.toMatch(/::-webkit-scrollbar-thumb\s*\{[^}]*border-bottom-width/);
+    expect(css).toMatch(/::-webkit-scrollbar-thumb:vertical\s*\{[^}]*border-left-width:\s*var\(--metrio-scrollbar-side-inset, 2px\)[^}]*border-right-width:\s*var\(--metrio-scrollbar-side-inset, 2px\)/);
+    expect(css).toMatch(/::-webkit-scrollbar-thumb:horizontal\s*\{[^}]*border-top-width:\s*var\(--metrio-scrollbar-side-inset, 2px\)[^}]*border-bottom-width:\s*var\(--metrio-scrollbar-side-inset, 2px\)/);
+    // thumb is never given a one-sided border (PASS35: symmetric 2 | 4 | 2 centring)
+    expect(css).not.toMatch(/::-webkit-scrollbar-thumb\s*\{[^}]*border-(right|bottom)-width/);
+    expect(tokens).toMatch(/--metrio-scrollbar-side-inset:\s*2px/);
     const v = css.match(/::-webkit-scrollbar-button:vertical:start:decrement,\s*\n::-webkit-scrollbar-button:vertical:end:increment\s*\{[^}]*\}/)![0];
     expect(v).toMatch(/display:\s*block/);
     expect(v).toMatch(/height:\s*var\(--metrio-scrollbar-end-inset, 8px\)/);

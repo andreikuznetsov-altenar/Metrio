@@ -43,13 +43,17 @@ export function buildLeadershipBranchMemberRows(input: {
 }): LeadershipBranchMemberRow[] {
   const inScope = new Set(input.descendantIds);
   const byId = new Map(input.persons.map((person) => [person.id, person]));
+  // A member whose supervisor link is missing or points outside the scoped people attaches
+  // directly to the branch leader, so a gap in Bamboo data never hides someone from the table.
+  const resolvable = new Set(input.persons.map((person) => person.id));
   const childrenOf = (parentId: string): Person[] =>
-    input.persons.filter(
-      (person) =>
-        person.id !== parentId &&
-        inScope.has(person.id) &&
-        person.bamboo.supervisorId === parentId,
-    );
+    input.persons.filter((person) => {
+      if (person.id === parentId || !inScope.has(person.id)) return false;
+      const supervisor = person.bamboo.supervisorId;
+      if (supervisor === parentId) return true;
+      const orphan = !supervisor || !resolvable.has(supervisor) || !inScope.has(supervisor);
+      return parentId === input.leaderId && orphan && person.id !== input.leaderId;
+    });
   const subtreeIds = (id: string): string[] => [
     id,
     ...childrenOf(id).flatMap((child) => subtreeIds(child.id)),

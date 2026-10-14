@@ -116,12 +116,16 @@
   min-width: 32px;
 }
 
+/* Symmetric centring: 8px lane = 2px empty | 4px painted thumb | 2px empty (both axes). The thumb is
+ * painted only inside the transparent borders (background-clip), never flush to a lane edge. */
 ::-webkit-scrollbar-thumb:vertical {
-  border-right-width: var(--metrio-scrollbar-inset, 4px);
+  border-left-width: var(--metrio-scrollbar-side-inset, 2px);
+  border-right-width: var(--metrio-scrollbar-side-inset, 2px);
 }
 
 ::-webkit-scrollbar-thumb:horizontal {
-  border-bottom-width: var(--metrio-scrollbar-inset, 4px);
+  border-top-width: var(--metrio-scrollbar-side-inset, 2px);
+  border-bottom-width: var(--metrio-scrollbar-side-inset, 2px);
 }
 
 ::-webkit-scrollbar-thumb:hover {
