@@ -98,3 +98,132 @@ test("primary scrollbar: 4px visible thumb, transparent track, no buttons", asyn
   expect(css.track.background).toBe("rgba(0, 0, 0, 0)");
   expect(css.button.display).toBe("none");
 });
+
+// ── PASS33: 8px end insets, measured on real pixels ─────────────────────────────────────────
+type Box = { top: number; bottom: number; right: number };
+
+async function thumbExtent(page: import("@playwright/test").Page, selector: string) {
+  const box: Box = await page.evaluate((sel) => {
+    const r = document.querySelector(sel)!.getBoundingClientRect();
+    return { top: r.top, bottom: r.bottom, right: r.right };
+  }, selector);
+  const shot = PNG.sync.read(await page.screenshot());
+  const x0 = Math.round(box.right) - 8;
+  const top = Math.round(box.top);
+  const bottom = Math.round(box.bottom);
+  const probe = (x: number, y: number) => (y * shot.width + x) * 4;
+  const bg = [0, 1, 2].map((c) => shot.data[probe(x0 + 7, top + 10) + c]!);
+  const lit = (x: number, y: number) =>
+    [0, 1, 2].some((c) => Math.abs(shot.data[probe(x, y) + c]! - bg[c]!) > 10);
+  let first = -1;
+  let last = -1;
+  for (let y = top; y < bottom; y += 1) {
+    let on = false;
+    for (let x = x0; x < x0 + 8; x += 1) if (lit(x, y)) on = true;
+    if (on) {
+      if (first < 0) first = y;
+      last = y;
+    }
+  }
+  const mid = Math.floor((first + last) / 2);
+  let width = 0;
+  for (let x = x0; x < x0 + 8; x += 1) if (lit(x, mid)) width += 1;
+  return { topInset: first - top, bottomInset: bottom - 1 - last, width };
+}
+
+for (const width of [1280, 1440, 1728]) {
+  test(`primary scrollbar keeps 8px end insets (performance, ${width})`, async ({ page }) => {
+    await bootOrgRoleScenario(page, "mom", { theme: "light", width });
+    await openPerformanceFromHome(page);
+    await setViewport(page, width, 560);
+    const sel = ".metrio-scroll--primary";
+    const over = await page.locator(sel).first().evaluate((el) => el.scrollHeight > el.clientHeight);
+    expect(over).toBe(true);
+    await page.locator(sel).first().evaluate((el) => {
+      (el as HTMLElement).style.scrollBehavior = "auto";
+      el.scrollTop = 0;
+    });
+    await page.waitForTimeout(200);
+    const atTop = await thumbExtent(page, sel);
+    expect(Math.abs(atTop.topInset - 8)).toBeLessThanOrEqual(1);
+    expect(atTop.width).toBe(4);
+    await page.locator(sel).first().evaluate((el) => {
+      el.scrollTop = el.scrollHeight;
+    });
+    await page.waitForTimeout(300);
+    const atBottom = await thumbExtent(page, sel);
+    expect(Math.abs(atBottom.bottomInset - 8)).toBeLessThanOrEqual(1);
+    expect(atBottom.width).toBe(4);
+  });
+}
+
+test("Manager Teams expanded keeps 8px end insets and no x shift", async ({ page }) => {
+  await openTeams(page, "light", 1440);
+  await setViewport(page, 1440, 430);
+  const collapsed = await geometry(page);
+  await page.getByTestId("leadership-branch-toggle").first().click();
+  await page.waitForTimeout(500);
+  const sel = ".metrio-scroll--primary";
+  await page.locator(sel).first().evaluate((el) => {
+    (el as HTMLElement).style.scrollBehavior = "auto";
+    el.scrollTop = 0;
+  });
+  await page.waitForTimeout(200);
+  const atTop = await thumbExtent(page, sel);
+  expect(Math.abs(atTop.topInset - 8)).toBeLessThanOrEqual(1);
+  await page.locator(sel).first().evaluate((el) => {
+    el.scrollTop = el.scrollHeight;
+  });
+  await page.waitForTimeout(300);
+  const atBottom = await thumbExtent(page, sel);
+  expect(Math.abs(atBottom.bottomInset - 8)).toBeLessThanOrEqual(1);
+  await page.locator(sel).first().evaluate((el) => {
+    el.scrollTop = 0;
+  });
+  sameWithin1(collapsed, await geometry(page));
+});
+
+test("long drawer: 4px thumb with 8px end insets", async ({ page }) => {
+  await bootOrgRoleScenario(page, "leaf", { theme: "light", width: 1440 });
+  await openPerformanceFromHome(page);
+  await page.locator(".performance-subnav__link").filter({ hasText: "People" }).click();
+  await setViewport(page, 1440, 420);
+  await page.locator("table tbody tr button").first().click();
+  const sel = "[data-testid='person-detail-drawer'] .drawer__body";
+  await expect(page.locator(sel)).toBeVisible();
+  await page.waitForTimeout(700);
+  const over = await page.locator(sel).evaluate((el) => el.scrollHeight > el.clientHeight);
+  expect(over).toBe(true);
+  await page.locator(sel).evaluate((el) => {
+    (el as HTMLElement).style.scrollBehavior = "auto";
+    el.scrollTop = 0;
+  });
+  await page.waitForTimeout(200);
+  const atTop = await thumbExtent(page, sel);
+  expect(Math.abs(atTop.topInset - 8)).toBeLessThanOrEqual(1);
+  expect(atTop.width).toBe(4);
+  await page.locator(sel).evaluate((el) => {
+    el.scrollTop = el.scrollHeight;
+  });
+  await page.waitForTimeout(300);
+  const atBottom = await thumbExtent(page, sel);
+  expect(Math.abs(atBottom.bottomInset - 8)).toBeLessThanOrEqual(1);
+});
+
+test("smooth-scroll contract: smooth normally, auto under reduced motion", async ({ page }) => {
+  await bootOrgRoleScenario(page, "mom", { theme: "light", width: 1440 });
+  await openPerformanceFromHome(page);
+  const read = () =>
+    page.evaluate(() => {
+      const behavior = (sel: string) => {
+        const el = document.querySelector(sel);
+        return el ? getComputedStyle(el).scrollBehavior : null;
+      };
+      return { primary: behavior(".metrio-scroll--primary"), secondary: behavior(".metrio-scroll") };
+    });
+  const normal = await read();
+  expect(normal.primary).toBe("smooth");
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  const reduced = await read();
+  expect(reduced.primary).toBe("auto");
+});

@@ -1,6 +1,7 @@
 import type { ActionItem, ActionTarget } from "../actions/actionTypes";
 import type { ActionNavigationHandlers } from "../../app/actionNavigation";
 import { navigateActionTarget, navigatePerformanceView } from "../../app/actionNavigation";
+import { smoothScrollBehavior } from "../../platform/scrollBehavior";
 
 export const PERFORMANCE_SCROLL_TARGETS = {
   teamAttention: "performance-section-team-attention",
@@ -45,7 +46,7 @@ export function scrollTargetIdForAction(action: ActionItem): string | null {
 export function scrollToPerformanceSection(sectionId: string): void {
   window.setTimeout(() => {
     document.getElementById(sectionId)?.scrollIntoView({
-      behavior: "smooth",
+      behavior: smoothScrollBehavior(),
       block: "start",
     });
   }, 120);

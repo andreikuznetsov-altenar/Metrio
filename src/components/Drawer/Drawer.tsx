@@ -107,7 +107,7 @@ export function Drawer({
             </IconButton>
           </div>
         </div>
-        <div className="drawer__body metrio-scroll metrio-scroll--hidden-thumb">
+        <div className="drawer__body metrio-scroll metrio-scroll--visible-thumb">
           {children}
         </div>
         {footer ? <div className="drawer__footer">{footer}</div> : null}

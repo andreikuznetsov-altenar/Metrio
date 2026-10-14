@@ -50,7 +50,7 @@ describe("Notification drawer scroll geometry", () => {
     );
   });
 
-  it("scroll viewport uses hidden-thumb class and remains the scroll container", () => {
+  it("scroll viewport uses the visible-thumb class and remains the scroll container", () => {
     seedNotificationEventsForTests([
       buildTaskAttentionEvent({ id: "t1" }),
       buildTaskAttentionEvent({ id: "t2" }),
@@ -66,7 +66,7 @@ describe("Notification drawer scroll geometry", () => {
     );
     const viewport = screen.getByTestId("notification-scroll-viewport");
     expect(viewport.className).toContain("metrio-scroll");
-    expect(viewport.className).toContain("metrio-scroll--hidden-thumb");
+    expect(viewport.className).toContain("metrio-scroll--visible-thumb");
     expect(viewport.className).toContain("notification-center__main");
 
     const drawerBody = document.querySelector(

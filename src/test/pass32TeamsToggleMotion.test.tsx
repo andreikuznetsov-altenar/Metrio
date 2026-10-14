@@ -160,10 +160,10 @@ describe("PASS32 Teams expansion motion", () => {
 describe("PASS32 Canonical scrollbar CSS contract", () => {
   it("primary scroll owner reserves a stable lane and renders an exact 4px thumb", () => {
     expect(sysCss).toMatch(/\.metrio-scroll--primary\s*\{[^}]*overflow-y:\s*scroll/);
-    const thumb = sysCss.match(/\.metrio-scroll--primary::-webkit-scrollbar-thumb\s*\{[^}]*\}/)![0];
-    expect(thumb).toMatch(/border:\s*0 solid transparent/);
-    expect(thumb).toMatch(/border-right-width:\s*var\(--metrio-scrollbar-inset, 4px\)/);
-    expect(thumb).toMatch(/background-clip:\s*padding-box/);
+    // PASS33 moved the 4px-thumb border geometry into the shared global thumb rules.
+    expect(sysCss).toMatch(/::-webkit-scrollbar-thumb\s*\{[^}]*border:\s*0 solid transparent/);
+    expect(sysCss).toMatch(/::-webkit-scrollbar-thumb:vertical\s*\{[^}]*border-right-width:\s*var\(--metrio-scrollbar-inset, 4px\)/);
+    expect(sysCss).toMatch(/::-webkit-scrollbar-thumb\s*\{[^}]*background-clip:\s*padding-box/);
     expect(sysCss).toMatch(/\.metrio-scroll--primary::-webkit-scrollbar\s*\{[^}]*width:\s*calc\(var\(--metrio-scrollbar-inset, 4px\) \+ var\(--metrio-scrollbar-size, 4px\)\)/);
     expect(sysCss).toMatch(/\.metrio-scroll--primary::-webkit-scrollbar-track,[\s\S]*?background:\s*transparent/);
     expect(sysCss).toMatch(/::-webkit-scrollbar-button\s*\{[^}]*display:\s*none/);

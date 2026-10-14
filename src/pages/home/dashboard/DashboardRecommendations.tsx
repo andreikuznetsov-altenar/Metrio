@@ -14,6 +14,7 @@ import {
   presentProductRecommendation,
   type RecommendationSurface,
 } from "../../../domain/recommendations/presentProductRecommendation";
+import { smoothScrollBehavior } from "../../../platform/scrollBehavior";
 import { JiraIssueText } from "../../../components/JiraIssueLink/JiraIssueText";
 
 const SEVERITY_VARIANT = {
@@ -85,7 +86,7 @@ export function DashboardRecommendations({
     const card = rail.querySelector<HTMLElement>(".executive-recommendations__item");
     const gap = Number.parseFloat(getComputedStyle(rail).gap || "0") || 0;
     const step = (card?.getBoundingClientRect().width ?? rail.clientWidth / 3) + gap;
-    rail.scrollBy({ left: direction * step, behavior: "smooth" });
+    rail.scrollBy({ left: direction * step, behavior: smoothScrollBehavior() });
   };
 
   if (!items.length) return null;

@@ -89,7 +89,14 @@
  * SECONDARY (default .metrio-scroll / --hidden-thumb): scrollable, invisible thumb, no width shift.
  * PRIMARY (.metrio-scroll--primary): visible Metrio overlay scrollbar on main screens only.
  */
-/* Canonical default for ANY scroller (tables, modals, popovers): transparent track, thumb only. */
+/*
+ * Canonical scrollbar for ANY scroller (tables, drawers, modals, popovers, main screens):
+ *  - 8px lane; transparent track (no rail)
+ *  - visible thumb exactly 4px (transparent border-right/bottom takes the other 4px)
+ *  - 8px empty space at both ends of the track: the start/end scrollbar buttons are invisible
+ *    8px spacers (no arrow, no background, no border, no hover). The inset therefore belongs to
+ *    scrollbar geometry only; page content is never padded.
+ */
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
@@ -102,10 +109,19 @@
 
 ::-webkit-scrollbar-thumb {
   background: var(--scrollbar-thumb);
-  border: 2px solid transparent;
+  border: 0 solid transparent;
   background-clip: padding-box;
   border-radius: var(--radius-round);
   min-height: 32px;
+  min-width: 32px;
+}
+
+::-webkit-scrollbar-thumb:vertical {
+  border-right-width: var(--metrio-scrollbar-inset, 4px);
+}
+
+::-webkit-scrollbar-thumb:horizontal {
+  border-bottom-width: var(--metrio-scrollbar-inset, 4px);
 }
 
 ::-webkit-scrollbar-thumb:hover {
@@ -119,6 +135,24 @@
   height: 0;
 }
 
+::-webkit-scrollbar-button:vertical:start:decrement,
+::-webkit-scrollbar-button:vertical:end:increment {
+  display: block;
+  width: 8px;
+  height: var(--metrio-scrollbar-end-inset, 8px);
+  background: transparent;
+  border: 0;
+}
+
+::-webkit-scrollbar-button:horizontal:start:decrement,
+::-webkit-scrollbar-button:horizontal:end:increment {
+  display: block;
+  width: var(--metrio-scrollbar-end-inset, 8px);
+  height: 8px;
+  background: transparent;
+  border: 0;
+}
+
 .metrio-scroll,
 .metrio-scroll--hidden-thumb,
 .metrio-scroll--overlay,
@@ -126,8 +160,24 @@
   overflow-x: hidden;
   overflow-y: auto;
   overscroll-behavior: contain;
-  scroll-behavior: smooth;
   scrollbar-gutter: auto;
+}
+
+/*
+ * Canonical smooth scrolling for every Metrio-owned scroll container. This only affects
+ * app-driven scrolling (scrollTo / scrollIntoView / anchors); native wheel, trackpad inertia and
+ * keyboard scrolling are untouched — there is deliberately no JS wheel interception.
+ */
+.metrio-scroll,
+.metrio-scroll--primary,
+.metrio-scroll--visible-thumb,
+.metrio-scroll--hidden-thumb,
+.metrio-scroll--overlay,
+.metrio-scroll--side-panel,
+.drawer__body,
+.metrio-tabular-modal .performance-table-wrap,
+.connection-screen {
+  scroll-behavior: smooth;
 }
 
 /*
@@ -155,6 +205,22 @@
 }
 
 /*
+ * Drawers / side panels: ONE vertical scroll owner that shows the canonical 4px thumb (with the
+ * 8px end insets from the global scrollbar) only when its content really overflows. A short
+ * drawer therefore has no scrollbar and no lane; a long one has exactly one.
+ */
+.metrio-scroll--visible-thumb {
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.metrio-scroll--visible-thumb::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+/*
  * Main-screen scroll owner. `overflow-y: scroll` (not auto) keeps the 8px scrollbar lane
  * permanently reserved, so content never shifts horizontally when a scrollbar becomes
  * necessary. The lane is a transparent track; only the 4px thumb is ever visible, and only
@@ -165,7 +231,6 @@
   overflow-x: hidden;
   overflow-y: scroll;
   overscroll-behavior: contain;
-  scroll-behavior: smooth;
 }
 
 @supports not selector(::-webkit-scrollbar) {
@@ -185,17 +250,7 @@
   background: transparent;
 }
 
-/* Lane = inset + size; the thumb's transparent border-right/bottom leaves exactly `size` (4px)
- * visible. The global thumb rule's left/top border must be reset here, otherwise the visible
- * thumb shrinks to 2px. */
 .metrio-scroll--primary::-webkit-scrollbar-thumb {
-  background: var(--scrollbar-thumb);
-  border: 0 solid transparent;
-  border-right-width: var(--metrio-scrollbar-inset, 4px);
-  border-bottom-width: var(--metrio-scrollbar-inset, 4px);
-  background-clip: padding-box;
-  border-radius: var(--radius-round);
-  min-height: 32px;
   transition: background var(--motion-hover) var(--transition-easing);
 }
 
@@ -241,9 +296,13 @@
 @media (prefers-reduced-motion: reduce) {
   .metrio-scroll,
   .metrio-scroll--primary,
+  .metrio-scroll--visible-thumb,
   .metrio-scroll--hidden-thumb,
   .metrio-scroll--overlay,
-  .metrio-scroll--side-panel {
+  .metrio-scroll--side-panel,
+  .drawer__body,
+  .metrio-tabular-modal .performance-table-wrap,
+  .connection-screen {
     scroll-behavior: auto;
   }
 

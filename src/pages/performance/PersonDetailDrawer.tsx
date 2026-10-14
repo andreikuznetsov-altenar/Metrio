@@ -40,6 +40,7 @@ import {
 import "./person-detail-drawer.css";
 import "./person-identity-header.css";
 import "./person-work-card.css";
+import { scrollToInstant } from "../../platform/scrollBehavior";
 import "./performance-dashboard.css";
 import "./performance-skeletons.css";
 
@@ -164,7 +165,7 @@ export function PersonDetailDrawer({
     const previous = previousViewRef.current;
     if (previous !== activeView) {
       scrollByView.current[previous] = body.scrollTop;
-      body.scrollTop = scrollByView.current[activeView] ?? 0;
+      scrollToInstant(body, scrollByView.current[activeView] ?? 0);
       previousViewRef.current = activeView;
     }
   }, [activeView]);

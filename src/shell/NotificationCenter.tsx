@@ -304,7 +304,7 @@ export function NotificationCenter({
         </div>
         <div
           ref={scrollRef}
-          className="notification-center__main metrio-scroll metrio-scroll--hidden-thumb"
+          className="notification-center__main metrio-scroll metrio-scroll--visible-thumb"
           data-testid="notification-scroll-viewport"
         >
         {dismissError ? (

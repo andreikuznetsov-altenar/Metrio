@@ -26,13 +26,13 @@ describe("Secondary panel scroll contract", () => {
     );
   });
 
-  it("shared Drawer body uses hidden-thumb scroll + flex shrink geometry", () => {
+  it("shared Drawer body uses the canonical visible-thumb scroll + flex shrink geometry", () => {
     const css = read("src/components/Drawer/Drawer.css");
     expect(css).toMatch(/\.drawer__body[\s\S]*flex:\s*1\s+1\s+auto/);
     expect(css).toMatch(/\.drawer__body[\s\S]*min-height:\s*0/);
     expect(css).toMatch(/\.drawer__body[\s\S]*overflow-y:\s*auto/);
     expect(read("src/components/Drawer/Drawer.tsx")).toContain(
-      "metrio-scroll--hidden-thumb",
+      "metrio-scroll--visible-thumb",
     );
   });
 
@@ -48,7 +48,7 @@ describe("Secondary panel scroll contract", () => {
     expect(header).toBeTruthy();
     expect(body).toBeTruthy();
     expect(header?.contains(body!)).toBe(false);
-    expect(body?.className).toContain("metrio-scroll--hidden-thumb");
+    expect(body?.className).toContain("metrio-scroll--visible-thumb");
   });
 
   it("Google setup for Feedback: body scrolls and Advanced section is in scroll tree", () => {

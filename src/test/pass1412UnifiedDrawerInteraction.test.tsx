@@ -287,18 +287,18 @@ describe("PASS 14.12 scrollbar policy contracts", () => {
     );
   });
 
-  it("secondary surfaces use hidden-thumb scroll", () => {
+  it("drawers show the canonical thumb; modals keep hidden-thumb scroll", () => {
     expect(read("src/components/Drawer/DrawerStack.tsx")).toContain(
-      "metrio-scroll--hidden-thumb",
+      "metrio-scroll--visible-thumb",
     );
     expect(read("src/components/Drawer/Drawer.tsx")).toContain(
-      "metrio-scroll--hidden-thumb",
+      "metrio-scroll--visible-thumb",
     );
     expect(read("src/components/Modal/Modal.tsx")).toContain(
       "metrio-scroll--hidden-thumb",
     );
     expect(read("src/shell/NotificationCenter.tsx")).toContain(
-      "metrio-scroll--hidden-thumb",
+      "metrio-scroll--visible-thumb",
     );
     expect(read("src/components/TaskListModal/TaskListModal.tsx")).toContain(
       "metrio-scroll--hidden-thumb",
