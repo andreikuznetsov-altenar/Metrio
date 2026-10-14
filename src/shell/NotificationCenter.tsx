@@ -124,6 +124,7 @@ export function NotificationCenter({
   const [loadError, setLoadError] = useState(false);
   const [sourceFilter, setSourceFilter] = useState<InboxSourceFilterId>("all");
   const [confirmClear, setConfirmClear] = useState(false);
+  const [dismissError, setDismissError] = useState<string | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
 
   const syncUnread = useCallback(
@@ -306,6 +307,12 @@ export function NotificationCenter({
           className="notification-center__main metrio-scroll metrio-scroll--hidden-thumb"
           data-testid="notification-scroll-viewport"
         >
+        {dismissError ? (
+          <p className="notification-center__error-line" role="alert" data-testid="notification-dismiss-error">
+            {dismissError}
+          </p>
+        ) : null}
+
         {confirmClear ? (
           <div className="notification-center__confirm" role="alertdialog" aria-label="Clear notifications">
             <p className="notification-center__confirm-text">
@@ -323,10 +330,16 @@ export function NotificationCenter({
                 type="button"
                 variant="danger"
                 onClick={() => {
-                  void clearActionInboxHistory().then(() => {
-                    refresh();
-                    setConfirmClear(false);
-                  });
+                  void clearActionInboxHistory()
+                    .then(() => {
+                      setDismissError(null);
+                      refresh();
+                      setConfirmClear(false);
+                    })
+                    .catch(() => {
+                      setDismissError("Couldn't clear notifications permanently. Try again.");
+                      refresh();
+                    });
                 }}
               >
                 Clear
@@ -424,9 +437,17 @@ export function NotificationCenter({
                               className="notification-center__dismiss"
                               data-testid="notification-delete"
                               onClick={() => {
-                                void deleteActionInboxItem(event).then(() =>
-                                  refresh(),
-                                );
+                                void deleteActionInboxItem(event)
+                                  .then(() => {
+                                    setDismissError(null);
+                                    refresh();
+                                  })
+                                  .catch(() => {
+                                    // The card stays: never pretend a dismissal was saved.
+                                    setDismissError(
+                                      "Couldn't delete this notification permanently. Try again.",
+                                    );
+                                  });
                               }}
                             >
                               Delete

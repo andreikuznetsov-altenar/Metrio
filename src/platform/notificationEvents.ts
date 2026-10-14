@@ -7,6 +7,7 @@ import { collapseIntegrationProblemDuplicates } from "./integrationProblemMigrat
 import {
   collapseSemanticNotificationDuplicates,
   DEDUPE_UPSERT_TYPES,
+  dismissalScopeForType,
   findActiveNotificationByDedupeKey,
   isWorkloadNotificationSuppressedToday,
   localNotificationCalendarDay,
@@ -21,7 +22,13 @@ import {
   type ActionInboxSource,
 } from "./notificationTypes";
 import type { AppPreferences } from "./preferences";
-import { recordNotificationSuppression } from "./notificationSuppressions";
+import {
+  endNotificationEpisode,
+  isNotificationDismissed,
+  recordNotificationSuppression,
+  recordNotificationSuppressions,
+  type DismissalScope,
+} from "./notificationSuppressions";
 import { getDocFixtureMode } from "./docFixtures";
 
 const STORAGE_KEY = "metrio-notification-events";
@@ -98,7 +105,16 @@ export async function hydrateDocFixtureNotificationEvents(): Promise<void> {
   const docMode = await getDocFixtureMode();
   if (!docMode.enabled) return;
   const { buildDocNotificationEvents } = await import("../fixtures/docFixtureData");
-  replaceNotificationEvents(buildDocNotificationEvents());
+  const existing = listNotificationEvents();
+  // The fixture obeys the same dismissal contract as real sources: a deleted demo event stays gone.
+  replaceNotificationEvents(
+    buildDocNotificationEvents()
+      .filter((event) => !isNotificationDismissed(event.dedupeKey))
+      .map((event) => {
+        const previous = existing.find((row) => row.id === event.id);
+        return previous?.readAt ? { ...event, readAt: previous.readAt } : event;
+      }),
+  );
 }
 
 export function listNotificationEventsOrThrow(): NotificationEvent[] {
@@ -210,6 +226,11 @@ export function tryRecordNotificationEvent(
   const events = listNotificationEvents();
   const dedupeKey = input.dedupeKey?.trim();
 
+  // A dismissed semantic event is never recreated by a sync/refresh (see notificationSuppressions).
+  if (dedupeKey && isNotificationDismissed(dedupeKey)) {
+    return null;
+  }
+
   if (dedupeKey && DEDUPE_UPSERT_TYPES.includes(input.type)) {
     const existingIdx = events.findIndex(
       (event) => event.dedupeKey === dedupeKey && !event.resolvedAt,
@@ -248,15 +269,12 @@ export function tryRecordNotificationEvent(
   return { event, isNew: true };
 }
 
+/** Records an event, or returns `null` when it is suppressed (dismissed by the user / rate-limited). */
 export function recordNotificationEvent(
   input: RecordNotificationEventInput,
   context?: RecordNotificationContext,
-): NotificationEvent {
-  const result = tryRecordNotificationEvent(input, context);
-  if (!result) {
-    throw new Error("notification suppressed");
-  }
-  return result.event;
+): NotificationEvent | null {
+  return tryRecordNotificationEvent(input, context)?.event ?? null;
 }
 
 export function markNotificationEventRead(id: string): void {
@@ -302,11 +320,14 @@ export function resolveNotificationByDedupeKey(
       : event,
   );
   writeEvents(events);
+  // The condition behind this live-state key is over: a later recurrence is a new episode.
+  endNotificationEpisode(dedupeKey);
 }
 
 /** Hard-delete notifications matching any of the dedupe keys (live-state recovery). */
 export function removeNotificationEventsByDedupeKeys(dedupeKeys: string[]): void {
   if (dedupeKeys.length === 0) return;
+  endNotificationEpisode(dedupeKeys);
   const drop = new Set(dedupeKeys);
   const events = listNotificationEvents();
   const next = events.filter(
@@ -316,15 +337,38 @@ export function removeNotificationEventsByDedupeKeys(dedupeKeys: string[]): void
   writeEvents(next);
 }
 
+/**
+ * Delete = dismiss this specific notification event permanently.
+ * The dismissal is persisted FIRST; if it cannot be stored the card is kept and the error
+ * propagates, so the UI never claims a permanent deletion that did not happen.
+ */
 export function deleteNotificationEvent(id: string): NotificationEvent | null {
   const events = listNotificationEvents();
   const target = events.find((event) => event.id === id);
   if (!target) return null;
-  writeEvents(events.filter((event) => event.id !== id));
   if (target.dedupeKey) {
-    recordNotificationSuppression(target.dedupeKey);
+    recordNotificationSuppression(
+      target.dedupeKey,
+      undefined,
+      dismissalScopeForType(target.type),
+    );
   }
+  writeEvents(events.filter((event) => event.id !== id));
   return target;
+}
+
+/** "Clear all": dismiss every currently stored semantic event, then empty the list. */
+export function dismissAllNotificationEvents(): void {
+  const events = listNotificationEvents();
+  recordNotificationSuppressions(
+    events
+      .filter((event) => event.dedupeKey)
+      .map((event) => ({
+        dedupeKey: event.dedupeKey!,
+        scope: dismissalScopeForType(event.type) as DismissalScope,
+      })),
+  );
+  writeEvents([]);
 }
 
 export function syncTrayBambooInboxActions(
@@ -354,6 +398,7 @@ export function syncTrayBambooInboxActions(
       }
       continue;
     }
+    if (isNotificationDismissed(dedupeKey)) continue;
     const created = buildEventFromInput({
       type: "bamboo_document_action",
       title: "Document requires signature",
@@ -375,6 +420,7 @@ export function syncTrayBambooInboxActions(
     }
     const id = event.dedupeKey.slice("bamboo:action:".length);
     if (!activeIds.has(id)) {
+      endNotificationEpisode(event.dedupeKey);
       return { ...event, resolvedAt: now };
     }
     return event;
@@ -391,6 +437,10 @@ export function markAllNotificationEventsRead(): void {
   writeEvents(events);
 }
 
+/**
+ * Empties the notification list WITHOUT recording dismissals (session reset). For the user-facing
+ * "clear all" use `dismissAllNotificationEvents`, which keeps the cleared events from returning.
+ */
 export function clearNotificationHistory(): void {
   writeEvents([]);
 }

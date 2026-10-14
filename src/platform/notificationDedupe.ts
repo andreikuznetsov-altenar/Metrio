@@ -30,6 +30,19 @@ export const DEDUPE_ACTIVE_SINGLETON_TYPES: NotificationEventType[] = [
   ...DEDUPE_UPSERT_TYPES,
 ];
 
+/**
+ * Dismissal lifetime for a notification type.
+ *  - `episode`: the dedupeKey names a live/state-derived condition, so the tombstone ends when that
+ *    condition clears (see `endNotificationEpisode`);
+ *  - `event`: the dedupeKey already identifies one concrete event.
+ * The canonical identity of a notification is always its `dedupeKey`.
+ */
+export function dismissalScopeForType(type: NotificationEventType): "event" | "episode" {
+  if (DEDUPE_UPSERT_TYPES.includes(type)) return "episode";
+  if (type === "workload_change" || type === "task_attention") return "episode";
+  return "event";
+}
+
 export function workloadDedupeKey(personId: string, level: string): string {
   return `workload:${personId}:${level}`;
 }

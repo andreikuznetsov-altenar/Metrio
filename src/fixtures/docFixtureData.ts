@@ -1026,6 +1026,7 @@ export function buildDocNotificationEvents(): NotificationEvent[] {
   return [
     {
       id: "doc-notification-review",
+      dedupeKey: "doc:task-attention:DEMO-202:review:2026-10-10",
       type: "task_attention",
       createdAt: "2026-10-10T08:30:00.000Z",
       title: "Review needs attention",
@@ -1041,6 +1042,7 @@ export function buildDocNotificationEvents(): NotificationEvent[] {
     },
     {
       id: "doc-notification-feedback",
+      dedupeKey: "doc:feedback-responses:design-health-pulse:2026-10-10",
       type: "feedback_action",
       createdAt: "2026-10-10T07:45:00.000Z",
       title: "Feedback responses ready",
@@ -1052,6 +1054,7 @@ export function buildDocNotificationEvents(): NotificationEvent[] {
     },
     {
       id: "doc-notification-vacation",
+      dedupeKey: "doc:vacation-reminder:doc-anna:2026-10-14",
       type: "vacation_reminder",
       createdAt: "2026-10-10T06:15:00.000Z",
       title: "Vacation starts soon",

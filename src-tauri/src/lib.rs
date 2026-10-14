@@ -571,6 +571,29 @@ fn tray_popover_action(app: AppHandle, action_id: String) -> Result<(), String> 
     Ok(())
 }
 
+/// Native window chrome follows the app theme: the titlebar area shows the NSWindow background, so
+/// it must be the canonical chrome surface (a distinct gray) instead of white; `theme` pins the
+/// native appearance (`"light"`, `"dark"`) or follows the system (`None`).
+#[tauri::command]
+fn app_set_window_chrome(
+    window: tauri::WebviewWindow,
+    r: u8,
+    g: u8,
+    b: u8,
+    theme: Option<String>,
+) -> Result<(), String> {
+    window
+        .set_background_color(Some(tauri::window::Color(r, g, b, 255)))
+        .map_err(|e| e.to_string())?;
+    let native_theme = match theme.as_deref() {
+        Some("light") => Some(tauri::Theme::Light),
+        Some("dark") => Some(tauri::Theme::Dark),
+        _ => None,
+    };
+    window.set_theme(native_theme).map_err(|e| e.to_string())?;
+    Ok(())
+}
+
 #[tauri::command]
 fn tray_popover_resize(app: AppHandle, width: f64, height: f64) -> Result<(), String> {
     tray_popover::tray_popover_resize(&app, width, height)
@@ -609,6 +632,7 @@ pub fn run() {
             storage_get_warnings,
             app_get_build_info,
             app_get_updater_target,
+            app_set_window_chrome,
             app_get_doc_fixture_mode,
             diagnostics_export_file,
             support_bundle_export,

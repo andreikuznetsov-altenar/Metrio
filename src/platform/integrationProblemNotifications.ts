@@ -16,6 +16,7 @@ import {
   type IntegrationProblemSource,
 } from "./integrationProblemMigration";
 import { enrichInboxEvent } from "../domain/inbox/actionInboxModel";
+import { endNotificationEpisode, isNotificationDismissed } from "./notificationSuppressions";
 
 export type { IntegrationProblemSource, IntegrationHealthMap };
 export {
@@ -81,6 +82,9 @@ export function setIntegrationProblem(
     (event) => !event.resolvedAt && !event.dedupeKey?.endsWith(":restored"),
   );
   const hadActive = active.length > 0;
+  const dismissed = allIntegrationProblemDedupeKeys(source).some((key) =>
+    isNotificationDismissed(key),
+  );
 
   const byCreated = [...active].sort(
     (a, b) => Date.parse(a.createdAt) - Date.parse(b.createdAt),
@@ -104,6 +108,12 @@ export function setIntegrationProblem(
     actionRequired: true,
   });
 
+  // The user deleted this outage's card: keep it gone until the integration recovers
+  // (clearIntegrationProblem ends the episode) — no new card, no native notification.
+  if (dismissed && !hadActive) {
+    return { event, created: false };
+  }
+
   replaceNotificationEvents([event, ...others]);
 
   if (!hadActive && input.emitNative !== false) {
@@ -120,6 +130,7 @@ export function setIntegrationProblem(
  * No "connection restored" history card. Scrubs legacy IDs and title matches too.
  */
 export function clearIntegrationProblem(source: IntegrationProblemSource): void {
+  endNotificationEpisode(allIntegrationProblemDedupeKeys(source));
   const all = listNotificationEvents();
   const next = all.filter(
     (event) => !isIntegrationProblemForSource(event, source),

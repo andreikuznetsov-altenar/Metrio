@@ -11,6 +11,7 @@ import {
   type RecordNotificationEventInput,
 } from "./notificationEvents";
 import type { NotificationEventType } from "./notificationTypes";
+import { endNotificationEpisode } from "./notificationSuppressions";
 import {
   dispatchNativeNotification,
   type NativeNotificationDescriptor,
@@ -50,7 +51,12 @@ export function collectPersonNotificationTransitions(
   persons: Person[],
   prefs: AppPreferences,
   params?: ReportParams,
-): { descriptors: NotificationTransitionDescriptor[]; nextState: AppPreferences["notificationState"] } {
+): {
+  descriptors: NotificationTransitionDescriptor[];
+  nextState: AppPreferences["notificationState"];
+  /** dedupeKeys of state-derived conditions that just ended (their dismissals end with them). */
+  endedEpisodes: string[];
+} {
   const state = {
     workloadLevels: { ...prefs.notificationState.workloadLevels },
     vacationNotified: { ...prefs.notificationState.vacationNotified },
@@ -60,6 +66,7 @@ export function collectPersonNotificationTransitions(
     },
   };
   const descriptors: NotificationTransitionDescriptor[] = [];
+  const endedEpisodes: string[] = [];
   const rules = normalizeOperationalRules(prefs.operationalRules);
   const healthThresholds = taskHealthThresholdsFromRules(rules);
 
@@ -68,6 +75,9 @@ export function collectPersonNotificationTransitions(
     const workloadLevel = person.workload?.level || "normal";
     const prevWorkload = state.workloadLevels[key];
 
+    if (prevWorkload && prevWorkload !== workloadLevel) {
+      endedEpisodes.push(`workload:${person.id}:${prevWorkload}`);
+    }
     const workloadEvent = workloadTransition(person, prevWorkload, workloadLevel);
     if (workloadEvent) {
       descriptors.push(workloadEvent);
@@ -75,6 +85,8 @@ export function collectPersonNotificationTransitions(
     state.workloadLevels[key] = workloadLevel;
 
     const availKey = `${key}:${person.availability.state}`;
+    // Occurrence discriminator: a later vacation (different dates) is a different event.
+    const occurrence = person.availability.startDate ?? person.availability.endDate ?? "undated";
 
     if (person.availability.state === "on_vacation") {
       if (state.vacationNotified[key] !== availKey) {
@@ -87,7 +99,7 @@ export function collectPersonNotificationTransitions(
           personId: person.id,
           personName: person.bamboo.displayName,
           target: { kind: "person", personId: person.id },
-          dedupeKey: `vacation-start:${availKey}`,
+          dedupeKey: `vacation-start:${availKey}:${occurrence}`,
           toggleKey: "vacationStarts",
           native: { title, body: message },
         });
@@ -128,7 +140,7 @@ export function collectPersonNotificationTransitions(
           personId: person.id,
           personName: person.bamboo.displayName,
           target: { kind: "person", personId: person.id },
-          dedupeKey: `vacation-reminder:${availKey}`,
+          dedupeKey: `vacation-reminder:${availKey}:${occurrence}`,
           toggleKey: "vacationReminder",
           native: { title, body: message },
         });
@@ -138,6 +150,9 @@ export function collectPersonNotificationTransitions(
 
     const problematic = person.workload?.problematicCount || 0;
     const prevProb = state.problematicCounts[key] || 0;
+    for (let count = prevProb; count > problematic; count -= 1) {
+      endedEpisodes.push(`problematic:${key}:${count}`);
+    }
     if (problematic > prevProb) {
       const title = "Problematic tasks";
       const message = `${person.bamboo.displayName}: ${problematic} problematic task${problematic === 1 ? "" : "s"}`;
@@ -183,12 +198,15 @@ export function collectPersonNotificationTransitions(
             },
           });
         }
+        if (prevHealth === "problematic" && health.status !== "problematic") {
+          endedEpisodes.push(`task-attention:${issueStateKey}:problematic`);
+        }
         state.workloadLevels[issueStateKey] = health.status;
       }
     }
   }
 
-  return { descriptors, nextState: state };
+  return { descriptors, nextState: state, endedEpisodes };
 }
 
 export async function processNotificationTransitions(
@@ -196,11 +214,12 @@ export async function processNotificationTransitions(
   prefs: AppPreferences,
   params?: ReportParams,
 ): Promise<AppPreferences> {
-  const { descriptors, nextState } = collectPersonNotificationTransitions(
+  const { descriptors, nextState, endedEpisodes } = collectPersonNotificationTransitions(
     persons,
     prefs,
     params,
   );
+  if (endedEpisodes.length > 0) endNotificationEpisode(endedEpisodes);
 
   let notificationState = nextState;
 

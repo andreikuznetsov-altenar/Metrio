@@ -17,7 +17,8 @@
         "title": "",
         "width": 1180,
         "height": 760,
-        "resizable": false
+        "resizable": false,
+        "backgroundColor": "#f1f3f6"
       }
     ],
     "security": {

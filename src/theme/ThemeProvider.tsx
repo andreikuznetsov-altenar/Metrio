@@ -14,6 +14,7 @@ import {
   type ResolvedTheme,
   type ThemePreference,
 } from "./theme";
+import { syncWindowChrome } from "../platform/windowChrome";
 
 interface ThemeContextValue {
   preference: ThemePreference;
@@ -54,6 +55,11 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     setResolved(applyTheme(preference));
   }, [preference]);
+
+  // Keep the native titlebar surface in step with the active theme.
+  useEffect(() => {
+    void syncWindowChrome(preference, resolved);
+  }, [preference, resolved]);
 
   const value = useMemo(
     () => ({ preference, resolved, setPreference }),
