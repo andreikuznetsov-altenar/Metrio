@@ -8,7 +8,7 @@ function isEfficiencyBackflowMarker(event: IssueEvent): boolean {
 export interface TaskPathStage {
   /** Raw Jira status name (used for colouring). */
   status: string;
-  /** True when entering this stage was a backflow (shown with a ↩ marker). */
+  /** True when entering this stage was a backflow. Metadata only: the Task Path tags show status names, no glyph. */
   isBackflow: boolean;
 }
 

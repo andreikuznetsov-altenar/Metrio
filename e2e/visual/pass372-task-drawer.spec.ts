@@ -209,7 +209,8 @@ for (const theme of ["light", "dark"] as const) {
         "In Progress",
         "In Review",
       ]);
-      expect(labels.join(" ")).not.toContain("→");
+      expect(labels.join(" ")).not.toMatch(/[↩→←]/);
+      expect(await page.getByTestId("task-journey-path").getAttribute("aria-label")).not.toMatch(/[↩→←]/);
       const info = await page.evaluate(() => {
         const list = document.querySelector("[data-testid='task-journey-path']") as HTMLElement;
         const body = document.querySelector(".task-journey-drawer .drawer__body") as HTMLElement;

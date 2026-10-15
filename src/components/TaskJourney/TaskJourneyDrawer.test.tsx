@@ -105,4 +105,55 @@ describe('TaskJourneyDrawer', () => {
     await user.click(ownerButtons[0]);
     expect(openPerson).toHaveBeenCalledWith('daria-id');
   });
+
+  it('renders backflow stages as plain status tags (no arrow glyphs, repeats and order kept)', () => {
+    const step = (from: string, to: string, day: number, isBackflow = false) => ({
+      eventType: 'Status' as const,
+      changedAt: `2026-09-${String(day).padStart(2, '0')}T09:00:00.000Z`,
+      changedBy: 'User',
+      fromValue: from,
+      toValue: to,
+      timeSincePreviousStatusMs: 86400000,
+      isBackflow,
+      isHandoff: false,
+      isReturnToTeam: false,
+      excludeFromEfficiencyBackflow: false,
+    });
+    const looping: AuditIssue = {
+      ...issue,
+      issueKey: 'UX-100',
+      events: [
+        step('To Do', 'In Progress', 2),
+        step('In Progress', 'In Review', 4),
+        step('In Review', 'In Progress', 6, true),
+        step('In Progress', 'In Review', 8),
+        step('In Review', 'In Progress', 10, true),
+        step('In Progress', 'On Hold', 12),
+      ],
+      currentStatus: 'On Hold',
+    };
+    render(
+      <TaskJourneyDrawer
+        open
+        issue={looping}
+        params={{ dateFrom: '2026-07-01', dateTo: '2026-10-09', targetReviewDays: 18, users: [], projects: ['UX'] }}
+        rules={DEFAULT_OPERATIONAL_RULES}
+        persons={persons}
+        onClose={() => undefined}
+      />,
+    );
+    const path = screen.getByTestId('task-journey-path');
+    const tags = within(path).getAllByTestId('task-journey-path-tag');
+    expect(tags.map((t) => t.textContent)).toEqual([
+      'To Do',
+      'In Progress',
+      'In Review',
+      'In Progress',
+      'In Review',
+      'In Progress',
+      'On Hold',
+    ]);
+    expect(path.textContent).not.toMatch(/[↩→←]/);
+    expect(path.getAttribute('aria-label')).not.toMatch(/[↩→←]/);
+  });
 });

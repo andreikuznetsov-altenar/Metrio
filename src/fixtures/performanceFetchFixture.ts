@@ -116,7 +116,8 @@ function longHistoryIssue(key: string, summary: string, ownerCanonical: string):
   const path = ["To Do", "Draft", "In Review", "Approved", "In Progress", "On Hold", "In Progress", "In Review"];
   const events = path.slice(1).flatMap((to, i) => {
     const at = new Date(Date.UTC(2026, 1, 10 + i * 9, 10)).toISOString();
-    const out = [statusEvent(path[i]!, to, at)];
+    // Later returns to In Progress / In Review are backflows (they must never add glyphs to the tags).
+    const out = [{ ...statusEvent(path[i]!, to, at), isBackflow: i >= 5 }];
     if (i % 3 === 1) {
       out.push({
         ...statusEvent("", "", at),

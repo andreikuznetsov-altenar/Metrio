@@ -260,7 +260,7 @@ export function TaskJourneyDrawer({
             ) : null}
             <ul
               className="task-journey-path"
-              aria-label={`Task path: ${journey.compressedPath}`}
+              aria-label={`Task path: ${journey.pathStages.map((stage) => stage.status).join(', ')}`}
               data-testid="task-journey-path"
             >
               {journey.pathStages.map((stage, index) => {
@@ -277,7 +277,7 @@ export function TaskJourneyDrawer({
                         .join(' ')}
                       data-testid="task-journey-path-tag"
                     >
-                      {stage.isBackflow ? `↩ ${stage.status}` : stage.status}
+                      {stage.status}
                     </Badge>
                   </li>
                 );
