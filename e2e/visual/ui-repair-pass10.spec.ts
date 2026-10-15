@@ -127,8 +127,8 @@ test.describe("UI Repair Pass 10 visual acceptance", () => {
   test("dashboard-recommendations", async ({ page }) => {
     await setViewport(page, 1440, 900);
     await bootDashboardManager(page);
-    await expect(page.getByTestId("dashboard-recommendations")).toHaveScreenshot(
-      "dashboard-recommendations.png",
+    await expect(page.getByTestId("recommended-actions")).toHaveScreenshot(
+      "dashboard-recommended-actions.png",
       SHOT,
     );
   });

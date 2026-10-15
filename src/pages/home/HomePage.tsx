@@ -243,6 +243,12 @@ export function HomePage() {
     );
   }, [data?.teamSnapshot?.persons, currentUser.person.id]);
 
+  /** The signed-in person ONLY (never the roster fallback): Recommended actions are about own work. */
+  const ownPerson = useMemo(
+    () => data?.teamSnapshot?.persons?.find((p) => p.id === currentUser.person.id) ?? null,
+    [data?.teamSnapshot?.persons, currentUser.person.id],
+  );
+
   const effectiveTeamSnapshot = useMemo((): TeamPerformanceSnapshot | null => {
     if (teamSnapshot) return teamSnapshot;
     if (homeRole === "employee") return null;
@@ -685,6 +691,7 @@ export function HomePage() {
               teamSnapshot={effectiveTeamSnapshot}
               deliveryRiskCount={deliveryRisk.length}
               deliveryRiskRows={deliveryRisk}
+              selfPerson={ownPerson}
               trends={performanceTrends}
               onOpenAction={handleAction}
               actionOpenLabel={actionOpenLabel}
@@ -722,6 +729,8 @@ export function HomePage() {
             personal={personal}
             selfWorkload={selfWorkload}
             selfAvailability={selfPerson?.availability}
+            selfPerson={ownPerson}
+            onOpenPerson={(personId) => openPerson(personId)}
             trends={employeeTrends}
             onOpenAction={handleAction}
             actionOpenLabel={actionOpenLabel}

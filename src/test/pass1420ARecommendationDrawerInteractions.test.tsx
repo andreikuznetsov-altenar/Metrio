@@ -93,11 +93,11 @@ describe("PASS 14.20A recommendations header + carousel", () => {
     expect(section.querySelector(".executive-recommendations__list--carousel")).toBeTruthy();
   });
 
-  it("places Dashboard Recommendations before Team Trends / Primary Trend", () => {
+  it("places Team Lead Recommended actions before Team Trends / Primary Trend", () => {
     const manager = sourceOf(
       "src/pages/home/dashboard/ManagerExecutiveDashboard.tsx",
     );
-    const recIdx = manager.indexOf("<DashboardRecommendations");
+    const recIdx = manager.indexOf("<RecommendedActionsSection");
     const trendIdx = manager.indexOf("<DashboardPrimaryTrend");
     expect(recIdx).toBeGreaterThan(-1);
     expect(trendIdx).toBeGreaterThan(-1);

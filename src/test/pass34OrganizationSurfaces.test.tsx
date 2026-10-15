@@ -30,10 +30,15 @@ const rec = (id: string): ProductRecommendation => ({
 });
 
 describe("PASS34 single attention card (shared primitive, every scope)", () => {
-  it("Manager and Director dashboards both render recommendations through the same primitive", () => {
-    for (const file of ["ManagerExecutiveDashboard", "DirectorExecutiveDashboard"]) {
-      expect(read(`src/pages/home/dashboard/${file}.tsx`)).toContain("<DashboardRecommendations");
-    }
+  it("Director uses the recommendation primitive; Team Lead uses the single Recommended actions engine (no second recommendation surface)", () => {
+    expect(read("src/pages/home/dashboard/DirectorExecutiveDashboard.tsx")).toContain("<DashboardRecommendations");
+    const lead = read("src/pages/home/dashboard/ManagerExecutiveDashboard.tsx");
+    expect(lead).toContain("<RecommendedActionsSection");
+    // The card primitive appears only behind the Playwright visual seam, never in the production path.
+    const seam = lead.indexOf("visualRecommendations ? (");
+    expect(seam).toBeGreaterThan(-1);
+    expect(lead.indexOf("<DashboardRecommendations")).toBeGreaterThan(seam);
+    expect(lead.indexOf("<DashboardRecommendations")).toBeLessThan(lead.indexOf("<RecommendedActionsSection"));
   });
 
   it("one card => full-width single layout with CTA right + centred; 2+ => grid; >3 => carousel", () => {

@@ -8,7 +8,8 @@ import type {
   HomePersonalWorkspace,
   HomeTeamWorkspace,
 } from "../../../domain/home/homeTypes";
-import type { TeamPerformanceSnapshot, TrendCardData } from "../../../domain/performance";
+import type { ProductRecommendation } from "../../../domain/recommendations/buildProductRecommendations";
+import type { DeliveryRiskRow, TeamPerformanceSnapshot, TrendCardData } from "../../../domain/performance";
 import type { Person } from "../../../domain/people/types";
 import { DashboardActionTabs } from "./DashboardActionTabs";
 import { DashboardAttentionNow } from "./DashboardAttentionNow";
@@ -29,15 +30,14 @@ import { DashboardTeamBriefCard } from "./DashboardTeamBriefCard";
 import {
   readDashboardVisualQueryFlag,
 } from "../../../fixtures/dashboardVisualOverrides";
-import { readVisualProductRecommendationsOverride } from "../../../fixtures/productRecommendationsVisualFixture";
-import { buildProductRecommendations } from "../../../domain/recommendations/buildProductRecommendations";
-import type { ProductRecommendation } from "../../../domain/recommendations/buildProductRecommendations";
+import { RecommendedActionsSection } from "./RecommendedActionsSection";
 import { DashboardRecommendations } from "./DashboardRecommendations";
+import { readVisualProductRecommendationsOverride } from "../../../fixtures/productRecommendationsVisualFixture";
+import { navigateProductRecommendation } from "../../../app/productRecommendationNavigation";
 import { DashboardMetricsPair } from "./DashboardMetricsPair";
 import { DashboardLowerThreeCards } from "./DashboardLowerThreeCards";
 import { DashboardDeliveryRiskCard } from "./DashboardDeliveryRiskCard";
-import { navigateProductRecommendation } from "../../../app/productRecommendationNavigation";
-import { backflowIssueKeysFromRiskRows } from "../../../domain/recommendations/backflowIssueKeys";
+import { navigateOpenTeamWorkloadSection } from "../../../domain/home/attentionNavigation";
 
 const QUEUE_PREVIEW = 5;
 type GoalsHomeSummary = ReturnType<typeof summarizeGoalsForHome>;
@@ -55,7 +55,9 @@ export interface ManagerExecutiveDashboardProps {
   teamSnapshot: TeamPerformanceSnapshot | null;
   deliveryRiskCount: number;
   /** Delivery-risk rows used to attach exact backflow issueKeys to recommendations. */
-  deliveryRiskRows?: Array<{ issueKey: string; riskReason: string }>;
+  deliveryRiskRows?: DeliveryRiskRow[];
+  /** Signed-in Team Lead (own goals for Recommended actions). */
+  selfPerson?: Person | null;
   trends: TrendCardData[];
   onOpenAction: (item: ActionItem) => void;
   actionOpenLabel: (item: ActionItem) => string;
@@ -89,6 +91,7 @@ export function ManagerExecutiveDashboard({
   teamSnapshot,
   deliveryRiskCount,
   deliveryRiskRows = [],
+  selfPerson = null,
   trends,
   onOpenAction,
   actionOpenLabel,
@@ -133,22 +136,10 @@ export function ManagerExecutiveDashboard({
     (/failure|survey in progress|pending/i.test(team.feedback.headline) ||
       Boolean(team.feedback.detail?.match(/failure|pending/i)));
 
-  const recommendations =
-    readVisualProductRecommendationsOverride() ??
-    buildProductRecommendations({
-      role: "manager",
-      deliverySummary: team.deliverySummary,
-      deliveryRiskCount,
-      teamWorkload: executiveModel.teamWorkload,
-      teamActions: team.actions,
-      focus: personal.focus,
-      attentionItems: executiveModel.attentionItems,
-      awayNextWeek: team.awayNextWeek,
-      backflowIssueKeys: backflowIssueKeysFromRiskRows(deliveryRiskRows),
-      maxItems: 3,
-    });
-
-  const onRecommendationAction = (rec: ProductRecommendation) => {
+  // Visual-regression seam only (localStorage key set by Playwright): renders the shared
+  // recommendation-card primitive with injected items. Production always uses Recommended actions.
+  const visualRecommendations = readVisualProductRecommendationsOverride();
+  const onVisualRecommendationAction = (rec: ProductRecommendation) => {
     navigateProductRecommendation(rec, {
       openPerson: onOpenPerson,
       openJira: (issueKey) => void onOpenJiraAssignment(issueKey),
@@ -171,12 +162,28 @@ export function ManagerExecutiveDashboard({
         />
       </div>
       <DashboardScopeHealthSummary scopeLabel={executiveModel.scopeLabel} summary={executiveModel.scopeHealth} />
-      <DashboardKpiStrip cards={executiveModel.kpis} />
-      <DashboardRecommendations
-        items={recommendations}
-        onAction={onRecommendationAction}
-        surface="dashboard"
+      {visualRecommendations ? (
+        <DashboardRecommendations
+          items={visualRecommendations}
+          onAction={onVisualRecommendationAction}
+          surface="dashboard"
+        />
+      ) : (
+      <RecommendedActionsSection
+        scope="team_lead"
+        ownPerson={selfPerson}
+        teamPersons={teamPersons}
+        teamWorkload={executiveModel.teamWorkload}
+        teamActions={team.actions}
+        deliveryRiskRows={deliveryRiskRows}
+        goalsFeatureOn={goalsFeatureOn}
+        jiraBaseUrl={jiraBaseUrl}
+        onOpenPerson={onOpenPerson}
+        onOpenTeamWorkload={navigateOpenTeamWorkloadSection}
+        onOpenMyWork={onOpenMyWeek}
       />
+      )}
+      <DashboardKpiStrip cards={executiveModel.kpis} />
       <DashboardPrimaryTrend
         trends={executiveModel.trends}
         spanClass={executiveModel.trendSpanClass}

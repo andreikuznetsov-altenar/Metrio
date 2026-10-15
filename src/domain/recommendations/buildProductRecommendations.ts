@@ -3,6 +3,7 @@ import type { ExecutiveAttentionItem } from "../home/executiveDashboardModel";
 import type { HomeDeliverySummary } from "../home/homeTypes";
 import type { HomeRoleVariant } from "../home/homeTypes";
 import type { WorkloadRow } from "../performance";
+import { elevatedCapacityRows, leaveActionItems } from "./sharedRules";
 
 export type RecommendationSeverity = "critical" | "watch" | "neutral";
 
@@ -123,31 +124,24 @@ export function buildProductRecommendations(
     });
   }
 
-  for (const item of [...teamActions, ...focus]) {
-    if (item.kind === "leave_delivery_risk" || item.kind === "upcoming_leave") {
-      if (role === "employee") continue;
-      pushUnique(out, seen, {
-        id: `leave-${item.personId ?? item.id}`,
-        severity: "watch",
-        title: item.title,
-        explanation:
-          item.description ??
-          "Reassign or hand over review items before leave starts.",
-        actionLabel: item.personId ? "View person" : "Open team overview",
-        actionKind: item.personId ? "view_person" : "open_team_workload",
-        personId: item.personId,
-        priority: 3,
-      });
-      break;
-    }
+  const firstLeave = role === "employee" ? undefined : leaveActionItems(teamActions, focus)[0];
+  if (firstLeave) {
+    pushUnique(out, seen, {
+      id: `leave-${firstLeave.personId ?? firstLeave.id}`,
+      severity: "watch",
+      title: firstLeave.title,
+      explanation:
+        firstLeave.description ??
+        "Reassign or hand over review items before leave starts.",
+      actionLabel: firstLeave.personId ? "View person" : "Open team overview",
+      actionKind: firstLeave.personId ? "view_person" : "open_team_workload",
+      personId: firstLeave.personId,
+      priority: 3,
+    });
   }
 
   if (role !== "employee") {
-    const hot = teamWorkload.filter(
-      (row) =>
-        row.capacityDataState !== "insufficient_history" &&
-        (row.workload === "Heavy" || row.workload === "Overloaded"),
-    );
+    const hot = elevatedCapacityRows(teamWorkload);
     if (hot.length > 0) {
       pushUnique(out, seen, {
         id: "team-capacity-hot",

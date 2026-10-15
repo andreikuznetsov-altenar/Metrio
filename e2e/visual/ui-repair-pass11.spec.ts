@@ -56,8 +56,8 @@ test.describe("UI Repair Pass 11 visual acceptance", () => {
   test("dashboard-recommendations-horizontal", async ({ page }) => {
     await setViewport(page, 1440, 900);
     await bootDashboardManager(page);
-    await expect(page.getByTestId("dashboard-recommendations")).toHaveScreenshot(
-      "dashboard-recommendations-horizontal.png",
+    await expect(page.getByTestId("recommended-actions")).toHaveScreenshot(
+      "dashboard-recommended-actions-horizontal.png",
       SHOT,
     );
   });
@@ -65,10 +65,10 @@ test.describe("UI Repair Pass 11 visual acceptance", () => {
   test("dashboard-recommendation-cta-compact", async ({ page }) => {
     await setViewport(page, 1440, 900);
     await bootDashboardManager(page);
-    const panel = page.getByTestId("dashboard-recommendations");
+    const panel = page.getByTestId("recommended-actions");
     await expect(panel).toBeVisible();
-    await expect(panel.locator(".executive-recommendations__item").first()).toHaveScreenshot(
-      "dashboard-recommendation-cta-compact.png",
+    await expect(panel.locator(".recommended-action").first()).toHaveScreenshot(
+      "dashboard-recommended-action-cta-compact.png",
       SHOT,
     );
   });

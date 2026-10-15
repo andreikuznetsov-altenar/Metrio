@@ -23,7 +23,7 @@ describe("UI Repair Pass 7A", () => {
     expect(source).not.toContain("Open Performance");
     expect(source).toContain("DashboardMetricsPair");
     expect(source).toContain("DashboardLowerThreeCards");
-    expect(source).toContain("DashboardRecommendations");
+    expect(source).toContain("RecommendedActionsSection");
     expect(source).not.toMatch(/newAssignmentCount\s*>\s*0[\s\S]*No new assignments/);
   });
 

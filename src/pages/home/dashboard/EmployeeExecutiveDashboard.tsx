@@ -7,7 +7,8 @@ import type { DashboardSyncStatus } from "../../../domain/home/dashboardSyncStat
 import type { HomePersonalWorkspace } from "../../../domain/home/homeTypes";
 import type { TrendCardData } from "../../../domain/performance";
 import type { WorkloadResult } from "../../../domain/workload/workloadEngine";
-import type { PersonAvailability } from "../../../domain/people/types";
+import type { Person, PersonAvailability } from "../../../domain/people/types";
+import { RecommendedActionsSection } from "./RecommendedActionsSection";
 import { DashboardActionTabs } from "./DashboardActionTabs";
 import { DashboardAttentionNow } from "./DashboardAttentionNow";
 import { DashboardExecutiveHeader } from "./DashboardExecutiveHeader";
@@ -36,6 +37,9 @@ export interface EmployeeExecutiveDashboardProps {
   personal: HomePersonalWorkspace;
   selfWorkload: WorkloadResult | null;
   selfAvailability?: PersonAvailability;
+  /** Signed-in person: source of own tasks / leave / workload for Recommended actions. */
+  selfPerson?: Person | null;
+  onOpenPerson?: (personId: string) => void;
   trends: TrendCardData[];
   onOpenAction: (item: ActionItem) => void;
   actionOpenLabel: (item: ActionItem) => string;
@@ -63,6 +67,8 @@ export function EmployeeExecutiveDashboard({
   personal,
   selfWorkload,
   selfAvailability,
+  selfPerson = null,
+  onOpenPerson,
   trends,
   onOpenAction,
   actionOpenLabel,
@@ -101,6 +107,15 @@ export function EmployeeExecutiveDashboard({
         />
       </div>
       <DashboardScopeHealthSummary scopeLabel={model.scopeLabel} summary={model.scopeHealth} />
+      <RecommendedActionsSection
+        scope="employee"
+        ownPerson={selfPerson}
+        goalsFeatureOn={goalsFeatureOn}
+        jiraBaseUrl={jiraBaseUrl}
+        onOpenPerson={(personId) => onOpenPerson?.(personId)}
+        onOpenTeamWorkload={onOpenMyWeek}
+        onOpenMyWork={onOpenMyWeek}
+      />
       {showManagerCard ? (
         <div className="executive-dashboard__span-12">
           <DashboardYourManagerCard

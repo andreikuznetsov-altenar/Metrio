@@ -132,6 +132,34 @@ function longHistoryIssue(key: string, summary: string, ownerCanonical: string):
   return { ...base, events: events as AuditIssue["events"], issueCreated: "2026-02-01T00:00:00.000Z" };
 }
 
+/**
+ * Recommended-actions visual states for the employee fixture (person-alex), set through
+ * localStorage `metrio-visual-visualOwnStale`: 1 → one stale Review task, 2 → + stale Hold,
+ * 3 → + overloaded workload (three recommendations).
+ */
+function visualOwnStaleLevel(): number {
+  try {
+    if (typeof localStorage === "undefined") return 0;
+    const n = Number(localStorage.getItem("metrio-visual-visualOwnStale") ?? "0");
+    return Number.isFinite(n) ? Math.max(0, Math.min(3, n)) : 0;
+  } catch {
+    return 0;
+  }
+}
+
+function visualOwnStaleIssues(): AuditIssue[] {
+  const level = visualOwnStaleLevel();
+  const out: AuditIssue[] = [];
+  if (level >= 1) {
+    out.push(activeIssue("UX-4101", "Settings IA review", "In Review", "jira-person-alex", true));
+    out.push(activeIssue("UX-4102", "Onboarding copy review", "In Review", "jira-person-alex", true));
+  }
+  if (level >= 2) {
+    out.push(activeIssue("UX-4103", "Icon set sign-off", "On Hold", "jira-person-alex", true));
+  }
+  return out;
+}
+
 function visualPerson(
   fixtureId: (typeof VISUAL_TEAM_IDS)[number],
   options: {
@@ -356,7 +384,11 @@ function buildTeamPersons(): Person[] {
           "In Progress",
           "jira-person-alex",
         ),
+        ...visualOwnStaleIssues(),
       ],
+      ...(visualOwnStaleLevel() >= 3
+        ? { workload: testWorkload({ level: "overloaded", activeCount: 8, atRiskCount: 1, problematicCount: 0 }) }
+        : {}),
     }),
     visualPerson("person-01", {
       workload: testWorkload({

@@ -267,11 +267,9 @@ test.describe("UI Repair Pass 13 acceptance", () => {
   test("recommendations-3-items", async ({ page }) => {
     await setViewport(page, 1440, 900);
     await bootDashboardManager(page);
-    const list = page.getByTestId("dashboard-recommendations").locator(
-      ".executive-recommendations__list",
-    );
+    const list = page.getByTestId("recommended-actions").locator(".recommended-actions__list");
     await expect(list).toBeVisible();
-    await expect(list).toHaveScreenshot("recommendations-pass13.png", SHOT);
+    await expect(list).toHaveScreenshot("recommended-actions-pass13.png", SHOT);
   });
 
   test("table-alignment-feedback", async ({ page }) => {

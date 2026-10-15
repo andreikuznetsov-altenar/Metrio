@@ -144,6 +144,9 @@
   --color-banner-neutral-bg: var(--color-surface-secondary);
   --color-banner-info-bg: color-mix(in srgb, var(--color-accent) 7%, var(--color-surface));
   --color-banner-info-border: color-mix(in srgb, var(--color-accent) 22%, var(--color-border));
+  /* Actionable highlight (Recommended Actions): informational blue, not an alert and not selection. */
+  --color-action-surface-bg: color-mix(in srgb, var(--color-accent) 6%, var(--color-surface));
+  --color-action-surface-border: color-mix(in srgb, var(--color-accent) 42%, var(--color-surface));
 
   --connection-status-connected-bg: color-mix(in srgb, var(--color-success) 14%, var(--color-surface));
   --connection-status-connected-border: color-mix(in srgb, var(--color-success) 42%, var(--color-border));
@@ -180,6 +183,8 @@
   --color-banner-neutral-bg: var(--color-surface-secondary);
   --color-banner-info-bg: color-mix(in srgb, var(--color-accent) 7%, var(--color-surface));
   --color-banner-info-border: color-mix(in srgb, var(--color-accent) 22%, var(--color-border));
+  --color-action-surface-bg: color-mix(in srgb, var(--color-accent) 9%, var(--color-surface));
+  --color-action-surface-border: color-mix(in srgb, var(--color-accent) 48%, var(--color-surface));
 
   /* Connection status badges */
   --connection-status-connected-bg: color-mix(in srgb, var(--color-success) 14%, var(--color-surface));
