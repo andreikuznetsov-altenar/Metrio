@@ -59,7 +59,16 @@ function exeVersion(exe) {
   return ps(`(Get-Item '${exe}').VersionInfo.ProductVersion`).split("\n")[0].trim();
 }
 
+/** WebView2 ignores the env var when the host sets its own browser args: use the per-app policy key. */
+function enableRemoteDebugging() {
+  for (const hive of ["HKLM", "HKCU"]) {
+    ps(`New-Item -Path '${hive}:\\SOFTWARE\\Policies\\Microsoft\\Edge\\WebView2\\AdditionalBrowserArguments' -Force | Out-Null;
+Set-ItemProperty -Path '${hive}:\\SOFTWARE\\Policies\\Microsoft\\Edge\\WebView2\\AdditionalBrowserArguments' -Name 'metrio.exe' -Value '--remote-debugging-port=${PORT}'`);
+  }
+}
+
 function launch(exe, env = {}) {
+  enableRemoteDebugging();
   const child = spawn(exe, [], {
     detached: true,
     stdio: "ignore",
