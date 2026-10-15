@@ -2205,7 +2205,7 @@ dependencies = [
 
 [[package]]
 name = "metrio"
-version = "0.1.30"
+version = "0.1.31"
 dependencies = [
  "base64 0.22.1",
  "futures-util",
