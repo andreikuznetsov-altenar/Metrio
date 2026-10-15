@@ -289,20 +289,22 @@ if (mode === "ota") {
     conn = await connect();
     await conn.page.getByRole("button", { name: "Dashboard" }).first().waitFor({ timeout: 60_000 });
   });
-  await step(`About shows ${from} before the update`, async () => {
+  await step(`controlled previous build reports ${from} to the updater`, async () => {
+    // The Tauri app version (used by the updater) is overridden to ${from}; the About page shows the
+    // frontend-baked version, so it is informational only here.
+    const v = exeVersion(exe);
+    if (!v.startsWith(from)) throw new Error(`exe product version ${v}`);
     await openAbout(conn.page);
-    const about = await readAbout(conn.page);
-    if (about.version !== from) throw new Error(`version ${about.version}`);
-    return JSON.stringify(about);
+    return `exe product version ${v}; About (informational): ${JSON.stringify(await readAbout(conn.page))}`;
   });
   await step("Check for updates offers the new release", async () => {
     await conn.page.getByRole("button", { name: "Check for updates" }).click();
-    await conn.page.getByRole("button", { name: "Update and restart" }).waitFor({ timeout: 60_000 });
+    await conn.page.getByRole("button", { name: "Update and restart" }).first().waitFor({ timeout: 60_000 });
     await conn.page.screenshot({ path: join(OUT, "ota-offer.png") }).catch(() => {});
     return (await conn.page.locator("body").innerText()).match(/Metrio [0-9.]+ is ready to install/)?.[0];
   });
   await step("Update and restart installs the new version", async () => {
-    await conn.page.getByRole("button", { name: "Update and restart" }).click();
+    await conn.page.getByRole("button", { name: "Update and restart" }).first().click();
     const deadline = Date.now() + 240_000;
     let v = "";
     while (Date.now() < deadline) {
