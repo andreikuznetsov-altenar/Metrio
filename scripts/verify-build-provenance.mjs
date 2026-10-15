@@ -25,6 +25,7 @@ if (!app || !expectedVersion || !expectedSha) {
   console.error("Usage: verify-build-provenance.mjs --app <Metrio.app> --version X.Y.Z --sha <full sha>");
   process.exit(1);
 }
+const targetTriple = value("--target");
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 
 const plistVersion = execFileSync(
@@ -34,7 +35,7 @@ const plistVersion = execFileSync(
 ).trim();
 
 function newestBuildOutput() {
-  const buildDir = join(root, "src-tauri/target/release/build");
+  const buildDir = join(root, "src-tauri/target", ...(targetTriple ? [targetTriple] : []), "release/build");
   if (!existsSync(buildDir)) return null;
   const candidates = readdirSync(buildDir)
     .filter((d) => d.startsWith("metrio-"))

@@ -15,17 +15,21 @@ if (!dir) {
   console.error("Usage: node verify-updater-tamper.mjs <artifact-dir>");
   process.exit(1);
 }
-const archive = readdirSync(dir).find((f) => f.endsWith(".app.tar.gz"));
-if (!archive) throw new Error(`No updater archive in ${dir}`);
-const copy = mkdtempSync(join(tmpdir(), "metrio-tamper-"));
-copyFileSync(join(dir, archive), join(copy, archive));
-copyFileSync(join(dir, `${archive}.sig`), join(copy, `${archive}.sig`));
-appendFileSync(join(copy, archive), "x");
-
+const archives = readdirSync(dir).filter((f) => f.endsWith(".app.tar.gz"));
+if (archives.length === 0) throw new Error(`No updater archive in ${dir}`);
 const verifier = join(dirname(fileURLToPath(import.meta.url)), "verify-updater-artifacts.mjs");
-const result = spawnSync("node", [verifier, copy], { encoding: "utf8" });
-if (result.status === 0) {
-  console.error("FAIL: a tampered archive was accepted");
-  process.exit(1);
+for (const archive of archives) {
+  // Tamper ONE archive; the other architecture's untouched pair must not mask the failure.
+  const copy = mkdtempSync(join(tmpdir(), "metrio-tamper-"));
+  for (const f of readdirSync(dir)) {
+    if (f === "latest.json") continue;
+    if (f.endsWith(".tar.gz") || f.endsWith(".tar.gz.sig")) copyFileSync(join(dir, f), join(copy, f));
+  }
+  appendFileSync(join(copy, archive), "x");
+  const result = spawnSync("node", [verifier, copy], { encoding: "utf8" });
+  if (result.status === 0) {
+    console.error(`FAIL: a tampered ${archive} was accepted`);
+    process.exit(1);
+  }
+  console.log(`OK: tampered ${archive} is rejected`);
 }
-console.log("OK: tampered archive is rejected");

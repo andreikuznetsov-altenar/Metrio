@@ -77,7 +77,8 @@ const NON_RUNTIME_PATTERNS = [
   /^src\/test\//,
   /\.test\.(ts|tsx|mjs|js)$/,
   /^src-tauri\/tests\//,
-  /^scripts\/(release-lib|prepare-release-version|plan-release|verify-build-provenance|verify-updater-tamper|generate-release-notes)\.mjs$/,
+  /^scripts\/(release-lib|prepare-release-version|plan-release|verify-build-provenance|verify-updater-tamper|generate-release-notes|generate-update-manifest|verify-updater-artifacts|release-targets)\.mjs$/,
+  /^scripts\/release-macos\.sh$/,
   /^scripts\/ci\//,
   /^\.gitignore$/,
 ];
@@ -157,6 +158,28 @@ export function buildLatestManifest({ version, repo, archiveName, signature, pla
     notes: notes?.trim() || `Metrio ${version}`,
     pub_date: pubDate ?? new Date().toISOString(),
     platforms: { [platform]: { signature: sig, url: releaseAssetUrl(repo, `v${version}`, archiveName) } },
+  };
+}
+
+/**
+ * Manifest with one entry per architecture. `entries` is [{ platform, archiveName, signature }].
+ * Each platform's url and signature come from that platform's OWN archive.
+ */
+export function buildMultiPlatformManifest({ version, repo, entries, notes, pubDate, tag = `v${version}` }) {
+  if (!parseSemver(version)) throw new Error(`Invalid version: ${version}`);
+  if (!entries?.length) throw new Error("no platform entries");
+  const platforms = {};
+  for (const { platform, archiveName, signature } of entries) {
+    const sig = String(signature ?? "").trim();
+    if (!sig || /^https?:\/\//i.test(sig)) throw new Error("signature must be the .sig file content, not a URL");
+    if (platforms[platform]) throw new Error(`duplicate platform ${platform}`);
+    platforms[platform] = { signature: sig, url: releaseAssetUrl(repo, tag, archiveName) };
+  }
+  return {
+    version,
+    notes: notes?.trim() || `Metrio ${version}`,
+    pub_date: pubDate ?? new Date().toISOString(),
+    platforms,
   };
 }
 

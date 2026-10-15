@@ -34,15 +34,22 @@ verified with a real over-the-air update from v0.1.3.
    `CHANGELOG.md`, committed as `RELEASE Metrio vX.Y.Z [skip release]` and pushed to `main`. This
    commit is the release SHA. Pushes made with `GITHUB_TOKEN` do not start workflows, and the marker
    keeps even a manual run from recursing.
-4. Build with an ephemeral keychain, Developer ID signing, `BUILD_CHANNEL=production`.
+4. Build with an ephemeral keychain, Developer ID signing, `BUILD_CHANNEL=production`. **Both macOS
+   architectures are built in this one job from the same checkout** (`scripts/ci/package-target.sh`):
+   Apple Silicon `aarch64-apple-darwin`, then Intel `x86_64-apple-darwin` (cross-built on the arm64
+   runner). The target list lives in `scripts/release-targets.mjs`; steps 5–9 run once per architecture.
+   `lipo -archs` must report exactly `arm64` / `x86_64` for the main executable and every Mach-O file
+   must contain the target architecture (`scripts/ci/verify-app-arch.sh`).
 5. **Provenance gate**: Info.plist version, every version source, the commit Cargo baked into the
    native build and the commit embedded in the frontend must all match the release commit.
 6. Signature check (Developer ID, team `V36L7T43H8`, bundle `com.altenar.metrio`, hardened runtime).
 7. Notarize the **app**, staple, validate, Gatekeeper (`source=Notarized Developer ID`).
-8. `Metrio.app.tar.gz` is created from that **stapled** app and signed with the updater key; the
+8. `Metrio_<arch>.app.tar.gz` (`aarch64`, `x86_64`) is created from that **stapled** app and signed with the updater key; the
    signature is verified and a one-byte-tampered copy must fail.
-9. DMG from the stapled app, signed, notarized, stapled, Gatekeeper-checked.
-10. `latest.json` (`darwin-aarch64`, URL of the release asset, **signature = `.sig` content**).
+9. `Metrio_<version>_aarch64.dmg` / `Metrio_<version>_x86_64.dmg` from the stapled app, signed, notarized, stapled, Gatekeeper-checked.
+10. ONE `latest.json` with `darwin-aarch64` and `darwin-x86_64`; each entry points at its own archive and
+    carries its own **`.sig` content**. The app picks its key at compile time (`tauri_plugin_updater::target()`),
+    so an Intel binary never downloads ARM content and vice versa.
 11. Tag `vX.Y.Z` on the release SHA; release created **without** `latest.json` and not yet "latest";
     the assets are downloaded again and compared byte-for-byte; only then `latest.json` is uploaded
     and the release marked latest. A failure before that point deletes the half-made release and tag;

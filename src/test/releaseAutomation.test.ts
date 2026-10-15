@@ -495,12 +495,21 @@ describe("release workflow structure", () => {
   });
 
   it("follows the proven order: sign → notarize/staple app → archive → DMG → latest.json → publish", () => {
+    // per-architecture order lives in scripts/ci/package-target.sh
+    const pkg = readFileSync(join(repoRoot, "scripts/ci/package-target.sh"), "utf8");
+    const pkgOrder = [
+      "verify-build-provenance.mjs",
+      "verify-app-signature.sh",
+      "notarize.sh \"$RUNNER_TEMP/Metrio-$ID-app.zip\"",
+      "tar -czf",
+      "build-dmg.sh",
+    ].map((needle) => pkg.indexOf(needle));
+    expect(pkgOrder.every((i) => i >= 0)).toBe(true);
+    expect([...pkgOrder].sort((a, b) => a - b)).toEqual(pkgOrder);
     const order = [
-      "Verify build provenance",
-      "Verify Developer ID signature",
-      "Notarize, staple and Gatekeeper-check the app",
-      "Updater archive from the FINAL stapled app",
-      "Build, notarize, staple and Gatekeeper-check the DMG",
+      "Package macOS Apple Silicon",
+      "Package macOS Intel",
+      "Verify updater signatures for both architectures",
       "Generate and validate latest.json",
       "Tag, publish release, verify published bytes",
       "Verify the live endpoint",
@@ -526,10 +535,12 @@ describe("release workflow structure", () => {
     expect(workflow).not.toMatch(/BEGIN (PRIVATE|CERTIFICATE)/);
     expect(workflow).toContain("scripts/plan-release.mjs");
     expect(workflow).toContain("RELEASE Metrio v$VERSION [skip release]");
-    expect(workflow).toContain("verify-build-provenance.mjs");
+    expect(readFileSync(join(repoRoot, "scripts/ci/package-target.sh"), "utf8")).toContain("verify-build-provenance.mjs");
     expect(workflow).toContain("verify-updater-tamper.mjs");
     // the build step must not notarize on its own (the app is stapled before archiving)
-    const buildStep = workflow.slice(stepIndex("Build and Developer ID sign the app"), stepIndex("Verify build provenance"));
-    expect(buildStep).not.toContain("APPLE_API");
+    const pkgScript = readFileSync(join(repoRoot, "scripts/ci/package-target.sh"), "utf8");
+    const buildCmd = pkgScript.slice(pkgScript.indexOf("npm run tauri build"), pkgScript.indexOf("verify-build-provenance.mjs"));
+    expect(buildCmd).not.toContain("notarytool");
+    expect(buildCmd).toContain("--bundles app");
   });
 });

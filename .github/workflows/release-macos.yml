@@ -93,6 +93,8 @@ jobs:
 
       - uses: dtolnay/rust-toolchain@stable
         if: steps.plan.outputs.should_release == 'true'
+        with:
+          targets: aarch64-apple-darwin,x86_64-apple-darwin
 
       - name: Install dependencies
         if: steps.plan.outputs.should_release == 'true'
@@ -175,71 +177,33 @@ jobs:
           chmod 600 "$KEY_PATH"
           echo "APPLE_API_KEY_PATH=$KEY_PATH" >> "$GITHUB_ENV"
 
-      - name: Build and Developer ID sign the app (no notarization here)
-        if: steps.plan.outputs.should_release == 'true'
-        env:
-          BUILD_CHANNEL: production
-          APPLE_SIGNING_IDENTITY: ${{ env.SIGNING_IDENTITY }}
-          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
-          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
-        run: npm run tauri build -- --bundles app
-
-      - name: Verify build provenance (must match the release commit)
-        if: steps.plan.outputs.should_release == 'true'
-        run: |
-          node scripts/verify-build-provenance.mjs \
-            --app src-tauri/target/release/bundle/macos/Metrio.app \
-            --version "$RELEASE_VERSION" --sha "$RELEASE_SHA"
-
-      - name: Verify Developer ID signature
-        if: steps.plan.outputs.should_release == 'true'
-        run: bash scripts/ci/verify-app-signature.sh src-tauri/target/release/bundle/macos/Metrio.app
-
-      - name: Notarize, staple and Gatekeeper-check the app
+      # One version, one release commit, one runner: both architectures are built from the exact
+      # same checked-out source. Apple Silicon is built and fully verified first; Intel
+      # (x86_64-apple-darwin) is cross-built on the same runner. Each architecture is verified with
+      # lipo, signed, notarized, stapled and gets its own updater archive + signature + DMG.
+      - name: Package macOS Apple Silicon (aarch64)
         if: steps.plan.outputs.should_release == 'true'
         env:
           APPLE_API_ISSUER: ${{ secrets.APPLE_API_ISSUER }}
           APPLE_API_KEY: ${{ secrets.APPLE_API_KEY }}
-        run: |
-          APP=src-tauri/target/release/bundle/macos/Metrio.app
-          ditto -c -k --keepParent "$APP" "$RUNNER_TEMP/Metrio-app.zip"
-          bash scripts/ci/notarize.sh "$RUNNER_TEMP/Metrio-app.zip"
-          xcrun stapler staple "$APP"
-          xcrun stapler validate "$APP"
-          spctl -a -vv "$APP" 2>&1 | tee "$RUNNER_TEMP/spctl-app.txt"
-          grep -q "source=Notarized Developer ID" "$RUNNER_TEMP/spctl-app.txt"
-
-      - name: Updater archive from the FINAL stapled app, sign, verify, tamper test
-        if: steps.plan.outputs.should_release == 'true'
-        env:
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        run: bash scripts/ci/package-target.sh aarch64
+
+      - name: Package macOS Intel (x86_64)
+        if: steps.plan.outputs.should_release == 'true'
+        env:
+          APPLE_API_ISSUER: ${{ secrets.APPLE_API_ISSUER }}
+          APPLE_API_KEY: ${{ secrets.APPLE_API_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        run: bash scripts/ci/package-target.sh x86_64
+
+      - name: Verify updater signatures for both architectures, tamper test
+        if: steps.plan.outputs.should_release == 'true'
         run: |
-          mkdir -p release-assets
-          COPYFILE_DISABLE=1 tar -czf release-assets/Metrio.app.tar.gz -C src-tauri/target/release/bundle/macos Metrio.app
-          npx tauri signer sign release-assets/Metrio.app.tar.gz > /dev/null 2>&1
-          test -s release-assets/Metrio.app.tar.gz.sig
           node scripts/verify-updater-artifacts.mjs release-assets
           node scripts/verify-updater-tamper.mjs release-assets
-
-      - name: Build, notarize, staple and Gatekeeper-check the DMG
-        if: steps.plan.outputs.should_release == 'true'
-        env:
-          APPLE_API_ISSUER: ${{ secrets.APPLE_API_ISSUER }}
-          APPLE_API_KEY: ${{ secrets.APPLE_API_KEY }}
-        run: |
-          DMG="release-assets/Metrio_${RELEASE_VERSION}_aarch64.dmg"
-          bash scripts/ci/build-dmg.sh src-tauri/target/release/bundle/macos/Metrio.app "$DMG" "$SIGNING_IDENTITY"
-          bash scripts/ci/notarize.sh "$DMG"
-          xcrun stapler staple "$DMG"
-          xcrun stapler validate "$DMG"
-          spctl -a -t open --context context:primary-signature -vv "$DMG" 2>&1 | tee "$RUNNER_TEMP/spctl-dmg.txt"
-          grep -q "source=Notarized Developer ID" "$RUNNER_TEMP/spctl-dmg.txt"
-          MNT="$RUNNER_TEMP/dmg-mount"; mkdir -p "$MNT"
-          hdiutil attach "$DMG" -nobrowse -readonly -mountpoint "$MNT" >/dev/null
-          spctl -a -vv "$MNT/Metrio.app" 2>&1 | tee "$RUNNER_TEMP/spctl-dmg-app.txt"
-          hdiutil detach "$MNT" >/dev/null
-          grep -q "source=Notarized Developer ID" "$RUNNER_TEMP/spctl-dmg-app.txt"
 
       - name: Generate and validate latest.json; record hashes
         if: steps.plan.outputs.should_release == 'true'
@@ -251,6 +215,8 @@ jobs:
           node scripts/verify-updater-artifacts.mjs release-assets
           test "$(node -p 'JSON.parse(require("fs").readFileSync("release-assets/latest.json","utf8")).version')" = "$RELEASE_VERSION"
           ls -l release-assets
+          grep -q '"darwin-aarch64"' release-assets/latest.json
+          grep -q '"darwin-x86_64"' release-assets/latest.json
           (cd release-assets && shasum -a 256 *.dmg *.tar.gz *.sig latest.json | tee "$RUNNER_TEMP/SHA256SUMS.txt")
 
       - name: Tag, publish release, verify published bytes, then switch clients over
@@ -275,13 +241,15 @@ jobs:
           # binaries are re-downloaded and compared byte-for-byte.
           gh release create "$TAG" --verify-tag --latest=false --title "Metrio $RELEASE_VERSION" \
             --notes-file "$RUNNER_TEMP/notes.md" \
-            "release-assets/Metrio_${RELEASE_VERSION}_aarch64.dmg" \
-            release-assets/Metrio.app.tar.gz release-assets/Metrio.app.tar.gz.sig
+            "release-assets/Metrio_${RELEASE_VERSION}_aarch64.dmg" "release-assets/Metrio_${RELEASE_VERSION}_x86_64.dmg" \
+            release-assets/Metrio_aarch64.app.tar.gz release-assets/Metrio_aarch64.app.tar.gz.sig \
+            release-assets/Metrio_x86_64.app.tar.gz release-assets/Metrio_x86_64.app.tar.gz.sig
           echo "METRIO_RELEASE_CREATED=$TAG" >> "$GITHUB_ENV"
 
           rm -rf verify-download && mkdir verify-download
           gh release download "$TAG" --dir verify-download
-          for f in "Metrio_${RELEASE_VERSION}_aarch64.dmg" Metrio.app.tar.gz Metrio.app.tar.gz.sig; do
+          for f in "Metrio_${RELEASE_VERSION}_aarch64.dmg" "Metrio_${RELEASE_VERSION}_x86_64.dmg" \
+                   Metrio_aarch64.app.tar.gz Metrio_aarch64.app.tar.gz.sig Metrio_x86_64.app.tar.gz Metrio_x86_64.app.tar.gz.sig; do
             cmp "release-assets/$f" "verify-download/$f"
             echo "published $f: $(stat -f %z "verify-download/$f") bytes, sha256 $(shasum -a 256 "verify-download/$f" | cut -d' ' -f1)"
           done
