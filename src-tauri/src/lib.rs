@@ -773,8 +773,14 @@ pub fn run() {
         .build(tauri::generate_context!())
         .expect("error while running tauri application")
         .run(|app_handle, event| {
+            // `RunEvent::Reopen` (Dock icon click) exists on macOS only.
+            #[cfg(target_os = "macos")]
             if let RunEvent::Reopen { .. } = event {
                 show_main_window(app_handle);
+            }
+            #[cfg(not(target_os = "macos"))]
+            {
+                let _ = (app_handle, event);
             }
         });
 }
