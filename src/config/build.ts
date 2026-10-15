@@ -19,7 +19,7 @@ function normalizeChannel(value: string | undefined): BuildChannel {
 /** Canonical frontend build metadata — do not hardcode version strings in UI. */
 export function getBuildInfo(): BuildInfo {
   return {
-    version: import.meta.env.VITE_APP_VERSION || '0.1.29',
+    version: import.meta.env.VITE_APP_VERSION || '0.1.30',
     commit: import.meta.env.VITE_GIT_COMMIT || 'dev',
     channel: normalizeChannel(import.meta.env.VITE_BUILD_CHANNEL),
     productName: PRODUCT_NAME,
