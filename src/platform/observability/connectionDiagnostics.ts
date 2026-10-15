@@ -1,3 +1,4 @@
+import { appNow } from "../appClock";
 import { isGoogleOAuthConfigured } from "../../config/google";
 import { isMetrioCloudConfigured } from "../../services/metrioCloud/metrioCloudClient";
 import { getEmployeePhotoPermissionHint } from "../../services/bamboo/bambooAvatarService";
@@ -141,7 +142,7 @@ export async function runConnectionDiagnostics(
 
 export function formatRelativeSync(iso: string | null | undefined): string {
   if (!iso) return "never";
-  const ms = Date.now() - Date.parse(iso);
+  const ms = appNow().getTime() - Date.parse(iso);
   if (!Number.isFinite(ms) || ms < 0) return "just now";
   const min = Math.floor(ms / 60000);
   if (min < 1) return "just now";

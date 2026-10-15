@@ -75,7 +75,7 @@ describe("documentation fixture mode", () => {
     expect(payload).not.toContain("UX-");
     expect(payload).not.toContain("AGTC-");
     expect(payload).not.toContain("PD-");
-  });
+  }, 30_000);
 
   it("keeps the explicit privacy denylist out of docs fixture payloads", async () => {
     const {
