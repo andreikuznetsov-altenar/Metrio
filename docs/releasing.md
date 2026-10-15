@@ -100,3 +100,27 @@ they would need a manual reinstall. Back up `~/.tauri/metrio-updater.key` and it
 An app launched straight from the DMG or Downloads while still quarantined runs from a read-only
 AppTranslocation path and cannot update itself; installing it into Applications and opening it once
 avoids that.
+
+## Platforms (PASS42)
+
+One release (one version, one tag, one GitHub Release, one `latest.json`) ships three platforms.
+The workflow is split into jobs that all use the single release commit planned by `prepare`:
+
+| Job | Runner | Output |
+|---|---|---|
+| `prepare` | macos-14 | plan, test gate, version bump + release commit |
+| `macos` | macos-14 | Apple Silicon + Intel: signed, notarized, stapled `.app`, DMGs, updater archives |
+| `windows` | windows-latest | NSIS installer `Metrio_<version>_x86_64-setup.exe` + updater signature, runtime QA report |
+| `publish` | macos-14 | verifies every signature, writes ONE `latest.json`, tags, publishes, uploads `latest.json` last |
+
+Updater platform keys: `darwin-aarch64`, `darwin-x86_64`, `windows-x86_64`.
+
+**Windows signing:** no Authenticode certificate or signing service is configured, so the Windows
+installer and app are **unsigned** (SmartScreen warns). The `.sig` next to the installer is the Tauri
+*updater* signature (same minisign key as macOS), not Authenticode. Add an Authenticode step to the
+`windows` job when a certificate becomes available.
+
+**Windows QA:** the `windows` job runs `scripts/windows-qa.mjs smoke` against the exact installer
+(silent install, launch, UI over WebView2 CDP, drawers, scroll, external link, tray, updater) and uploads
+`qa-out/`. The manual workflow **Windows QA** (`windows-qa.yml`) runs the same smoke test or a controlled
+OTA test (`mode=ota`) without publishing anything.

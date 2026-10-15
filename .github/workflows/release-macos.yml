@@ -1,7 +1,9 @@
 name: Release macOS
 
-# The single owner of Metrio releases: version bump, release commit, signed + notarized build,
-# updater archive, DMG, latest.json, tag and GitHub Release all happen in this one workflow.
+# The single owner of Metrio releases: version bump, release commit, the signed + notarized macOS
+# builds (Apple Silicon + Intel), the Windows x64 build, updater archives, DMGs, latest.json, tag and
+# GitHub Release all happen in this one workflow. The version is planned ONCE (job `prepare`); every
+# build job checks out that exact release commit and `publish` creates the one tag/release.
 # Triggers: push to main (planned, usually a no-op for docs/test/CI-only pushes) and manual
 # workflow_dispatch. There is deliberately NO `v*` tag trigger: the tag is created here, so a tag push can never
 # start a competing build. See docs/releasing.md.
@@ -38,9 +40,16 @@ env:
   SIGNING_IDENTITY: "Developer ID Application: Andrei Kuznetsov (V36L7T43H8)"
 
 jobs:
-  release:
+  # ---------------------------------------------------------------- plan + test + version commit
+  prepare:
     runs-on: macos-14
-    timeout-minutes: 120
+    timeout-minutes: 60
+    outputs:
+      should_release: ${{ steps.plan.outputs.should_release }}
+      reason: ${{ steps.plan.outputs.reason }}
+      version: ${{ steps.plan.outputs.version }}
+      previous_tag: ${{ steps.plan.outputs.previous_tag }}
+      sha: ${{ steps.commit.outputs.sha }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -140,11 +149,37 @@ jobs:
             exit 1
           fi
           echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
-          echo "RELEASE_SHA=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
-          echo "RELEASE_VERSION=$VERSION" >> "$GITHUB_ENV"
+
+
+  # ---------------------------------------------------------------- macOS (Apple Silicon + Intel)
+  macos:
+    needs: prepare
+    if: needs.prepare.outputs.should_release == 'true'
+    runs-on: macos-14
+    timeout-minutes: 120
+    env:
+      SIGNING_IDENTITY: "Developer ID Application: Andrei Kuznetsov (V36L7T43H8)"
+      RELEASE_VERSION: ${{ needs.prepare.outputs.version }}
+      RELEASE_SHA: ${{ needs.prepare.outputs.sha }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.prepare.outputs.sha }}
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-apple-darwin,x86_64-apple-darwin
+
+      - name: Install dependencies
+        run: npm ci
 
       - name: Import Developer ID certificate into an ephemeral keychain
-        if: steps.plan.outputs.should_release == 'true'
         env:
           APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
           APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
@@ -167,7 +202,6 @@ jobs:
           grep -q "$SIGNING_IDENTITY" "$RUNNER_TEMP/identities.txt" || { echo "::error::Expected signing identity not found in keychain"; exit 1; }
 
       - name: Write App Store Connect API key
-        if: steps.plan.outputs.should_release == 'true'
         env:
           APPLE_API_KEY_CONTENT: ${{ secrets.APPLE_API_KEY_CONTENT }}
           APPLE_API_KEY: ${{ secrets.APPLE_API_KEY }}
@@ -177,12 +211,11 @@ jobs:
           chmod 600 "$KEY_PATH"
           echo "APPLE_API_KEY_PATH=$KEY_PATH" >> "$GITHUB_ENV"
 
-      # One version, one release commit, one runner: both architectures are built from the exact
-      # same checked-out source. Apple Silicon is built and fully verified first; Intel
+      # Both architectures are built from the exact same release commit. Apple Silicon is built
+      # and fully verified first; Intel
       # (x86_64-apple-darwin) is cross-built on the same runner. Each architecture is verified with
       # lipo, signed, notarized, stapled and gets its own updater archive + signature + DMG.
       - name: Package macOS Apple Silicon (aarch64)
-        if: steps.plan.outputs.should_release == 'true'
         env:
           APPLE_API_ISSUER: ${{ secrets.APPLE_API_ISSUER }}
           APPLE_API_KEY: ${{ secrets.APPLE_API_KEY }}
@@ -191,7 +224,6 @@ jobs:
         run: bash scripts/ci/package-target.sh aarch64
 
       - name: Package macOS Intel (x86_64)
-        if: steps.plan.outputs.should_release == 'true'
         env:
           APPLE_API_ISSUER: ${{ secrets.APPLE_API_ISSUER }}
           APPLE_API_KEY: ${{ secrets.APPLE_API_KEY }}
@@ -199,14 +231,120 @@ jobs:
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         run: bash scripts/ci/package-target.sh x86_64
 
-      - name: Verify updater signatures for both architectures, tamper test
-        if: steps.plan.outputs.should_release == 'true'
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-assets-macos
+          path: release-assets/
+          if-no-files-found: error
+
+      - name: Cleanup signing material
+        if: always()
         run: |
+          if [ -n "${METRIO_KEYCHAIN:-}" ] && [ -f "$METRIO_KEYCHAIN" ]; then security delete-keychain "$METRIO_KEYCHAIN" || true; fi
+          rm -f "$RUNNER_TEMP"/AuthKey_*.p8 "$RUNNER_TEMP"/certificate.p12 || true
+
+  # ---------------------------------------------------------------- Windows x64
+  windows:
+    needs: prepare
+    if: needs.prepare.outputs.should_release == 'true'
+    runs-on: windows-latest
+    timeout-minutes: 90
+    defaults:
+      run:
+        shell: bash
+    env:
+      RELEASE_VERSION: ${{ needs.prepare.outputs.version }}
+      RELEASE_SHA: ${{ needs.prepare.outputs.sha }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.prepare.outputs.sha }}
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-pc-windows-msvc
+
+      - name: Install dependencies
+        run: npm ci
+
+      # Authenticode: NO Windows code-signing certificate/service is configured, so the installer and
+      # app are UNSIGNED (SmartScreen will warn). The `.sig` is the Tauri UPDATER signature (minisign,
+      # the same permanent key as macOS); it is NOT Authenticode.
+      - name: Build the Windows NSIS installer (x86_64-pc-windows-msvc)
+        env:
+          BUILD_CHANNEL: production
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        run: npm run tauri build -- --target x86_64-pc-windows-msvc --bundles nsis
+
+      - name: Stage the installer + updater signature
+        run: |
+          SRC=src-tauri/target/x86_64-pc-windows-msvc/release/bundle/nsis
+          ls -l "$SRC"
+          SETUP="$(ls $SRC/*-setup.exe | head -1)"
+          test -s "$SETUP.sig"
+          mkdir -p release-assets
+          cp "$SETUP" "release-assets/Metrio_${RELEASE_VERSION}_x86_64-setup.exe"
+          cp "$SETUP.sig" "release-assets/Metrio_${RELEASE_VERSION}_x86_64-setup.exe.sig"
+          ls -l release-assets
+
+      - name: Windows runtime QA on the exact installer (install, launch, UI, updater)
+        continue-on-error: true
+        run: |
+          SETUP_WIN="$(cygpath -w "$PWD/release-assets/Metrio_${RELEASE_VERSION}_x86_64-setup.exe")"
+          node scripts/windows-qa.mjs smoke --installer "$SETUP_WIN" --expect-version "$RELEASE_VERSION" --expect-sha "${RELEASE_SHA:0:7}"
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: windows-qa-report
+          path: qa-out/
+          if-no-files-found: ignore
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-assets-windows
+          path: release-assets/
+          if-no-files-found: error
+
+  # ---------------------------------------------------------------- latest.json, tag, release
+  publish:
+    needs: [prepare, macos, windows]
+    runs-on: macos-14
+    timeout-minutes: 60
+    env:
+      REPO: ${{ github.repository }}
+      RELEASE_VERSION: ${{ needs.prepare.outputs.version }}
+      RELEASE_SHA: ${{ needs.prepare.outputs.sha }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.prepare.outputs.sha }}
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: release-assets-*
+          path: release-assets
+          merge-multiple: true
+
+      - name: Verify updater signatures for every platform, tamper test
+        run: |
+          ls -l release-assets
           node scripts/verify-updater-artifacts.mjs release-assets
           node scripts/verify-updater-tamper.mjs release-assets
 
       - name: Generate and validate latest.json; record hashes
-        if: steps.plan.outputs.should_release == 'true'
         run: |
           METRIO_RELEASE_REPO="$REPO" METRIO_RELEASE_TAG="v$RELEASE_VERSION" \
             METRIO_RELEASE_NOTES="Metrio $RELEASE_VERSION" \
@@ -217,13 +355,13 @@ jobs:
           ls -l release-assets
           grep -q '"darwin-aarch64"' release-assets/latest.json
           grep -q '"darwin-x86_64"' release-assets/latest.json
+          grep -q '"windows-x86_64"' release-assets/latest.json
           (cd release-assets && shasum -a 256 *.dmg *.tar.gz *.sig latest.json | tee "$RUNNER_TEMP/SHA256SUMS.txt")
 
       - name: Tag, publish release, verify published bytes, then switch clients over
-        if: steps.plan.outputs.should_release == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
-          PREVIOUS_TAG: ${{ steps.plan.outputs.previous_tag }}
+          PREVIOUS_TAG: ${{ needs.prepare.outputs.previous_tag }}
         run: |
           TAG="v$RELEASE_VERSION"
           if git ls-remote --exit-code --tags origin "refs/tags/$TAG" >/dev/null 2>&1; then
@@ -243,13 +381,15 @@ jobs:
             --notes-file "$RUNNER_TEMP/notes.md" \
             "release-assets/Metrio_${RELEASE_VERSION}_aarch64.dmg" "release-assets/Metrio_${RELEASE_VERSION}_x86_64.dmg" \
             release-assets/Metrio_aarch64.app.tar.gz release-assets/Metrio_aarch64.app.tar.gz.sig \
-            release-assets/Metrio_x86_64.app.tar.gz release-assets/Metrio_x86_64.app.tar.gz.sig
+            release-assets/Metrio_x86_64.app.tar.gz release-assets/Metrio_x86_64.app.tar.gz.sig \
+            "release-assets/Metrio_${RELEASE_VERSION}_x86_64-setup.exe" "release-assets/Metrio_${RELEASE_VERSION}_x86_64-setup.exe.sig"
           echo "METRIO_RELEASE_CREATED=$TAG" >> "$GITHUB_ENV"
 
           rm -rf verify-download && mkdir verify-download
           gh release download "$TAG" --dir verify-download
           for f in "Metrio_${RELEASE_VERSION}_aarch64.dmg" "Metrio_${RELEASE_VERSION}_x86_64.dmg" \
-                   Metrio_aarch64.app.tar.gz Metrio_aarch64.app.tar.gz.sig Metrio_x86_64.app.tar.gz Metrio_x86_64.app.tar.gz.sig; do
+                   Metrio_aarch64.app.tar.gz Metrio_aarch64.app.tar.gz.sig Metrio_x86_64.app.tar.gz Metrio_x86_64.app.tar.gz.sig \
+                   "Metrio_${RELEASE_VERSION}_x86_64-setup.exe" "Metrio_${RELEASE_VERSION}_x86_64-setup.exe.sig"; do
             cmp "release-assets/$f" "verify-download/$f"
             echo "published $f: $(stat -f %z "verify-download/$f") bytes, sha256 $(shasum -a 256 "verify-download/$f" | cut -d' ' -f1)"
           done
@@ -259,7 +399,6 @@ jobs:
           echo "METRIO_RELEASE_LATEST=$TAG" >> "$GITHUB_ENV"
 
       - name: Verify the live endpoint serves the new release
-        if: steps.plan.outputs.should_release == 'true'
         run: |
           URL="https://github.com/$REPO/releases/latest/download/latest.json"
           for i in $(seq 1 30); do
@@ -282,8 +421,3 @@ jobs:
           fi
           git push origin ":refs/tags/$METRIO_TAG_PUSHED" || true
 
-      - name: Cleanup signing material
-        if: always()
-        run: |
-          if [ -n "${METRIO_KEYCHAIN:-}" ] && [ -f "$METRIO_KEYCHAIN" ]; then security delete-keychain "$METRIO_KEYCHAIN" || true; fi
-          rm -f "$RUNNER_TEMP"/AuthKey_*.p8 "$RUNNER_TEMP"/certificate.p12 || true

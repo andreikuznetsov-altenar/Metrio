@@ -33,12 +33,13 @@ function parseMinisignSignature(base64Text) {
 }
 
 const files = readdirSync(dir);
+const version = JSON.parse(readFileSync(join(root, "package.json"), "utf8")).version;
 const pub = parseMinisignPublicKey(conf.plugins.updater.pubkey);
 
 // Per-architecture layout: every release target must be present. Legacy: one archive.
-const perArch = files.some((f) => RELEASE_TARGETS.some((t) => updaterArchiveName(t) === f));
+const perArch = files.some((f) => RELEASE_TARGETS.some((t) => updaterArchiveName(t, version) === f));
 const archives = perArch
-  ? RELEASE_TARGETS.map((t) => updaterArchiveName(t))
+  ? RELEASE_TARGETS.map((t) => updaterArchiveName(t, version))
   : [files.find((f) => f.endsWith(".app.tar.gz")) ?? files.find((f) => f.endsWith(".tar.gz"))];
 if (archives.some((a) => !a)) throw new Error(`No updater archive in ${dir}`);
 
@@ -76,7 +77,7 @@ if (existsSync(manifestPath)) {
   for (const [platform, entry] of Object.entries(manifest.platforms)) {
     if (/^https?:/i.test(entry.signature)) throw new Error("latest.json signature must not be a URL");
     const archive = perArch
-      ? updaterArchiveName(RELEASE_TARGETS.find((t) => t.updaterPlatform === platform) ?? (() => { throw new Error(`latest.json has unknown platform ${platform}`); })())
+      ? updaterArchiveName(RELEASE_TARGETS.find((t) => t.updaterPlatform === platform) ?? (() => { throw new Error(`latest.json has unknown platform ${platform}`); })(), version)
       : archives[0];
     if (entry.signature !== sigTexts.get(archive)) throw new Error(`latest.json ${platform} signature is not the .sig content of ${archive}`);
     if (!entry.url.endsWith(`/${encodeURIComponent(archive)}`)) throw new Error(`latest.json ${platform} url does not point at ${archive}`);

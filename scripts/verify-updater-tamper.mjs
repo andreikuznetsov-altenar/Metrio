@@ -15,7 +15,7 @@ if (!dir) {
   console.error("Usage: node verify-updater-tamper.mjs <artifact-dir>");
   process.exit(1);
 }
-const archives = readdirSync(dir).filter((f) => f.endsWith(".app.tar.gz"));
+const archives = readdirSync(dir).filter((f) => f.endsWith(".app.tar.gz") || /-setup\.exe$/.test(f));
 if (archives.length === 0) throw new Error(`No updater archive in ${dir}`);
 const verifier = join(dirname(fileURLToPath(import.meta.url)), "verify-updater-artifacts.mjs");
 for (const archive of archives) {
@@ -23,7 +23,7 @@ for (const archive of archives) {
   const copy = mkdtempSync(join(tmpdir(), "metrio-tamper-"));
   for (const f of readdirSync(dir)) {
     if (f === "latest.json") continue;
-    if (f.endsWith(".tar.gz") || f.endsWith(".tar.gz.sig")) copyFileSync(join(dir, f), join(copy, f));
+    if (f.endsWith(".tar.gz") || f.endsWith(".tar.gz.sig") || /-setup\.exe(\.sig)?$/.test(f)) copyFileSync(join(dir, f), join(copy, f));
   }
   appendFileSync(join(copy, archive), "x");
   const result = spawnSync("node", [verifier, copy], { encoding: "utf8" });

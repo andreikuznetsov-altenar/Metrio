@@ -509,7 +509,7 @@ describe("release workflow structure", () => {
     const order = [
       "Package macOS Apple Silicon",
       "Package macOS Intel",
-      "Verify updater signatures for both architectures",
+      "Verify updater signatures for every platform",
       "Generate and validate latest.json",
       "Tag, publish release, verify published bytes",
       "Verify the live endpoint",

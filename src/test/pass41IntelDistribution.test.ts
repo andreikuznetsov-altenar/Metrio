@@ -15,32 +15,38 @@ import {
 const repoRoot = resolve(process.cwd());
 const source = (p: string) => readFileSync(join(repoRoot, p), "utf8");
 
+const pkgVersion = JSON.parse(source("package.json")).version as string;
+
 function artifactDir(): string {
   const dir = mkdtempSync(join(tmpdir(), "metrio-multiarch-"));
   for (const t of RELEASE_TARGETS) {
-    writeFileSync(join(dir, updaterArchiveName(t)), `archive-bytes-${t.id}`);
-    writeFileSync(join(dir, `${updaterArchiveName(t)}.sig`), `SIG-${t.id}\n`);
+    writeFileSync(join(dir, updaterArchiveName(t, pkgVersion)), `archive-bytes-${t.id}`);
+    writeFileSync(join(dir, `${updaterArchiveName(t, pkgVersion)}.sig`), `SIG-${t.id}\n`);
   }
   return dir;
 }
 
 describe("release targets", () => {
-  it("ships Apple Silicon AND Intel with the Tauri updater platform keys", () => {
+  it("ships Apple Silicon, Intel AND Windows x64 with the Tauri updater platform keys", () => {
     expect(RELEASE_TARGETS.map((t) => [t.rustTarget, t.updaterPlatform, t.lipoArch])).toEqual([
       ["aarch64-apple-darwin", "darwin-aarch64", "arm64"],
       ["x86_64-apple-darwin", "darwin-x86_64", "x86_64"],
+      ["x86_64-pc-windows-msvc", "windows-x86_64", undefined],
     ]);
   });
 
   it("uses unambiguous, distinct asset names per architecture", () => {
-    const [arm, intel] = RELEASE_TARGETS;
+    const [arm, intel, win] = RELEASE_TARGETS;
     expect(dmgName("1.2.3", arm)).toBe("Metrio_1.2.3_aarch64.dmg");
     expect(dmgName("1.2.3", intel)).toBe("Metrio_1.2.3_x86_64.dmg");
-    expect(updaterArchiveName(arm)).toBe("Metrio_aarch64.app.tar.gz");
-    expect(updaterArchiveName(intel)).toBe("Metrio_x86_64.app.tar.gz");
+    expect(updaterArchiveName(arm, "1.2.3")).toBe("Metrio_aarch64.app.tar.gz");
+    expect(updaterArchiveName(intel, "1.2.3")).toBe("Metrio_x86_64.app.tar.gz");
+    expect(updaterArchiveName(win, "1.2.3")).toBe("Metrio_1.2.3_x86_64-setup.exe");
+    expect(bundleDir(win)).toBe("src-tauri/target/x86_64-pc-windows-msvc/release/bundle/nsis");
     expect(bundleDir(intel)).toBe("src-tauri/target/x86_64-apple-darwin/release/bundle/macos");
-    expect(targetForArchive("Metrio_x86_64.app.tar.gz")?.updaterPlatform).toBe("darwin-x86_64");
-    expect(targetForArchive("Metrio.app.tar.gz")).toBeUndefined();
+    expect(targetForArchive("Metrio_x86_64.app.tar.gz", "1.2.3")?.updaterPlatform).toBe("darwin-x86_64");
+    expect(targetForArchive("Metrio_1.2.3_x86_64-setup.exe", "1.2.3")?.updaterPlatform).toBe("windows-x86_64");
+    expect(targetForArchive("Metrio.app.tar.gz", "1.2.3")).toBeUndefined();
   });
 });
 
@@ -51,7 +57,7 @@ describe("platform → artifact mapping (OTA safety)", () => {
       env: { ...process.env, METRIO_RELEASE_REPO: "o/r", METRIO_RELEASE_TAG: "v9.9.9" },
     });
     const manifest = JSON.parse(readFileSync(join(dir, "latest.json"), "utf8"));
-    expect(Object.keys(manifest.platforms).sort()).toEqual(["darwin-aarch64", "darwin-x86_64"]);
+    expect(Object.keys(manifest.platforms).sort()).toEqual(["darwin-aarch64", "darwin-x86_64", "windows-x86_64"]);
     expect(manifest.platforms["darwin-aarch64"]).toEqual({
       signature: "SIG-aarch64",
       url: "https://github.com/o/r/releases/download/v9.9.9/Metrio_aarch64.app.tar.gz",
@@ -60,19 +66,25 @@ describe("platform → artifact mapping (OTA safety)", () => {
       signature: "SIG-x86_64",
       url: "https://github.com/o/r/releases/download/v9.9.9/Metrio_x86_64.app.tar.gz",
     });
-    for (const [platform, entry] of Object.entries(manifest.platforms) as [string, { url: string; signature: string }][]) {
-      const arch = platform.replace("darwin-", "");
-      expect(entry.url).toContain(`Metrio_${arch}.app.tar.gz`);
-      expect(entry.url).not.toContain(arch === "x86_64" ? "aarch64" : "x86_64");
-      expect(entry.signature).toBe(`SIG-${arch}`);
+    expect(manifest.platforms["windows-x86_64"]).toEqual({
+      signature: "SIG-windows-x86_64",
+      url: `https://github.com/o/r/releases/download/v9.9.9/Metrio_${pkgVersion}_x86_64-setup.exe`,
+    });
+    for (const t of RELEASE_TARGETS) {
+      const entry = manifest.platforms[t.updaterPlatform] as { url: string; signature: string };
+      expect(entry.url.endsWith(`/${updaterArchiveName(t, pkgVersion)}`)).toBe(true);
+      expect(entry.signature).toBe(`SIG-${t.id}`);
+      // no platform may point at another platform's artifact
+      for (const other of RELEASE_TARGETS.filter((o) => o !== t)) {
+        expect(entry.url.endsWith(`/${updaterArchiveName(other, pkgVersion)}`)).toBe(false);
+      }
     }
   });
 
   it("refuses to publish a manifest when one architecture is missing", () => {
     const dir = artifactDir();
     const intel = RELEASE_TARGETS[1];
-    writeFileSync(join(dir, `${updaterArchiveName(intel)}.sig`), "");
-    execFileSync("rm", [join(dir, `${updaterArchiveName(intel)}.sig`)]);
+    execFileSync("rm", [join(dir, `${updaterArchiveName(intel, pkgVersion)}.sig`)]);
     const run = spawnSync("node", [join(repoRoot, "scripts/generate-update-manifest.mjs"), dir], { encoding: "utf8" });
     expect(run.status).not.toBe(0);
     expect(run.stderr).toContain("darwin-x86_64");
@@ -104,7 +116,7 @@ describe("platform → artifact mapping (OTA safety)", () => {
 describe("release workflow", () => {
   const workflow = source(".github/workflows/release-macos.yml");
 
-  it("plans the version once and builds both architectures in that single job", () => {
+  it("plans the version once; mac (both archs) and windows builds all use that one release commit", () => {
     expect((workflow.match(/node scripts\/plan-release\.mjs/g) ?? []).length).toBe(1);
     expect((workflow.match(/prepare-release-version\.mjs/g) ?? []).length).toBe(1);
     expect((workflow.match(/git tag -a/g) ?? []).length).toBe(1);
@@ -113,9 +125,16 @@ describe("release workflow", () => {
     expect(workflow).toContain("package-target.sh aarch64");
     expect(workflow).toContain("package-target.sh x86_64");
     expect(workflow).not.toMatch(/strategy:\s*\n\s*matrix/);
+    expect(workflow).toContain("runs-on: windows-latest");
+    expect(workflow).toContain("npm run tauri build -- --target x86_64-pc-windows-msvc --bundles nsis");
+    expect((workflow.match(/ref: \$\{\{ needs\.prepare\.outputs\.sha \}\}/g) ?? []).length).toBe(3);
+    expect(workflow).toContain("needs: [prepare, macos, windows]");
+    expect(workflow).toContain("Authenticode");
   });
 
-  it("uploads both DMGs and both archive/signature pairs, and latest.json last", () => {
+  it("uploads both DMGs, both mac archives, the Windows installer and signatures, and latest.json last", () => {
+    expect(workflow).toContain("Metrio_${RELEASE_VERSION}_x86_64-setup.exe.sig");
+    expect(workflow).toContain('"windows-x86_64"');
     expect(workflow).toContain("Metrio_${RELEASE_VERSION}_aarch64.dmg");
     expect(workflow).toContain("Metrio_${RELEASE_VERSION}_x86_64.dmg");
     for (const f of ["Metrio_aarch64.app.tar.gz", "Metrio_x86_64.app.tar.gz"]) {

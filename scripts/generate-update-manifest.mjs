@@ -38,9 +38,9 @@ const files = readdirSync(artifactDir);
 const target = join(outDir ?? artifactDir, "latest.json");
 
 // Per-architecture archives (Metrio_<arch>.app.tar.gz): every release target must be present.
-const perArch = RELEASE_TARGETS.map((t) => ({ t, archive: updaterArchiveName(t) })).filter(({ archive }) => files.includes(archive));
+const perArch = RELEASE_TARGETS.map((t) => ({ t, archive: updaterArchiveName(t, version) })).filter(({ archive }) => files.includes(archive));
 if (perArch.length > 0) {
-  const missing = RELEASE_TARGETS.filter((t) => !files.includes(updaterArchiveName(t)) || !files.includes(`${updaterArchiveName(t)}.sig`));
+  const missing = RELEASE_TARGETS.filter((t) => !files.includes(updaterArchiveName(t, version)) || !files.includes(`${updaterArchiveName(t, version)}.sig`));
   if (missing.length > 0) {
     console.error(`Missing updater archive/signature for: ${missing.map((t) => t.updaterPlatform).join(", ")}`);
     process.exit(1);
@@ -52,12 +52,12 @@ if (perArch.length > 0) {
     notes,
     entries: RELEASE_TARGETS.map((t) => ({
       platform: t.updaterPlatform,
-      archiveName: updaterArchiveName(t),
-      signature: readFileSync(join(artifactDir, `${updaterArchiveName(t)}.sig`), "utf8"),
+      archiveName: updaterArchiveName(t, version),
+      signature: readFileSync(join(artifactDir, `${updaterArchiveName(t, version)}.sig`), "utf8"),
     })),
   });
   if (baseUrlOverride) {
-    for (const t of RELEASE_TARGETS) manifest.platforms[t.updaterPlatform].url = `${baseUrl}/${encodeURIComponent(updaterArchiveName(t))}`;
+    for (const t of RELEASE_TARGETS) manifest.platforms[t.updaterPlatform].url = `${baseUrl}/${encodeURIComponent(updaterArchiveName(t, version))}`;
   }
   writeFileSync(target, `${JSON.stringify(manifest, null, 2)}\n`);
   console.log(`Wrote ${target} (${Object.keys(manifest.platforms).join(", ")}, v${version})`);
