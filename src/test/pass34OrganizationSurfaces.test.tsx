@@ -61,9 +61,16 @@ describe("PASS34 single attention card (shared primitive, every scope)", () => {
 describe("PASS34 carousel edge peek (shared primitive)", () => {
   it("two full cards + deliberate peeks, scroll-padding keeps the previous peek", () => {
     expect(recCss).toMatch(/--carousel-peek:\s*clamp\(/);
-    expect(recCss).toMatch(/scroll-padding-inline-start:\s*calc\(var\(--carousel-peek\) \+ var\(--carousel-gap\)\)/);
+    expect(recCss).toMatch(/scroll-padding-inline-start:\s*calc\(var\(--carousel-bleed\) \+ var\(--carousel-peek-scroll\) \+ var\(--carousel-gap\)\)/);
     expect(recCss).toMatch(/--carousel \.executive-recommendations__item\s*\{[^}]*calc\(\(100% - 2 \* var\(--carousel-peek\) - 3 \* var\(--carousel-gap\)\) \/ 2\)/);
     expect(recCss).toMatch(/scroll-snap-align:\s*start/);
+  });
+
+  it("is full-bleed: the scroller extends through the page gutter (token) and keeps the content grid via symmetric padding", () => {
+    expect(recCss).toMatch(/--carousel-bleed:[^;]*var\(--page-gutter-inline/);
+    expect(recCss).toMatch(/margin-inline:\s*calc\(-1 \* var\(--carousel-bleed\)\)/);
+    expect(recCss).toMatch(/padding-inline:\s*var\(--carousel-bleed\)/);
+    expect(recCss).not.toMatch(/--carousel \{[^}]*max-width:\s*100%/);
   });
 });
 

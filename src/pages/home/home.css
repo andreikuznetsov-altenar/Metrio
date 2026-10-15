@@ -1,7 +1,9 @@
 .home-page {
   max-width: 1320px;
   margin: 0 auto;
-  padding: var(--space-4) var(--space-5) var(--space-6);
+  --page-gutter-inline: var(--space-5);
+  --page-max-width: 1320px;
+  padding: var(--space-4) var(--page-gutter-inline) var(--space-6);
 }
 
 .home-empty-state {

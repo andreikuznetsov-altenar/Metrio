@@ -171,27 +171,37 @@
 }
 
 /*
- * Carousel with a deliberate edge peek. Two cards are fully visible; a sliver of the neighbouring
- * card stays visible on every side that has more content, so the row reads as scrollable:
- *   start:        [card][card][ next-peek ]
- *   intermediate: [prev-peek][card][card][next-peek]
- *   end:          [prev-peek][card][card]
- * Card width = (viewport - 2 peeks - 3 gaps) / 2; scroll-padding keeps the previous card's peek
- * on screen after snapping. Position 0 and the last position clamp, so there is never a fake peek.
+ * Carousel with a deliberate edge peek, FULL-BLEED to the app viewport. Two cards are fully visible
+ * on the normal content grid; a neighbouring card continues through the page side gutter and is
+ * clipped only at the window edge (never at the inner content boundary):
+ *   start:        [card][card][ next card ........ window edge
+ *   intermediate: ...... prev][card][card][ next ...... window edge
+ *   end:          ...... prev][card][card]
+ * Card width = (content width - 2 peeks - 3 gaps) / 2 where content width is the NORMAL content
+ * box (the scroller's symmetric padding keeps percentages relative to it), so card size/gap are
+ * unchanged. The scroller extends sideways by --carousel-bleed (page gutter token + any outer
+ * margin up to the viewport edge). Padding keeps the first and last cards on the content grid;
+ * scroll-padding keeps the previous peek after snapping.
  */
 .executive-recommendations__list--carousel {
   --carousel-peek: clamp(1.5rem, 4%, 3rem);
   --carousel-gap: var(--space-2);
+  /* Distance from the content edge to the viewport edge: the page gutter plus, on centred max-width pages, the outer margin. */
+  --carousel-bleed: calc((100vw - min(100vw, var(--page-max-width, 100vw))) / 2 + var(--page-gutter-inline, 0px));
+  /* scroll-padding percentages are relative to the full-bleed scrollport, so peek is restated against the content width. */
+  --carousel-peek-scroll: clamp(1.5rem, calc((100% - 2 * var(--carousel-bleed)) * 0.04), 3rem);
   display: flex;
   gap: var(--carousel-gap);
   grid-template-columns: none;
   overflow-x: auto;
   overflow-y: hidden;
   scroll-snap-type: x mandatory;
-  scroll-padding-inline-start: calc(var(--carousel-peek) + var(--carousel-gap));
+  margin-inline: calc(-1 * var(--carousel-bleed));
+  padding-inline: var(--carousel-bleed);
+  scroll-padding-inline-start: calc(var(--carousel-bleed) + var(--carousel-peek-scroll) + var(--carousel-gap));
   scroll-behavior: smooth;
   overscroll-behavior-x: contain;
-  max-width: 100%;
+  max-width: none;
 }
 
 .executive-recommendations__list--carousel .executive-recommendations__item {

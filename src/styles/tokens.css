@@ -59,6 +59,8 @@
   --space-4: 16px;
   --space-5: 20px;
   --space-6: 24px;
+  /* Horizontal page gutter (content padding). Pages may override; full-bleed carousels read it. */
+  --page-gutter-inline: var(--space-6);
   --space-8: 32px;
   --space-10: 40px;
 
