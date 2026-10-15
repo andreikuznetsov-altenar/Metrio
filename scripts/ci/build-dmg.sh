@@ -41,36 +41,58 @@ hdiutil create   -volname "Metrio"   -srcfolder "$CONTENT_DIR"   -fs HFS+   -for
 
 hdiutil attach "$RW_DMG"   -readwrite   -noverify   -noautoopen   -mountpoint "$MOUNT_DIR" >/dev/null
 
-# Persist a deterministic Finder icon-view layout.
-#
-# Keep this deliberately simple and native: no background art and no third-party
-# DMG tooling. The application is the primary object and appears first/left.
-osascript <<'APPLESCRIPT'
-tell application "Finder"
-  tell disk "Metrio"
-    open
+# Persist the Finder layout through the mounted path instead of addressing
+# "disk Metrio" by name. GitHub-hosted macOS runners can mount the image at a
+# custom path without exposing a Finder disk object with that exact name.
+style_dmg() {
+  osascript - "$MOUNT_DIR" <<'APPLESCRIPT'
+on run argv
+  set mountPath to item 1 of argv
+  set targetFolder to POSIX file mountPath as alias
 
-    set current view of container window to icon view
-    set toolbar visible of container window to false
-    set statusbar visible of container window to false
-    set bounds of container window to {100, 100, 760, 500}
+  tell application "Finder"
+    open targetFolder
+    delay 1
 
-    set viewOptions to the icon view options of container window
+    tell container window of targetFolder
+      set current view to icon view
+      set toolbar visible to false
+      set statusbar visible to false
+      set bounds to {100, 100, 760, 500}
+    end tell
+
+    set viewOptions to icon view options of container window of targetFolder
     set arrangement of viewOptions to not arranged
     set icon size of viewOptions to 128
     set text size of viewOptions to 16
 
-    set position of item "Metrio.app" of container window to {180, 190}
-    set position of item "Applications" of container window to {480, 190}
+    set position of item "Metrio.app" of targetFolder to {180, 190}
+    set position of item "Applications" of targetFolder to {480, 190}
 
-    close
-    open
-    update without registering applications
+    update targetFolder without registering applications
     delay 2
-    close
+    close container window of targetFolder
   end tell
-end tell
+end run
 APPLESCRIPT
+}
+
+# Finder automation on hosted runners can be briefly unavailable right after mount.
+# Retry a few times, but never publish an unstyled DMG.
+styled=false
+for attempt in 1 2 3; do
+  if style_dmg; then
+    styled=true
+    break
+  fi
+  echo "Finder DMG styling attempt $attempt failed; retrying…" >&2
+  sleep 2
+done
+
+if [[ "$styled" != "true" ]]; then
+  echo "Failed to persist Finder DMG layout." >&2
+  exit 1
+fi
 
 sync
 test -f "$MOUNT_DIR/.DS_Store"
