@@ -162,16 +162,22 @@ describe("release workflow", () => {
     expect(source("scripts/ci/verify-app-arch.sh")).toContain("lipo -archs");
   });
 
-  it("distribution-only script changes never trigger a release on push", () => {
+  it("release metadata helpers stay non-runtime, but shipped installer packaging triggers a release", () => {
     for (const f of [
       "scripts/release-targets.mjs",
       "scripts/generate-update-manifest.mjs",
       "scripts/verify-updater-artifacts.mjs",
       "scripts/release-macos.sh",
-      "scripts/ci/package-target.sh",
       ".github/workflows/release-macos.yml",
     ]) {
       expect(isNonRuntimeFile(f)).toBe(true);
+    }
+
+    for (const f of [
+      "scripts/ci/build-dmg.sh",
+      "scripts/ci/package-target.sh",
+    ]) {
+      expect(isNonRuntimeFile(f)).toBe(false);
     }
   });
 });
