@@ -23,9 +23,9 @@ RW_DMG="$ROOT_TMP/Metrio-rw.dmg"
 
 cleanup() {
   if mount | grep -Fq " on $MOUNT_DIR "; then
-    hdiutil detach "$MOUNT_DIR" -quiet || true
+    hdiutil detach "$MOUNT_DIR" -quiet || hdiutil detach "$MOUNT_DIR" -force -quiet || true
   fi
-  rm -rf "$ROOT_TMP"
+  rm -rf "$ROOT_TMP" || true
 }
 trap cleanup EXIT
 
@@ -54,14 +54,16 @@ on run argv
     open targetFolder
     delay 1
 
-    tell container window of targetFolder
-      set current view to icon view
-      set toolbar visible to false
-      set statusbar visible to false
-      set bounds to {100, 100, 760, 500}
-    end tell
+    -- A mounted folder alias does not itself expose `container window` reliably
+    -- on GitHub-hosted macOS runners. After opening the folder, operate on the
+    -- actual Finder window that was created.
+    set targetWindow to front Finder window
+    set current view of targetWindow to icon view
+    set toolbar visible of targetWindow to false
+    set statusbar visible of targetWindow to false
+    set bounds of targetWindow to {100, 100, 760, 500}
 
-    set viewOptions to icon view options of container window of targetFolder
+    set viewOptions to icon view options of targetWindow
     set arrangement of viewOptions to not arranged
     set icon size of viewOptions to 128
     set text size of viewOptions to 16
@@ -71,7 +73,7 @@ on run argv
 
     update targetFolder without registering applications
     delay 2
-    close container window of targetFolder
+    close targetWindow
   end tell
 end run
 APPLESCRIPT
