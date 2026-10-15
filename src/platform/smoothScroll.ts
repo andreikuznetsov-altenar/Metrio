@@ -1,6 +1,6 @@
 /**
  * Metrio smooth wheel scrolling: the SAME engine and tuning as the https://averquo.app reference
- * (Lenis 1.3.x, `lerp: 0.07, wheelMultiplier: 0.9, smoothWheel: true`).
+ * (Lenis 1.3.x, `lerp: 0.09`, `wheelMultiplier: 0.9`, `smoothWheel: true`; the reference uses lerp 0.07, PASS37.3 relaxed it).
  *
  * Model: wheel input moves a TARGET; one RAF loop eases the real scroll position toward it, and
  * further input keeps extending the same motion. There is no per-notch animation and no device
@@ -14,8 +14,8 @@
  */
 import Lenis from "lenis";
 
-/** Averquo reference values (read from its production bundle). */
-export const SMOOTH_SCROLL_LERP = 0.07;
+/** Averquo uses 0.07 (production bundle); PASS37.3 tuned lerp up to 0.09 for a shorter tail. */
+export const SMOOTH_SCROLL_LERP = 0.09;
 export const SMOOTH_SCROLL_WHEEL_MULTIPLIER = 0.9;
 
 const BOUNDARY_EPSILON_PX = 0.5;

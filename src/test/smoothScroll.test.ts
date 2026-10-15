@@ -69,7 +69,7 @@ afterEach(() => {
 
 describe("reference parity", () => {
   it("uses the Averquo values", () => {
-    expect(SMOOTH_SCROLL_LERP).toBe(0.07);
+    expect(SMOOTH_SCROLL_LERP).toBe(0.09);
     expect(SMOOTH_SCROLL_WHEEL_MULTIPLIER).toBe(0.9);
   });
 });

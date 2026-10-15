@@ -7,7 +7,7 @@ test.use({ launchOptions: { ignoreDefaultArgs: ["--hide-scrollbars"] } });
 /**
  * SYNTHETIC wheel tests (events dispatched in the page, on a CHILD inside the scroll owner like a
  * real pointer over content). They are not physical-hardware verification.
- * Engine under test: Lenis, lerp 0.07 / wheelMultiplier 0.9 (the averquo.app reference values).
+ * Engine under test: Lenis, lerp 0.09 (tuned from averquo 0.07) / wheelMultiplier 0.9.
  */
 const MULT = 0.9;
 
