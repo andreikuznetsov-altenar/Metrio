@@ -17,6 +17,9 @@ on:
       from_version:
         description: "ota: version the controlled previous build reports (must be lower than the release)"
         default: ""
+      reuse_run:
+        description: "Optional run id of a previous Windows QA run whose installer is reused (skips the build)"
+        default: ""
       to_version:
         description: "ota: published version expected after the update (smoke: expected About version, optional)"
         default: ""
@@ -44,7 +47,21 @@ jobs:
         with:
           targets: x86_64-pc-windows-msvc
       - run: npm ci
+      - name: Reuse the installer from a previous run
+        if: inputs.reuse_run != ''
+        uses: actions/download-artifact@v4
+        with:
+          name: windows-qa-${{ inputs.mode }}
+          run-id: ${{ inputs.reuse_run }}
+          github-token: ${{ github.token }}
+          path: reused
+      - name: Place the reused installer
+        if: inputs.reuse_run != ''
+        run: |
+          mkdir -p src-tauri/target/x86_64-pc-windows-msvc/release/bundle/nsis
+          cp "$(find reused -name '*-setup.exe' | head -1)" src-tauri/target/x86_64-pc-windows-msvc/release/bundle/nsis/
       - name: Build the NSIS installer (x86_64-pc-windows-msvc)
+        if: inputs.reuse_run == ''
         env:
           BUILD_CHANNEL: production
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}

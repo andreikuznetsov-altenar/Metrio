@@ -75,6 +75,20 @@ function launch(exe, env = {}) {
   return child;
 }
 
+function diagnostics(label) {
+  const info = [
+    `--- diagnostics: ${label}`,
+    ps(`Get-Process | Where-Object { $_.ProcessName -match 'metrio|msedgewebview2' } | Select-Object ProcessName,Id,MainWindowTitle | Format-Table -AutoSize | Out-String`),
+    ps(`Get-CimInstance Win32_Process -Filter "Name='msedgewebview2.exe'" | Select-Object -First 1 -ExpandProperty CommandLine`),
+    ps(`(Get-ChildItem Env: | Where-Object Name -like 'WEBVIEW2*' | Out-String)`),
+    `app.log tail:\n${logTail().split("\n").slice(-25).join("\n")}`,
+    ps(`Get-WinEvent -FilterHashtable @{LogName='Application'; Level=2; StartTime=(Get-Date).AddMinutes(-10)} -MaxEvents 5 -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Message`),
+  ].join("\n");
+  console.log(info);
+  writeFileSync(join(OUT, `diagnostics-${label}.txt`), info);
+  screenshotDesktop(`desktop-${label}.png`);
+}
+
 async function connect(timeoutMs = 90_000) {
   const deadline = Date.now() + timeoutMs;
   let last;
@@ -91,6 +105,7 @@ async function connect(timeoutMs = 90_000) {
     }
     await sleep(2000);
   }
+  diagnostics("cdp-timeout");
   throw new Error(`CDP connect timed out: ${last}`);
 }
 
