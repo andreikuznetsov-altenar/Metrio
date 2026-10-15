@@ -77,7 +77,7 @@ const NON_RUNTIME_PATTERNS = [
   /^src\/test\//,
   /\.test\.(ts|tsx|mjs|js)$/,
   /^src-tauri\/tests\//,
-  /^scripts\/(release-lib|prepare-release-version|plan-release|verify-build-provenance|verify-updater-tamper|generate-release-notes|generate-update-manifest|verify-updater-artifacts|release-targets)\.mjs$/,
+  /^scripts\/(release-lib|prepare-release-version|plan-release|verify-build-provenance|verify-updater-tamper|generate-release-notes|generate-update-manifest|verify-updater-artifacts|release-targets|windows-qa)\.mjs$/,
   /^scripts\/release-macos\.sh$/,
   /^scripts\/ci\//,
   /^\.gitignore$/,

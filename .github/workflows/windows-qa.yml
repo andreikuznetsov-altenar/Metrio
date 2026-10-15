@@ -1,0 +1,83 @@
+name: Windows QA
+
+# Builds the Windows x86_64 NSIS installer and runs real runtime QA on a Windows runner.
+# Never publishes anything and never touches main/tags. See docs/releasing.md.
+#   mode=smoke : build from `ref`, install, launch, drive the UI over WebView2 CDP, check updater.
+#   mode=ota   : install a controlled PREVIOUS build (version overridden to `from_version`, built from
+#                `ref`), update it through the REAL updater endpoint to the published release and verify.
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: "Git ref (branch, tag or SHA) to build"
+        default: main
+      mode:
+        description: "smoke or ota"
+        default: smoke
+      from_version:
+        description: "ota: version the controlled previous build reports (must be lower than the release)"
+        default: ""
+      to_version:
+        description: "ota: published version expected after the update (smoke: expected About version, optional)"
+        default: ""
+
+permissions:
+  contents: read
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    timeout-minutes: 90
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-pc-windows-msvc
+      - run: npm ci
+      - name: Build the NSIS installer (x86_64-pc-windows-msvc)
+        env:
+          BUILD_CHANNEL: production
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+          FROM_VERSION: ${{ inputs.from_version }}
+          MODE: ${{ inputs.mode }}
+        run: |
+          if [ "$MODE" = "ota" ]; then
+            test -n "$FROM_VERSION"
+            npm run tauri build -- --target x86_64-pc-windows-msvc --bundles nsis --config "{\"version\":\"$FROM_VERSION\"}"
+          else
+            npm run tauri build -- --target x86_64-pc-windows-msvc --bundles nsis
+          fi
+          ls -l src-tauri/target/x86_64-pc-windows-msvc/release/bundle/nsis
+      - name: Runtime QA
+        env:
+          MODE: ${{ inputs.mode }}
+          FROM_VERSION: ${{ inputs.from_version }}
+          TO_VERSION: ${{ inputs.to_version }}
+        run: |
+          SETUP="$(ls src-tauri/target/x86_64-pc-windows-msvc/release/bundle/nsis/*-setup.exe | head -1)"
+          SETUP_WIN="$(cygpath -w "$SETUP")"
+          if [ "$MODE" = "ota" ]; then
+            node scripts/windows-qa.mjs ota --installer "$SETUP_WIN" --from-version "$FROM_VERSION" --to-version "$TO_VERSION"
+          else
+            EXPECT=""; if [ -n "$TO_VERSION" ]; then EXPECT="--expect-version $TO_VERSION"; fi
+            node scripts/windows-qa.mjs smoke --installer "$SETUP_WIN" $EXPECT
+          fi
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: windows-qa-${{ inputs.mode }}
+          path: |
+            qa-out/
+            src-tauri/target/x86_64-pc-windows-msvc/release/bundle/nsis/*
+          if-no-files-found: warn
