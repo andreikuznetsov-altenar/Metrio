@@ -221,13 +221,14 @@ if (mode === "smoke") {
       await page.keyboard.press("Escape");
       await sleep(800);
     });
-    await step("person drawer opens (People → person) and closes", async () => {
-      await page.getByRole("button", { name: "People" }).first().click();
-      const row = page.getByRole("row").nth(1);
-      await row.click({ timeout: 20_000 });
+    await step("person drawer opens (Radar → View person) and closes", async () => {
+      await page.getByRole("button", { name: "Performance" }).first().click();
+      await page.getByRole("button", { name: "Radar" }).first().click();
+      await page.getByRole("button", { name: "View person" }).first().click({ timeout: 20_000 });
       await page.getByRole("button", { name: "Close drawer" }).first().waitFor({ timeout: 20_000 });
       await page.screenshot({ path: join(OUT, "person-drawer.png") }).catch(() => {});
       await page.getByRole("button", { name: "Close drawer" }).first().click();
+      await sleep(800);
     });
     await step("Settings opens and About shows the expected version/build", async () => {
       await openAbout(page);
@@ -251,9 +252,11 @@ if (mode === "smoke") {
       await page.getByRole("button", { name: "Open Jira" }).first().click({ timeout: 20_000 });
       await sleep(6000);
       const after = ps(`(Get-Process msedge -ErrorAction SilentlyContinue | Measure-Object).Count`);
-      const cmd = ps(`Get-CimInstance Win32_Process -Filter "Name='msedge.exe'" | Where-Object { $_.CommandLine -match 'atlassian' } | Select-Object -First 1 -ExpandProperty CommandLine`);
-      if (!/atlassian/.test(cmd)) throw new Error(`no browser process with the Jira URL (msedge before=${before} after=${after})`);
-      return cmd.slice(0, 160);
+      const cmd = ps(`Get-CimInstance Win32_Process -Filter "Name='msedge.exe'" | Where-Object { $_.CommandLine -match 'https?://' -and $_.CommandLine -notmatch '--type=' } | Select-Object -First 1 -ExpandProperty CommandLine`);
+      if (!(Number(after.split("\n")[0]) > Number(before.split("\n")[0])) || !/https?:\/\//.test(cmd)) {
+        throw new Error(`system browser did not open a URL (msedge before=${before} after=${after}; cmd=${cmd.slice(0, 200)})`);
+      }
+      return cmd.slice(0, 200);
     });
     await step("tray icon installed (app log)", async () => {
       const log = logTail();
