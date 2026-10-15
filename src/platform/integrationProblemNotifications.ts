@@ -18,6 +18,7 @@ import {
 import { enrichInboxEvent } from "../domain/inbox/actionInboxModel";
 import { endNotificationEpisode, isNotificationDismissed } from "./notificationSuppressions";
 
+import { appNow } from "./appClock";
 export type { IntegrationProblemSource, IntegrationHealthMap };
 export {
   allIntegrationProblemDedupeKeys,
@@ -97,7 +98,7 @@ export function setIntegrationProblem(
   const event = enrichInboxEvent({
     id: preferred?.id ?? newEventId(),
     type: "integration_problem",
-    createdAt: earliest?.createdAt ?? new Date().toISOString(),
+    createdAt: earliest?.createdAt ?? appNow().toISOString(),
     readAt: hadActive ? (anyUnread ? undefined : preferred?.readAt) : undefined,
     title,
     message,

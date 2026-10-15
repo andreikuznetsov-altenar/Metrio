@@ -1,3 +1,4 @@
+import { appNow } from "../../platform/appClock";
 export function parseDateStartOfDay(value: string | null | undefined): Date | null {
   if (!value) return null;
   const d = new Date(`${value}T00:00:00`);
@@ -111,7 +112,7 @@ export function formatDuration(ms: number | null | undefined): string {
 }
 
 export function getTodayIsoDate(): string {
-  const now = new Date();
+  const now = appNow();
   const y = now.getFullYear();
   const m = String(now.getMonth() + 1).padStart(2, '0');
   const d = String(now.getDate()).padStart(2, '0');

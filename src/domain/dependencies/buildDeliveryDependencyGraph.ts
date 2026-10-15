@@ -18,10 +18,11 @@ import {
 } from "./parseJiraIssueLinks";
 import { buildDependencyChains } from "./dependencyTraversal";
 
+import { appNow } from "../../platform/appClock";
 export const MAX_CHAIN_DEPTH = 3;
 export const MAX_CHAIN_NODES = 40;
 
-export function emptyDependencyIndex(now = new Date()): DeliveryDependencyIndex {
+export function emptyDependencyIndex(now = appNow()): DeliveryDependencyIndex {
   return {
     builtAt: now.toISOString(),
     dependencies: [],
@@ -152,7 +153,7 @@ export function collectLinkedIssueKeys(issues: unknown[]): string[] {
 export function buildDeliveryDependencyGraph(
   issues: unknown[],
   snapshot: TeamSnapshot,
-  now = new Date(),
+  now = appNow(),
 ): DeliveryDependencyIndex {
   const byKey = new Map<string, ParsedIssueSnapshot>();
   for (const issue of issues) {

@@ -13,6 +13,7 @@ import {
 } from './issueCompletion';
 import { isTimestampInRange } from './dateRange';
 
+import { appNow } from "../../platform/appClock";
 export interface PeriodFlowMetrics {
   completedCount: number;
   firstPassCount: number;
@@ -82,7 +83,7 @@ export function computeTeamFlowMetrics(
 export function getCurrentWeekFlowMetrics(
   person: Person,
   params: ReportParams,
-  now = new Date(),
+  now = appNow(),
 ): PeriodFlowMetrics {
   return computePersonFlowMetrics(person, getCurrentWeekRange(now), params);
 }
@@ -91,7 +92,7 @@ export function getLastWeeksFlowMetrics(
   person: Person,
   params: ReportParams,
   weeks = 4,
-  now = new Date(),
+  now = appNow(),
 ): PeriodFlowMetrics {
   return computePersonFlowMetrics(person, getLastNDaysRange(weeks * 7, now), params);
 }

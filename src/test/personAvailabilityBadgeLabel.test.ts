@@ -15,7 +15,7 @@ describe("personAvailabilityBadgeLabel", () => {
         label: "On time off",
         startDate: "2026-09-01",
         endDate: "2026-09-05",
-      }),
+      }, new Date(2026, 8, 3)),
     ).toBe("On leave");
   });
 });

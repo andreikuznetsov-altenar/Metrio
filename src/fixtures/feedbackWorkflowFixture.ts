@@ -9,6 +9,7 @@ import {
 } from '../platform/preferences';
 import { createDefaultSurveyData } from '../domain/survey/defaults';
 
+import { VISUAL_FIXTURE_NOW_ISO } from "../platform/appClock";
 export const FEEDBACK_WORKFLOW_FIXTURE = {
   google: {
     accountEmail: 'lead@fixture.dev',
@@ -61,7 +62,7 @@ export function serializeFeedbackVisualPrefsForPlaywright(): string {
 
 /** Team lead Feedback page without Google connection (Survey tab still visible). */
 export function serializeFeedbackCyclesPopulatedSurveyForPlaywright(): string {
-  const now = new Date().toISOString();
+  const now = new Date(VISUAL_FIXTURE_NOW_ISO).toISOString();
   return JSON.stringify({
     schemaVersion: 2,
     defaults: {
@@ -96,7 +97,7 @@ export function serializeFeedbackCyclesPopulatedSurveyForPlaywright(): string {
 
 /** Active survey with recipients for Delivery / Recipients visual tests. */
 export function serializeFeedbackDeliveryVisualSurveyForPlaywright(): string {
-  const now = new Date().toISOString();
+  const now = new Date(VISUAL_FIXTURE_NOW_ISO).toISOString();
   const surveyId = 'survey_visual_delivery';
   const cycleId = 'cycle_visual_delivery';
   const defaults = createDefaultSurveyData();

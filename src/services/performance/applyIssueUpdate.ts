@@ -3,8 +3,7 @@ import {
   mapIssueByKey,
   type VerifiedIssueState,
 } from "../../domain/jira/applyVerifiedIssueState";
-import type { AuditReportData } from "../../domain/jira/types";
-import { filterOwnedIssues } from "../../domain/people/ownedIssues";
+import type { AuditIssue, AuditReportData } from "../../domain/jira/types";
 import type { Person, TeamSnapshot } from "../../domain/people/types";
 import { calculateWorkload } from "../../domain/workload/workloadEngine";
 import { summarizeTeam } from "../people/personService";
@@ -21,18 +20,23 @@ function patchReport(report: AuditReportData, verified: VerifiedIssueState): Aud
   return { ...report, grouped };
 }
 
+/**
+ * Patches EVERY array a person exposes the issue through. `issues` is the historically attributed
+ * set while `ownedIssues` is "currently assigned in Jira" and can contain an issue the person never
+ * touched (so it is absent from `issues`): Delivery Risk, Attention and Recommended actions read
+ * `ownedIssues`, therefore it must be patched on its own — never re-derived from `issues`.
+ */
 function patchSnapshot(
   snapshot: TeamSnapshot,
   report: AuditReportData,
   verified: VerifiedIssueState,
 ): TeamSnapshot {
+  const hasKey = (list: AuditIssue[] | undefined) => (list ?? []).some((i) => i.issueKey === verified.issueKey);
+  const transform = (i: AuditIssue) => applyVerifiedIssueState(i, verified);
   const persons: Person[] = snapshot.persons.map((person) => {
-    if (!person.issues.some((i) => i.issueKey === verified.issueKey)) return person;
-    const issues = mapIssueByKey(person.issues, verified.issueKey, (i) =>
-      applyVerifiedIssueState(i, verified),
-    );
-    const canonicalKey = person.jira?.canonicalKey || person.bamboo.workEmail || person.id;
-    const ownedIssues = filterOwnedIssues(issues, canonicalKey);
+    if (!hasKey(person.issues) && !hasKey(person.ownedIssues)) return person;
+    const issues = mapIssueByKey(person.issues, verified.issueKey, transform);
+    const ownedIssues = mapIssueByKey(person.ownedIssues ?? [], verified.issueKey, transform);
     const personalWorkload = calculateWorkload(
       ownedIssues,
       report.params,

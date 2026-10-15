@@ -137,4 +137,88 @@ describe("applyVerifiedIssueUpdate (verified Jira transition → canonical recom
     // input is not mutated (nothing is "optimistically" changed in place)
     expect(before.reportData.grouped["jira-p"]!.issues[0]!.currentStatus).toBe("In Review");
   });
+
+  /** Same data, but the stale issue is ONLY in `ownedIssues` (currently assigned, never touched by the person). */
+  function buildOwnedOnly(extra: AuditIssue[] = []): PerformanceFetchResult {
+    const base = build();
+    const owned = base.teamSnapshot.persons[0]!.ownedIssues;
+    const historical = [issue("UX-HIST", "Done", 300)];
+    const person: Person = { ...base.teamSnapshot.persons[0]!, issues: historical, ownedIssues: [...owned, ...extra] };
+    const teamSnapshot: TeamSnapshot = { ...base.teamSnapshot, persons: [person], summary: summarizeTeam([person], params) };
+    return { ...base, teamSnapshot, historyTeamSnapshot: teamSnapshot };
+  }
+
+  it("REGRESSION: an issue that exists ONLY in ownedIssues (the array Delivery Risk reads) is patched too", () => {
+    const before = buildOwnedOnly();
+    expect(before.teamSnapshot.persons[0]!.issues.some((i) => i.issueKey === "UX-123")).toBe(false);
+    const vmBefore = buildPerformanceViewModels(before, "p");
+    expect(vmBefore.teamSecondary.deliveryRisk.map((r) => r.issueKey)).toContain("UX-123");
+
+    const after = applyVerifiedIssueUpdate(before, {
+      issueKey: "UX-123",
+      currentStatus: "Done",
+      statusEvents: [statusEvent("In Review", "Done", new Date().toISOString())],
+    });
+    const vmAfter = buildPerformanceViewModels(after, "p");
+    expect(vmAfter.teamSecondary.deliveryRisk.map((r) => r.issueKey)).not.toContain("UX-123");
+    expect(vmAfter.teamSecondary.deliveryRisk.length).toBe(vmBefore.teamSecondary.deliveryRisk.length - 1);
+    expect(after.teamSnapshot.persons[0]!.ownedIssues.find((i) => i.issueKey === "UX-123")?.currentStatus).toBe("Done");
+  });
+
+  for (const finalStatus of ["Done", "Closed", "Approved"]) {
+    it(`any canonical terminal-success final status leaves current risk, not just the raw name "Done" (${finalStatus})`, () => {
+      const before = buildOwnedOnly();
+      const after = applyVerifiedIssueUpdate(before, {
+        issueKey: "UX-123",
+        currentStatus: finalStatus,
+        statusEvents: [statusEvent("In Review", finalStatus, new Date().toISOString())],
+      });
+      const risk = buildPerformanceViewModels(after, "p").teamSecondary.deliveryRisk.map((r) => r.issueKey);
+      expect(risk).not.toContain("UX-123");
+      expect(risk).toContain("UX-200");
+    });
+  }
+
+  it("Recommended actions, workload and team summary follow the SAME updated source (7 → 6 → gone)", async () => {
+    const { buildRecommendedActions } = await import("../../domain/recommendedActions/buildRecommendedActions");
+    const seven = Array.from({ length: 7 }, (_, i) => issue(`UX-${300 + i}`, "In Review", 45));
+    let data = buildOwnedOnly(seven);
+    const stale = (d: PerformanceFetchResult) =>
+      buildRecommendedActions({
+        scope: "team_lead",
+        now: new Date(),
+        teamIssues: d.teamSnapshot.persons.flatMap((p) => p.ownedIssues),
+        teamWorkload: [],
+        teamActions: [],
+        deliveryRiskRows: buildPerformanceViewModels(d, "p").teamSecondary.deliveryRisk.map((r) => ({
+          issueKey: r.issueKey,
+          ownerId: r.personId,
+          ownerName: r.personName,
+        })),
+      }).find((a) => a.id === "stale-review");
+    expect(stale(data)?.affectedCount).toBe(9); // UX-123, UX-200 + 7
+    const activeBefore = data.teamSnapshot.persons[0]!.workload?.activeCount ?? 0;
+    data = applyVerifiedIssueUpdate(data, {
+      issueKey: "UX-300",
+      currentStatus: "Closed",
+      statusEvents: [statusEvent("In Review", "Closed", new Date().toISOString())],
+    });
+    expect(stale(data)?.affectedCount).toBe(8);
+    expect(data.teamSnapshot.persons[0]!.workload?.activeCount ?? 0).toBeLessThanOrEqual(activeBefore);
+    for (const key of ["UX-301", "UX-302", "UX-303", "UX-304", "UX-305", "UX-123", "UX-200"]) {
+      data = applyVerifiedIssueUpdate(data, {
+        issueKey: key,
+        currentStatus: "Approved",
+        statusEvents: [statusEvent("In Review", "Approved", new Date().toISOString())],
+      });
+    }
+    expect(stale(data)?.affectedCount).toBe(1); // UX-306 left
+    data = applyVerifiedIssueUpdate(data, {
+      issueKey: "UX-306",
+      currentStatus: "Done",
+      statusEvents: [statusEvent("In Review", "Done", new Date().toISOString())],
+    });
+    expect(stale(data)).toBeUndefined();
+    expect(buildPerformanceViewModels(data, "p").teamSecondary.deliveryRisk).toHaveLength(0);
+  });
 });

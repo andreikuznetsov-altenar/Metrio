@@ -2,6 +2,7 @@ import type { AppPreferences } from "./preferences";
 import type { NotificationEvent, NotificationEventType } from "./notificationTypes";
 import { resolveDisplayTimezone } from "./displayTimezone";
 
+import { appNow } from "./appClock";
 /** Types that upsert message fields while preserving the first createdAt. */
 export const DEDUPE_UPSERT_TYPES: NotificationEventType[] = [
   "integration_problem",
@@ -49,7 +50,7 @@ export function workloadDedupeKey(personId: string, level: string): string {
 
 export function localNotificationCalendarDay(
   prefs: AppPreferences,
-  at = new Date(),
+  at = appNow(),
 ): string {
   const tz = resolveDisplayTimezone(prefs.appearance.displayTimezone);
   return new Intl.DateTimeFormat("en-CA", {
@@ -63,7 +64,7 @@ export function localNotificationCalendarDay(
 export function isWorkloadNotificationSuppressedToday(
   personId: string,
   prefs: AppPreferences,
-  at = new Date(),
+  at = appNow(),
 ): boolean {
   const key = String(personId).trim();
   if (!key) return false;

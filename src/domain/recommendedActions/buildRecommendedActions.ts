@@ -5,11 +5,16 @@
  * data, so a resolved problem simply stops producing its recommendation. All rules consume
  * existing canonical semantics (stale Review/Hold from PASS38's `checkStaleReviewOrHold`,
  * measured capacity, existing leave actions) and define no new thresholds except the documented
- * concentration and goal-hygiene constants below.
+ * concentration constants below.
+ *
+ * Deliberately NOT implemented: "no new goal in N months". Metrio reads goals from BambooHR's
+ * Goals Aggregate v1.2 (`/performance/employees/{id}/goals/aggregate`), which exposes
+ * startDate / dueDate / completionDate but no confirmed creation timestamp. Using startDate, dueDate,
+ * updates or first-seen time as a proxy would fabricate a creation date, so the rule is disabled.
  */
-import { subMonths, differenceInCalendarMonths } from "date-fns";
 import type { ActionItem } from "../actions/actionTypes";
-import { calendarDaysUntil, formatLeaveCountdown, isUpcomingLeaveState } from "../availability/leaveCalendar";
+import { resolveAvailabilityPresentation } from "../availability/availabilityPresentation";
+import { calendarDaysUntil, formatLeaveCountdown } from "../availability/leaveCalendar";
 import { STALE_COMPLETION_THRESHOLD_DAYS, checkStaleReviewOrHold } from "../jira/issueCompletion";
 import type { AuditIssue } from "../jira/types";
 import type { PersonAvailability } from "../people/types";
@@ -23,24 +28,21 @@ export const MAX_VISIBLE_RECOMMENDED_ACTIONS = 3;
 export const VERY_STALE_DAYS = 90;
 /** Leave is actionable when it starts within this many days (same window as the team-action rule). */
 export const LEAVE_WINDOW_DAYS = 14;
-/** Goal hygiene: no goal CREATED within this many calendar months. */
-export const GOAL_HYGIENE_MONTHS = 6;
 /** Concentration: one owner holds at least this share and count of the current delivery-risk tasks. */
 export const CONCENTRATION_MIN_COUNT = 4;
 export const CONCENTRATION_MIN_SHARE = 0.5;
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
-export interface GoalHygieneInput {
-  /**
-   * Newest goal CREATION date across authoritative sources, or null when it cannot be determined
-   * reliably (no data, an unreliable source, or any goal without a creation date). null → no
-   * recommendation is generated.
-   */
-  lastGoalCreatedAt: Date | null;
-}
+/*
+ * Stale = Review/Hold for MORE than STALE_COMPLETION_THRESHOLD_DAYS (30; exactly 30 is not stale),
+ * decided only by `checkStaleReviewOrHold`, the same helper that gates PASS38's "Mark complete +".
+ * This is intentionally different from the configurable `taskAttention.longReviewHighlightDays`
+ * analytics threshold (Delivery Risk / team actions), which answers "which reviews look slow", not
+ * "which tasks are old enough to close".
+ */
 
-export interface EmployeeRecommendationInput extends GoalHygieneInput {
+export interface EmployeeRecommendationInput {
   scope: "employee";
   now: Date;
   ownedIssues: AuditIssue[];
@@ -54,7 +56,7 @@ export interface DeliveryRiskOwnerRow {
   ownerName?: string;
 }
 
-export interface TeamLeadRecommendationInput extends GoalHygieneInput {
+export interface TeamLeadRecommendationInput {
   scope: "team_lead";
   now: Date;
   teamIssues: AuditIssue[];
@@ -119,9 +121,7 @@ function staleActions(issues: AuditIssue[], now: Date, scope: "employee" | "team
       id: "stale-hold",
       type: "stale_hold",
       priority: hold.oldestDays > VERY_STALE_DAYS ? 1 : 2,
-      title: own
-        ? plural(n, "A task has been on hold too long", "Tasks have been on hold too long")
-        : "Review long-held tasks",
+      title: plural(n, "A task has been on hold too long", "Tasks have been on hold too long"),
       description: own
         ? `${n} ${plural(n, "task has", "tasks have")} been on hold for more than ${STALE_COMPLETION_THRESHOLD_DAYS} days. Review whether they should remain on hold.`
         : `${n} team ${plural(n, "task has", "tasks have")} been on hold for more than ${STALE_COMPLETION_THRESHOLD_DAYS} days.`,
@@ -135,26 +135,6 @@ function staleActions(issues: AuditIssue[], now: Date, scope: "employee" | "team
     });
   }
   return out;
-}
-
-function goalAction(input: GoalHygieneInput, now: Date): RecommendedAction[] {
-  const last = input.lastGoalCreatedAt;
-  if (!last || Number.isNaN(last.getTime())) return [];
-  if (last.getTime() >= subMonths(now, GOAL_HYGIENE_MONTHS).getTime()) return [];
-  const months = differenceInCalendarMonths(now, last);
-  const span = months >= 12 ? "a year" : `${Math.max(GOAL_HYGIENE_MONTHS, months)} months`;
-  return [
-    {
-      id: "no-recent-goal",
-      type: "no_recent_goal",
-      priority: 4,
-      title: "Add a new goal",
-      description: `You haven't added a new goal in more than ${span}.`,
-      actionLabel: "Add goal",
-      destination: { kind: "goals" },
-      weight: months,
-    },
-  ];
 }
 
 function employeeActions(input: EmployeeRecommendationInput): RecommendedAction[] {
@@ -180,7 +160,7 @@ function employeeActions(input: EmployeeRecommendationInput): RecommendedAction[
     });
   }
 
-  if (selfAvailability?.startDate && isUpcomingLeaveState(selfAvailability.state) && selfAvailability.state !== "on_vacation") {
+  if (selfAvailability?.startDate && resolveAvailabilityPresentation(selfAvailability, now).phase === "upcoming") {
     const days = calendarDaysUntil(selfAvailability.startDate, now);
     const active = selfWorkload?.activeCount ?? 0;
     const inReview = selfWorkload?.inReviewCount ?? 0;
@@ -199,7 +179,6 @@ function employeeActions(input: EmployeeRecommendationInput): RecommendedAction[
     }
   }
 
-  out.push(...goalAction(input, now));
   return out;
 }
 
@@ -252,7 +231,6 @@ function leadActions(input: TeamLeadRecommendationInput): RecommendedAction[] {
     });
   }
 
-  out.push(...goalAction(input, now));
   return out;
 }
 

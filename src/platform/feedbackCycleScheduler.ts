@@ -2,9 +2,10 @@ import { evaluateFeedbackCycles } from '../domain/feedbackCycles/feedbackCycleEn
 import type { SurveyDataFile } from '../domain/survey/types';
 import { recordNotificationEvent } from './notificationEvents';
 
+import { appNow } from "./appClock";
 export function runFeedbackCycleScheduler(
   data: SurveyDataFile,
-  now = new Date(),
+  now = appNow(),
 ): SurveyDataFile {
   const { data: next, createdRunIds } = evaluateFeedbackCycles(data, now);
   for (const runId of createdRunIds) {

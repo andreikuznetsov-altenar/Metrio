@@ -7,6 +7,7 @@ import { DEFAULT_WORKFLOW_MAPPINGS } from "../workflows/defaultWorkflowMappings"
 import type { CompanyConfig, CompanyResourceConfig } from "./companyConfigTypes";
 import { COMPANY_CONFIG_SCHEMA_VERSION } from "./companyConfigTypes";
 
+import { appNow } from "../../platform/appClock";
 function mapResources(): CompanyResourceConfig[] {
   return CURATED_ONBOARDING_RESOURCES.map((def) => ({
     id: def.id,
@@ -24,7 +25,7 @@ function mapResources(): CompanyResourceConfig[] {
 }
 
 /** Builtin company config — preserves Phase 26/36/35/31 behavior. */
-export function buildDefaultCompanyConfig(now = new Date()): CompanyConfig {
+export function buildDefaultCompanyConfig(now = appNow()): CompanyConfig {
   return {
     schemaVersion: COMPANY_CONFIG_SCHEMA_VERSION,
     configVersion: "builtin-1",

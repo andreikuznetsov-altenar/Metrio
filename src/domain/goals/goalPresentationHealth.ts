@@ -1,6 +1,7 @@
 import type { BadgeVariant } from "../../components/Badge/Badge";
 import type { BambooGoal } from "./bambooGoalTypes";
 
+import { appNow } from "../../platform/appClock";
 export type GoalPresentationHealth =
   | "on_track"
   | "watch"
@@ -130,7 +131,7 @@ const HEALTH_VARIANT: Record<GoalPresentationHealth, BadgeVariant> = {
 
 export function resolveGoalPresentationStatus(
   goal: BambooGoal,
-  now = new Date(),
+  now = appNow(),
 ): GoalPresentationStatus {
   if (goal.status === "completed" || goal.percentComplete >= 100) {
     return {

@@ -17,6 +17,7 @@ import { loadPreferences, savePreferences } from "./preferences";
 import { markInboxJiraEventsReadForIssueKey } from "./notificationEvents";
 import { JIRA_ASSIGNMENT_CHANGED } from "./jiraAssignmentEvents";
 
+import { appNow } from "./appClock";
 export interface TrayBuildContext {
   summary: TraySummaryModel;
   softwareUpdateAvailable?: boolean;
@@ -81,7 +82,7 @@ export async function acknowledgeTrayJiraIssue(issueKey: string): Promise<void> 
   const prefs = await loadPreferences();
   const state = prefs.notificationState.jiraAssignment;
   if (!state) return;
-  const readAt = new Date().toISOString();
+  const readAt = appNow().toISOString();
   const nextState = markJiraAssignmentRead(state, issueKey, readAt);
   await savePreferences({
     ...prefs,
@@ -99,7 +100,7 @@ export async function markAllTrayJiraAssignmentsRead(): Promise<void> {
   const prefs = await loadPreferences();
   const state = prefs.notificationState.jiraAssignment;
   if (!state || unreadJiraAssignments(state).length === 0) return;
-  const readAt = new Date().toISOString();
+  const readAt = appNow().toISOString();
   const records = { ...state.records };
   for (const key of Object.keys(records)) {
     if (!records[key].readAt) {

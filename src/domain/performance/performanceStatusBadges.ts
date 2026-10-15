@@ -8,6 +8,7 @@ export function availabilityBadgeVariant(label: string): BadgeVariant {
   }
   if (
     normalized.includes("vacation") ||
+    normalized.includes("leave") ||
     normalized.includes("away") ||
     normalized.includes("off")
   ) {

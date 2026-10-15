@@ -32,6 +32,7 @@ import {
   type OrgRoleScenarioId,
 } from "./orgRoleProductionPathFixture";
 
+import { VISUAL_FIXTURE_NOW_ISO } from "../platform/appClock";
 const VISUAL_TEAM_IDS = [
   "person-sam",
   "person-alex",
@@ -49,7 +50,7 @@ const VISUAL_TEAM_IDS = [
 
 const params: AuditReportData["params"] = {
   dateFrom: "2026-01-15",
-  dateTo: new Date().toISOString().slice(0, 10),
+  dateTo: new Date(VISUAL_FIXTURE_NOW_ISO).toISOString().slice(0, 10),
   targetReviewDays: 3,
   users: VISUAL_TEAM_IDS.map((id) => `${id}@visual.metrio`),
   projects: ["UX"],
@@ -651,7 +652,7 @@ export function buildVisualPerformanceFetchResult(
         "partial"
         ? ["bamboo_time_off_unavailable"]
         : [],
-    lastUpdatedAt: new Date().toISOString(),
+    lastUpdatedAt: new Date(VISUAL_FIXTURE_NOW_ISO).toISOString(),
     historicalBootstrapRan: false,
     dependencyIndex: emptyDependencyIndex(),
   });

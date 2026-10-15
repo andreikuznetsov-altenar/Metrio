@@ -10,6 +10,7 @@ import { DEFAULT_OPERATIONAL_RULES } from "../operationalRules/operationalRulesD
 import { aggregateStaleReviewActions, dedupeActions } from "./dedupeActions";
 import { sortActionsByPriority } from "./actionPriority";
 
+import { appNow } from "../../platform/appClock";
 const MAX_TEAM = 7;
 
 export interface BuildTeamActionsInput {
@@ -24,7 +25,7 @@ export interface BuildTeamActionsInput {
 export function buildTeamActions(input: BuildTeamActionsInput): ActionItem[] {
   const { snapshot, deliveryRisk, feedback } = input;
   const rules = input.operationalRules ?? DEFAULT_OPERATIONAL_RULES;
-  const now = input.now ?? new Date();
+  const now = input.now ?? appNow();
   const items: ActionItem[] = [];
   const longReviewDays = rules.taskAttention.longReviewHighlightDays;
 

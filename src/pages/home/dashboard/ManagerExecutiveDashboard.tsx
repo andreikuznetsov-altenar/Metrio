@@ -176,7 +176,6 @@ export function ManagerExecutiveDashboard({
         teamWorkload={executiveModel.teamWorkload}
         teamActions={team.actions}
         deliveryRiskRows={deliveryRiskRows}
-        goalsFeatureOn={goalsFeatureOn}
         jiraBaseUrl={jiraBaseUrl}
         onOpenPerson={onOpenPerson}
         onOpenTeamWorkload={navigateOpenTeamWorkloadSection}

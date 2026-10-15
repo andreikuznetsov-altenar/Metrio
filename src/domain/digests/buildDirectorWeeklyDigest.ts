@@ -3,9 +3,10 @@ import { buildDigestId, getLocalWeekKey } from "./digestIds";
 import { finalizeDigest } from "./formatDigest";
 import type { OperationalDigest } from "./digestTypes";
 
+import { appNow } from "../../platform/appClock";
 export function buildDirectorWeeklyDigest(
   model: OrganizationOverviewModel,
-  now = new Date(),
+  now = appNow(),
 ): OperationalDigest {
   const signalLines = model.signals
     .slice(0, 8)

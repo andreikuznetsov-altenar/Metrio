@@ -2,7 +2,8 @@ import { getLocalDateKey } from "../periods/dateRange";
 import { getCurrentWeekRange } from "../periods/dateRange";
 import type { DigestKind, DigestRoleVariant } from "./digestTypes";
 
-export function getLocalWeekKey(now = new Date()): string {
+import { appNow } from "../../platform/appClock";
+export function getLocalWeekKey(now = appNow()): string {
   const { start } = getCurrentWeekRange(now);
   return getLocalDateKey(start);
 }
@@ -10,7 +11,7 @@ export function getLocalWeekKey(now = new Date()): string {
 export function buildDigestId(
   kind: DigestKind,
   role: DigestRoleVariant,
-  now = new Date(),
+  now = appNow(),
 ): string {
   if (kind === "daily") {
     return `daily:${getLocalDateKey(now)}:${role}`;

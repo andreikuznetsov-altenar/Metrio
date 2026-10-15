@@ -5,6 +5,7 @@ import { cycleNeedsNewRun } from './feedbackScheduling';
 import { createSurveyId } from '../../services/survey/surveyPersistence';
 import { createDefaultSurveyData } from '../survey/defaults';
 
+import { appNow } from "../../platform/appClock";
 export function createCycleId(): string {
   return `fcycle_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
 }
@@ -37,8 +38,8 @@ export function createDraftRunForCycle(
     ? getTemplateById(data.templates ?? [], cycle.surveyTemplateId)
     : null;
   const defaults = data.defaults;
-  const now = new Date().toISOString();
-  const due = new Date();
+  const now = appNow().toISOString();
+  const due = appNow();
   due.setDate(due.getDate() + 7);
 
   return {
@@ -83,7 +84,7 @@ export interface EvaluateCyclesResult {
 
 export function evaluateFeedbackCycles(
   data: SurveyDataFile,
-  now = new Date(),
+  now = appNow(),
 ): EvaluateCyclesResult {
   const launched = { ...(data.scheduleState?.launchedPeriodKeys ?? {}) };
   const existingKeys = new Set(Object.keys(launched));

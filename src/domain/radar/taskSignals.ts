@@ -14,6 +14,7 @@ import type { RadarSeverity } from './types';
 import { resolveWorkflowProfile } from '../workflows/resolveWorkflowProfile';
 import { resolveWorkflowStage } from '../workflows/resolveWorkflowStage';
 
+import { appNow } from "../../platform/appClock";
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
 export function stageAgeDays(issue: AuditIssue, now: Date): number | null {
@@ -45,7 +46,7 @@ export function getActiveIssues(person: Person, params?: ReportParams): AuditIss
 export function classifyIssueAttention(
   issue: AuditIssue,
   params: ReportParams,
-  now = new Date(),
+  now = appNow(),
   rules: OperationalRules = DEFAULT_OPERATIONAL_RULES,
 ): { severity: RadarSeverity; reason: string; health: TaskHealthResult } | null {
   const thresholds = taskHealthThresholdsFromRules(rules);

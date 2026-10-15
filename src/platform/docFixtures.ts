@@ -1,4 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
+import { DOC_FIXTURE_NOW_ISO, setAppClockFixed } from "./appClock";
 
 export type DocFixtureRole = "ic" | "lead" | "manager" | "director";
 
@@ -39,6 +40,12 @@ export async function getDocFixtureMode(): Promise<DocFixtureMode> {
   if (!cachedMode) {
     cachedMode = invoke("app_get_doc_fixture_mode")
       .then(normalizeMode)
+      .then((mode) => {
+        // Fixture datasets describe a fixed "today": pin the app clock to it so ages / countdowns
+        // never drift with the real date. Production (no fixture mode) keeps the real clock.
+        if (mode.enabled) setAppClockFixed(DOC_FIXTURE_NOW_ISO);
+        return mode;
+      })
       .catch(() => DEFAULT_MODE);
   }
   return cachedMode;

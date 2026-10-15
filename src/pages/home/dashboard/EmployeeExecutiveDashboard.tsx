@@ -110,7 +110,6 @@ export function EmployeeExecutiveDashboard({
       <RecommendedActionsSection
         scope="employee"
         ownPerson={selfPerson}
-        goalsFeatureOn={goalsFeatureOn}
         jiraBaseUrl={jiraBaseUrl}
         onOpenPerson={(personId) => onOpenPerson?.(personId)}
         onOpenTeamWorkload={onOpenMyWeek}

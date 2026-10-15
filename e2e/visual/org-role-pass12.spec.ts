@@ -83,12 +83,13 @@ test.describe("ORG Pass 12 manager of managers", () => {
     ).toHaveCount(0);
   });
 
-  test("org-role-manager-of-managers-branch-first People", async ({ page }) => {
+  test("org-role-manager-of-managers-branch-first Teams (People tab no longer exists for leadership)", async ({ page }) => {
     await bootOrgRoleScenario(page, "mom");
     await openPerformanceFromHome(page);
-    await page.locator(".performance-subnav__link").filter({ hasText: "People" }).click();
-    await expect(page.getByTestId("leadership-branches-people")).toBeVisible();
+    await expect(page.locator(".performance-subnav__link").filter({ hasText: "People" })).toHaveCount(0);
+    await page.locator(".performance-subnav__link").filter({ hasText: "Teams" }).click();
     await expect(page.getByTestId("team-people-view")).toHaveCount(0);
+    await expect(page.getByTestId("leadership-branch-toggle").first()).toBeVisible({ timeout: 15_000 });
   });
 
   test("org-role-manager-of-managers-direct-ic-note mixed", async ({ page }) => {

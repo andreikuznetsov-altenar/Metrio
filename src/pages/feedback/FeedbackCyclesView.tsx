@@ -20,6 +20,7 @@ import { Badge, Button } from './design-system';
 import { FeedbackEmptyState } from './FeedbackEmptyState';
 import { FeedbackTemplateLibrary } from './FeedbackTemplateLibrary';
 
+import { appNow } from "../../platform/appClock";
 function cycleStatusVariant(
   status: FeedbackCycle['status'],
 ): 'success' | 'warning' | 'neutral' {
@@ -58,7 +59,7 @@ export function FeedbackCyclesView() {
 
   const addPulseCycle = async () => {
     if (!canManage) return;
-    const now = new Date().toISOString();
+    const now = appNow().toISOString();
     const cycle: FeedbackCycle = {
       id: createCycleId(),
       name: 'Team pulse',
@@ -80,7 +81,7 @@ export function FeedbackCyclesView() {
 
   const setCycleStatus = async (cycleId: string, status: FeedbackCycle['status']) => {
     const next = cycles.map((c) =>
-      c.id === cycleId ? { ...c, status, updatedAt: new Date().toISOString() } : c,
+      c.id === cycleId ? { ...c, status, updatedAt: appNow().toISOString() } : c,
     );
     await saveSurveyData({ ...data, cycles: next });
     await init();

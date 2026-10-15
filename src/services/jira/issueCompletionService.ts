@@ -11,6 +11,7 @@ import { getWorkEmail, loadPreferences } from "../../platform/preferences";
 import { resolveJiraBaseUrl } from "../../config/product";
 import { JiraClient } from "./jiraClient";
 
+import { appNow } from "../../platform/appClock";
 export type IssueCompletionFailure = "stale_refresh" | "rejected";
 
 export class IssueCompletionError extends Error {
@@ -111,7 +112,7 @@ export function createFixtureIssueCompletionService(): IssueCompletionService {
         statusEvents: [
           {
             eventType: "Status",
-            changedAt: new Date().toISOString(),
+            changedAt: appNow().toISOString(),
             changedBy: "Metrio fixture",
             fromValue: issue.currentStatus ?? "",
             toValue: option.targetStatus,

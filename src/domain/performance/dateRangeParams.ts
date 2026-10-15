@@ -2,9 +2,10 @@ import { format, subMonths, subYears } from "date-fns";
 import type { DateRangeKey } from "../performance";
 import { getLastNDaysRange } from "../periods/dateRange";
 
+import { appNow } from "../../platform/appClock";
 export function dateRangeKeyToBounds(
   key: DateRangeKey,
-  now = new Date(),
+  now = appNow(),
 ): { dateFrom: string; dateTo: string } {
   const dateTo = format(now, "yyyy-MM-dd");
   if (key === "7d") {

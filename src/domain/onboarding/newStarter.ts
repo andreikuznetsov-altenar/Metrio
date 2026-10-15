@@ -1,5 +1,6 @@
 import { differenceInCalendarDays, format, parseISO } from "date-fns";
 
+import { appNow } from "../../platform/appClock";
 export const NEW_STARTER_DAYS = 60;
 
 let configuredNewStarterDays = NEW_STARTER_DAYS;
@@ -20,7 +21,7 @@ export interface NewStarterProfile {
   jobTitle?: string;
 }
 
-export function isNewStarter(hireDate: string | undefined, today = new Date()): boolean {
+export function isNewStarter(hireDate: string | undefined, today = appNow()): boolean {
   if (!hireDate) return false;
   const start = parseISO(hireDate.slice(0, 10));
   if (Number.isNaN(start.getTime())) return false;
@@ -28,12 +29,12 @@ export function isNewStarter(hireDate: string | undefined, today = new Date()): 
   return days >= 0 && days < configuredNewStarterDays;
 }
 
-export function newStarterDayNumber(hireDate: string, today = new Date()): number {
+export function newStarterDayNumber(hireDate: string, today = appNow()): number {
   const start = parseISO(hireDate.slice(0, 10));
   return differenceInCalendarDays(today, start) + 1;
 }
 
-export function formatNewStarterHeadline(hireDate: string, today = new Date()): string {
+export function formatNewStarterHeadline(hireDate: string, today = appNow()): string {
   const day = newStarterDayNumber(hireDate, today);
   return `Getting started · Day ${day}`;
 }

@@ -63,10 +63,14 @@ test.describe("PASS 22.1 geometry", () => {
     await bootOrgRoleScenario(page, "mom");
     await openPerformanceFromHome(page);
     await page.locator(".performance-subnav__link").filter({ hasText: "Overview" }).click();
-    const indicator = await box(page, ".performance-subnav__indicator");
-    const active = await box(page, ".performance-subnav__link.is-active");
-    expect(indicator.width).toBeGreaterThan(20);
-    expect(Math.abs(indicator.x - active.x)).toBeLessThan(2);
+    // The indicator animates to the active tab: wait for it to settle instead of sampling mid-transition.
+    await expect
+      .poll(async () => {
+        const indicator = await box(page, ".performance-subnav__indicator");
+        const active = await box(page, ".performance-subnav__link.is-active");
+        return indicator.width > 20 && Math.abs(indicator.x - active.x) < 2;
+      })
+      .toBe(true);
   });
 
   test("IC performance context strip and Resources use canonical surfaces", async ({ page }) => {

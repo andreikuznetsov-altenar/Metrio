@@ -1,3 +1,4 @@
+import { appNow } from "./appClock";
 /**
  * Persistent dismissal ledger ("tombstones") for deleted notifications.
  *
@@ -94,7 +95,7 @@ export function recordNotificationSuppression(
 ): void {
   const key = String(dedupeKey).trim();
   if (!key) return;
-  const at = deletedAt ?? new Date().toISOString();
+  const at = deletedAt ?? appNow().toISOString();
   try {
     const others = readSuppressions().filter((row) => row.dedupeKey !== key);
     writeSuppressions([...others, { dedupeKey: key, deletedAt: at, scope }]);
@@ -108,7 +109,7 @@ export function recordNotificationSuppressions(
   items: { dedupeKey: string; scope: DismissalScope }[],
   deletedAt?: string,
 ): void {
-  const at = deletedAt ?? new Date().toISOString();
+  const at = deletedAt ?? appNow().toISOString();
   const keys = new Map<string, DismissalScope>();
   for (const item of items) {
     const key = String(item.dedupeKey ?? "").trim();

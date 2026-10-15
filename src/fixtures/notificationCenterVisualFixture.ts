@@ -1,7 +1,8 @@
 import { buildIntegrationEvent, buildTaskAttentionEvent, buildVacationEvent, buildWorkloadEvent } from "../test/notificationEventFactory";
 import type { NotificationEvent } from "../platform/notificationTypes";
 
-const now = Date.now();
+import { VISUAL_FIXTURE_NOW_ISO } from "../platform/appClock";
+const now = new Date(VISUAL_FIXTURE_NOW_ISO).getTime();
 const hours = (n: number) => new Date(now - n * 60 * 60 * 1000).toISOString();
 const days = (n: number) => new Date(now - n * 24 * 60 * 60 * 1000).toISOString();
 

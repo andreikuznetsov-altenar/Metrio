@@ -43,6 +43,7 @@ import type { TeamSnapshot } from '../domain/people/types';
 import type { OrgResolutionResult } from '../services/bamboo/orgResolver';
 import type { AppPreferences } from '../platform/preferences';
 
+import { appNow } from "../platform/appClock";
 const REMINDER_MIN_INTERVAL_MS = 24 * 60 * 60 * 1000;
 let responseSyncInFlight: Promise<void> | null = null;
 
@@ -120,7 +121,7 @@ function patchSurvey(data: SurveyDataFile, surveyId: string, patch: Partial<Surv
   return {
     ...data,
     surveys: data.surveys.map((s) =>
-      s.id === surveyId ? { ...s, ...patch, updatedAt: new Date().toISOString() } : s,
+      s.id === surveyId ? { ...s, ...patch, updatedAt: appNow().toISOString() } : s,
     ),
   };
 }
@@ -340,7 +341,7 @@ export const useFeedbackSurveyStore = create<SurveyState>((set, get) => ({
     const batch: SurveySendBatch = {
       id: batchId,
       surveyId,
-      startedAt: new Date().toISOString(),
+      startedAt: appNow().toISOString(),
       completedAt: null,
       requestedCount: 0,
       sentCount: 0,
@@ -400,7 +401,7 @@ export const useFeedbackSurveyStore = create<SurveyState>((set, get) => ({
         const sentRecipient = {
           ...sendingRecipient,
           status: 'sent' as const,
-          sentAt: new Date().toISOString(),
+          sentAt: appNow().toISOString(),
           gmailMessageId: messageId,
           error: null,
         };
@@ -429,7 +430,7 @@ export const useFeedbackSurveyStore = create<SurveyState>((set, get) => ({
       set({ data: nextData });
     }
 
-    const completedBatch = { ...batch, completedAt: new Date().toISOString() };
+    const completedBatch = { ...batch, completedAt: appNow().toISOString() };
     const finalSurvey = {
       ...survey,
       sendBatches: survey.sendBatches.map((b) => (b.id === batch.id ? completedBatch : b)),
@@ -495,7 +496,7 @@ export const useFeedbackSurveyStore = create<SurveyState>((set, get) => ({
       const next = patchSurvey(data, surveyId, {
         responses,
         recipients,
-        lastResponseSyncAt: new Date().toISOString(),
+        lastResponseSyncAt: appNow().toISOString(),
         status: survey.status === 'ready' ? 'active' : survey.status,
       });
       await saveSurveyData(next);
@@ -535,7 +536,7 @@ export const useFeedbackSurveyStore = create<SurveyState>((set, get) => ({
         await client.sendEmail(recipient.reporterEmail, `Reminder: ${survey.emailSubject}`, html);
         const updated = {
           ...recipient,
-          lastReminderAt: new Date().toISOString(),
+          lastReminderAt: appNow().toISOString(),
           reminderCount: recipient.reminderCount + 1,
           lastReminderError: null,
         };

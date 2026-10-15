@@ -5,6 +5,7 @@ import type { TimeOffEntry } from "../domain/people/availability";
 import type { OrgHierarchyScope } from "../domain/organization/orgRole";
 import type { AppPreferences } from "../platform/preferences";
 import type { DocFixtureRole } from "../platform/docFixtures";
+import { DOC_FIXTURE_NOW_ISO } from "../platform/appClock";
 import type { SurveyDataFile } from "../domain/survey/types";
 import type { GoalsDataFile } from "../domain/goals/goalTypes";
 import {
@@ -32,7 +33,7 @@ import { createDefaultSurveyData } from "../domain/survey/defaults";
 import type { NotificationEvent } from "../platform/notificationTypes";
 import type { BambooGoal, BambooGoalStatusFilter } from "../domain/goals/bambooGoalTypes";
 
-const NOW = "2026-10-10T09:30:00.000Z";
+const NOW = DOC_FIXTURE_NOW_ISO;
 
 type DocPersonId =
   | "doc-maria"

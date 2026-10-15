@@ -11,6 +11,7 @@ import { classifyTaskHealth } from '../../domain/task-health/taskHealthEngine';
 import { filterOwnedIssues } from '../../domain/people/ownedIssues';
 import type { WorkloadThresholds } from '../../domain/workload/workloadEngine';
 
+import { appNow } from "../../platform/appClock";
 function collectScopeEmployees(org: OrgResolutionResult): ResolvedEmployee[] {
   if (!org.employee) return [];
   if (org.mode === 'personal' || org.mode === 'personal_limited') return [org.employee];
@@ -97,7 +98,7 @@ export function buildTeamSnapshot(
 }
 
 export function getWhosOutDateRange(): { start: string; end: string } {
-  const start = format(new Date(), 'yyyy-MM-dd');
-  const end = format(addDays(new Date(), 30), 'yyyy-MM-dd');
+  const start = format(appNow(), 'yyyy-MM-dd');
+  const end = format(addDays(appNow(), 30), 'yyyy-MM-dd');
   return { start, end };
 }

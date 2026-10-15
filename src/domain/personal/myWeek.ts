@@ -13,6 +13,7 @@ import { getOperationalIssues } from '../people/ownedIssues';
 import { resolveWorkflowProfile } from '../workflows/resolveWorkflowProfile';
 import { resolveWorkflowStage } from '../workflows/resolveWorkflowStage';
 
+import { appNow } from "../../platform/appClock";
 export interface MyWeekAttentionTask {
   issueKey: string;
   summary: string;
@@ -47,7 +48,7 @@ function currentStage(issue: AuditIssue) {
 export function buildMyWeek(
   person: Person,
   params: ReportParams,
-  now = new Date(),
+  now = appNow(),
   rules: OperationalRules = DEFAULT_OPERATIONAL_RULES,
 ): MyWeekGroups {
   const weekRange = getCurrentWeekRange(now);

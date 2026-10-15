@@ -8,6 +8,7 @@ import {
 import { resolveWorkflowProfile } from '../workflows/resolveWorkflowProfile';
 import { resolveWorkflowStage } from '../workflows/resolveWorkflowStage';
 
+import { appNow } from "../../platform/appClock";
 export type TaskHealthStatus =
   | 'successful'
   | 'stable'
@@ -83,7 +84,7 @@ export function getCurrentStageAgeMs(issue: AuditIssue, now: Date): number | nul
 /** Centralized task health classification */
 export function classifyTaskHealth(input: TaskHealthInput): TaskHealthResult {
   const { issue, params } = input;
-  const now = input.now || new Date();
+  const now = input.now || appNow();
   const thresholds = input.thresholds || DEFAULT_TASK_HEALTH_THRESHOLDS;
   const targetMs = params.targetReviewDays * 24 * 60 * 60 * 1000;
   const atRiskMs = targetMs * thresholds.atRiskRatio;

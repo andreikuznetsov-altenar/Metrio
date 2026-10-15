@@ -6,6 +6,7 @@ import {
 } from "./companyConfigTypes";
 import { hostMatchesAllowlist, isAllowedHttpsUrl } from "./urlSecurity";
 
+import { appNow } from "../../platform/appClock";
 const SECRET_KEYS = /^(api[_-]?key|token|secret|password|credential|private[_-]?key)$/i;
 
 function rejectSecrets(obj: unknown, path = "", errors: string[]): void {
@@ -102,7 +103,7 @@ export function validateCompanyConfig(raw: unknown): ConfigValidationResult {
   const config: CompanyConfig = {
     schemaVersion: COMPANY_CONFIG_SCHEMA_VERSION,
     configVersion: String(input.configVersion ?? "1"),
-    updatedAt: input.updatedAt ?? new Date().toISOString(),
+    updatedAt: input.updatedAt ?? appNow().toISOString(),
     company: {
       displayName: input.company!.displayName!.trim(),
       logoUrl: input.company?.logoUrl,

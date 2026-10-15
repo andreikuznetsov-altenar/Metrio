@@ -7,6 +7,7 @@ import { finalizeDigest } from "./formatDigest";
 import type { OperationalDigest } from "./digestTypes";
 import { getLocalDateKey } from "../periods/dateRange";
 
+import { appNow } from "../../platform/appClock";
 export interface BuildEmployeeDailyBriefInput {
   selfPerson: Person;
   employeeSnapshot: EmployeePerformanceSnapshot | null;
@@ -19,7 +20,7 @@ export interface BuildEmployeeDailyBriefInput {
 export function buildEmployeeDailyBrief(
   input: BuildEmployeeDailyBriefInput,
 ): OperationalDigest {
-  const now = input.now ?? new Date();
+  const now = input.now ?? appNow();
   const dateLabel = getLocalDateKey(now);
   const newAssignments = unreadJiraAssignments(input.assignmentState);
   const attention = input.employeeSnapshot?.myWeek.needsAttention ?? [];

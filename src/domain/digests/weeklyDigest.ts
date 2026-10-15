@@ -14,13 +14,14 @@ import {
   trendSufficiency,
 } from '../trends/trendEngine';
 
+import { appNow } from "../../platform/appClock";
 export function buildTeamWeeklyDigest(
   snapshot: TeamSnapshot,
   reportData: AuditReportData,
   radarItems: TeamRadarItem[],
   kpiSnapshots: KpiSnapshotFile,
   teamLabel = 'Team',
-  now = new Date(),
+  now = appNow(),
 ): string {
   const params = reportData.params;
   const radarSummary = summarizeTeamRadar(radarItems);
@@ -119,7 +120,7 @@ export function buildTeamDigestSections(
   reportData: AuditReportData,
   radarItems: TeamRadarItem[],
   kpiSnapshots: KpiSnapshotFile,
-  now = new Date(),
+  now = appNow(),
 ): DigestColumn[] {
   const params = reportData.params;
   const radarSummary = summarizeTeamRadar(radarItems);

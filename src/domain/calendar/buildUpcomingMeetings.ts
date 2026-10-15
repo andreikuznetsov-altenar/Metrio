@@ -9,6 +9,7 @@ import {
   extractJiraKeysFromText,
 } from "./extractMeetingLinks";
 
+import { appNow } from "../../platform/appClock";
 export interface BuildUpcomingMeetingsInput {
   events: CalendarEventRaw[];
   selfEmail: string;
@@ -47,7 +48,7 @@ export function mapRawEvent(dto: {
 export function buildUpcomingMeetings(
   input: BuildUpcomingMeetingsInput,
 ): UpcomingMeetingsModel {
-  const now = input.now ?? new Date();
+  const now = input.now ?? appNow();
   const meetings: MatchedMeeting[] = [];
   const pastOneOnOnes = new Map<string, string>();
 
@@ -119,7 +120,7 @@ export function buildUpcomingMeetings(
   };
 }
 
-export function periodPresetForOneOnOne(lastIso?: string, now = new Date()): "7d" | "30d" | "3m" {
+export function periodPresetForOneOnOne(lastIso?: string, now = appNow()): "7d" | "30d" | "3m" {
   if (!lastIso) return "30d";
   const days = Math.floor(
     (now.getTime() - Date.parse(lastIso)) / (24 * 60 * 60 * 1000),
@@ -129,7 +130,7 @@ export function periodPresetForOneOnOne(lastIso?: string, now = new Date()): "7d
   return "3m";
 }
 
-export function isJoinWindowActive(meeting: MatchedMeeting, now = new Date()): boolean {
+export function isJoinWindowActive(meeting: MatchedMeeting, now = appNow()): boolean {
   const start = Date.parse(meeting.start);
   const end = Date.parse(meeting.end);
   if (!Number.isFinite(start) || !meeting.joinUrl) return false;

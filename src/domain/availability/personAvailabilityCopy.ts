@@ -1,54 +1,34 @@
 import type { PersonAvailability } from "../people/types";
-import {
-  formatLeaveCountdown,
-  formatLeaveRangeLabel,
-  isUpcomingLeaveState,
-} from "./leaveCalendar";
+import { resolveAvailabilityPresentation } from "./availabilityPresentation";
+import { formatLeaveCountdown, formatLeaveRangeLabel } from "./leaveCalendar";
 
-/** Short label for availability badges (no comparison period). */
+import { appNow } from "../../platform/appClock";
+/** Short label for availability badges (no comparison period). Delegates to the shared resolver. */
 export function personAvailabilityBadgeLabel(
   availability: PersonAvailability,
+  today: Date = appNow(),
 ): string {
-  if (availability.state === "available") {
-    return "Available";
-  }
-  if (availability.state === "on_vacation") {
-    return "On leave";
-  }
-  if (isUpcomingLeaveState(availability.state)) {
-    return "On leave";
-  }
-  if (availability.state === "returns_today") {
-    return "Returns today";
-  }
-  const short = availability.label.split("·")[0]?.trim();
-  return short || availability.label;
+  return resolveAvailabilityPresentation(availability, today).badgeLabel;
 }
 
 export function personAvailabilityDrawerLine(
   availability: PersonAvailability,
-  today = new Date(),
+  today = appNow(),
 ): string {
-  if (availability.state === "available") {
-    return "Available";
+  const presentation = resolveAvailabilityPresentation(availability, today);
+  const range = formatLeaveRangeLabel(availability.startDate, availability.endDate);
+  switch (presentation.phase) {
+    case "available":
+      return "Available";
+    case "returning":
+      return "Returns today";
+    case "current":
+      return range ? `On time off · ${range}` : availability.label;
+    case "upcoming": {
+      if (!availability.startDate) return availability.label;
+      const countdown = formatLeaveCountdown(availability.startDate, today);
+      const noun = presentation.kind === "vacation" ? "Vacation" : "Leave";
+      return range ? `${noun} ${countdown} · ${range}` : `${noun} ${countdown}`;
+    }
   }
-  if (availability.state === "on_vacation") {
-    const range = formatLeaveRangeLabel(
-      availability.startDate,
-      availability.endDate,
-    );
-    return range ? `On time off · ${range}` : availability.label;
-  }
-  if (isUpcomingLeaveState(availability.state) && availability.startDate) {
-    const range = formatLeaveRangeLabel(
-      availability.startDate,
-      availability.endDate,
-    );
-    const countdown = formatLeaveCountdown(availability.startDate, today);
-    return range ? `Vacation ${countdown} · ${range}` : `Vacation ${countdown}`;
-  }
-  if (availability.state === "returns_today") {
-    return "Returns today";
-  }
-  return availability.label;
 }

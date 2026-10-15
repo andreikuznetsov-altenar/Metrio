@@ -196,7 +196,8 @@ test.describe("UI Repair Pass 11 visual acceptance", () => {
     await setViewport(page, 1440, 900);
     await bootMetrioWithFlags(page, { groupedTasks: true });
     await openFirstAttentionPerson(page);
-    const table = page.getByTestId("attention-signals-table");
+    // The drawer's table (the page behind the drawer has its own attention table).
+    const table = page.getByTestId("person-detail-drawer").getByTestId("attention-signals-table").first();
     await expect(table).toBeVisible();
     const link = table.getByTestId("grouped-issue-count-link").first();
     if (await link.isVisible()) {

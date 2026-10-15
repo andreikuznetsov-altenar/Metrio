@@ -184,13 +184,17 @@ test.describe("PASS 22.2 geometry", () => {
     expect(new Set(actions.map((y) => Math.round(y))).size).toBe(1);
   });
 
-  test("IC manager email action shares the identity row centre line", async ({ page }) => {
+  test("IC manager e-mail is a text link inside the identity block", async ({ page }) => {
     await bootOrgRoleScenario(page, "ic");
     const card = page.getByTestId("dashboard-your-manager");
     await expect(card).toBeVisible();
+    // The manager's e-mail is a text link under the identity (no separate button).
     const identity = (await card.locator(".person-identity").boundingBox())!;
-    const action = (await card.locator(".btn").boundingBox())!;
-    expect(Math.abs(identity.y + identity.height / 2 - (action.y + action.height / 2))).toBeLessThanOrEqual(1);
-    await expect(card.locator(".btn")).toHaveClass(/btn--secondary/);
+    const email = card.getByTestId("dashboard-your-manager-email");
+    await expect(email).toBeVisible();
+    await expect(email).toHaveClass(/metrio-text-link/);
+    await expect(email).toContainText("@");
+    const link = (await email.boundingBox())!;
+    expect(link.y).toBeGreaterThanOrEqual(identity.y);
   });
 });

@@ -5,6 +5,7 @@ import type { CalendarEventRaw } from "../../domain/calendar/calendarTypes";
 import { mapRawEvent } from "../../domain/calendar/buildUpcomingMeetings";
 import { subDays, addDays } from "date-fns";
 
+import { appNow } from "../../platform/appClock";
 export interface CalendarListDto {
   id: string;
   title: string;
@@ -23,7 +24,7 @@ async function invokeCalendar<T>(command: string, args: Record<string, unknown>)
   }
 }
 
-export function calendarFetchWindow(now = new Date()): { timeMin: string; timeMax: string } {
+export function calendarFetchWindow(now = appNow()): { timeMin: string; timeMax: string } {
   return {
     timeMin: subDays(now, 30).toISOString(),
     timeMax: addDays(now, 7).toISOString(),
@@ -31,7 +32,7 @@ export function calendarFetchWindow(now = new Date()): { timeMin: string; timeMa
 }
 
 export async function fetchGoogleCalendarEvents(
-  now = new Date(),
+  now = appNow(),
   clientId = getGoogleOAuthClientId(),
 ): Promise<CalendarEventRaw[]> {
   const { timeMin, timeMax } = calendarFetchWindow(now);

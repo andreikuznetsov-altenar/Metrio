@@ -8,6 +8,7 @@ import {
   previousComparableRange,
 } from '../performance/performanceDateRange';
 
+import { appNow } from "../../platform/appClock";
 export type TrendDirection = 'up' | 'down' | 'flat' | 'unknown';
 
 export type TrendAggregation = 'sum' | 'average' | 'weighted_rate' | 'weighted_average';
@@ -105,12 +106,12 @@ export interface TrendSufficiency {
   recommended: number;
 }
 
-export function currentPeriod(points: TrendPoint[], days: number, now = new Date()): TrendPoint[] {
+export function currentPeriod(points: TrendPoint[], days: number, now = appNow()): TrendPoint[] {
   const keys = new Set(calendarPeriodDateKeys(days, now));
   return points.filter((p) => keys.has(p.date));
 }
 
-export function previousPeriod(points: TrendPoint[], days: number, now = new Date()): TrendPoint[] {
+export function previousPeriod(points: TrendPoint[], days: number, now = appNow()): TrendPoint[] {
   const keys = new Set(previousCalendarPeriodDateKeys(days, now));
   return points.filter((p) => keys.has(p.date));
 }
@@ -223,7 +224,7 @@ export function compareTrendPeriodsForDisplayRange(
 export function trendSufficiency(
   points: TrendPoint[],
   periodDays: number,
-  now = new Date(),
+  now = appNow(),
 ): TrendSufficiency {
   const current = currentPeriod(points, periodDays, now);
   const previous = previousPeriod(points, periodDays, now);
@@ -280,7 +281,7 @@ export function compareTrendWithAggregation(
   points: TrendPoint[],
   descriptor: Pick<TrendMetricDescriptor, 'id' | 'aggregation' | 'favorableDirection'>,
   periodDays = 28,
-  now = new Date(),
+  now = appNow(),
   options?: { requireSamples?: boolean },
 ): TrendComparison {
   const sufficiency =
@@ -343,7 +344,7 @@ export function compareTrendPeriods(
   points: TrendPoint[],
   metric: 'completed' | 'firstPass' | 'avgCycle' | 'backflows' | 'problematic',
   periodDays = 28,
-  now = new Date(),
+  now = appNow(),
 ): TrendComparison {
   const idMap: Record<string, TrendMetricId> = {
     completed: 'completed',
@@ -362,7 +363,7 @@ export function compareWeightedFirstPassTrend(
   completedPoints: TrendPoint[],
   firstPassPoints: TrendPoint[],
   periodDays = 28,
-  now = new Date(),
+  now = appNow(),
 ): TrendComparison {
   const sufficiency = trendSufficiency(completedPoints, periodDays, now);
   const currentCompleted = sumValue(currentPeriod(completedPoints, periodDays, now));
@@ -400,7 +401,7 @@ export function compareWeightedAvgCycleTrend(
   cycleSumPoints: TrendPoint[],
   completedWithCyclePoints: TrendPoint[],
   periodDays = 28,
-  now = new Date(),
+  now = appNow(),
 ): TrendComparison {
   const sufficiency = trendSufficiency(cycleSumPoints, periodDays, now);
   const currentCycleSum = sumValue(currentPeriod(cycleSumPoints, periodDays, now));

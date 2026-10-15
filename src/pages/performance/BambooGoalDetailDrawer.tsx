@@ -28,6 +28,7 @@ import {
 } from "../../services/goals/bambooGoalSidecar";
 import { loadGoalsData } from "../../services/goals/goalsPersistence";
 
+import { appNow } from "../../platform/appClock";
 function formatStatus(goal: BambooGoal): string {
   switch (goal.status) {
     case "in_progress":
@@ -190,7 +191,7 @@ export function BambooGoalDetailDrawer({
       if (!subdomain) throw new Error("BambooHR is not configured.");
       const client = new BambooClient({ subdomain });
       const completionDate =
-        percent === 100 ? new Date().toISOString().slice(0, 10) : null;
+        percent === 100 ? appNow().toISOString().slice(0, 10) : null;
       await client.updateGoalProgress(
         ownerEmployeeId,
         detail.id,
@@ -224,7 +225,7 @@ export function BambooGoalDetailDrawer({
         detail.id,
         milestoneId,
         completed
-          ? { completed: true, completedDateTime: new Date().toISOString() }
+          ? { completed: true, completedDateTime: appNow().toISOString() }
           : { completed: false },
       );
       const aggregate = await client.getGoalAggregate(ownerEmployeeId, detail.id);

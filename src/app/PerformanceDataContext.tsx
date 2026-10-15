@@ -64,6 +64,7 @@ import { PerformanceIssueCatalogProvider } from "./PerformanceIssueCatalogContex
 import { TaskJourneyProvider } from "./TaskJourneyContext";
 import { flattenTeamKpiIssues } from "../domain/analytics/analyticsReportScope";
 
+import { appNow } from "../platform/appClock";
 export type PerformanceLoadStatus =
   | "idle"
   | "loading"
@@ -288,7 +289,7 @@ export function PerformanceDataProvider({
         };
         void saveDashboardCache({
           schemaVersion: DASHBOARD_CACHE_SCHEMA_VERSION,
-          savedAt: new Date().toISOString(),
+          savedAt: appNow().toISOString(),
           sourceLastUpdatedAt: next.lastUpdatedAt,
           identity: cacheIdentity,
           fetchResult: next,
@@ -564,19 +565,27 @@ export function PerformanceDataProvider({
       setData(next);
       setViewModels(models);
       registerKpiReconciliationDataSource(next, reviewTarget);
-      void saveDashboardCache({
-        schemaVersion: DASHBOARD_CACHE_SCHEMA_VERSION,
-        savedAt: new Date().toISOString(),
-        sourceLastUpdatedAt: next.lastUpdatedAt,
-        identity: {
-          selfPersonId,
-          role: userRole,
-          datasetKey,
-          workEmail:
-            next.identityResolution.find((r) => r.matched)?.workEmail || undefined,
-        },
-        fetchResult: next,
-      }).catch(() => undefined);
+      // Persisting the (large) snapshot serialises all of it: never run that on the click path of a
+      // just-confirmed transition. Idle time only (bounded), so closing the drawer stays instant.
+      const persist = () => {
+        void saveDashboardCache({
+          schemaVersion: DASHBOARD_CACHE_SCHEMA_VERSION,
+          savedAt: appNow().toISOString(),
+          sourceLastUpdatedAt: next.lastUpdatedAt,
+          identity: {
+            selfPersonId,
+            role: userRole,
+            datasetKey,
+            workEmail:
+              next.identityResolution.find((r) => r.matched)?.workEmail || undefined,
+          },
+          fetchResult: next,
+        }).catch(() => undefined);
+      };
+      const idle = (window as Window & { requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => number })
+        .requestIdleCallback;
+      if (idle) idle.call(window, persist, { timeout: 10_000 });
+      else window.setTimeout(persist, 1_500);
     },
     [selfPersonId, dateRange, reviewTarget, operationalRules, userRole, datasetKey],
   );

@@ -12,6 +12,7 @@ import type { OperationalRules } from '../operationalRules/operationalRulesTypes
 import { DEFAULT_OPERATIONAL_RULES } from '../operationalRules/operationalRulesDefaults';
 import type { DeliveryDependencyIndex } from '../dependencies/dependencyTypes';
 
+import { appNow } from "../../platform/appClock";
 function maxSeverity(a: RadarSeverity, b: RadarSeverity): RadarSeverity {
   const order = { critical: 0, warning: 1, info: 2 };
   return order[a] <= order[b] ? a : b;
@@ -20,7 +21,7 @@ function maxSeverity(a: RadarSeverity, b: RadarSeverity): RadarSeverity {
 export function buildDeliveryRiskItems(
   snapshot: TeamSnapshot,
   params: ReportParams,
-  now = new Date(),
+  now = appNow(),
   rules: OperationalRules = DEFAULT_OPERATIONAL_RULES,
   dependencyIndex?: DeliveryDependencyIndex | null,
 ): DeliveryRiskItem[] {
@@ -94,7 +95,7 @@ function dedupeDeliveryRiskByIssueKey(items: DeliveryRiskItem[]): DeliveryRiskIt
 export function buildDeliveryRiskItemsDeduped(
   snapshot: TeamSnapshot,
   params: ReportParams,
-  now = new Date(),
+  now = appNow(),
 ): DeliveryRiskItem[] {
   return buildDeliveryRiskItems(snapshot, params, now);
 }

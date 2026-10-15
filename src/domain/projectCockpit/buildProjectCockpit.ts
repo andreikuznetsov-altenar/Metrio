@@ -37,6 +37,7 @@ import { formatAttentionHealthLabel } from "../../pages/performance/trendPresent
 import { buildProjectDependencySection } from "../dependencies/buildProjectDependencies";
 import type { DeliveryDependencyIndex } from "../dependencies/dependencyTypes";
 
+import { appNow } from "../../platform/appClock";
 export interface BuildProjectCockpitInput {
   scope: ProjectCockpitScope;
   snapshot: TeamSnapshot;
@@ -174,7 +175,7 @@ function buildDeliverySignals(
 export function buildProjectCockpit(input: BuildProjectCockpitInput): ProjectCockpitModel {
   const rules = input.operationalRules ?? DEFAULT_OPERATIONAL_RULES;
   const healthThresholds = taskHealthThresholdsFromRules(rules);
-  const now = new Date();
+  const now = appNow();
   const projectKey =
     input.scope.kind === "project"
       ? input.scope.projectKey.toUpperCase()

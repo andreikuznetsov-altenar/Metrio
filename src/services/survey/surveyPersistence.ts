@@ -11,6 +11,7 @@ import type {
 import { applyFeedbackCyclesMigration } from '../../domain/feedbackCycles/migrateFeedbackData';
 import { getDocFixtureMode } from '../../platform/docFixtures';
 
+import { appNow } from "../../platform/appClock";
 export const SURVEY_DATA_SCHEMA_VERSION = 2;
 
 export const EMPTY_SURVEY_DATA: SurveyDataFile = {
@@ -65,8 +66,8 @@ function migrateSurvey(survey: Partial<Survey>): Survey {
     id: String(survey.id || ''),
     googleFormId: survey.googleFormId ?? null,
     responderUri: survey.responderUri ?? null,
-    createdAt: survey.createdAt || new Date().toISOString(),
-    updatedAt: survey.updatedAt || new Date().toISOString(),
+    createdAt: survey.createdAt || appNow().toISOString(),
+    updatedAt: survey.updatedAt || appNow().toISOString(),
     dateFrom: survey.dateFrom || '',
     dateTo: survey.dateTo || '',
     scope: survey.scope || 'full',
@@ -192,7 +193,7 @@ export function createSurveyFromDefaults(
     projects: string[];
   },
 ): Survey {
-  const now = new Date().toISOString();
+  const now = appNow().toISOString();
   return {
     id: createSurveyId(),
     googleFormId: null,
@@ -227,7 +228,7 @@ export function recoverStaleSendingRecipients(survey: Survey): Survey {
       return {
         ...recipient,
         status: 'sent' as RecipientStatus,
-        sentAt: recipient.sentAt || new Date().toISOString(),
+        sentAt: recipient.sentAt || appNow().toISOString(),
         error: null,
       };
     }

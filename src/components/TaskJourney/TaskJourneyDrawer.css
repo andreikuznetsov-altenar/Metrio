@@ -53,6 +53,11 @@
   margin-bottom: 1.5rem;
 }
 
+/* The drawer body already supplies the bottom inset: no extra blank scroll area after the last section. */
+.task-journey-drawer__section:last-child {
+  margin-bottom: 0;
+}
+
 .task-journey-drawer__section-title {
   font-size: 0.75rem;
   font-weight: 600;

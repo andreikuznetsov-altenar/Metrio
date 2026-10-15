@@ -1,6 +1,7 @@
 import { differenceInCalendarDays, format, parseISO } from "date-fns";
 import type { Person } from "../people/types";
 
+import { appNow } from "../../platform/appClock";
 export function vacationTrayLabelForPerson(person: Person): string | null {
   const state = person.availability.state;
   if (
@@ -30,7 +31,7 @@ export function vacationTrayLabelForPerson(person: Person): string | null {
 
   const days = differenceInCalendarDays(
     parseISO(start.slice(0, 10)),
-    new Date(),
+    appNow(),
   );
 
   if (days <= 0) return `Vacation today${range}`;

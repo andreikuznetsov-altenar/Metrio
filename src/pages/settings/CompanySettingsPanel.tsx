@@ -8,6 +8,7 @@ import { Button } from "../../components/Button/Button";
 import { Switch } from "../../components/Switch/Switch";
 import { CompanyReadonlySummary } from "./CompanyReadonlySummary";
 
+import { appNow } from "../../platform/appClock";
 type AdminTab = "general" | "resources" | "onboarding" | "feedback" | "defaults" | "features";
 
 export function CompanySettingsPanel({ embedded = false }: { embedded?: boolean }) {
@@ -50,7 +51,7 @@ export function CompanySettingsPanel({ embedded = false }: { embedded?: boolean 
     const next = {
       ...cache.active,
       features: draftFeatures,
-      updatedAt: new Date().toISOString(),
+      updatedAt: appNow().toISOString(),
       configVersion: `local-${Date.now()}`,
     };
     const result = await publishConfig(next, "Feature flags");

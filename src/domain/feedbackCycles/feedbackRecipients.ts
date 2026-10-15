@@ -1,6 +1,7 @@
 import type { Person } from '../people/types';
 import type { AudienceRule } from './feedbackCycleTypes';
 import type { CurrentUser } from '../types';
+import { appNow } from "../../platform/appClock";
 export interface RecipientGenerationInput {
   rule: AudienceRule;
   currentUser: CurrentUser;
@@ -28,7 +29,7 @@ export function generateAudiencePersonIds(input: RecipientGenerationInput): stri
       return directScopePersons.map((p) => p.id);
     case 'new_starter': {
       const days = rule.onboardingDays ?? [30];
-      const today = new Date();
+      const today = appNow();
       return directScopePersons
         .filter((p) => {
           const hire = p.bamboo.hireDate;

@@ -9,10 +9,6 @@ import { RecommendedActionsSection } from "./RecommendedActionsSection";
 
 const appNavigate = vi.fn();
 vi.mock("../../../app/navigationStore", () => ({ appNavigate: (...a: unknown[]) => appNavigate(...a) }));
-vi.mock("../../../hooks/useGoals", () => ({ useGoals: () => ({ goals: [] }) }));
-vi.mock("../../../hooks/useBambooEmployeeGoals", () => ({
-  useBambooEmployeeGoals: () => ({ goals: [], state: "empty" }),
-}));
 vi.mock("../../../app/PerformanceIssueCatalogContext", () => ({ useOptionalPerformanceIssueCatalog: () => undefined }));
 vi.mock("../../../app/TaskJourneyContext", () => ({ useOptionalTaskJourney: () => null }));
 
@@ -32,7 +28,7 @@ function person(issues: AuditIssue[], workload: WorkloadResult = wl()): Person {
 }
 
 const handlers = () => ({ onOpenPerson: vi.fn(), onOpenTeamWorkload: vi.fn(), onOpenMyWork: vi.fn() });
-const base = { goalsFeatureOn: true, now: NOW };
+const base = { now: NOW };
 
 describe("RecommendedActionsSection (IC)", () => {
   beforeEach(() => appNavigate.mockClear());

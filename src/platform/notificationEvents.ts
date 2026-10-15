@@ -31,6 +31,7 @@ import {
 } from "./notificationSuppressions";
 import { getDocFixtureMode } from "./docFixtures";
 
+import { appNow } from "./appClock";
 const STORAGE_KEY = "metrio-notification-events";
 export const NOTIFICATION_EVENT_LIMIT = 100;
 export const NOTIFICATION_EVENTS_CHANGED = "metrio-notification-events-changed";
@@ -167,7 +168,7 @@ function buildEventFromInput(
   return enrichInboxEvent({
     id: id ?? `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
     type,
-    createdAt: input.createdAt ?? new Date().toISOString(),
+    createdAt: input.createdAt ?? appNow().toISOString(),
     readAt: input.readAt,
     title: input.title,
     message: input.message,
@@ -280,14 +281,14 @@ export function recordNotificationEvent(
 export function markNotificationEventRead(id: string): void {
   const events = listNotificationEvents().map((event) =>
     event.id === id && !event.readAt
-      ? { ...event, readAt: new Date().toISOString() }
+      ? { ...event, readAt: appNow().toISOString() }
       : event,
   );
   writeEvents(events);
 }
 
 export function markInboxJiraEventsReadForIssueKey(issueKey: string): void {
-  const now = new Date().toISOString();
+  const now = appNow().toISOString();
   const events = listNotificationEvents().map((event) =>
     event.issueKey === issueKey &&
     (event.type === "jira_assignment" || event.type === "jira_reassignment") &&
@@ -299,7 +300,7 @@ export function markInboxJiraEventsReadForIssueKey(issueKey: string): void {
 }
 
 export function markAllJiraAssignmentInboxEventsRead(): void {
-  const now = new Date().toISOString();
+  const now = appNow().toISOString();
   const events = listNotificationEvents().map((event) =>
     (event.type === "jira_assignment" || event.type === "jira_reassignment") &&
     !event.readAt
@@ -313,7 +314,7 @@ export function resolveNotificationByDedupeKey(
   dedupeKey: string,
   resolvedAt?: string,
 ): void {
-  const now = resolvedAt ?? new Date().toISOString();
+  const now = resolvedAt ?? appNow().toISOString();
   const events = listNotificationEvents().map((event) =>
     event.dedupeKey === dedupeKey && !event.resolvedAt
       ? { ...event, resolvedAt: now }
@@ -376,7 +377,7 @@ export function syncTrayBambooInboxActions(
 ): void {
   const activeIds = new Set(actions.map((action) => action.id));
   let events = listNotificationEvents();
-  const now = new Date().toISOString();
+  const now = appNow().toISOString();
 
   for (const action of actions) {
     const dedupeKey = `bamboo:action:${action.id}`;
@@ -430,7 +431,7 @@ export function syncTrayBambooInboxActions(
 }
 
 export function markAllNotificationEventsRead(): void {
-  const now = new Date().toISOString();
+  const now = appNow().toISOString();
   const events = listNotificationEvents().map((event) =>
     event.readAt ? event : { ...event, readAt: now },
   );
@@ -484,7 +485,7 @@ export function hydrateNotificationEventsFromStorage(): boolean {
 export function touchWorkloadNotificationLocalDay(
   prefs: AppPreferences,
   personId: string,
-  at = new Date(),
+  at = appNow(),
 ): AppPreferences["notificationState"] {
   const key = String(personId).trim();
   if (!key) return prefs.notificationState;

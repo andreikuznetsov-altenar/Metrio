@@ -1,5 +1,6 @@
 import type { PerformanceExportView } from './types';
 
+import { appNow } from "../../platform/appClock";
 const VIEW_SLUGS: Record<PerformanceExportView, string> = {
   'team-overview': 'Team-Performance',
   'team-radar': 'Team-Radar',
@@ -18,7 +19,7 @@ export function buildPdfFilename(
   view: PerformanceExportView,
   options?: { date?: Date; dateFrom?: string; dateTo?: string },
 ): string {
-  const date = options?.date ?? new Date();
+  const date = options?.date ?? appNow();
   if (view === 'team-overview' && options?.dateFrom && options?.dateTo) {
     const from = sanitizeFilenamePart(options.dateFrom);
     const to = sanitizeFilenamePart(options.dateTo);

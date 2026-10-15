@@ -3,6 +3,7 @@ import type { PerformanceReviewTarget } from "../performance";
 import type { PerformanceDateRange } from "./performanceDateRange";
 import { resolveReviewTargetPolicy } from "./reviewTargetPolicy";
 
+import { appNow } from "../../platform/appClock";
 export type PerformanceAudience = "team" | "employee";
 
 export function reviewTargetToTeamScope(
@@ -33,7 +34,7 @@ export function resolvePerformanceReportRanges(
   reviewTarget: PerformanceReviewTarget,
   audience: PerformanceAudience,
   configuredTargetReviewDays: number,
-  now = new Date(),
+  now = appNow(),
 ): PerformanceReportRanges {
   const policy = resolveReviewTargetPolicy(
     reviewTarget,

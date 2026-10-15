@@ -8,6 +8,7 @@ import { resolveWorkflowProfile } from './resolveWorkflowProfile';
 import { resolveWorkflowStage } from './resolveWorkflowStage';
 import type { WorkflowProfileMapping } from './types';
 
+import { appNow } from "../../platform/appClock";
 export const MONTHLY_CAPACITY_HOURS = 164;
 
 export type CapacityDataState = 'measured' | 'insufficient_history';
@@ -103,7 +104,7 @@ export function resolveCurrentOperationalCapacityPresentation(
 
 export function calculateCapacityBreakdown(input: CapacityWorkloadInput): CapacityBreakdown {
   const { issues, params } = input;
-  const now = input.now || new Date();
+  const now = input.now || appNow();
   const nowIso = now.toISOString();
   const daysInPeriod = daysInReportingPeriod(params);
 

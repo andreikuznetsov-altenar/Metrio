@@ -4,12 +4,13 @@ import { getOperationalIssues } from "../people/ownedIssues";
 import { classifyIssueAttention, stageAgeDays } from "../radar/taskSignals";
 import type { OperationalRules } from "./operationalRulesTypes";
 
+import { appNow } from "../../platform/appClock";
 /** Preview counts for Settings using already-loaded team data (no network). */
 export function countReviewAttentionMatches(
   snapshot: TeamSnapshot | null | undefined,
   params: ReportParams | undefined,
   rules: OperationalRules,
-  now = new Date(),
+  now = appNow(),
 ): number {
   if (!snapshot || !params) return 0;
   let count = 0;
@@ -35,7 +36,7 @@ export function countNoActivityMatches(
   snapshot: TeamSnapshot | null | undefined,
   params: ReportParams | undefined,
   rules: OperationalRules,
-  now = new Date(),
+  now = appNow(),
 ): number {
   if (!snapshot || !params) return 0;
   let count = 0;

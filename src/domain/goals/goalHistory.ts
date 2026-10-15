@@ -1,5 +1,6 @@
 import type { Goal, GoalHistoryEntry } from "./goalTypes";
 
+import { appNow } from "../../platform/appClock";
 export function appendGoalHistory(
   history: GoalHistoryEntry[],
   entry: Omit<GoalHistoryEntry, "id">,
@@ -19,7 +20,7 @@ export function recordGoalFieldChange(
   if (previousValue === nextValue) return history;
   return appendGoalHistory(history, {
     goalId,
-    at: new Date().toISOString(),
+    at: appNow().toISOString(),
     actorPersonId,
     field,
     previousValue,
@@ -52,7 +53,7 @@ export function applyGoalPatch(
     );
   };
 
-  const updated: Goal = { ...goal, ...patch, updatedAt: new Date().toISOString() };
+  const updated: Goal = { ...goal, ...patch, updatedAt: appNow().toISOString() };
 
   if (patch.status && patch.status !== goal.status) {
     track("status", goal.status, patch.status);

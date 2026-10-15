@@ -2,6 +2,7 @@ import { addDays, format, isAfter, isBefore, isEqual, parseISO, startOfDay } fro
 import type { PersonAvailability } from './types';
 import { formatBambooTimeOffType } from './timeOffTypeLabel';
 
+import { appNow } from "../../platform/appClock";
 export interface TimeOffEntry {
   employeeId?: string;
   name?: string;
@@ -32,7 +33,7 @@ function formatRange(start: Date, end: Date): string {
 
 export function classifyAvailability(
   entry: TimeOffEntry | null,
-  today: Date = startOfDay(new Date()),
+  today: Date = startOfDay(appNow()),
   soonWithinDays = 7,
 ): PersonAvailability {
   const day = startOfDay(today);
@@ -108,7 +109,7 @@ export function classifyAvailability(
 export function pickRelevantTimeOff(
   entries: TimeOffEntry[],
   employeeId: string,
-  today: Date = startOfDay(new Date()),
+  today: Date = startOfDay(appNow()),
 ): TimeOffEntry | null {
   const mine = entries.filter((e) => String(e.employeeId || '') === String(employeeId));
   if (!mine.length) return null;

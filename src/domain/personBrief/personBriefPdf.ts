@@ -2,10 +2,11 @@ import { format } from "date-fns";
 import type { PersonBriefModel } from "./personBriefTypes";
 import type { PerformanceExportPayload } from "../../services/export/types";
 
+import { appNow } from "../../platform/appClock";
 export function buildPersonBriefPdfPayload(
   brief: PersonBriefModel,
 ): PerformanceExportPayload {
-  const now = new Date();
+  const now = appNow();
   const sections: PerformanceExportPayload["sections"] = [
     {
       title: "Summary",

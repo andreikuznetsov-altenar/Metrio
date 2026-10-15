@@ -1,7 +1,6 @@
 export type RecommendedActionType =
   | "stale_review"
   | "stale_hold"
-  | "no_recent_goal"
   | "high_workload"
   | "upcoming_leave"
   | "team_capacity"
@@ -9,7 +8,7 @@ export type RecommendedActionType =
 
 /**
  * P1 immediate operational risk · P2 stale / blocked work · P3 workload, capacity, leave ·
- * P4 development / goal hygiene.
+ * P4 reserved for future development hygiene (no rule generates it today).
  */
 export type RecommendedActionPriority = 1 | 2 | 3 | 4;
 
@@ -19,7 +18,6 @@ export type RecommendedActionDestination =
   | { kind: "delivery_risk" }
   | { kind: "person"; personId: string }
   | { kind: "team_workload" }
-  | { kind: "goals" }
   | { kind: "my_work" };
 
 export interface RecommendedAction {

@@ -5,6 +5,7 @@ import { createSurveyId } from '../../services/survey/surveyPersistence';
 import { assignQuestionIds, stabilizeQuestionsForRepeat } from './questionIdentity';
 import { runsForCycle } from '../feedbackCycles/runComparison';
 
+import { appNow } from "../../platform/appClock";
 export interface NewFeedbackSurveyInput {
   title: string;
   introText: string;
@@ -22,7 +23,7 @@ function baseRunFields(
   cycleId: string,
   defaults: SurveyDataFile['defaults'],
 ): Survey {
-  const now = new Date().toISOString();
+  const now = appNow().toISOString();
   return {
     id: createSurveyId(),
     cycleId,
@@ -60,7 +61,7 @@ export function createCycleWithFirstRun(
   data: SurveyDataFile,
   input: NewFeedbackSurveyInput,
 ): { data: SurveyDataFile; cycle: FeedbackCycle; run: Survey } {
-  const now = new Date().toISOString();
+  const now = appNow().toISOString();
   const cycleId = createCycleId();
   const run = baseRunFields(input, cycleId, data.defaults);
   const cycle: FeedbackCycle = {
@@ -98,7 +99,7 @@ export function repeatCycleRun(
     ...baseRunFields({ ...input, questions }, cycleId, data.defaults),
     recipients: input.recipients.length ? input.recipients : last?.recipients ?? [],
   };
-  const now = new Date().toISOString();
+  const now = appNow().toISOString();
   const nextCycle: FeedbackCycle = {
     ...cycle,
     name: input.title || cycle.name,

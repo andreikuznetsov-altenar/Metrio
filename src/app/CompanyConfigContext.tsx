@@ -30,6 +30,7 @@ import {
 import { fetchRemoteCompanyConfig } from "../services/companyConfig/fetchRemoteCompanyConfig";
 import { useOptionalCurrentUser } from "./CurrentUserContext";
 
+import { appNow } from "../platform/appClock";
 export const COMPANY_CONFIG_CHANGED = "metrio-company-config-changed";
 
 interface CompanyConfigContextValue {
@@ -134,7 +135,7 @@ export function CompanyConfigProvider({ children }: { children: ReactNode }) {
       await saveCompanyConfigCache({
         ...base,
         lastRemoteError: remote.error ?? "Unknown error",
-        lastRemoteFetchAt: new Date().toISOString(),
+        lastRemoteFetchAt: appNow().toISOString(),
       });
       return;
     }
@@ -142,7 +143,7 @@ export function CompanyConfigProvider({ children }: { children: ReactNode }) {
     if (result.applied) {
       await saveCompanyConfigCache({
         ...result.cache,
-        lastRemoteFetchAt: new Date().toISOString(),
+        lastRemoteFetchAt: appNow().toISOString(),
         lastRemoteError: null,
       });
       setCache(result.cache);

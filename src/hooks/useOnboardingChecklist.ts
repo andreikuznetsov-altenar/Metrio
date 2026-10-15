@@ -18,6 +18,7 @@ import {
   saveOnboardingChecklistData,
 } from "../services/onboarding/onboardingChecklistPersistence";
 
+import { appNow } from "../platform/appClock";
 export function useOnboardingChecklist(
   person: Person | null | undefined,
   surveyData: SurveyDataFile | null | undefined,
@@ -64,7 +65,7 @@ export function useOnboardingChecklist(
       if (!person) return;
       const accountKey = person.bamboo.id || person.id;
       const account = getAccountState(file, accountKey);
-      const now = new Date().toISOString();
+      const now = appNow().toISOString();
       const nextManual = { ...account.manualCompletions };
       if (complete) {
         nextManual[itemId] = { completedAt: now };

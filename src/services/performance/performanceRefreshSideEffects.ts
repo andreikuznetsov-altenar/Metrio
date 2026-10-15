@@ -18,6 +18,7 @@ import {
   recordIntegrationRefresh,
 } from "../../platform/observability/observabilityStore";
 
+import { appNow } from "../../platform/appClock";
 export interface PerformanceSideEffectOptions {
   selfPersonId: string;
   role: UserRole;
@@ -41,7 +42,7 @@ export async function applyPerformanceRefreshSideEffects(
 ): Promise<void> {
   const started = performance.now();
   const params = result.reportParams;
-  const now = result.lastUpdatedAt || new Date().toISOString();
+  const now = result.lastUpdatedAt || appNow().toISOString();
   const self = resolveSelfPerson(result, options.selfPersonId);
 
   let prefs = await loadPreferences();

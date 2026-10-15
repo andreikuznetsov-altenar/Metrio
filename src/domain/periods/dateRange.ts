@@ -1,13 +1,14 @@
 import { endOfDay, getISOWeek, getISOWeekYear, parseISO, startOfMonth, startOfQuarter } from 'date-fns';
 import { parseDateStartOfDay } from '../jira/dates';
 
+import { appNow } from "../../platform/appClock";
 export interface DateRange {
   start: Date;
   end: Date;
 }
 
 /** Local calendar date key (YYYY-MM-DD). */
-export function getLocalDateKey(date = new Date()): string {
+export function getLocalDateKey(date = appNow()): string {
   const y = date.getFullYear();
   const m = String(date.getMonth() + 1).padStart(2, '0');
   const d = String(date.getDate()).padStart(2, '0');
@@ -15,7 +16,7 @@ export function getLocalDateKey(date = new Date()): string {
 }
 
 /** Monday 00:00 local time through `now` (inclusive). */
-export function getCurrentWeekRange(now = new Date()): DateRange {
+export function getCurrentWeekRange(now = appNow()): DateRange {
   const day = now.getDay();
   const daysFromMonday = day === 0 ? 6 : day - 1;
   const start = new Date(
@@ -30,7 +31,7 @@ export function getCurrentWeekRange(now = new Date()): DateRange {
   return { start, end: now };
 }
 
-export function getLastNDaysRange(days: number, now = new Date()): DateRange {
+export function getLastNDaysRange(days: number, now = appNow()): DateRange {
   const end = now;
   const start = new Date(now.getTime() - days * 24 * 60 * 60 * 1000);
   return { start, end };
@@ -39,7 +40,7 @@ export function getLastNDaysRange(days: number, now = new Date()): DateRange {
 export function getLocalDayRangeFromKey(dateKey: string): DateRange {
   const start = parseDateStartOfDay(dateKey);
   if (!start) {
-    const fallback = new Date();
+    const fallback = appNow();
     return { start: fallback, end: fallback };
   }
   return { start, end: endOfDay(start) };

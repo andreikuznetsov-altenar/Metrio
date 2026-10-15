@@ -20,6 +20,7 @@ import {
 } from '../reports/reportHistoryStore';
 import { notifyReportHistoryChanged } from '../reports/reportHistoryEvents';
 
+import { appNow } from "../../platform/appClock";
 export type PdfExportResult =
   | { status: 'saved'; path: string }
   | { status: 'cancelled'; message: string }
@@ -198,7 +199,7 @@ async function exportPerformancePdfOnce(
       sectionCount: payload.sections.length,
       targetExtension: 'pdf',
     });
-    const createdAt = new Date().toISOString();
+    const createdAt = appNow().toISOString();
     const archiveFilename = buildArchivedReportFilename(new Date(createdAt));
     try {
       await archiveExportedReport(bytes, createdAt, archiveFilename);

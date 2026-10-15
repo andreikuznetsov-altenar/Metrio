@@ -3,6 +3,7 @@ import type { TimeOffEntry } from "./availability";
 import { parseIsoDateOnly } from "../../components/DatePicker/datePickerValue";
 import { formatBambooTimeOffType } from "./timeOffTypeLabel";
 
+import { appNow } from "../../platform/appClock";
 export interface PlannedTimeOffRow {
   employeeId: string;
   personName?: string;
@@ -24,7 +25,7 @@ function dedupeKey(employeeId: string, start: string, end: string): string {
 }
 
 export function getWhosOutHorizonRange(
-  today: Date = new Date(),
+  today: Date = appNow(),
 ): { start: string; end: string } {
   const start = format(today, "yyyy-MM-dd");
   const end = format(addMonths(today, 12), "yyyy-MM-dd");
@@ -59,7 +60,7 @@ export function splitWhosOutRange(
 export function buildPlannedTimeOffRows(
   entries: TimeOffEntry[],
   teamEmployeeIds: Set<string>,
-  today: Date = new Date(),
+  today: Date = appNow(),
 ): PlannedTimeOffRow[] {
   const todayIso = format(today, "yyyy-MM-dd");
   const seen = new Set<string>();

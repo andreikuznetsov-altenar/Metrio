@@ -8,6 +8,7 @@ import type { OperationalDigest } from "./digestTypes";
 import { getLocalDateKey } from "../periods/dateRange";
 import type { FeedbackActionSummary } from "../feedback/feedbackActionSummary";
 
+import { appNow } from "../../platform/appClock";
 export interface BuildManagerDailyBriefInput {
   team: HomeTeamWorkspace;
   teamActions: ActionItem[];
@@ -21,7 +22,7 @@ export interface BuildManagerDailyBriefInput {
 export function buildManagerDailyBrief(
   input: BuildManagerDailyBriefInput,
 ): OperationalDigest {
-  const now = input.now ?? new Date();
+  const now = input.now ?? appNow();
   const actionLines = input.teamActions.slice(0, 8).map((a) => a.title);
   const deliveryLines = buildMetricsChangeLines(
     input.previousMetrics,

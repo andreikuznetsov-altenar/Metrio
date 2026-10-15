@@ -6,6 +6,7 @@ import { classifyIssueAttention } from "../radar/taskSignals";
 import { DEFAULT_OPERATIONAL_RULES } from "../operationalRules/operationalRulesDefaults";
 import type { OperationalRules } from "../operationalRules/operationalRulesTypes";
 
+import { appNow } from "../../platform/appClock";
 export interface DigestMetrics {
   deliveryRiskCount: number;
   problematicTaskCount: number;
@@ -26,7 +27,7 @@ export function collectTeamDigestMetrics(input: {
   now?: Date;
 }): DigestMetrics {
   const rules = input.rules ?? DEFAULT_OPERATIONAL_RULES;
-  const now = input.now ?? new Date();
+  const now = input.now ?? appNow();
   const attentionIssueKeys: string[] = [];
   for (const person of input.snapshot.persons) {
     for (const issue of getActiveIssues(person, input.params)) {

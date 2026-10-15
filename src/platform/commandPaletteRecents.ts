@@ -3,6 +3,7 @@ import type {
   CommandResultType,
 } from "../domain/commandPalette/commandResultTypes";
 
+import { appNow } from "./appClock";
 const STORAGE_KEY = "metrio-command-palette-recents";
 const MAX_RECENTS = 16;
 
@@ -37,7 +38,7 @@ export function recordCommandPaletteRecent(input: {
   target: CommandPaletteTarget;
 }): void {
   if (typeof localStorage === "undefined") return;
-  const now = new Date().toISOString();
+  const now = appNow().toISOString();
   const entry: CommandPaletteRecent = { ...input, visitedAt: now };
   const dedupeKey = `${input.type}:${input.id}`;
   const next = [

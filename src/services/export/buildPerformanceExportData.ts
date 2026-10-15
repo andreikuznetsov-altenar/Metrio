@@ -25,6 +25,7 @@ import type { TeamPerformanceSnapshot } from '../../domain/performance';
 import type { PerformanceExportPayload, PerformanceExportView, PdfSection, ReportRangeIso } from './types';
 import { buildTeamPerformancePdfLayout } from './teamPerformancePdfModel';
 
+import { appNow } from "../../platform/appClock";
 function formatRange(from: string, to: string): string {
   const fmt = (iso: string) => {
     if (!iso) return '—';
@@ -187,7 +188,7 @@ export function buildPerformanceExportData(input: {
 }): PerformanceExportPayload {
   const { view, snapshot, reportData, kpiSnapshots, firstPassMetrics, prefs, historyPerson, workHistoryPeriod } =
     input;
-  const generatedAt = input.generatedAt ?? new Date();
+  const generatedAt = input.generatedAt ?? appNow();
   const params = reportData.params;
   const timezone = resolveDisplayTimezone(prefs.appearance.displayTimezone);
   const person = snapshot.persons[0];

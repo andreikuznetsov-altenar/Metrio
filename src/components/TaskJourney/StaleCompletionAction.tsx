@@ -15,6 +15,7 @@ import {
   type IssueCompletionService,
 } from "../../services/jira/issueCompletionService";
 
+import { appNow } from "../../platform/appClock";
 export interface StaleCompletionActionProps {
   issue: AuditIssue;
   service: IssueCompletionService;
@@ -35,7 +36,7 @@ const STALE_REFRESH_MESSAGE =
 export function StaleCompletionAction({ issue, service, onVerified, now }: StaleCompletionActionProps) {
   const toast = useOptionalToast();
   const eligible = useMemo(
-    () => checkStaleReviewOrHold(issue, now ? now() : new Date()).eligible,
+    () => checkStaleReviewOrHold(issue, now ? now() : appNow()).eligible,
     [issue, now],
   );
   const [options, setOptions] = useState<CompletionOption[]>([]);
@@ -63,7 +64,7 @@ export function StaleCompletionAction({ issue, service, onVerified, now }: Stale
     };
   }, [eligible, issue, service]);
 
-  if (!eligible || options.length === 0) return null;
+  const showAction = eligible && options.length > 0;
 
   const closeConfirm = () => {
     if (submitting) return;
@@ -79,6 +80,9 @@ export function StaleCompletionAction({ issue, service, onVerified, now }: Stale
       const verified = await service.complete(issue, pending);
       setSubmitting(false);
       setPending(null);
+      // Let the confirm dialog finish leaving BEFORE the (synchronous, heavy) recompute and the toast,
+      // so no scrim / focus lock is left behind while the data graph is rebuilt.
+      await new Promise<void>((resolve) => window.requestAnimationFrame(() => resolve()));
       onVerified(verified);
       toast?.success(`${issue.issueKey} moved to ${verified.currentStatus}`);
     } catch (e) {
@@ -94,6 +98,7 @@ export function StaleCompletionAction({ issue, service, onVerified, now }: Stale
 
   return (
     <>
+      {showAction ? (
       <Popover.Root open={menuOpen} onOpenChange={setMenuOpen}>
         <Popover.Trigger asChild>
           <Button
@@ -138,6 +143,7 @@ export function StaleCompletionAction({ issue, service, onVerified, now }: Stale
           </Popover.Content>
         </Popover.Portal>
       </Popover.Root>
+      ) : null}
       <Modal open={pending !== null} onClose={closeConfirm} title="Mark task complete?">
         <div data-testid="task-completion-confirm">
           <p className="task-completion__confirm-body">

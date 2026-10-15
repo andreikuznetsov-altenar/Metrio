@@ -1,7 +1,8 @@
 import { getLocalDateKey } from './dateRange';
 
+import { appNow } from "../../platform/appClock";
 /** Inclusive local calendar date keys ending on `endDate` (exactly `days` dates). */
-export function calendarPeriodDateKeys(days: number, endDate = new Date()): string[] {
+export function calendarPeriodDateKeys(days: number, endDate = appNow()): string[] {
   const keys: string[] = [];
   const end = new Date(endDate);
   end.setHours(12, 0, 0, 0);
@@ -14,7 +15,7 @@ export function calendarPeriodDateKeys(days: number, endDate = new Date()): stri
 }
 
 /** The `days` local calendar dates immediately before the current period. */
-export function previousCalendarPeriodDateKeys(days: number, endDate = new Date()): string[] {
+export function previousCalendarPeriodDateKeys(days: number, endDate = appNow()): string[] {
   const current = calendarPeriodDateKeys(days, endDate);
   const firstCurrent = new Date(`${current[0]}T12:00:00`);
   const endBefore = new Date(firstCurrent);

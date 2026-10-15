@@ -7,6 +7,7 @@ import {
 } from '../performance/performanceDateRange';
 import { WORK_HISTORY_WINDOW_DAYS } from './constants';
 
+import { appNow } from "../../platform/appClock";
 export interface RequiredComparisonCoverage {
   displayRange: PerformanceDateRange;
   comparisonRange: PerformanceDateRange;
@@ -31,7 +32,7 @@ export function resolveEffectiveReportRange(filters: {
 /** Canonical display/comparison/fetch coverage for Performance history. */
 export function resolveRequiredComparisonCoverage(
   displayRange: PerformanceDateRange,
-  now = new Date(),
+  now = appNow(),
 ): RequiredComparisonCoverage {
   const comparisonRange = previousComparableRange(displayRange);
   const workHistoryStart = format(

@@ -9,6 +9,7 @@ import type {
 } from "./goalTypes";
 import { GOALS_DATA_SCHEMA_VERSION } from "./goalTypes";
 
+import { appNow } from "../../platform/appClock";
 const STATUSES: GoalStatus[] = [
   "draft",
   "active",
@@ -60,7 +61,7 @@ export function normalizeGoal(raw: Partial<Goal>): Goal | null {
     ? (raw.progressMode as GoalProgressMode)
     : "linked_work";
 
-  const now = new Date().toISOString();
+  const now = appNow().toISOString();
   return {
     id,
     title,
@@ -109,7 +110,7 @@ function normalizeSidecar(raw: unknown): BambooGoalSidecarRecord | null {
     linkedConfluencePageIds: Array.isArray(row.linkedConfluencePageIds)
       ? row.linkedConfluencePageIds.map(String)
       : [],
-    updatedAt: row.updatedAt ? String(row.updatedAt) : new Date().toISOString(),
+    updatedAt: row.updatedAt ? String(row.updatedAt) : appNow().toISOString(),
   };
 }
 

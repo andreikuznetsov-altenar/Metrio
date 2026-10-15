@@ -15,6 +15,7 @@ import type { DailyPersonSnapshot, DailyTeamSnapshot } from '../snapshots/types'
 import { resolveRequiredComparisonCoverage } from './historyRanges';
 import { SNAPSHOT_RETENTION_DAYS } from './constants';
 
+import { appNow } from "../../platform/appClock";
 export interface DailyFlowFields {
   completedOnDate: number;
   backflowsOnDate: number;
@@ -46,7 +47,7 @@ export function enumerateLocalDateKeys(startKey: string, endKey: string): string
 
 export function getBootstrapDateRange(
   reportParams: ReportParams,
-  now = new Date(),
+  now = appNow(),
 ): { startKey: string; endKey: string } {
   const endKey = reportParams.dateTo || getLocalDateKey(now);
   const displayFrom = reportParams.dateFrom || endKey;
@@ -197,7 +198,7 @@ export function pruneSnapshotsBeforeDate<T extends { date: string }>(
   return snapshots.filter((s) => s.date >= cutoffKey);
 }
 
-export function getRetentionCutoffKey(now = new Date()): string {
+export function getRetentionCutoffKey(now = appNow()): string {
   const cutoff = new Date(now);
   cutoff.setDate(cutoff.getDate() - SNAPSHOT_RETENTION_DAYS);
   return getLocalDateKey(cutoff);

@@ -6,6 +6,7 @@ import { formatStageAgeLabel } from "../../domain/radar/taskSignals";
 import { JiraIssueLink } from "../../components/JiraIssueLink/JiraIssueLink";
 import type { AuditIssue } from "../../domain/jira/types";
 
+import { appNow } from "../../platform/appClock";
 export function DependencyDetailDrawer({
   dependency,
   index,
@@ -26,7 +27,7 @@ export function DependencyDetailDrawer({
   const blockerIssue = issueByKey.get(dependency.targetIssueKey);
   const chain = buildDrawerChain(index, dependency.sourceIssueKey);
   const stageLabel = blockerIssue
-    ? formatStageAgeLabel(blockerIssue, new Date())
+    ? formatStageAgeLabel(blockerIssue, appNow())
     : "—";
 
   return (

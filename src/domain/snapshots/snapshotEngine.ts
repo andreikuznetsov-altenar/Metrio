@@ -13,6 +13,7 @@ import type {
 } from './types';
 import { KPI_SNAPSHOT_SCHEMA_VERSION } from './types';
 
+import { appNow } from "../../platform/appClock";
 export const EMPTY_KPI_SNAPSHOT_FILE: KpiSnapshotFile = {
   schemaVersion: KPI_SNAPSHOT_SCHEMA_VERSION,
   personSnapshots: [],
@@ -157,7 +158,7 @@ export function recordDailySnapshots(
   file: KpiSnapshotFile,
   snapshot: TeamSnapshot,
   reportData: AuditReportData,
-  now = new Date(),
+  now = appNow(),
 ): KpiSnapshotFile {
   const date = getLocalDateKey(now);
   const next = migrateKpiSnapshotFile(file);
@@ -307,7 +308,7 @@ export function personSparklinePoints(
   personId: string,
   field: FlowField,
   days = 56,
-  now = new Date(),
+  now = appNow(),
 ): { date: string; value: number }[] {
   const cutoff = new Date(now);
   cutoff.setDate(cutoff.getDate() - Math.max(0, days - 1));
@@ -322,7 +323,7 @@ export function teamSparklinePoints(
   file: KpiSnapshotFile,
   field: FlowField,
   days = 56,
-  now = new Date(),
+  now = appNow(),
 ): { date: string; value: number }[] {
   const cutoff = new Date(now);
   cutoff.setDate(cutoff.getDate() - Math.max(0, days - 1));

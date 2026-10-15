@@ -2,6 +2,7 @@ import type { BambooGoalSidecarRecord, GoalsDataFile } from "../../domain/goals/
 import { bambooGoalSidecarKey } from "../../domain/goals/bambooGoalTypes";
 import { loadGoalsData, saveGoalsData } from "./goalsPersistence";
 
+import { appNow } from "../../platform/appClock";
 export function findBambooGoalSidecar(
   file: GoalsDataFile | null | undefined,
   employeeId: string,
@@ -25,7 +26,7 @@ export async function upsertBambooGoalSidecar(
     linkedJiraIssueKeys: [...(patch.linkedJiraIssueKeys ?? [])],
     linkedJiraProjectKeys: [...(patch.linkedJiraProjectKeys ?? [])],
     linkedConfluencePageIds: [...(patch.linkedConfluencePageIds ?? [])],
-    updatedAt: patch.updatedAt ?? new Date().toISOString(),
+    updatedAt: patch.updatedAt ?? appNow().toISOString(),
   };
   const key = bambooGoalSidecarKey(next.bambooEmployeeId, next.bambooGoalId);
   const others = (file.bambooSidecars ?? []).filter(

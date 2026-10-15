@@ -1,5 +1,6 @@
 import { formatUtcOffset, getSystemTimezone } from './timezone';
 
+import { appNow } from "./appClock";
 export const DISPLAY_TIMEZONE_SYSTEM = 'system';
 
 export interface DisplayTimezoneOption {
@@ -14,12 +15,12 @@ export function resolveDisplayTimezone(displayTimezone: string | undefined): str
   return displayTimezone;
 }
 
-export function formatCompactUtcOffset(date = new Date(), timeZone = getSystemTimezone()): string {
+export function formatCompactUtcOffset(date = appNow(), timeZone = getSystemTimezone()): string {
   const raw = formatUtcOffset(date, timeZone);
   return raw.replace(/^UTC([+-])/, 'UTC $1');
 }
 
-export function getTimezoneOffsetMinutes(timeZone: string, date = new Date()): number {
+export function getTimezoneOffsetMinutes(timeZone: string, date = appNow()): number {
   try {
     const parts = new Intl.DateTimeFormat('en-US', {
       timeZone,
@@ -37,7 +38,7 @@ export function getTimezoneOffsetMinutes(timeZone: string, date = new Date()): n
   }
 }
 
-export function isFractionalTimezone(timeZone: string, date = new Date()): boolean {
+export function isFractionalTimezone(timeZone: string, date = appNow()): boolean {
   const minutes = Math.abs(getTimezoneOffsetMinutes(timeZone, date));
   return minutes % 60 !== 0;
 }
@@ -67,7 +68,7 @@ export function listSupportedTimezones(): string[] {
 export function buildDisplayTimezoneOptions({
   hideFractional,
   selectedTimezone,
-  date = new Date(),
+  date = appNow(),
 }: {
   hideFractional: boolean;
   selectedTimezone: string;

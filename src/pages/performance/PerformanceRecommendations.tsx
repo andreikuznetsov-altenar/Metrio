@@ -1,6 +1,7 @@
 import { DashboardRecommendations } from "../home/dashboard/DashboardRecommendations";
 import { buildProductRecommendations } from "../../domain/recommendations/buildProductRecommendations";
 import type { ProductRecommendation } from "../../domain/recommendations/buildProductRecommendations";
+import { readVisualProductRecommendationsOverride } from "../../fixtures/productRecommendationsVisualFixture";
 import type { ActionItem } from "../../domain/actions/actionTypes";
 import type { WorkloadRow } from "../../domain/performance";
 
@@ -25,7 +26,8 @@ export function PerformanceRecommendations({
   backflowIssueKeys?: string[];
   onAction: (item: ProductRecommendation) => void;
 }) {
-  const items = buildProductRecommendations({
+  // Visual builds only (VITE_VISUAL_FIXTURE + localStorage): lets Playwright render the REAL carousel with enough cards.
+  const items = readVisualProductRecommendationsOverride() ?? buildProductRecommendations({
     role: "manager",
     deliverySummary,
     deliveryRiskCount,

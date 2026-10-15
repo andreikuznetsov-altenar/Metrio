@@ -56,7 +56,7 @@ describe("person experience pass 4B", () => {
         label: "On time off · Sep 1–5",
         startDate: "2026-09-01",
         endDate: "2026-09-05",
-      }),
+      }, new Date(2026, 8, 3)),
     ).toBe("On leave");
   });
 

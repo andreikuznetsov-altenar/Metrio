@@ -1,20 +1,21 @@
 import { differenceInCalendarDays, format, parseISO, startOfDay } from "date-fns";
 import type { PersonAvailability } from "../people/types";
 
+import { appNow } from "../../platform/appClock";
 export function parseCalendarDate(iso?: string): Date | null {
   if (!iso) return null;
   const d = parseISO(iso.slice(0, 10));
   return Number.isNaN(d.getTime()) ? null : startOfDay(d);
 }
 
-export function calendarDaysUntil(startDateIso: string, today = new Date()): number | null {
+export function calendarDaysUntil(startDateIso: string, today = appNow()): number | null {
   const start = parseCalendarDate(startDateIso);
   if (!start) return null;
   const day = startOfDay(today);
   return differenceInCalendarDays(start, day);
 }
 
-export function formatLeaveCountdown(startDateIso: string, today = new Date()): string {
+export function formatLeaveCountdown(startDateIso: string, today = appNow()): string {
   const days = calendarDaysUntil(startDateIso, today);
   if (days == null) return "Upcoming time off";
   if (days <= 0) return "starts today";
@@ -42,7 +43,7 @@ export function isUpcomingLeaveState(state: PersonAvailability["state"]): boolea
 
 export function availabilityHeadline(
   availability: PersonAvailability,
-  today = new Date(),
+  today = appNow(),
 ): string {
   if (availability.state === "on_vacation") {
     return "On time off";

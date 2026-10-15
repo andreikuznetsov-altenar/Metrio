@@ -61,6 +61,7 @@ import {
 import { targetScopeLabel } from "./analyticsReportScope";
 import type { AnalyticsEvidenceIssue } from "./analyticsEvidenceTypes";
 
+import { appNow } from "../../platform/appClock";
 export interface PersonWorkRowData {
   key: string;
   title: string;
@@ -332,7 +333,7 @@ export function buildPersonAnalyticsWorkspace(
     person.issues.length > 0
       ? buildKpiFromIssues(person.issues, {}, params)
       : person.performance;
-  const now = new Date();
+  const now = appNow();
   const trendAnchor = new Date(`${displayRange?.to || params.dateTo}T12:00:00`);
   const trendContextLabel = displayRange
     ? comparisonPeriodLabel(displayRange)

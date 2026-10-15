@@ -1,4 +1,5 @@
 import { test as base } from "@playwright/test";
+import { VISUAL_FIXTURE_NOW_ISO } from "../../src/platform/appClock";
 
 /**
  * Visual snapshots embed dates, relative ages and the time-of-day greeting. Without a pinned
@@ -6,7 +7,7 @@ import { test as base } from "@playwright/test";
  * the same fixed "now"; timers keep running. Tests that need their own instant (or a frozen
  * clock) still call `page.clock.install(...)`, which overrides this.
  */
-export const VISUAL_FIXED_NOW = new Date("2026-10-03T09:30:00+02:00");
+export const VISUAL_FIXED_NOW = new Date(VISUAL_FIXTURE_NOW_ISO);
 
 export const test = base.extend({
   page: async ({ page }, use) => {

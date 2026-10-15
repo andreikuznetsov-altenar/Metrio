@@ -1,6 +1,7 @@
 import { format, parseISO } from "date-fns";
 import type { BambooGoal } from "./bambooGoalTypes";
 
+import { appNow } from "../../platform/appClock";
 function formatGoalDate(iso: string | null | undefined): string | null {
   if (!iso?.trim()) return null;
   const slice = iso.trim().slice(0, 10);
@@ -24,7 +25,7 @@ export function formatGoalSetDateLabel(goal: BambooGoal): string | null {
 
 export function formatGoalDueDateLabel(
   goal: BambooGoal,
-  now = new Date(),
+  now = appNow(),
 ): string | null {
   const formatted = formatGoalDate(goal.dueDate);
   if (!formatted) return null;
@@ -37,7 +38,7 @@ export function formatGoalDueDateLabel(
 }
 
 /** Compact metadata line for goal cards. */
-export function formatGoalCardDateLine(goal: BambooGoal, now = new Date()): string {
+export function formatGoalCardDateLine(goal: BambooGoal, now = appNow()): string {
   const setLabel = formatGoalSetDateLabel(goal);
   const dueLabel = formatGoalDueDateLabel(goal, now);
   if (setLabel && dueLabel) {

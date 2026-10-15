@@ -65,6 +65,7 @@ import {
 } from "../refresh/performanceRefreshCadence";
 import { getDocFixtureMode } from "../../platform/docFixtures";
 
+import { appNow } from "../../platform/appClock";
 export type { PerformanceFetchResult, PerformanceIdentityResolution } from "./performanceTypes";
 
 export function scopeOrgForPerformance(
@@ -488,7 +489,7 @@ export async function fetchPerformanceData(
     identityResolution,
     timeOffEntries,
     partialWarnings,
-    lastUpdatedAt: new Date().toISOString(),
+    lastUpdatedAt: appNow().toISOString(),
     historicalBootstrapRan,
     dependencyIndex,
   };

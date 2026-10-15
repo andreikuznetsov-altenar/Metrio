@@ -1,3 +1,4 @@
+import { appNow } from "./appClock";
 export function getSystemTimezone(): string {
   try {
     return Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
@@ -6,7 +7,7 @@ export function getSystemTimezone(): string {
   }
 }
 
-export function formatUtcOffset(date = new Date(), timeZone = getSystemTimezone()): string {
+export function formatUtcOffset(date = appNow(), timeZone = getSystemTimezone()): string {
   if (timeZone === 'UTC') return 'UTC+0';
 
   try {
@@ -36,12 +37,12 @@ export function formatUtcOffset(date = new Date(), timeZone = getSystemTimezone(
   }
 }
 
-export function formatTimezoneHeaderLabel(date = new Date(), timeZone = getSystemTimezone()): string {
+export function formatTimezoneHeaderLabel(date = appNow(), timeZone = getSystemTimezone()): string {
   const zone = timeZone === 'UTC' ? 'UTC' : timeZone;
   return `${zone} · ${formatUtcOffset(date, timeZone)}`;
 }
 
-export function formatGeneratedTimestamp(date = new Date()): string {
+export function formatGeneratedTimestamp(date = appNow()): string {
   const pad = (n: number) => String(n).padStart(2, '0');
   return `${pad(date.getDate())}/${pad(date.getMonth() + 1)}/${date.getFullYear()} ${pad(date.getHours())}:${pad(date.getMinutes())}`;
 }

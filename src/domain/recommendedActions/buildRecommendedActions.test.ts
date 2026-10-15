@@ -50,7 +50,6 @@ const emp = (over: Partial<EmployeeRecommendationInput> = {}): EmployeeRecommend
   now: NOW,
   ownedIssues: [],
   selfWorkload: workload(),
-  lastGoalCreatedAt: null,
   ...over,
 });
 
@@ -61,7 +60,6 @@ const lead = (over: Partial<TeamLeadRecommendationInput> = {}): TeamLeadRecommen
   teamWorkload: [],
   teamActions: [],
   deliveryRiskRows: [],
-  lastGoalCreatedAt: null,
   ...over,
 });
 
@@ -103,13 +101,10 @@ describe("Recommended Actions — Individual Contributor", () => {
     expect(r[0]).toMatchObject({ id: "stale-review", priority: 1 });
   });
 
-  it("goal hygiene: only when the newest CREATED goal is older than 6 months", () => {
-    const old = new Date("2026-02-01T00:00:00.000Z");
-    const [a] = buildRecommendedActions(emp({ lastGoalCreatedAt: old }));
-    expect(a).toMatchObject({ id: "no-recent-goal", priority: 4, actionLabel: "Add goal", destination: { kind: "goals" } });
-    expect(a!.description).toBe("You haven't added a new goal in more than 8 months.");
-    expect(buildRecommendedActions(emp({ lastGoalCreatedAt: new Date("2026-05-01T00:00:00.000Z") }))).toEqual([]);
-    expect(buildRecommendedActions(emp({ lastGoalCreatedAt: null }))).toEqual([]);
+  it("never recommends adding a goal (Bamboo exposes no creation timestamp, so the rule is disabled)", () => {
+    const r = buildRecommendedActions(emp({ ownedIssues: [issue("UX-1", "In Review", 45)] }));
+    expect(r.every((x) => !/goal/i.test(x.id + x.title + x.description))).toBe(true);
+    expect(r.every((x) => x.priority !== 4)).toBe(true);
   });
 
   it("high workload only for high / overloaded, never for normal", () => {
@@ -127,16 +122,14 @@ describe("Recommended Actions — Individual Contributor", () => {
     expect(buildRecommendedActions(emp({ selfAvailability: leave, selfWorkload: workload({ activeCount: 0, inReviewCount: 0 }) }))).toEqual([]);
   });
 
-  it("caps nothing by itself: the full ordered list is returned for the UI to slice", () => {
+  it("returns the full ordered list; the UI slices it to the visible maximum", () => {
     const r = buildRecommendedActions(
       emp({
         ownedIssues: [issue("UX-1", "In Review", 45), issue("UX-2", "On Hold", 50)],
         selfWorkload: workload({ level: "overloaded", activeCount: 8 }),
-        lastGoalCreatedAt: new Date("2025-01-01T00:00:00.000Z"),
       }),
     );
-    expect(ids(r)).toEqual(["stale-hold", "stale-review", "high-workload", "no-recent-goal"]);
-    expect(r.length).toBeGreaterThan(MAX_VISIBLE_RECOMMENDED_ACTIONS);
+    expect(ids(r)).toEqual(["stale-hold", "stale-review", "high-workload"]);
   });
 
   it("LIVE: completing stale tasks shrinks then removes the recommendation (pure recompute)", () => {
@@ -146,6 +139,20 @@ describe("Recommended Actions — Individual Contributor", () => {
     expect(buildRecommendedActions(emp({ ownedIssues: afterOne }))[0]!.affectedCount).toBe(6);
     const allDone = seven.map((i) => ({ ...i, currentStatus: "Done", events: [...i.events, ev("In Review", "Done", iso(0))] }));
     expect(buildRecommendedActions(emp({ ownedIssues: allDone }))).toEqual([]);
+  });
+});
+
+describe("stale rule is ONE rule shared with Mark complete (PASS38)", () => {
+  it("29 / 30 / 31 days agree between the completion eligibility helper and the recommendation", async () => {
+    const { checkStaleReviewOrHold } = await import("../jira/issueCompletion");
+    for (const [days, stale] of [[29, false], [30, false], [31, true]] as const) {
+      for (const status of ["In Review", "On Hold"]) {
+        const i = issue("UX-9", status, days);
+        expect(checkStaleReviewOrHold(i, NOW).eligible).toBe(stale);
+        expect(buildRecommendedActions(emp({ ownedIssues: [i] })).length > 0).toBe(stale);
+        expect(buildRecommendedActions(lead({ teamIssues: [i] })).length > 0).toBe(stale);
+      }
+    }
   });
 });
 
@@ -169,7 +176,7 @@ describe("Recommended Actions — Team Lead", () => {
     const r = buildRecommendedActions(lead({ teamIssues: [issue("A-1", "In Review", 40), issue("A-2", "In Review", 41), issue("A-3", "On Hold", 33)] }));
     expect(r[0]).toMatchObject({ id: "stale-review", destination: { kind: "delivery_risk" }, actionLabel: "Open Delivery Risk", affectedCount: 2 });
     expect(r[0]!.description).toBe("2 team tasks have been in Review for more than 30 days. Start with the oldest and check whether they can be completed.");
-    expect(r[1]).toMatchObject({ id: "stale-hold", title: "Review long-held tasks" });
+    expect(r[1]).toMatchObject({ id: "stale-hold", title: "A task has been on hold too long" });
     expect(r[1]!.description).toBe("1 team task has been on hold for more than 30 days.");
   });
 
@@ -202,10 +209,9 @@ describe("Recommended Actions — Team Lead", () => {
         teamIssues: [issue("A-1", "In Review", 45)],
         teamActions: [leaveItem()],
         teamWorkload: [row("a", "Heavy")],
-        lastGoalCreatedAt: new Date("2025-01-01T00:00:00.000Z"),
       }),
     );
-    expect(ids(r)).toEqual(["leave-p-nikita", "stale-review", "team-capacity", "no-recent-goal"]);
+    expect(ids(r)).toEqual(["leave-p-nikita", "stale-review", "team-capacity"]);
     expect(r.slice(0, MAX_VISIBLE_RECOMMENDED_ACTIONS)).toHaveLength(3);
   });
 

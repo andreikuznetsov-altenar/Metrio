@@ -1,6 +1,7 @@
 import type { KpiSnapshotFile } from "./types";
 import { teamSparklinePoints } from "./snapshotEngine";
 
+import { appNow } from "../../platform/appClock";
 function mergeRateSeries(
   numerator: { date: string; value: number }[],
   denominator: { date: string; value: number }[],
@@ -40,7 +41,7 @@ function mergeRatioSeries(
 export function teamFirstPassRateSparklinePoints(
   file: KpiSnapshotFile,
   days = 56,
-  now = new Date(),
+  now = appNow(),
 ): { date: string; value: number }[] {
   const completed = teamSparklinePoints(file, "completedOnDate", days, now);
   const firstPass = teamSparklinePoints(file, "firstPassOnDate", days, now);
@@ -51,7 +52,7 @@ export function teamFirstPassRateSparklinePoints(
 export function teamAvgCycleDaysSparklinePoints(
   file: KpiSnapshotFile,
   days = 56,
-  now = new Date(),
+  now = appNow(),
 ): { date: string; value: number }[] {
   const sumWindow = teamSparklinePoints(file, "cycleMsSumOnDate", days, now);
   const countWindow = teamSparklinePoints(file, "completedWithCycleOnDate", days, now);

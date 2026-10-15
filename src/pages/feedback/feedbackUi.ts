@@ -1,3 +1,4 @@
+import { appNow } from "../../platform/appClock";
 import type { BadgeVariant } from '../../components/Badge/Badge';
 import type { SurveyIndexStatus } from '../../domain/survey/metrics';
 import { recipientStatusLabel } from '../../domain/survey/status';
@@ -81,7 +82,7 @@ export function recipientStatusBadgeVariant(status: RecipientStatus): BadgeVaria
   }
 }
 
-export function formatFeedbackLastSync(iso: string | null | undefined, now = Date.now()): string {
+export function formatFeedbackLastSync(iso: string | null | undefined, now = appNow().getTime()): string {
   if (!iso) return 'Not synced yet';
   const ts = Date.parse(iso);
   if (Number.isNaN(ts)) return 'Not synced yet';

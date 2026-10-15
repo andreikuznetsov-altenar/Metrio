@@ -1,6 +1,7 @@
 import type { DeliveryRiskRow, TeamPerformanceSnapshot } from "../performance";
 import { calendarDaysUntil, formatLeaveRangeLabel } from "./leaveCalendar";
 
+import { appNow } from "../../platform/appClock";
 export type AvailabilityRowSeverity = "info" | "warning";
 
 export interface ManagerAvailabilityRow {
@@ -34,7 +35,7 @@ export interface TeamCapacityCounts {
 export function buildManagerAvailabilityRows(
   snapshot: TeamPerformanceSnapshot,
   deliveryRisk: DeliveryRiskRow[],
-  now = new Date(),
+  now = appNow(),
 ): ManagerAvailabilityRow[] {
   const rows: ManagerAvailabilityRow[] = [];
 
@@ -95,7 +96,7 @@ function isoRangesOverlap(
 export function detectTeamLeaveOverlaps(
   snapshot: TeamPerformanceSnapshot,
   minPeople = 2,
-  now = new Date(),
+  now = appNow(),
 ): TeamLeaveOverlap[] {
   const intervals = snapshot.timeOff
     .filter((e) => e.startDate)
@@ -200,7 +201,7 @@ export interface DirectorTeamCapacityRow {
 
 export function buildDirectorTeamCapacity(
   teams: { teamId: string; teamName: string; persons: import("../people/types").Person[] }[],
-  now = new Date(),
+  now = appNow(),
 ): DirectorTeamCapacityRow[] {
   return teams.map((team) => {
     const awayNextWeek = team.persons.filter((person) => {

@@ -20,6 +20,7 @@ import { compressStatusPath, taskPathStages, type TaskPathStage } from './compre
 import { getFullIssueEventsSorted, getFullStatusEventsSorted } from './issueEvents';
 import { resolveIssueCurrentOwner, type IssueCurrentOwner } from './resolveIssueCurrentOwner';
 
+import { appNow } from "../../platform/appClock";
 export type TaskJourneyTimelineKind = 'status_transition' | 'assignee_change';
 
 export interface TaskJourneyStatusSegment {
@@ -319,7 +320,7 @@ export interface BuildTaskJourneyInput {
 }
 
 export function buildTaskJourney(input: BuildTaskJourneyInput): TaskJourney {
-  const now = input.now ?? new Date();
+  const now = input.now ?? appNow();
   const rules = input.rules ?? DEFAULT_OPERATIONAL_RULES;
   const issue = input.issue;
   const currentStatus = issue.currentStatus?.trim() || '—';

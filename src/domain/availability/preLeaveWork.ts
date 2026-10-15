@@ -6,6 +6,7 @@ import { classifyTaskHealth } from "../task-health/taskHealthEngine";
 import type { PersonWorkRowData } from "../analytics/personAnalyticsWorkspace";
 import { auditIssueToPersonWorkRow } from "../analytics/personAnalyticsWorkspace";
 
+import { appNow } from "../../platform/appClock";
 export interface PreLeaveWorkSummary {
   activeCount: number;
   inReviewCount: number;
@@ -16,7 +17,7 @@ export function buildPreLeaveWorkSummary(
   person: Person,
   params: ReportParams,
   maxRows = 5,
-  now = new Date(),
+  now = appNow(),
 ): PreLeaveWorkSummary {
   const issues = getOperationalIssues(person);
   const activeCount = issues.length;

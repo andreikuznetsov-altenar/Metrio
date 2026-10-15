@@ -3,7 +3,7 @@ import { PersonAvatar } from "../../components/PersonAvatar/PersonAvatar";
 import type { Person } from "../../domain/people/types";
 import { personAvailabilityBadgeLabel } from "../../domain/availability/personAvailabilityCopy";
 import {
-  availabilityTagVariant,
+  availabilityPhaseVariant,
   formatWorkloadLabel,
 } from "../../domain/people/personDisplay";
 import { workloadBadgeVariantFromLabel } from "../../domain/performance/performanceStatusBadges";
@@ -36,7 +36,7 @@ export function PersonIdentityHeader({
       : availabilityLabel ?? "—";
   const availabilityVariant =
     person != null
-      ? availabilityTagVariant(person.availability.state)
+      ? availabilityPhaseVariant(person.availability)
       : "neutral";
   const workloadBadge =
     person != null

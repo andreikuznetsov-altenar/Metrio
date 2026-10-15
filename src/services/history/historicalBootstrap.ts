@@ -14,6 +14,7 @@ import { HISTORICAL_BOOTSTRAP_VERSION } from '../../domain/history/constants';
 import { migrateKpiSnapshotFile } from '../../domain/snapshots/snapshotEngine';
 import type { KpiSnapshotFile } from '../../domain/snapshots/types';
 
+import { appNow } from "../../platform/appClock";
 export interface BootstrapProgress {
   stage: string;
   current: number;
@@ -124,7 +125,7 @@ export function runHistoricalBootstrap(
     shouldAbort?: () => boolean;
   },
 ): KpiSnapshotFile {
-  const now = options?.now || new Date();
+  const now = options?.now || appNow();
   const next = migrateKpiSnapshotFile(file);
   const params = reportData.params;
   const requested = getBootstrapDateRange(params, now);

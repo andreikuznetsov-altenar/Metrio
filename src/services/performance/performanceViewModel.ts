@@ -88,6 +88,7 @@ import {
   trendComparisonDayCount,
   type PerformanceDateRange,
 } from "../../domain/performance/performanceDateRange";
+import { appNow } from "../../platform/appClock";
 function efficiencyStatusVariant(score: number): BadgeVariant {
   const status = getEfficiencyStatus(score);
   if (status === "Excellent" || status === "Healthy") return "success";
@@ -225,7 +226,7 @@ export function buildPerformanceViewModels(
 
   const trendAnchor = displayRange
     ? new Date(`${displayRange.to}T12:00:00`)
-    : new Date();
+    : appNow();
   const completedTrendPoints = teamTrendPoints(kpiSnapshots, "completedOnDate");
   const firstPassTrendPoints = teamTrendPoints(kpiSnapshots, "firstPassOnDate");
   const cycleSumTrendPoints = teamTrendPoints(kpiSnapshots, "cycleMsSumOnDate");
@@ -676,7 +677,7 @@ function buildEmployeeSnapshot(
   historyParams: AuditReportData["params"],
   operationalRules: OperationalRules = DEFAULT_OPERATIONAL_RULES,
 ): EmployeePerformanceSnapshot {
-  const now = new Date();
+  const now = appNow();
   const metrics = workspace.performanceKpis;
 
   const activeWork: ActiveWorkItem[] = workspace.workRows.slice(0, 12).map((row) => ({
@@ -748,7 +749,7 @@ function buildPersonDetailSnapshot(
 ): PersonDetailSnapshot {
   const perf = person.performance;
   const activeIssues = getActiveIssues(person, params);
-  const now = new Date();
+  const now = appNow();
   const problematicWork = getOperationalIssues(person)
     .filter(
       (issue) =>

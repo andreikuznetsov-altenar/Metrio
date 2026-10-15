@@ -7,7 +7,8 @@ import {
   differenceInHours,
 } from "date-fns";
 
-export function formatNotificationRelativeTime(iso: string, now = new Date()): string {
+import { appNow } from "./appClock";
+export function formatNotificationRelativeTime(iso: string, now = appNow()): string {
   const date = parseISO(iso);
   const minutes = differenceInMinutes(now, date);
   if (minutes < 1) {

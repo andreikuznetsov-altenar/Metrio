@@ -18,6 +18,7 @@ import type { RadarSeverity, TeamRadarItem, RadarSignal } from './types';
 import type { OperationalRules } from '../operationalRules/operationalRulesTypes';
 import { DEFAULT_OPERATIONAL_RULES } from '../operationalRules/operationalRulesDefaults';
 
+import { appNow } from "../../platform/appClock";
 const SEVERITY_ORDER: Record<RadarSeverity, number> = {
   critical: 0,
   warning: 1,
@@ -143,7 +144,7 @@ function buildPersonRadarItem(
 export function buildTeamRadar(
   snapshot: TeamSnapshot,
   params: ReportParams,
-  now = new Date(),
+  now = appNow(),
   rules: OperationalRules = DEFAULT_OPERATIONAL_RULES,
 ): TeamRadarItem[] {
   if (snapshot.mode !== 'team') return [];

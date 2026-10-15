@@ -4,10 +4,11 @@ import { goalReviewMilestone } from "../domain/goals/goalReview";
 import type { Goal } from "../domain/goals/goalTypes";
 import { recordNotificationEvent } from "./notificationEvents";
 
+import { appNow } from "./appClock";
 export function syncGoalReviewNotifications(
   goals: Goal[],
   currentUser: CurrentUser,
-  now = new Date(),
+  now = appNow(),
 ): void {
   const visible = listVisibleGoals(goals, currentUser);
   for (const goal of visible) {

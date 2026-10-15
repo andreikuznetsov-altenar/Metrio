@@ -9,6 +9,7 @@ import {
   saveGoalsData,
 } from "../services/goals/goalsPersistence";
 
+import { appNow } from "../platform/appClock";
 const GOALS_CHANGED = "metrio-goals-changed";
 
 export function useGoals() {
@@ -77,7 +78,7 @@ export function useGoals() {
       ) {
         return null;
       }
-      const now = new Date().toISOString();
+      const now = appNow().toISOString();
       const goal = normalizeGoal({
         id: createGoalId(),
         title: input.title,

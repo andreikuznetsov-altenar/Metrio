@@ -1,3 +1,4 @@
+import { resolveAvailabilityPresentation } from '../availability/availabilityPresentation';
 import type { Person } from './types';
 import type { ReportParams } from '../jira/types';
 import { getOperationalIssues } from './ownedIssues';
@@ -13,6 +14,7 @@ import {
 } from '../workload/capacityPresentation';
 import type { WorkloadRow } from '../performance';
 
+import { appNow } from "../../platform/appClock";
 export function personRouteKey(person: Person): string {
   return person.jira?.canonicalKey || person.bamboo.workEmail || person.id;
 }
@@ -89,6 +91,21 @@ export function availabilityTagVariant(
   return 'neutral';
 }
 
+/** Badge variant from the shared availability phase (never from a possibly stale persisted state). */
+export function availabilityPhaseVariant(
+  availability: Person['availability'],
+  today: Date = appNow(),
+): 'success' | 'warning' | 'danger' | 'info' | 'neutral' {
+  switch (resolveAvailabilityPresentation(availability, today).phase) {
+    case 'available':
+      return 'success';
+    case 'upcoming':
+      return 'warning';
+    default:
+      return 'info';
+  }
+}
+
 export function workloadTagVariant(level: string | undefined): 'success' | 'warning' | 'danger' | 'neutral' {
   if (level === 'overloaded') return 'danger';
   if (level === 'high') return 'warning';
@@ -142,7 +159,7 @@ export function buildWorkloadRowFields(
     atRisk: counts.atRisk,
     workload,
     capacityDataState,
-    availability: person?.availability.label || '—',
+    availability: person ? resolveAvailabilityPresentation(person.availability).badgeLabel : '—',
   };
   if (currentWorkload?.capacityLoadPercent != null && capacityDataState === "measured") {
     return {

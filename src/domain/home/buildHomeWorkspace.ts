@@ -52,6 +52,7 @@ import {
 import { formatDashboardGreeting } from "./dashboardGreeting";
 import { homeRoleVariantFromOrgRole } from "../organization/orgRoleRouting";
 
+import { appNow } from "../../platform/appClock";
 export interface BuildHomeWorkspaceInput {
   role: UserRole;
   homeRole: HomeRoleVariant;
@@ -94,7 +95,7 @@ export function resolveHomeRoleVariant(
 }
 
 export function buildHomeWorkspace(input: BuildHomeWorkspaceInput): HomeWorkspace {
-  const now = input.now ?? new Date();
+  const now = input.now ?? appNow();
   const personal = buildPersonalSection(input, now);
   const team =
     input.homeRole !== "employee" && input.teamSnapshot

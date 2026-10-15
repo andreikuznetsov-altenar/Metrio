@@ -1,6 +1,7 @@
 import { resolveLocalQuestion } from './questionMapping';
 import type { SurveyQuestion, SurveyResponse, SurveyResponseAnswer } from './types';
 
+import { appNow } from "../../platform/appClock";
 function answerText(value: unknown): string {
   if (value === null || value === undefined) return '';
   if (typeof value === 'string') return value;
@@ -73,5 +74,5 @@ export function matchResponseToRecipient(
 
 export function responseSubmittedAt(raw: Record<string, unknown>): string {
   const submitted = String(raw.lastSubmittedTime || raw.createTime || '');
-  return submitted || new Date().toISOString();
+  return submitted || appNow().toISOString();
 }

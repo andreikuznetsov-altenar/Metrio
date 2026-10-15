@@ -18,6 +18,7 @@ import { DEFAULT_OPERATIONAL_RULES } from "../operationalRules/operationalRulesD
 import type { DeliveryRiskRow } from "../performance";
 import type { DeliveryDependencyIndex } from "../dependencies/dependencyTypes";
 
+import { appNow } from "../../platform/appClock";
 export interface BuildWeeklyManagerDigestInput {
   snapshot: TeamSnapshot;
   reportData: AuditReportData;
@@ -35,7 +36,7 @@ export interface BuildWeeklyManagerDigestInput {
 export function buildWeeklyManagerDigest(
   input: BuildWeeklyManagerDigestInput,
 ): OperationalDigest {
-  const now = input.now ?? new Date();
+  const now = input.now ?? appNow();
   const params = input.reportData.params;
   const rules = input.operationalRules ?? DEFAULT_OPERATIONAL_RULES;
   const weekFlow = computeTeamFlowMetrics(

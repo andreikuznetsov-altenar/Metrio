@@ -1,5 +1,6 @@
 import type { CalendarEventRaw } from "../domain/calendar/calendarTypes";
 
+import { VISUAL_FIXTURE_NOW_ISO } from "../platform/appClock";
 const FIXTURE_KEY = "metrio-calendar-visual-fixture";
 
 export interface CalendarVisualFixture {
@@ -23,7 +24,7 @@ export function readCalendarVisualFixture(): CalendarVisualFixture | null {
 }
 
 export function buildDefaultCalendarVisualFixture(): CalendarVisualFixture {
-  const today = new Date();
+  const today = new Date(VISUAL_FIXTURE_NOW_ISO);
   const y = today.getFullYear();
   const m = String(today.getMonth() + 1).padStart(2, "0");
   const d = String(today.getDate()).padStart(2, "0");

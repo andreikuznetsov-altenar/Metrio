@@ -1,5 +1,6 @@
 import type { Goal } from "./goalTypes";
 
+import { appNow } from "../../platform/appClock";
 export type GoalReviewMilestone = "7d" | "1d" | "today" | "overdue";
 
 export function parseLocalDateKey(dateKey: string): Date | null {
@@ -17,7 +18,7 @@ export function parseLocalDateKey(dateKey: string): Date | null {
 
 export function calendarDaysUntilReview(
   reviewDate: string,
-  now = new Date(),
+  now = appNow(),
 ): number | null {
   const target = parseLocalDateKey(reviewDate);
   if (!target) return null;
@@ -33,7 +34,7 @@ export function calendarDaysUntilReview(
 
 export function goalReviewMilestone(
   goal: Goal,
-  now = new Date(),
+  now = appNow(),
 ): GoalReviewMilestone | null {
   if (!goal.reviewDate || goal.status === "cancelled" || goal.status === "completed") {
     return null;
@@ -47,7 +48,7 @@ export function goalReviewMilestone(
   return null;
 }
 
-export function goalNeedsDiscussion(goal: Goal, now = new Date()): boolean {
+export function goalNeedsDiscussion(goal: Goal, now = appNow()): boolean {
   const milestone = goalReviewMilestone(goal, now);
   return milestone === "overdue" || milestone === "today" || milestone === "1d";
 }
@@ -64,7 +65,7 @@ export function formatReviewDateLabel(reviewDate: string): string {
 
 export function summarizeGoalsForHome(
   goals: Goal[],
-  now = new Date(),
+  now = appNow(),
 ): {
   activeCount: number;
   reviewApproachingCount: number;

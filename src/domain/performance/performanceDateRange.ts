@@ -9,6 +9,7 @@ import {
 import type { DateRangeKey } from '../performance';
 import { getLastNDaysRange } from '../periods/dateRange';
 
+import { appNow } from "../../platform/appClock";
 /** Legacy session values may still carry `quarter` from older builds. */
 export type LegacyDateRangePreset = 'quarter';
 
@@ -42,7 +43,7 @@ export function isKnownDateRangePreset(
 
 export function presetToBounds(
   preset: DateRangeKey,
-  now = new Date(),
+  now = appNow(),
 ): { from: string; to: string } {
   const dateTo = format(now, 'yyyy-MM-dd');
   if (preset === '7d') {
@@ -64,7 +65,7 @@ export function presetToBounds(
 
 export function createPerformanceDateRange(
   preset: DateRangeKey,
-  now = new Date(),
+  now = appNow(),
 ): PerformanceDateRange {
   const bounds = presetToBounds(preset, now);
   return { ...bounds, preset };
@@ -72,7 +73,7 @@ export function createPerformanceDateRange(
 
 export function performanceDateRangeFromPresetKey(
   key: DateRangeKey,
-  now = new Date(),
+  now = appNow(),
 ): PerformanceDateRange {
   return createPerformanceDateRange(key, now);
 }
@@ -194,7 +195,7 @@ function parsedSessionRange(raw: string | null): PerformanceDateRange | null {
 }
 
 export function readSessionPerformanceDateRange(
-  now = new Date(),
+  now = appNow(),
 ): PerformanceDateRange {
   if (typeof sessionStorage === 'undefined') {
     return createPerformanceDateRange('3m', now);

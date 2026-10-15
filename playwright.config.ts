@@ -3,6 +3,8 @@ import { defineConfig, devices } from "@playwright/test";
 const VISUAL_PORT = 5199;
 
 export default defineConfig({
+  // Visible hard stop for a runaway suite (the runner script has its own watchdog as well).
+  globalTimeout: 30 * 60_000,
   testDir: "./e2e/visual",
   fullyParallel: true,
   forbidOnly: Boolean(process.env.CI),
