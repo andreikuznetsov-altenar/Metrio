@@ -85,6 +85,16 @@ const NON_RUNTIME_PATTERNS = [
 
 export function isNonRuntimeFile(file) {
   const normalized = String(file).replace(/\\/g, "/").replace(/^\.\//, "");
+
+  // These scripts directly define the bytes/UX of shipped installers and therefore
+  // must cut a new release when they change, even though most scripts/ci helpers do not.
+  if (
+    normalized === "scripts/ci/build-dmg.sh" ||
+    normalized === "scripts/ci/package-target.sh"
+  ) {
+    return false;
+  }
+
   if (/\.md$/i.test(normalized)) return true;
   return NON_RUNTIME_PATTERNS.some((pattern) => pattern.test(normalized));
 }
