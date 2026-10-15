@@ -299,12 +299,12 @@ if (mode === "ota") {
   });
   await step("Check for updates offers the new release", async () => {
     await conn.page.getByRole("button", { name: "Check for updates" }).click();
-    await conn.page.getByRole("button", { name: "Update and restart" }).first().waitFor({ timeout: 60_000 });
+    await conn.page.getByRole("button", { name: "Update and restart" }).last().waitFor({ timeout: 60_000 });
     await conn.page.screenshot({ path: join(OUT, "ota-offer.png") }).catch(() => {});
     return (await conn.page.locator("body").innerText()).match(/Metrio [0-9.]+ is ready to install/)?.[0];
   });
   await step("Update and restart installs the new version", async () => {
-    await conn.page.getByRole("button", { name: "Update and restart" }).first().click();
+    await conn.page.getByRole("button", { name: "Update and restart" }).last().click();
     const deadline = Date.now() + 240_000;
     let v = "";
     while (Date.now() < deadline) {
