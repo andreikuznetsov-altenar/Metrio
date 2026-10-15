@@ -14,6 +14,7 @@ import type { RadarSeverity } from './types';
 import { resolveWorkflowProfile } from '../workflows/resolveWorkflowProfile';
 import { resolveWorkflowStage } from '../workflows/resolveWorkflowStage';
 
+import { formatLeaveCountdown } from '../availability/leaveCalendar';
 import { appNow } from "../../platform/appClock";
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
@@ -167,7 +168,7 @@ export function vacationDaysLabel(person: Person): string | null {
   if (person.availability.state === 'vacation_tomorrow') return 'Vacation starts tomorrow';
   if (person.availability.state === 'vacation_soon') {
     if (person.availability.startDate) {
-      return `Vacation starts ${person.availability.startDate}`;
+      return `Vacation ${formatLeaveCountdown(person.availability.startDate)}`;
     }
     return 'Vacation starting soon';
   }
