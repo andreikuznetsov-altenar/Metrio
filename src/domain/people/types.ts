@@ -31,12 +31,19 @@ export interface PersonIdentityDiagnostics {
   warnings: string[];
 }
 
+/** Inclusive leave range (yyyy-MM-dd) used to reduce available hours in the workload horizon. */
+export interface PersonLeavePeriod {
+  start: string;
+  end: string;
+}
+
 export interface Person {
   id: string;
   bamboo: ResolvedEmployee;
   jira: PersonJiraIdentity | null;
   identity: PersonIdentityDiagnostics;
   availability: PersonAvailability;
+  leavePeriods?: PersonLeavePeriod[];
   /** Personal Jira workload — only issues currently assigned to this person. */
   personalWorkload?: WorkloadResult | null;
   workload: WorkloadResult | null;

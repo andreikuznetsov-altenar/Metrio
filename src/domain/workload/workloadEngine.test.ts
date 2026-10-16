@@ -34,15 +34,17 @@ describe('calculateWorkload', () => {
   it('uses the current queue for workload even when capacity history is insufficient', () => {
     const result = calculateWorkload([activeIssue('A-1')], params);
     expect(result.level).toBe('low');
-    expect(result.score).toBe(1);
+    expect(result.score).toBe(2.5);
+    expect(result.expectedEffortHours).toBe(2);
     expect(result.capacityDataState).toBe('insufficient_history');
   });
 
-  it('can flag a current high workload even with zero completed capacity cycles', () => {
+  it('uses estimated effort rather than an active-task count override', () => {
     const issues = Array.from({ length: 6 }, (_, i) => activeIssue(`A-${i}`));
     const result = calculateWorkload(issues, params);
-    expect(result.level).toBe('high');
-    expect(result.score).toBe(6);
+    expect(result.level).toBe('low');
+    expect(result.score).toBe(15);
+    expect(result.expectedEffortHours).toBe(12);
     expect(result.capacityDataState).toBe('insufficient_history');
     expect(result.capacityLoadPercent).toBe(0);
   });

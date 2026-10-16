@@ -1,3 +1,5 @@
+import { appNow } from '../../platform/appClock';
+import { buildEffortHistory } from '../../domain/workload/effort/history';
 import {
   applyVerifiedIssueState,
   mapIssueByKey,
@@ -33,6 +35,13 @@ function patchSnapshot(
 ): TeamSnapshot {
   const hasKey = (list: AuditIssue[] | undefined) => (list ?? []).some((i) => i.issueKey === verified.issueKey);
   const transform = (i: AuditIssue) => applyVerifiedIssueState(i, verified);
+  // The effort estimators need the whole team's history, exactly as buildTeamSnapshot used.
+  const effortHistory = buildEffortHistory(
+    Object.values(report.grouped)
+      .flatMap((block) => block.issues)
+      .map((issue) => (issue.issueKey === verified.issueKey ? transform(issue) : issue)),
+    { now: appNow() },
+  );
   const persons: Person[] = snapshot.persons.map((person) => {
     if (!hasKey(person.issues) && !hasKey(person.ownedIssues)) return person;
     const issues = mapIssueByKey(person.issues, verified.issueKey, transform);
@@ -42,6 +51,12 @@ function patchSnapshot(
       report.params,
       undefined,
       person.availability,
+      {
+        capacityIssues: issues,
+        capacitySubjectCanonical: person.jira?.canonicalKey,
+        effortHistory,
+        leave: person.leavePeriods,
+      },
     );
     return { ...person, issues, ownedIssues, personalWorkload, workload: personalWorkload };
   });

@@ -3,7 +3,7 @@ import type { Person } from "../people/types";
 import { buildOrgGraph } from "../organization/orgGraph";
 import {
   computeOrganizationalTeamWorkload,
-  personalCapacityLoadPercent,
+  personalCurrentEffort,
   resolveWorkloadUnitForViewer,
   workloadUnitDonutWeight,
 } from "./hierarchicalWorkload";
@@ -16,12 +16,22 @@ function person(
 ): Person {
   const workload =
     capacityLoadPercent == null
-      ? testWorkload({ level: "normal", activeCount: 1, capacityDataState: "insufficient_history" })
+      ? testWorkload({
+          level: "normal",
+          activeCount: 1,
+          capacityDataState: "insufficient_history",
+          currentLoadPercent: undefined,
+          expectedEffortHours: undefined,
+          availableHoursInHorizon: undefined,
+        })
       : testWorkload({
           level: capacityLoadPercent > 90 ? "overloaded" : "normal",
           activeCount: 1,
           capacityLoadPercent,
           capacityDataState: "measured",
+          currentLoadPercent: capacityLoadPercent,
+          expectedEffortHours: (capacityLoadPercent / 100) * 80,
+          availableHoursInHorizon: 80,
         });
   return {
     id,
@@ -47,7 +57,7 @@ function person(
 
 describe("hierarchicalWorkload", () => {
   const personal = (persons: Record<string, Person>) => (id: string) =>
-    personalCapacityLoadPercent(persons[id]);
+    personalCurrentEffort(persons[id]);
 
   it("CASE A: leaf manager team average includes lead personal values without summing", () => {
     const lead = person("lead", undefined, 80);
@@ -123,16 +133,16 @@ describe("hierarchicalWorkload", () => {
     const headTeam = computeOrganizationalTeamWorkload("head", graph, personal(persons));
     expect(teamA).toBe(90);
     expect(teamB).toBe(40);
-    expect(headTeam).toBeCloseTo(56.666666666666664, 5);
+    expect(headTeam).toBe(60);
   });
 
-  it("CASE E: unequal team sizes are one unit each at parent level", () => {
-    const parent = person("parent", undefined, 10);
-    const leadSmall = person("leadSmall", "parent", 50);
-    const s1 = person("s1", "leadSmall", 50);
-    const leadBig = person("leadBig", "parent", 50);
+  it("CASE E: unequal child teams are weighted by all represented capacity", () => {
+    const parent = person("parent", undefined, 0);
+    const leadSmall = person("leadSmall", "parent", 100);
+    const s1 = person("s1", "leadSmall", 100);
+    const leadBig = person("leadBig", "parent", 0);
     const bigs = Array.from({ length: 9 }, (_, i) =>
-      person(`big${i}`, "leadBig", 50),
+      person(`big${i}`, "leadBig", 0),
     );
     const persons: Record<string, Person> = {
       parent,
@@ -144,9 +154,12 @@ describe("hierarchicalWorkload", () => {
     const graph = buildOrgGraph(Object.values(persons).map((p) => p.bamboo));
     const smallTeam = computeOrganizationalTeamWorkload("leadSmall", graph, personal(persons));
     const bigTeam = computeOrganizationalTeamWorkload("leadBig", graph, personal(persons));
-    expect(smallTeam).toBe(50);
-    expect(bigTeam).toBe(50);
-    expect(smallTeam).toBe(bigTeam);
+    expect(smallTeam).toBe(100);
+    expect(bigTeam).toBe(0);
+    expect(computeOrganizationalTeamWorkload("parent", graph, personal(persons))).toBeCloseTo(
+      (160 / (13 * 80)) * 100,
+      5,
+    );
   });
 
   it("CASE F: own-team view keeps lead personal workload for donut unit", () => {

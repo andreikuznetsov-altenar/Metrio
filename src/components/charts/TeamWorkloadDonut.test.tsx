@@ -43,6 +43,9 @@ const workload: WorkloadRow[] = [
     availability: "Available",
     capacityDataState: "measured",
     capacityLoadPercent: 60,
+    currentLoadPercent: 60,
+    expectedEffortHours: 48,
+    availableHoursInHorizon: 80,
   },
   {
     personId: "p2",
@@ -71,7 +74,7 @@ describe("TeamWorkloadDonut", () => {
     const root = container.querySelector('[data-testid="team-brief-workload-donut"]')!;
     const detail = within(root as HTMLElement).getByTestId("team-brief-workload-detail");
     expect(detail).toHaveTextContent("Ada");
-    expect(detail).toHaveTextContent("60% capacity");
+    expect(detail).toHaveTextContent("60% current load");
 
     fireEvent.click(within(root as HTMLElement).getByTestId("team-workload-pie"));
     expect(detail).toHaveTextContent("Ben");

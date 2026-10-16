@@ -273,6 +273,9 @@ describe("Pass 13.6 Apps Script canonical parity matrix", () => {
       availability: "Available",
       capacityDataState: "measured",
       capacityLoadPercent: 103,
+      currentLoadPercent: 103,
+      expectedEffortHours: 82.4,
+      availableHoursInHorizon: 80,
     };
     rows.push({
       metric: "Team Brief workload donut weight",

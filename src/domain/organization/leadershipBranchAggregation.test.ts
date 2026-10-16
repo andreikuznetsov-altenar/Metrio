@@ -8,6 +8,8 @@ import type { Person } from "../people/types";
 import type { DeliveryRiskItem } from "../radar/types";
 
 function person(id: string, level?: string): Person {
+  const workloadLevel = level === "Heavy" ? "high" : level === "Overloaded" ? "overloaded" : level === "Light" ? "low" : "normal";
+  const currentLoadPercent = workloadLevel === "high" ? 90 : workloadLevel === "overloaded" ? 110 : workloadLevel === "low" ? 25 : 60;
   return {
     id,
     bamboo: {
@@ -19,17 +21,14 @@ function person(id: string, level?: string): Person {
       jobTitle: "Designer",
     },
     availability: { state: "available", label: "Available" },
-    workload: level
-      ? {
-          level,
+    workload: {
+          level: workloadLevel,
           activeCount: 2,
+          currentLoadPercent,
+          expectedEffortHours: currentLoadPercent * 0.8,
+          availableHoursInHorizon: 80,
           capacityDataState: "measured",
           capacityBreakdown: { completedCyclesInPeriod: 3, capacityDataState: "measured" },
-        }
-      : {
-          activeCount: 1,
-          capacityDataState: "insufficient_history",
-          capacityBreakdown: { completedCyclesInPeriod: 0, capacityDataState: "insufficient_history" },
         },
   } as Person;
 }
@@ -66,7 +65,7 @@ describe("leadershipBranchAggregation", () => {
     expect(metrics.capacity.totalPeople).toBe(2);
     expect(metrics.uniqueDeliveryRiskCount).toBe(1);
     expect(metrics.longReviewCount).toBe(1);
-    expect(metrics.capacity.insufficientHistoryPeople).toBe(1);
+    expect(metrics.capacity.insufficientHistoryPeople).toBe(0);
     expect(metrics.capacity.heavy + metrics.capacity.overloaded).toBeGreaterThanOrEqual(0);
   });
 

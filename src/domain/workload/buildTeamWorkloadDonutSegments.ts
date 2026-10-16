@@ -1,7 +1,7 @@
 import type { Person } from "../people/types";
 import type { WorkloadRow } from "../performance";
 import {
-  personalCapacityLoadPercent,
+  personalCurrentEffort,
   resolveWorkloadUnitForViewer,
   workloadStatusLabelForUnit,
   workloadUnitDetailLabel,
@@ -24,17 +24,17 @@ export interface BuildTeamWorkloadDonutOptions {
   personsById?: Map<string, Person>;
 }
 
-/** Share of team measured load uses the same capacity % as Team Workload when available. */
+/** Share of team load uses Current Workload V2, never the historical capacity metric. */
 export function workloadDonutWeight(row: WorkloadRow): number {
-  if (row.capacityDataState === "measured" && row.capacityLoadPercent != null) {
-    return Math.max(0, row.capacityLoadPercent);
+  if (row.currentLoadPercent != null) {
+    return Math.max(0, row.currentLoadPercent);
   }
   return Math.max(0, row.activeWork);
 }
 
 export function workloadDonutDetailLabel(row: WorkloadRow): string {
-  if (row.capacityDataState === "measured" && row.capacityLoadPercent != null) {
-    return `${row.capacityLoadPercent}% capacity`;
+  if (row.currentLoadPercent != null) {
+    return `${row.currentLoadPercent}% current load`;
   }
   return `${row.activeWork} active`;
 }
@@ -45,15 +45,15 @@ export function buildTeamWorkloadDonutSegments(
 ): TeamWorkloadDonutSegment[] {
   const context = options.context ?? { mode: "own_team" };
   const personsById = options.personsById;
-  const personalPercent = (personId: string) => {
+  const personalEffort = (personId: string) => {
     const person = personsById?.get(personId);
-    return person ? personalCapacityLoadPercent(person) : null;
+    return person ? personalCurrentEffort(person) : null;
   };
 
   return workload.map((row) => {
     const person = personsById?.get(row.personId);
     if (person) {
-      const unit = resolveWorkloadUnitForViewer(person, context, personalPercent);
+      const unit = resolveWorkloadUnitForViewer(person, context, personalEffort);
       return {
         personId: row.personId,
         personName: row.personName ?? row.personId,
@@ -76,19 +76,14 @@ export function buildTeamWorkloadDonutSegments(
 }
 
 export function workloadDonutSupportingMetric(row: WorkloadRow): string {
-  if (row.capacityDataState === "insufficient_history") {
-    return "Not enough history";
-  }
-  return `${row.activeWork} active · ${row.atRisk} at risk`;
+  return `${row.assignedWork ?? row.activeWork} assigned · ${row.activeWork} active · ${row.atRisk} at risk`;
 }
 
 export function teamWorkloadDonutMetricLabel(workload: WorkloadRow[]): string {
-  const measured = workload.some(
-    (row) => row.capacityDataState === "measured" && row.capacityLoadPercent != null,
-  );
+  const measured = workload.some((row) => row.currentLoadPercent != null);
   return measured
-    ? "Share of estimated monthly capacity load"
-    : "Share of active work (insufficient capacity history)";
+    ? "Share of expected effort in the 10-working-day horizon"
+    : "Share of active work (current workload unavailable)";
 }
 
 /** Distinct segment colors — stable per person, theme-aware via tokens. */

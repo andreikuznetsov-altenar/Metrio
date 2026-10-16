@@ -309,10 +309,8 @@ describe.skipIf(!runReal)('PASS 14.4 real Jira read-only acceptance', () => {
             `${person.bamboo.displayName} has raw execution statuses but activeWorkCount=0`,
           );
         }
-        if ((w?.capacityLoadPercent ?? 0) > 100) {
+        if ((w?.currentLoadPercent ?? 0) > 100) {
           expect(w?.level).toBe('overloaded');
-          expect(w?.capacityDataState).toBe('measured');
-          expect((w?.capacityBreakdown?.completedCyclesInPeriod ?? 0) > 0).toBe(true);
         } else {
           expect(w?.level).not.toBe('overloaded');
         }

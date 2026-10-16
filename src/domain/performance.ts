@@ -70,6 +70,10 @@ export interface WorkloadRow {
   capacityLoadPercent?: number;
   estimatedMonthlyHours?: number;
   monthlyCapacityHours?: number;
+  /** Current Workload V2 numerator/denominator; independent of historical capacity sufficiency. */
+  currentLoadPercent?: number;
+  expectedEffortHours?: number;
+  availableHoursInHorizon?: number;
 }
 
 export interface TimeOffEntry {

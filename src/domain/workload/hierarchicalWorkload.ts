@@ -5,7 +5,6 @@ import {
   type OrgNode,
 } from "../organization/orgGraph";
 import type { ResolvedEmployee } from "../../services/bamboo/orgResolver";
-import { capacityDataStateFromWorkload } from "./capacityPresentation";
 import type { WorkloadRow } from "../performance";
 import { capacityLevelFromPercent } from "../workflows/capacityWorkload";
 import { workloadDisplayLabel } from "./workloadDisplay";
@@ -24,63 +23,90 @@ function resolvePersonalWorkload(person: Person | undefined): Person["workload"]
   return person.personalWorkload ?? person.workload;
 }
 
-export function personalCapacityLoadPercent(person: Person | undefined): number | null {
-  const workload = resolvePersonalWorkload(person);
-  if (!workload) return null;
-  const state = capacityDataStateFromWorkload(workload);
-  if (state !== "measured") return null;
-  const value = workload.capacityLoadPercent;
-  if (value == null || !Number.isFinite(value)) return null;
-  return Math.max(0, value);
+export interface CurrentEffortMeasure {
+  expectedEffortHours: number;
+  availableHoursInHorizon: number;
 }
 
-function averageFinite(values: number[]): number | null {
-  const finite = values.filter((v) => Number.isFinite(v));
-  if (!finite.length) return null;
-  return finite.reduce((sum, v) => sum + v, 0) / finite.length;
+export function personalCurrentEffort(person: Person | undefined): CurrentEffortMeasure | null {
+  const workload = resolvePersonalWorkload(person);
+  const expected = workload?.expectedEffortHours;
+  const available = workload?.availableHoursInHorizon;
+  if (
+    expected == null ||
+    available == null ||
+    !Number.isFinite(expected) ||
+    !Number.isFinite(available)
+  ) {
+    return null;
+  }
+  return {
+    expectedEffortHours: Math.max(0, expected),
+    availableHoursInHorizon: Math.max(0, available),
+  };
+}
+
+function percentFor(measure: CurrentEffortMeasure | null): number | null {
+  if (!measure || measure.availableHoursInHorizon <= 0) return null;
+  return (measure.expectedEffortHours / measure.availableHoursInHorizon) * 100;
 }
 
 /**
- * Bottom-up organizational team workload for a manager's unit.
- * Leaf team: average(personal lead + personal ICs).
- * Nested: average(personal manager + each direct child unit value).
+ * Bottom-up organizational effort totals. Child units contribute their full numerator and
+ * denominator, so a one-person team and a ten-person team never receive equal weight.
  */
-export function computeOrganizationalTeamWorkload(
+export function computeOrganizationalTeamEffort(
   managerId: string,
   orgGraph: Map<string, OrgNode>,
-  personalPercent: (personId: string) => number | null,
+  personalEffort: (personId: string) => CurrentEffortMeasure | null,
   visiting: Set<string> = new Set(),
-): number | null {
+): CurrentEffortMeasure | null {
   if (visiting.has(managerId)) return null;
   visiting.add(managerId);
 
   const node = orgGraph.get(managerId);
   if (!node) {
     visiting.delete(managerId);
-    return personalPercent(managerId);
+    return personalEffort(managerId);
   }
 
-  const unitValues: number[] = [];
-  const self = personalPercent(managerId);
-  if (self != null) unitValues.push(self);
+  const unitValues: CurrentEffortMeasure[] = [];
+  const self = personalEffort(managerId);
+  if (self) unitValues.push(self);
 
   for (const reportId of node.directReportIds) {
     if (employeeHasDirectReports(reportId, orgGraph)) {
-      const childTeam = computeOrganizationalTeamWorkload(
+      const childTeam = computeOrganizationalTeamEffort(
         reportId,
         orgGraph,
-        personalPercent,
+        personalEffort,
         visiting,
       );
-      if (childTeam != null) unitValues.push(childTeam);
+      if (childTeam) unitValues.push(childTeam);
     } else {
-      const personal = personalPercent(reportId);
-      if (personal != null) unitValues.push(personal);
+      const personal = personalEffort(reportId);
+      if (personal) unitValues.push(personal);
     }
   }
 
   visiting.delete(managerId);
-  return averageFinite(unitValues);
+  if (!unitValues.length) return null;
+  return unitValues.reduce(
+    (total, unit) => ({
+      expectedEffortHours: total.expectedEffortHours + unit.expectedEffortHours,
+      availableHoursInHorizon:
+        total.availableHoursInHorizon + unit.availableHoursInHorizon,
+    }),
+    { expectedEffortHours: 0, availableHoursInHorizon: 0 },
+  );
+}
+
+export function computeOrganizationalTeamWorkload(
+  managerId: string,
+  orgGraph: Map<string, OrgNode>,
+  personalEffort: (personId: string) => CurrentEffortMeasure | null,
+): number | null {
+  return percentFor(computeOrganizationalTeamEffort(managerId, orgGraph, personalEffort));
 }
 
 export function buildOrgGraphFromPersons(persons: Person[]): Map<string, OrgNode> {
@@ -113,20 +139,22 @@ export interface ResolvedWorkloadUnit {
 export function resolveWorkloadUnitForViewer(
   person: Person,
   context: TeamWorkloadViewContext,
-  personalPercent: (id: string) => number | null,
+  personalEffort: (id: string) => CurrentEffortMeasure | null,
 ): ResolvedWorkloadUnit {
   const personal = resolvePersonalWorkload(person);
   const activeFallback = personal?.activeCount ?? 0;
-  const capacityState = capacityDataStateFromWorkload(personal);
+  const effort = personalEffort(person.id);
+  const workloadState =
+    effort && effort.availableHoursInHorizon > 0 ? "measured" : "insufficient_history";
 
   if (context.mode === "own_team") {
     return {
       personId: person.id,
       kind: "personal",
       currentLevel: personal?.level,
-      loadPercent: personalPercent(person.id),
+      loadPercent: percentFor(effort),
       activeWorkFallback: activeFallback,
-      capacityDataState: capacityState,
+      capacityDataState: workloadState,
     };
   }
 
@@ -136,16 +164,16 @@ export function resolveWorkloadUnitForViewer(
       personId: person.id,
       kind: "personal",
       currentLevel: personal?.level,
-      loadPercent: personalPercent(person.id),
+      loadPercent: percentFor(effort),
       activeWorkFallback: activeFallback,
-      capacityDataState: capacityState,
+      capacityDataState: workloadState,
     };
   }
 
   const teamLoad = computeOrganizationalTeamWorkload(
     person.id,
     context.orgGraph,
-    personalPercent,
+    personalEffort,
   );
 
   return {
@@ -153,7 +181,7 @@ export function resolveWorkloadUnitForViewer(
     kind: "team",
     loadPercent: teamLoad,
     activeWorkFallback: activeFallback,
-    capacityDataState: teamLoad != null ? "measured" : capacityState,
+    capacityDataState: teamLoad != null ? "measured" : workloadState,
   };
 }
 
@@ -162,7 +190,7 @@ export function workloadStatusLabelForUnit(unit: ResolvedWorkloadUnit): string {
     return workloadDisplayLabel(unit.currentLevel);
   }
   if (unit.capacityDataState === "insufficient_history" || unit.loadPercent == null) {
-    return "Not enough history";
+    return "Workload unavailable";
   }
   return workloadDisplayLabel(capacityLevelFromPercent(unit.loadPercent));
 }
@@ -170,7 +198,7 @@ export function workloadStatusLabelForUnit(unit: ResolvedWorkloadUnit): string {
 export function workloadUnitDetailLabel(unit: ResolvedWorkloadUnit): string {
   const prefix = unit.kind === "team" ? "Team load" : "Personal load";
   if (unit.loadPercent != null && unit.capacityDataState === "measured") {
-    return `${prefix} · ${Math.round(unit.loadPercent * 10) / 10}% capacity`;
+    return `${prefix} · ${Math.round(unit.loadPercent * 10) / 10}% current load`;
   }
   return `${prefix} · ${unit.activeWorkFallback} active`;
 }

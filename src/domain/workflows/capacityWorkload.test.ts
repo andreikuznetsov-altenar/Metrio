@@ -104,7 +104,7 @@ describe('capacityWorkload', () => {
     expect(loadPercent).toBeCloseTo((hours / 164) * 100, 1);
   });
 
-  it('derives current workload from the current Jira queue even without completed history', () => {
+  it('derives effort-based current workload even without completed history', () => {
     const activeOnly = Array.from({ length: 12 }, (_, i) =>
       uxIssue(`UX-${i}`, [], 'In Progress'),
     );
@@ -112,8 +112,9 @@ describe('capacityWorkload', () => {
 
     expect(result.capacityDataState).toBe('insufficient_history');
     expect(result.activeCount).toBe(12);
-    expect(result.score).toBe(12);
-    expect(result.level).toBe('overloaded');
+    expect(result.score).toBe(30);
+    expect(result.expectedEffortHours).toBe(24);
+    expect(result.level).toBe('low');
   });
 
   it('derives historical capacity labels from capacity percent thresholds', () => {
@@ -177,8 +178,8 @@ describe('capacityWorkload', () => {
 
     expect(result.currentAssignedIssueCount).toBe(1);
     expect(result.activeWorkCount).toBe(1);
-    expect(result.level).toBe('normal');
-    expect(result.score).toBe(3);
+    expect(result.level).toBe('low');
+    expect(result.score).toBeGreaterThan(0);
     expect(result.capacityBreakdown?.completedCycleHours).toBeGreaterThan(0);
   });
 
@@ -285,7 +286,7 @@ describe('capacityWorkload', () => {
     expect(result.reviewCount).toBe(9);
     expect(result.holdCount).toBe(3);
     expect(result.backlogCount).toBe(1);
-    expect(result.level).toBe('high');
+    expect(result.level).toBe('low');
     expect(result.level).not.toBe('overloaded');
   });
 });

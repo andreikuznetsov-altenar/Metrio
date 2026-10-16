@@ -88,6 +88,8 @@ export class JiraClient {
       'project',
       'issuelinks',
       'duedate',
+      'timeoriginalestimate',
+      'timeestimate',
     ];
     if (JIRA_CONFIG.CONTENT_TYPE_FIELD) fields.push(JIRA_CONFIG.CONTENT_TYPE_FIELD);
     if (JIRA_CONFIG.EPIC_LINK_FIELD) fields.push(JIRA_CONFIG.EPIC_LINK_FIELD);

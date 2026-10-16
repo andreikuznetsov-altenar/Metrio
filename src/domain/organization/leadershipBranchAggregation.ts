@@ -5,7 +5,6 @@ import { buildCanonicalKpiForPersonScope } from "../jira/scopedCanonicalKpi";
 import type { TopLevelManagerBranch } from "./orgRole";
 import type { ResolvedEmployee } from "../../services/bamboo/orgResolver";
 import {
-  capacityDataStateFromWorkload,
   capacityPresentationLabel,
   isMeasuredCapacityLabel,
 } from "../workload/capacityPresentation";
@@ -34,12 +33,13 @@ export function buildBranchCapacitySummary(persons: Person[]): BranchCapacitySum
     summary.totalPeople += 1;
 
     const wl = person.workload ?? null;
-    const state = capacityDataStateFromWorkload(wl);
-    if (state === "insufficient_history") {
+    if (!wl) {
       summary.insufficientHistoryPeople += 1;
       continue;
     }
 
+    // Current workload is available even when the separate historical-capacity metric has no
+    // completed-cycle samples. Never gate the current distribution on historical sufficiency.
     const label = capacityPresentationLabel(wl, person.availability);
     if (!isMeasuredCapacityLabel(label)) {
       summary.insufficientHistoryPeople += 1;

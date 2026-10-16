@@ -11,6 +11,18 @@ export type CanonicalStage =
   | 'done'
   | 'cancelled';
 
+/**
+ * What the CURRENT ASSIGNEE is expected to do in a status. This is workflow-profile semantics
+ * (who actually performs the work in that stage), not something inferred from status names.
+ * - hands_on:      the assignee is expected to be working on the issue now
+ * - queued:        belongs to the assignee, not started yet
+ * - reserve:       someone else has it now, but it can come back to the assignee for rework
+ * - external_wait: the assignee waits for another person/system/process; no live effort
+ *                  (a QA stage may still carry a small rework reserve, see the effort model)
+ * - none:          done / cancelled / unmapped / excluded - irrelevant to live workload
+ */
+export type AssigneeEffortMode = 'hands_on' | 'queued' | 'reserve' | 'external_wait' | 'none';
+
 export type WorkflowEfficiencyModel = 'ux' | 'wskins' | 'none';
 
 export interface ResolvedWorkflowStage {
@@ -53,6 +65,11 @@ export interface WorkflowProfile {
    * stay `unknown` instead of using generic name inference.
    */
   strictStatusMap: boolean;
+  /** Assignee-effort semantics: stage defaults with optional per-status overrides (normalized keys). */
+  assigneeEffort: {
+    byStage: Record<CanonicalStage, AssigneeEffortMode>;
+    byStatus: Record<string, AssigneeEffortMode>;
+  };
 }
 
 export interface WorkflowProfileMapping {

@@ -290,7 +290,7 @@ describe("buildCanonicalKpiForPersonScope", () => {
     );
   });
 
-  it("H. capacity branch semantics unchanged (distribution, not averaged %)", () => {
+  it("H. current workload distribution is not gated by historical capacity history", () => {
     const persons = [
       personWithIssues("a", [], "Heavy"),
       personWithIssues("b", []),
@@ -311,7 +311,7 @@ describe("buildCanonicalKpiForPersonScope", () => {
     };
     const capacity = buildBranchCapacitySummary(persons);
     expect(capacity.totalPeople).toBe(3);
-    expect(capacity.insufficientHistoryPeople).toBeGreaterThanOrEqual(1);
+    expect(capacity.insufficientHistoryPeople).toBe(0);
     // Must not expose a single averaged capacity percentage field.
     expect(
       Object.keys(capacity).some((k) => /percent|average|avg/i.test(k)),

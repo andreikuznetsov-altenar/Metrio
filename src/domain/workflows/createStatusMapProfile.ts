@@ -1,6 +1,7 @@
 import { presetForCanonicalStage } from './stagePresets';
 import { normalizeStatusKey } from './normalizeStatus';
 import type {
+  AssigneeEffortMode,
   CanonicalStage,
   ResolvedWorkflowStage,
   WorkflowEfficiencyModel,
@@ -20,10 +21,30 @@ export interface StatusMapProfileInput {
    */
   strictStatusMap?: boolean;
   transitionRules?: WorkflowTransitionRule[];
+  /** Per-canonical-stage overrides of the default assignee-effort semantics. */
+  effortByStage?: Partial<Record<CanonicalStage, AssigneeEffortMode>>;
+  /** Per-raw-status overrides (for profiles where one canonical stage mixes different ownership). */
+  effortByStatus?: Record<string, AssigneeEffortMode>;
   stageOverrides?: Partial<
     Record<CanonicalStage, Partial<Omit<ResolvedWorkflowStage, 'canonicalStage' | 'statusName'>>>
   >;
 }
+
+/**
+ * Default assignee effort per canonical stage. QA defaults to external_wait: in the corporate
+ * workflows QA is performed by another role, so the original assignee only keeps a rework reserve.
+ */
+export const DEFAULT_ASSIGNEE_EFFORT_BY_STAGE: Record<CanonicalStage, AssigneeEffortMode> = {
+  unknown: 'none',
+  backlog: 'queued',
+  active: 'hands_on',
+  review: 'reserve',
+  qa: 'external_wait',
+  waiting: 'external_wait',
+  hold: 'external_wait',
+  done: 'none',
+  cancelled: 'none',
+};
 
 const DEFAULT_TRANSITION_RULES: WorkflowTransitionRule[] = [
   { from: 'backlog', to: 'active', startsCycle: true },
@@ -87,5 +108,14 @@ export function createStatusMapProfile(input: StatusMapProfileInput): WorkflowPr
     stages,
     transitionRules: input.transitionRules ?? DEFAULT_TRANSITION_RULES,
     strictStatusMap: input.strictStatusMap ?? true,
+    assigneeEffort: {
+      byStage: { ...DEFAULT_ASSIGNEE_EFFORT_BY_STAGE, ...input.effortByStage },
+      byStatus: Object.fromEntries(
+        Object.entries(input.effortByStatus ?? {}).map(([status, mode]) => [
+          normalizeStatusKey(status),
+          mode,
+        ]),
+      ),
+    },
   };
 }

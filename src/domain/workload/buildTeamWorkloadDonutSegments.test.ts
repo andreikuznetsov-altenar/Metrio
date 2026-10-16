@@ -22,20 +22,21 @@ const base = (overrides: Partial<WorkloadRow>): WorkloadRow => ({
 });
 
 describe("buildTeamWorkloadDonutSegments", () => {
-  it("prefers measured capacity percent over active work", () => {
+  it("prefers current effort percent over historical capacity and active work", () => {
     const row = base({
       activeWork: 2,
       capacityDataState: "measured",
-      capacityLoadPercent: 72.5,
+      capacityLoadPercent: 999,
+      currentLoadPercent: 72.5,
     });
     expect(workloadDonutWeight(row)).toBe(72.5);
     const segments = buildTeamWorkloadDonutSegments([row]);
-    expect(segments[0].detailLabel).toBe("72.5% capacity");
+    expect(segments[0].detailLabel).toBe("72.5% current load");
   });
 
-  it("labels insufficient history in supporting metric copy", () => {
+  it("does not gate current supporting signals on historical capacity sufficiency", () => {
     const row = base({ capacityDataState: "insufficient_history" });
-    expect(workloadDonutSupportingMetric(row)).toBe("Not enough history");
+    expect(workloadDonutSupportingMetric(row)).toBe("3 assigned · 3 active · 0 at risk");
   });
 
   it("falls back to active work when capacity is insufficient", () => {
@@ -52,12 +53,14 @@ describe("buildTeamWorkloadDonutSegments", () => {
         activeWork: 5,
         capacityDataState: "measured",
         capacityLoadPercent: 40,
+        currentLoadPercent: 40,
       }),
       base({
         personId: "c",
         activeWork: 1,
         capacityDataState: "measured",
         capacityLoadPercent: 40,
+        currentLoadPercent: 40,
       }),
     ];
     expect(selectDefaultTeamWorkloadDonutPersonId(rows)).toBe("b");
@@ -83,6 +86,9 @@ describe("buildTeamWorkloadDonutSegments", () => {
         activeCount: 1,
         capacityLoadPercent: 82,
         capacityDataState: "measured",
+        currentLoadPercent: 82,
+        expectedEffortHours: 65.6,
+        availableHoursInHorizon: 80,
       }),
       performance: null,
       issues: [],
@@ -97,6 +103,9 @@ describe("buildTeamWorkloadDonutSegments", () => {
         activeCount: 8,
         capacityLoadPercent: 120,
         capacityDataState: "measured",
+        currentLoadPercent: 120,
+        expectedEffortHours: 96,
+        availableHoursInHorizon: 80,
       }),
     };
     const personsById = new Map<string, Person>([
@@ -148,6 +157,9 @@ describe("buildTeamWorkloadDonutSegments", () => {
         activeCount: 1,
         capacityLoadPercent: 80,
         capacityDataState: "measured",
+        currentLoadPercent: 80,
+        expectedEffortHours: 64,
+        availableHoursInHorizon: 80,
       }),
       performance: null,
       issues: [],
@@ -162,6 +174,9 @@ describe("buildTeamWorkloadDonutSegments", () => {
         activeCount: 2,
         capacityLoadPercent: 40,
         capacityDataState: "measured",
+        currentLoadPercent: 40,
+        expectedEffortHours: 32,
+        availableHoursInHorizon: 80,
       }),
     };
     const graph = buildOrgGraph([lead.bamboo, ic.bamboo]);

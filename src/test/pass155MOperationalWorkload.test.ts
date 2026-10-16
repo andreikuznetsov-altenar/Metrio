@@ -52,7 +52,7 @@ function issue(
 }
 
 describe('PASS 15.5M current operational workload', () => {
-  it('Person A: no capacity contributors → Active 0, load 0, not overloaded', () => {
+  it('Person A: no current contributors → Active 0, current load 0, not overloaded', () => {
     const completedOnly = issue('UX-HIST', 'Done', [
       event('To Do', 'In Progress', '2026-08-01T09:00:00.000Z'),
       event('In Progress', 'In Review', '2026-08-03T09:00:00.000Z'),
@@ -61,7 +61,9 @@ describe('PASS 15.5M current operational workload', () => {
     const result = calculateWorkload([completedOnly], params);
     expect(result.activeWorkCount).toBe(0);
     expect(result.capacityContributorIssueCount).toBe(0);
-    expect(result.capacityLoadPercent).toBe(0);
+    // Historical capacity can vary at a report-boundary instant by display timezone; current
+    // workload is timezone-stable because the only issue is completed.
+    expect(result.currentLoadPercent).toBe(0);
     expect(result.level).not.toBe('overloaded');
     expect(result.level).not.toBe('high');
   });

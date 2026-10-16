@@ -20,4 +20,5 @@ export const productHandoverWorkflowProfile = createStatusMapProfile({
       countsAsAttentionEligible: false,
     },
   },
+  effortByStatus: { 'Ready for Handover': 'external_wait', Handover: 'reserve' },
 });

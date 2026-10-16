@@ -82,6 +82,8 @@ export const prdPhasedWorkflowProfile = createStatusMapProfile({
     'L. Cancelled': 'cancelled',
     'M. Cancelled': 'cancelled',
   },
+  // The BA, not the analyst, takes the issue from the handover on.
+  effortByStatus: { 'E. Ready For BA Handover': 'external_wait' },
 });
 
 export const prdDiscoveryWorkflowProfile = createStatusMapProfile({
@@ -104,6 +106,12 @@ export const prdDiscoveryWorkflowProfile = createStatusMapProfile({
     'Rollout/QA': 'qa',
     Completed: 'done',
     Discarded: 'cancelled',
+  },
+  // 'Issue Approved' waits for the handover slot; analysis/handover questions can come back.
+  effortByStatus: {
+    'Issue Approved': 'external_wait',
+    'Analysis Completed': 'reserve',
+    Handover: 'reserve',
   },
 });
 
@@ -150,6 +158,8 @@ export const citPurchaseWorkflowProfile = createStatusMapProfile({
     Delivered: 'done',
     Cancelled: 'cancelled',
   },
+  // Approval is decided by someone else and does not come back as rework.
+  effortByStatus: { 'Awaiting approval': 'external_wait' },
 });
 
 export const citSecurityPatchWorkflowProfile = createStatusMapProfile({

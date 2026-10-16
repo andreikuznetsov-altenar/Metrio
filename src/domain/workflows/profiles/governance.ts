@@ -23,4 +23,9 @@ export const governanceWorkflowProfile = createStatusMapProfile({
     Suspended: 'hold',
     Cancelled: 'cancelled',
   },
+  // Comment rounds come back to the author; start/approval requests are pure waiting.
+  effortByStatus: {
+    'Request to start review': 'external_wait',
+    'Request for Approval': 'external_wait',
+  },
 });

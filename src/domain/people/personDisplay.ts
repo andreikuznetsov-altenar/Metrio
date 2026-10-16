@@ -135,6 +135,9 @@ export function buildWorkloadRowFields(
   capacityLoadPercent?: number;
   estimatedMonthlyHours?: number;
   monthlyCapacityHours?: number;
+  currentLoadPercent?: number;
+  expectedEffortHours?: number;
+  availableHoursInHorizon?: number;
 } {
   const currentWorkload = currentWorkloadForPerson(person);
   const capacityDataState = capacityDataStateFromWorkload(currentWorkload);
@@ -146,6 +149,9 @@ export function buildWorkloadRowFields(
     workload,
     capacityDataState,
     availability: person ? resolveAvailabilityPresentation(person.availability).badgeLabel : '—',
+    currentLoadPercent: currentWorkload?.currentLoadPercent,
+    expectedEffortHours: currentWorkload?.expectedEffortHours,
+    availableHoursInHorizon: currentWorkload?.availableHoursInHorizon,
   };
   if (currentWorkload?.capacityLoadPercent != null && capacityDataState === "measured") {
     return {

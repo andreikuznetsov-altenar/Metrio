@@ -10,6 +10,8 @@ import { calculateWorkload } from '../../domain/workload/workloadEngine';
 import { classifyTaskHealth } from '../../domain/task-health/taskHealthEngine';
 import { filterOwnedIssues } from '../../domain/people/ownedIssues';
 import type { WorkloadThresholds } from '../../domain/workload/workloadEngine';
+import { buildEffortHistory } from '../../domain/workload/effort/history';
+import type { LeavePeriod } from '../../domain/workload/effort/types';
 
 import { appNow } from "../../platform/appClock";
 function collectScopeEmployees(org: OrgResolutionResult): ResolvedEmployee[] {
@@ -49,6 +51,16 @@ export function summarizeTeam(
   };
 }
 
+function leavePeriodsForEmployee(entries: TimeOffEntry[], employeeId: string): LeavePeriod[] {
+  return entries
+    .filter((entry) => entry.employeeId === employeeId)
+    .map((entry) => ({
+      start: String(entry.start || entry.startDate || '').slice(0, 10),
+      end: String(entry.end || entry.endDate || '').slice(0, 10),
+    }))
+    .filter((period) => period.start && period.end);
+}
+
 export function buildTeamSnapshot(
   org: OrgResolutionResult,
   reportData: AuditReportData | null,
@@ -58,6 +70,14 @@ export function buildTeamSnapshot(
   vacationSoonWithinDays = 7,
 ): TeamSnapshot {
   const employees = collectScopeEmployees(org);
+
+  // One team-wide history feeds every person's effort estimates (medians need the whole sample).
+  const effortHistory = reportData
+    ? buildEffortHistory(
+        Object.values(reportData.grouped).flatMap((block) => block.issues),
+        { now: appNow() },
+      )
+    : undefined;
 
   const persons: Person[] = employees.map((employee) => {
     const mapping = resolveJiraIdentity(employee, teamUsers);
@@ -73,11 +93,14 @@ export function buildTeamSnapshot(
     const availability = classifyAvailability(timeOff, undefined, vacationSoonWithinDays);
 
     const performance = reportData?.perUserKpi[canonicalKey] || null;
+    const leavePeriods = leavePeriodsForEmployee(timeOffEntries, employee.id);
     const personalWorkload =
       params
         ? calculateWorkload(ownedIssues, params, workloadThresholds, availability, {
             capacityIssues: issues,
             capacitySubjectCanonical: canonicalKey,
+            effortHistory,
+            leave: leavePeriods,
           })
         : null;
 
@@ -87,6 +110,7 @@ export function buildTeamSnapshot(
       jira,
       identity,
       availability,
+      leavePeriods,
       personalWorkload,
       workload: personalWorkload,
       performance,

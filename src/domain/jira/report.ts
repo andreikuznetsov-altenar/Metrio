@@ -265,6 +265,13 @@ export async function buildEnhancedJiraAuditReport(
     const contentType = getContentTypeValue(issue) || 'none';
     const designImprovementType = isDesignImprovement(issue) ? issueTypeName : 'none';
     const currentStatus = safeGet<string>(issue, ['fields', 'status', 'name']) || '';
+    const dueDate = safeGet<string>(issue, ['fields', 'duedate']) || '';
+    const originalEstimateSeconds = safeGet<number>(issue, ['fields', 'timeoriginalestimate']);
+    const remainingEstimateSeconds = safeGet<number>(issue, ['fields', 'timeestimate']);
+    const toHours = (seconds: unknown): number | undefined =>
+      typeof seconds === 'number' && Number.isFinite(seconds) && seconds > 0
+        ? Math.round((seconds / 3600) * 100) / 100
+        : undefined;
 
     const epicInfo = await resolveEpicInfo(issue, issueCache, input.fetchIssueByKey);
 
@@ -320,6 +327,13 @@ export async function buildEnhancedJiraAuditReport(
         events: fullEvents,
         rangeEvents,
         currentStatus,
+        ...(dueDate ? { dueDate } : {}),
+        ...(toHours(originalEstimateSeconds) !== undefined
+          ? { originalEstimateHours: toHours(originalEstimateSeconds) }
+          : {}),
+        ...(toHours(remainingEstimateSeconds) !== undefined
+          ? { remainingEstimateHours: toHours(remainingEstimateSeconds) }
+          : {}),
         ...currentAssignee,
       });
 

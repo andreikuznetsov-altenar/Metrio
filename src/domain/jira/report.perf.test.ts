@@ -13,6 +13,9 @@ function makeIssue(key: string, assigneeEmail: string) {
       issuetype: { name: 'Task' },
       created: '2025-01-01T10:00:00.000+0000',
       resolutiondate: '2025-01-05T10:00:00.000+0000',
+      duedate: '2025-01-10',
+      timeoriginalestimate: 28_800,
+      timeestimate: 10_800,
       customfield_10000: 'Design',
     },
   };
@@ -84,6 +87,23 @@ async function measureReport(userCount: number, issueCount: number) {
 }
 
 describe('Jira report performance (fixture-only)', () => {
+  it('preserves structured planning fields for workload estimation', async () => {
+    const fixture = buildFixture(1, 1);
+    const report = await buildEnhancedJiraAuditReport({
+      issues: fixture.issues,
+      params: fixture.params,
+      teamUsers: fixture.teamUsers,
+      teamIdentityIndex: fixture.teamIdentityIndex,
+      changelogByIssue: fixture.changelogByIssue,
+      fetchIssueByKey: async () => null,
+    });
+    expect(report.grouped['user0@example.com']?.issues[0]).toMatchObject({
+      dueDate: '2025-01-10',
+      originalEstimateHours: 8,
+      remainingEstimateHours: 3,
+    });
+  });
+
   it('10 users / 500 issues baseline', async () => {
     const result = await measureReport(10, 500);
     expect(result.transitions).toBeGreaterThan(0);

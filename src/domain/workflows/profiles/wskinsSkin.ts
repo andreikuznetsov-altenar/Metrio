@@ -46,4 +46,7 @@ export const wskinsSkinWorkflowProfile = createStatusMapProfile({
     },
     waiting: downstreamWaitingOverride,
   },
+  // Done is terminal and Archive is a storage state: no live effort. Live / PRE-LIVE / On approval
+  // are downstream waits (default external_wait).
+  effortByStatus: { Done: 'none', Archived: 'none', Archive: 'none' },
 });

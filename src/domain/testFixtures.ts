@@ -9,6 +9,8 @@ export function testWorkload(overrides: Partial<WorkloadResult> & Pick<WorkloadR
   const capacityDataState =
     overrides.capacityDataState ?? resolveCapacityDataState(completedCyclesInPeriod);
   const capacityLoadPercent = overrides.capacityLoadPercent ?? 45;
+  const currentLoadPercent = overrides.currentLoadPercent ?? capacityLoadPercent;
+  const availableHoursInHorizon = overrides.availableHoursInHorizon ?? 80;
   const operationalScore = overrides.score ?? overrides.activeCount ?? 2;
   const estimatedMonthlyHours = overrides.estimatedMonthlyHours ?? 72;
   const capacityBreakdown =
@@ -35,6 +37,10 @@ export function testWorkload(overrides: Partial<WorkloadResult> & Pick<WorkloadR
     overdueCount: overrides.overdueCount ?? 0,
     summary: overrides.summary ?? '',
     capacityLoadPercent,
+    currentLoadPercent,
+    expectedEffortHours:
+      overrides.expectedEffortHours ?? (currentLoadPercent / 100) * availableHoursInHorizon,
+    availableHoursInHorizon,
     estimatedMonthlyHours,
     monthlyCapacityHours: overrides.monthlyCapacityHours ?? 164,
     requiredHeadcount: overrides.requiredHeadcount ?? 1,

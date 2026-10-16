@@ -81,6 +81,12 @@ export interface AuditIssue {
   currentAssigneeCanonical?: string;
   currentAssigneeAccountId?: string;
   currentAssigneeDisplayName?: string;
+  /** Jira `duedate` (yyyy-MM-dd) when set. Scheduling hint only. */
+  dueDate?: string;
+  /** Jira `timeoriginalestimate` converted to hours, when the team sets it (never parsed from text). */
+  originalEstimateHours?: number;
+  /** Jira `timeestimate` (remaining estimate) in hours, when set. */
+  remainingEstimateHours?: number;
 }
 
 export interface KpiData {

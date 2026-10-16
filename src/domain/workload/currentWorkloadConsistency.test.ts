@@ -109,48 +109,53 @@ function representativeQueue(owner = 'person-a'): AuditIssue[] {
 }
 
 describe('current workload is derived from the current queue only', () => {
-  it('representative queue (1 In Progress, 9 In Review, 3 On Hold, 1 To Do) is High - not Overloaded', () => {
+  it('does not turn a representative review/hold-heavy queue into active overload', () => {
     const result = calculateWorkload(representativeQueue(), params, undefined, undefined, { now: NOW });
 
     // The three On Hold tasks are "problematic" for delivery-risk purposes (health-wide count)...
     expect(result.problematicCount).toBe(3);
-    // ...but On Hold is a low-weight waiting stage, not extra effort: it adds no load risk.
-    expect(result.loadProblematicCount).toBe(0);
+    // ...but On Hold is delivery risk, not live assignee effort.
+    expect(
+      result.effortBreakdown
+        ?.filter((item) => item.canonicalStage === 'hold')
+        .every((item) => item.contributionHours === 0),
+    ).toBe(true);
     expect(result.currentAssignedIssueCount).toBe(14);
     expect(result.activeWorkCount).toBe(1);
-    expect(result.level).toBe('high');
-    expect(result.score).toBeGreaterThanOrEqual(6);
-    expect(result.score).toBeLessThan(10);
+    expect(result.level).toBe('low');
+    expect(result.expectedEffortHours).toBe(17.2);
+    expect(result.score).toBe(21.5);
   });
 
-  it('exposes an exact per-issue breakdown that sums to the score', () => {
+  it('exposes an exact per-issue effort breakdown that sums to expected hours', () => {
     const result = calculateWorkload(representativeQueue(), params, undefined, undefined, { now: NOW });
-    const breakdown = result.scoreBreakdown ?? [];
+    const breakdown = result.effortBreakdown ?? [];
     expect(breakdown).toHaveLength(14);
 
     const byKey = new Map(breakdown.map((item) => [item.issueKey, item]));
-    expect(byKey.get('Q-1')).toMatchObject({ stage: 'active', stageScore: 1, riskScore: 0, total: 1 });
-    expect(byKey.get('Q-R0')).toMatchObject({ stage: 'review', stageScore: 0.5, riskScore: 0, total: 0.5 });
-    expect(byKey.get('Q-H0')).toMatchObject({ stage: 'hold', stageScore: 0.1, problematic: false, riskScore: 0, total: 0.1 });
-    expect(byKey.get('Q-T')).toMatchObject({ stage: 'backlog', stageScore: 0.25, riskScore: 0, total: 0.25 });
+    expect(byKey.get('Q-1')).toMatchObject({ canonicalStage: 'active', effortMode: 'hands_on', contributionHours: 4 });
+    expect(byKey.get('Q-R0')).toMatchObject({ canonicalStage: 'review', effortMode: 'reserve', contributionHours: 0.8 });
+    expect(byKey.get('Q-H0')).toMatchObject({ canonicalStage: 'hold', effortMode: 'external_wait', contributionHours: 0 });
+    expect(byKey.get('Q-T')).toMatchObject({ canonicalStage: 'backlog', effortMode: 'queued', contributionHours: 6 });
 
-    const sum = breakdown.reduce((acc, item) => acc + item.total, 0);
-    expect(result.score).toBeCloseTo(sum, 1);
+    const sum = breakdown.reduce((acc, item) => acc + item.contributionHours, 0);
+    expect(result.expectedEffortHours).toBeCloseTo(sum, 8);
   });
 
-  it('three genuinely problematic active-stage tasks still make a person Overloaded', () => {
+  it('problematic review tasks stay delivery risk and do not force overload', () => {
     const stuck = [1, 2, 3].map((n) => current(`S-${n}`, 'In Review', 'person-a', 40, 1));
     const result = calculateWorkload(stuck, params, undefined, undefined, { now: NOW });
-    expect(result.loadProblematicCount).toBe(3);
-    expect(result.level).toBe('overloaded');
+    expect(result.problematicCount).toBe(3);
+    expect(result.level).toBe('low');
+    expect(result.reserveReworkHours).toBe(2.4);
   });
 
-  it('counts one issue once: "exceeds target" is a flavour of problematic, not a second penalty', () => {
+  it('counts one issue once and does not convert health penalties into effort', () => {
     const [item] =
       calculateWorkload([current('S-1', 'In Review', 'person-a', 40, 1)], params, undefined, undefined, {
         now: NOW,
-      }).scoreBreakdown ?? [];
-    expect(item).toMatchObject({ problematic: true, overdue: true, riskScore: 2, stageScore: 0.5, total: 2.5 });
+      }).effortBreakdown ?? [];
+    expect(item).toMatchObject({ effortMode: 'reserve', reserveHours: 0.8, contributionHours: 0.8 });
   });
 
   it('completed / terminal issues never affect current workload', () => {
@@ -171,7 +176,7 @@ describe('current workload is derived from the current queue only', () => {
     expect(withTerminal.level).toBe(base.level);
     expect(withTerminal.score).toBe(base.score);
     expect(withTerminal.currentAssignedIssueCount).toBe(14);
-    expect(withTerminal.scoreBreakdown?.map((i) => i.issueKey)).not.toContain('D-1');
+    expect(withTerminal.effortBreakdown?.map((i) => i.issueKey)).not.toContain('D-1');
   });
 
   it('historical capacity can change (even above 100%) without changing the current level', () => {
@@ -292,13 +297,13 @@ describe('every surface resolves the same current workload for the same person',
     };
   }
 
-  it('People row, drawer, distribution, KPI, donut and presentation label agree (High / Heavy)', () => {
+  it('People row, drawer, distribution, KPI, donut and presentation label agree', () => {
     // Heavy *historical* capacity must not leak into any of them either.
     const queue = representativeQueue('valeriia');
     const history = [completed('H-BIG', 'valeriia', 120, 0.25)];
     const p = person('v1', 'Valeriia Pavlova', 'valeriia', [...queue, ...history]);
     expect(p.workload!.capacityLoadPercent!).toBeGreaterThan(100);
-    expect(p.workload!.level).toBe('high');
+    expect(p.workload!.level).toBe('low');
 
     const teamSnapshot: TeamSnapshot = {
       persons: [p],
@@ -330,15 +335,15 @@ describe('every surface resolves the same current workload for the same person',
     const vm = buildPerformanceViewModels(data, 'v1');
     const rows = vm.teamOverview!.workload;
 
-    expect(rows[0]).toMatchObject({ workload: 'Heavy', assignedWork: 14, activeWork: 1 });
-    expect(vm.teamOverview!.personDetails['v1']!.workload).toBe('Heavy');
-    expect(capacityPresentationLabel(p.workload)).toBe('Heavy');
-    expect(capacityDistribution(rows).find((d) => d.label === 'Heavy')?.count).toBe(1);
+    expect(rows[0]).toMatchObject({ workload: 'Light', assignedWork: 14, activeWork: 1 });
+    expect(vm.teamOverview!.personDetails['v1']!.workload).toBe('Light');
+    expect(capacityPresentationLabel(p.workload)).toBe('Light');
+    expect(capacityDistribution(rows).find((d) => d.label === 'Light')?.count).toBe(1);
     expect(capacityDistribution(rows).find((d) => d.label === 'Overloaded')?.count).toBe(0);
-    expect(teamCapacityKpiFromRows(rows)).toMatchObject({ value: '1', badgeLabel: '1 elevated' });
+    expect(teamCapacityKpiFromRows(rows)).toMatchObject({ value: '0', badgeLabel: 'Balanced' });
     expect(
       buildTeamWorkloadDonutSegments(rows, { personsById: new Map([[p.id, p]]) })[0]!.workloadLabel,
-    ).toBe('Heavy');
-    expect(buildTeamWorkloadDonutSegments(rows)[0]!.workloadLabel).toBe('Heavy');
+    ).toBe('Light');
+    expect(buildTeamWorkloadDonutSegments(rows)[0]!.workloadLabel).toBe('Light');
   });
 });

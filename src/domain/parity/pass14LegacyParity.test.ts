@@ -303,10 +303,10 @@ describe('PASS 14.4 legacy Apps Script parity harness', () => {
       expect(result.reviewCount).toBe(expectedReview);
       expect(result.holdCount).toBe(expectedHold);
       expect(result.waitingCount).toBe(expectedWaiting);
-      if ((result.capacityLoadPercent ?? 0) > 100) {
+      if ((result.currentLoadPercent ?? 0) > 100) {
         expect(result.level).toBe('overloaded');
       } else if (result.level === 'overloaded') {
-        expect(result.capacityLoadPercent ?? 0).toBeGreaterThan(100);
+        expect(result.currentLoadPercent ?? 0).toBeGreaterThan(100);
       }
       addRow({
         fixture: fixture.id,
