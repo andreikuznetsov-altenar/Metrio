@@ -32,7 +32,8 @@ import {
   type OrgRoleScenarioId,
 } from "./orgRoleProductionPathFixture";
 
-import { VISUAL_FIXTURE_NOW_ISO } from "../platform/appClock";
+import { VISUAL_FIXTURE_NOW_ISO, appNow } from "../platform/appClock";
+import { getLocalDateKey } from "../domain/periods/dateRange";
 const VISUAL_TEAM_IDS = [
   "person-sam",
   "person-alex",
@@ -573,10 +574,16 @@ export function buildVisualPerformanceFetchResult(
   dateRangeKey: DateRangeKey,
   reviewTarget: PerformanceReviewTarget,
   audience: PerformanceAudience,
+  now: Date = appNow(),
 ): PerformanceFetchResult {
   void audience;
   void reviewTarget;
-  const displayRange = createPerformanceDateRange(dateRangeKey);
+  // One explicit "now": the report range is anchored to the reporting-calendar date of `now`
+  // (the same date the trend windows use), never to the host-OS date, so the range, the snapshot
+  // history and the trend windows cannot disagree around a midnight boundary or between host
+  // time zones.
+  const reportingNoon = new Date(`${getLocalDateKey(now)}T12:00:00Z`);
+  const displayRange = createPerformanceDateRange(dateRangeKey, reportingNoon);
   const reportRanges = resolvePerformanceReportRanges(
     displayRange,
     "team",

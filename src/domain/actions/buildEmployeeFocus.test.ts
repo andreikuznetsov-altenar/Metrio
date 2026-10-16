@@ -1,10 +1,14 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { VISUAL_FIXTURE_NOW_ISO, setAppClock, setAppClockFixed } from "../../platform/appClock";
 import { buildEmployeeFocusActions } from "./buildEmployeeFocus";
 import { buildPersonAnalyticsWorkspace } from "../analytics/personAnalyticsWorkspace";
 import { buildVisualPerformanceFetchResult } from "../../fixtures/performanceFetchFixture";
 import { EMPTY_KPI_SNAPSHOT_FILE } from "../snapshots/snapshotEngine";
 
 describe("buildEmployeeFocusActions access", () => {
+  beforeEach(() => setAppClockFixed(VISUAL_FIXTURE_NOW_ISO));
+  afterEach(() => setAppClock(null));
+
   it("scopes focus items to the signed-in employee issues only", () => {
     const data = buildVisualPerformanceFetchResult("30d", "team", "team");
     const person = data.teamSnapshot.persons[0]!;

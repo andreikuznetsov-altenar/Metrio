@@ -1,10 +1,14 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { VISUAL_FIXTURE_NOW_ISO, setAppClock, setAppClockFixed } from "../../platform/appClock";
 import { buildVisualPerformanceFetchResult } from "../../fixtures/performanceFetchFixture";
 import { buildKpiFromIssues } from "../jira/kpi";
 import { buildPersonAnalyticsWorkspace } from "./personAnalyticsWorkspace";
 import { EMPTY_KPI_SNAPSHOT_FILE } from "../snapshots/snapshotEngine";
 
 describe("buildPersonAnalyticsWorkspace", () => {
+  beforeEach(() => setAppClockFixed(VISUAL_FIXTURE_NOW_ISO));
+  afterEach(() => setAppClock(null));
+
   it("uses history snapshot for history groups and current snapshot for KPI cards", () => {
     const data = buildVisualPerformanceFetchResult("30d", "team", "team");
     const person = data.teamSnapshot.persons[0]!;
