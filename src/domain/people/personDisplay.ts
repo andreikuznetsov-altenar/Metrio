@@ -117,7 +117,7 @@ export function formatWorkloadLabel(
     availability?: Person['availability'];
   },
 ): string {
-  return workloadDisplayLabel(level ?? context?.workload?.level);
+  return workloadDisplayLabel(context?.workload?.level ?? level);
 }
 
 export function currentWorkloadForPerson(person: Person | undefined): WorkloadResult | null {
