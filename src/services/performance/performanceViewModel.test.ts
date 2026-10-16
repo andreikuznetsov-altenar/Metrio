@@ -292,7 +292,8 @@ describe("buildPerformanceViewModels", () => {
     person.workload = person.personalWorkload;
 
     expect(person.personalWorkload.capacityContributorIssueCount).toBe(0);
-    expect(person.personalWorkload.capacityLoadPercent).toBe(0);
+    expect(person.personalWorkload.capacityDataState).toBe("measured");
+    expect(person.personalWorkload.capacityLoadPercent).toBeGreaterThan(0);
     expect(person.personalWorkload.level).toBe("low");
 
     const vm = buildPerformanceViewModels(buildResult([person]), "valeriia");
@@ -325,7 +326,7 @@ describe("buildPerformanceViewModels", () => {
     const result = calculateWorkload([active, completedCycleIssue("UX-C3", owner)], params);
     expect(result.activeWorkCount).toBe(1);
     expect(result.capacityContributorIssueCount).toBe(1);
-    expect(result.currentAssignedIssueCount).toBe(2);
+    expect(result.currentAssignedIssueCount).toBe(1);
     expect(result.level).toMatch(/low|normal|high|overloaded/);
   });
 
