@@ -4,7 +4,6 @@ import { classifyTaskHealth } from '../task-health/taskHealthEngine';
 import {
   calculateCapacityBreakdown,
   countOperationalWorkload,
-  resolveCurrentOperationalCapacityPresentation,
   MONTHLY_CAPACITY_HOURS,
   requiredHeadcount,
   type CapacityDataState,
@@ -18,9 +17,9 @@ import { isActiveWorkloadStatus } from '../workflows/workloadStatusClassificatio
 export type WorkloadLevel = 'low' | 'normal' | 'high' | 'overloaded';
 
 export interface WorkloadThresholds {
-  /** Weighted workload score threshold for High level. */
+  /** Weighted current Jira queue score threshold for High level. */
   highScore: number;
-  /** Weighted workload score threshold for Overloaded level. */
+  /** Weighted current Jira queue score threshold for Overloaded level. */
   overloadedScore: number;
   highInProgress: number;
   problematicWeight: number;
@@ -76,7 +75,7 @@ export function countActiveIssues(
 
 export interface WorkloadResult {
   level: WorkloadLevel;
-  /** Legacy score field — mirrors capacityLoadPercent when capacity model is used. */
+  /** Weighted score of the current Jira queue; historical cycle duration is not part of it. */
   score: number;
   activeCount: number;
   inProgressCount: number;
@@ -85,6 +84,7 @@ export interface WorkloadResult {
   atRiskCount: number;
   overdueCount: number;
   summary: string;
+  /** Historical elapsed-business-time capacity metric, kept separate from current workload. */
   capacityLoadPercent?: number;
   estimatedMonthlyHours?: number;
   monthlyCapacityHours?: number;
@@ -116,10 +116,80 @@ export interface CalculateWorkloadOptions {
   now?: Date;
 }
 
+function currentQueueScore(
+  operational: ReturnType<typeof countOperationalWorkload>,
+  counts: {
+    problematicCount: number;
+    atRiskCount: number;
+    overdueCount: number;
+  },
+  thresholds: WorkloadThresholds,
+): number {
+  // Current queue stages deliberately carry different weights. Review/QA still
+  // consume attention, while waiting/hold/backlog are weaker load signals than
+  // hands-on active execution.
+  const stageScore =
+    operational.activeWorkCount +
+    operational.reviewCount * 0.5 +
+    operational.qaCount * 0.5 +
+    operational.waitingCount * 0.25 +
+    operational.holdCount * 0.1 +
+    operational.backlogCount * 0.25 +
+    operational.unknownCount * 0.25;
+
+  const riskScore =
+    counts.problematicCount * thresholds.problematicWeight +
+    counts.atRiskCount * thresholds.atRiskWeight +
+    counts.overdueCount * thresholds.overdueWeight;
+
+  return Math.round((stageScore + riskScore) * 10) / 10;
+}
+
+function currentQueueLevel(
+  score: number,
+  operational: ReturnType<typeof countOperationalWorkload>,
+  counts: {
+    problematicCount: number;
+    atRiskCount: number;
+  },
+  thresholds: WorkloadThresholds,
+): WorkloadLevel {
+  if (operational.currentAssignedIssueCount === 0) return 'low';
+
+  if (score >= thresholds.overloadedScore || counts.problematicCount >= 3) {
+    return 'overloaded';
+  }
+
+  if (
+    score >= thresholds.highScore ||
+    operational.activeWorkCount >= thresholds.highInProgress
+  ) {
+    return 'high';
+  }
+
+  if (
+    score < 3 &&
+    operational.activeWorkCount <= 1 &&
+    counts.problematicCount === 0 &&
+    counts.atRiskCount === 0
+  ) {
+    return 'low';
+  }
+
+  return 'normal';
+}
+
+function workloadLevelLabel(level: WorkloadLevel): string {
+  if (level === 'low') return 'Light';
+  if (level === 'high') return 'High';
+  if (level === 'overloaded') return 'Overloaded';
+  return 'Balanced';
+}
+
 export function calculateWorkload(
   issues: AuditIssue[],
   params: ReportParams,
-  _thresholds: WorkloadThresholds = DEFAULT_WORKLOAD_THRESHOLDS,
+  thresholds: WorkloadThresholds = DEFAULT_WORKLOAD_THRESHOLDS,
   availability?: PersonAvailability,
   options: CalculateWorkloadOptions = {},
 ): WorkloadResult {
@@ -173,52 +243,51 @@ export function calculateWorkload(
 
   const operational = countOperationalWorkload(uniqueIssues, params, options.mappings);
   const activeCount = countActiveIssues(uniqueIssues, params, options.mappings);
+  const score = currentQueueScore(
+    operational,
+    { problematicCount, atRiskCount, overdueCount },
+    thresholds,
+  );
+  const level = currentQueueLevel(
+    score,
+    operational,
+    { problematicCount, atRiskCount },
+    thresholds,
+  );
+
+  // Historical capacity remains available for analytics, but it is explicitly
+  // not allowed to drive today's Light/Balanced/High/Overloaded badge.
   const capacityBreakdown = calculateCapacityBreakdown({
     issues: uniqueIssues,
     params,
     mappings: options.mappings,
     now: options.now,
   });
-  const capacityPresentation = resolveCurrentOperationalCapacityPresentation(
-    capacityBreakdown,
-    operational,
-  );
-  const capacityDataState = capacityPresentation.capacityDataState;
-  const level = capacityPresentation.level;
-  const displayedCapacityPercent = capacityPresentation.capacityLoadPercent;
+  const capacityDataState = capacityBreakdown.capacityDataState;
+  const capacityLoadPercent = capacityBreakdown.capacityLoadPercent;
 
-  const levelLabel =
-    capacityDataState === 'measured'
-      ? level === 'low'
-        ? 'Low'
-        : level === 'normal'
-          ? 'Balanced'
-          : level === 'high'
-            ? 'High'
-            : 'Overloaded'
-      : 'Not enough history';
-
-  const capacityNote =
-    capacityDataState === 'measured' && displayedCapacityPercent > 0
-      ? ` · ~${capacityBreakdown.estimatedMonthlyHours}h/mo (${displayedCapacityPercent}% of ${MONTHLY_CAPACITY_HOURS}h)`
-      : capacityDataState === 'insufficient_history'
-        ? ' · capacity not measured (no completed cycles in period)'
-        : '';
+  const details = [
+    `${operational.currentAssignedIssueCount} assigned`,
+    `${operational.activeWorkCount} active`,
+    operational.reviewCount ? `${operational.reviewCount} review` : '',
+    operational.holdCount ? `${operational.holdCount} hold` : '',
+    problematicCount ? `${problematicCount} problematic` : '',
+  ].filter(Boolean).join(' · ');
 
   return {
     level,
-    score: displayedCapacityPercent,
+    score,
     activeCount,
     inProgressCount,
     inReviewCount: operational.reviewCount,
     problematicCount,
     atRiskCount,
     overdueCount,
-    summary: `${levelLabel} workload · ${activeCount} active · ${inProgressCount} in progress · ${problematicCount} problematic${capacityNote}`,
-    capacityLoadPercent: displayedCapacityPercent,
+    summary: `${workloadLevelLabel(level)} workload · ${details}`,
+    capacityLoadPercent,
     estimatedMonthlyHours: capacityBreakdown.estimatedMonthlyHours,
     monthlyCapacityHours: MONTHLY_CAPACITY_HOURS,
-    requiredHeadcount: requiredHeadcount(displayedCapacityPercent),
+    requiredHeadcount: requiredHeadcount(capacityLoadPercent),
     currentAssignedIssueCount: operational.currentAssignedIssueCount,
     activeWorkCount: operational.activeWorkCount,
     reviewCount: operational.reviewCount,
