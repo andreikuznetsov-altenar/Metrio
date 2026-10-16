@@ -1,4 +1,9 @@
 import { appNow } from "../../platform/appClock";
+
+export const WORKDAY_START_HOUR = 9;
+export const WORKDAY_END_HOUR = 17;
+export const WORKDAY_HOURS = WORKDAY_END_HOUR - WORKDAY_START_HOUR;
+
 export function parseDateStartOfDay(value: string | null | undefined): Date | null {
   if (!value) return null;
   const d = new Date(`${value}T00:00:00`);
@@ -30,7 +35,22 @@ export function endOfDay(date: Date): Date {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate(), 23, 59, 59, 999);
 }
 
-/** Port of legacy getWorkingDurationMs_ — excludes weekends */
+function atLocalHour(date: Date, hour: number): Date {
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate(), hour, 0, 0, 0);
+}
+
+function nextDayStart(date: Date): Date {
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate() + 1, 0, 0, 0, 0);
+}
+
+/**
+ * Elapsed business time between two Jira timestamps.
+ *
+ * Metrio intentionally does not treat "time in status" as 24h/day effort.
+ * Only weekdays inside the reporting workday (09:00–17:00 local time) count.
+ * This is still elapsed business time, not a timesheet or a claim about actual
+ * hands-on effort.
+ */
 export function getWorkingDurationMs(
   fromValue: string | null | undefined,
   toValue: string | null | undefined,
@@ -42,19 +62,21 @@ export function getWorkingDurationMs(
   if (end <= start) return 0;
 
   let total = 0;
-  let cursor = new Date(start);
+  let day = startOfDay(start);
 
-  while (cursor < end) {
-    const dayEnd = endOfDay(cursor);
+  while (day < end) {
+    if (!isWeekend(day)) {
+      const workStart = atLocalHour(day, WORKDAY_START_HOUR);
+      const workEnd = atLocalHour(day, WORKDAY_END_HOUR);
+      const segmentStart = new Date(Math.max(start.getTime(), workStart.getTime()));
+      const segmentEnd = new Date(Math.min(end.getTime(), workEnd.getTime()));
 
-    const segmentStart = new Date(Math.max(cursor.getTime(), start.getTime()));
-    const segmentEnd = new Date(Math.min(dayEnd.getTime(), end.getTime()));
-
-    if (!isWeekend(segmentStart) && segmentEnd > segmentStart) {
-      total += segmentEnd.getTime() - segmentStart.getTime();
+      if (segmentEnd > segmentStart) {
+        total += segmentEnd.getTime() - segmentStart.getTime();
+      }
     }
 
-    cursor = new Date(dayEnd.getTime() + 1);
+    day = nextDayStart(day);
   }
 
   return total;
