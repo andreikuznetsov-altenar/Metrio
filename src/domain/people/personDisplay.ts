@@ -5,12 +5,9 @@ import { getOperationalIssues } from './ownedIssues';
 import { countActiveIssues, type WorkloadResult } from '../workload/workloadEngine';
 import { classifyTaskHealth } from '../task-health/taskHealthEngine';
 import { formatDuration } from '../jira/dates';
-import { workloadDisplayLabel } from '../workload/workloadDisplay';
+import { workloadDisplayLabel, type WorkloadDisplayLabel } from '../workload/workloadDisplay';
 import {
-  CAPACITY_INSUFFICIENT_LABEL,
-  capacityPresentationLabel,
   capacityDataStateFromWorkload,
-  type CapacityPresentationLabel,
 } from '../workload/capacityPresentation';
 import type { WorkloadRow } from '../performance';
 
@@ -120,24 +117,15 @@ export function formatWorkloadLabel(
     availability?: Person['availability'];
   },
 ): string {
-  if (context) {
-    return capacityPresentationLabel(context.workload ?? null, context.availability);
-  }
-  return workloadDisplayLabel(level);
+  return workloadDisplayLabel(level ?? context?.workload?.level);
 }
 
 export function currentWorkloadForPerson(person: Person | undefined): WorkloadResult | null {
   return person?.personalWorkload ?? person?.workload ?? null;
 }
 
-export function workloadLabelForPerson(person: Person | undefined): CapacityPresentationLabel {
-  if (!person) return CAPACITY_INSUFFICIENT_LABEL;
-  const workload = currentWorkloadForPerson(person);
-  const state = capacityDataStateFromWorkload(workload);
-  if (state === "insufficient_history") {
-    return CAPACITY_INSUFFICIENT_LABEL;
-  }
-  return workloadDisplayLabel(workload?.level);
+export function workloadLabelForPerson(person: Person | undefined): WorkloadDisplayLabel {
+  return workloadDisplayLabel(currentWorkloadForPerson(person)?.level);
 }
 
 export function buildWorkloadRowFields(
@@ -150,10 +138,7 @@ export function buildWorkloadRowFields(
 } {
   const currentWorkload = currentWorkloadForPerson(person);
   const capacityDataState = capacityDataStateFromWorkload(currentWorkload);
-  const workload =
-    capacityDataState === 'insufficient_history'
-      ? CAPACITY_INSUFFICIENT_LABEL
-      : workloadLabelForPerson(person);
+  const workload = workloadLabelForPerson(person);
   const base = {
     activeWork: counts.activeWork,
     atRisk: counts.atRisk,
