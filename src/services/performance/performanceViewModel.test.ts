@@ -274,7 +274,7 @@ describe("buildPerformanceViewModels", () => {
     expect(vm.statusMessage).toBe("No Jira work found for this period.");
   });
 
-  it("PASS 16.6 keeps review and hold-only current work out of Heavy and Overloaded workload", () => {
+  it("keeps a review and hold-only queue below Heavy while still reflecting unfinished work", () => {
     const person = bambooPerson("valeriia", "Valeriia Pavlova");
     const owner = person.jira!.canonicalKey;
     const issues = [
@@ -294,12 +294,12 @@ describe("buildPerformanceViewModels", () => {
     expect(person.personalWorkload.capacityContributorIssueCount).toBe(0);
     expect(person.personalWorkload.capacityDataState).toBe("measured");
     expect(person.personalWorkload.capacityLoadPercent).toBeGreaterThan(0);
-    expect(person.personalWorkload.level).toBe("low");
+    expect(person.personalWorkload.level).toBe("normal");
 
     const vm = buildPerformanceViewModels(buildResult([person]), "valeriia");
-    expect(vm.teamSecondary.people[0].workload).toBe("Light");
-    expect(vm.teamOverview.workload[0].workload).toBe("Light");
-    expect(vm.getPersonDetail("valeriia")?.workload).toBe("Light");
+    expect(vm.teamSecondary.people[0].workload).toBe("Balanced");
+    expect(vm.teamOverview.workload[0].workload).toBe("Balanced");
+    expect(vm.getPersonDetail("valeriia")?.workload).toBe("Balanced");
   });
 
   it("PASS 16.6 allows High Attention with Light current workload", () => {
