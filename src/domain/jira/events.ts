@@ -61,6 +61,8 @@ export function buildIssueEvents(
           changedBy,
           fromValue,
           toValue,
+          fromCanonical: fromCanonical || undefined,
+          toCanonical: toCanonical || undefined,
           timeSincePreviousStatusMs: null,
           isBackflow: false,
           isHandoff: !!(fromCanonical && !toCanonical),
