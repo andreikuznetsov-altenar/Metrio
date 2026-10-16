@@ -1,4 +1,5 @@
 import type { AuditIssue, AuditReportData, ReportParams } from '../jira/types';
+import { filterOwnedIssues } from '../people/ownedIssues';
 import { classifyTaskHealth } from '../task-health/taskHealthEngine';
 import {
   calculateWorkload,
@@ -6,7 +7,10 @@ import {
   type WorkloadLevel,
   type WorkloadThresholds,
 } from '../workload/workloadEngine';
-import type { CapacityDataState } from './capacityWorkload';
+import {
+  capacityLevelFromPercent,
+  type CapacityDataState,
+} from './capacityWorkload';
 import {
   CAPACITY_INSUFFICIENT_LABEL,
   capacityDataStateFromWorkload,
@@ -172,15 +176,25 @@ export function runWorkflowCapacityAudit(reportData: AuditReportData): WorkflowC
   const grouped = reportData.grouped || {};
   const personRows: WorkflowCapacityPersonRow[] = [];
 
-  Object.entries(grouped).forEach(([, block]) => {
+  Object.entries(grouped).forEach(([canonical, block]) => {
     const issues = block.issues || [];
-    const legacy = calculateLegacyWorkloadAssessment(issues, params);
-    const workload = calculateWorkload(issues, params);
+    const ownedIssues = filterOwnedIssues(issues, canonical);
+    const legacy = calculateLegacyWorkloadAssessment(ownedIssues, params);
+    const workload = calculateWorkload(
+      ownedIssues,
+      params,
+      DEFAULT_WORKLOAD_THRESHOLDS,
+      undefined,
+      {
+        capacityIssues: issues,
+        capacitySubjectCanonical: canonical,
+      },
+    );
     personRows.push({
       personLabel: block.userLabel || 'unknown',
       legacyScore: legacy.score,
       legacyLevel: legacy.level,
-      assigned: issues.length,
+      assigned: workload.currentAssignedIssueCount ?? ownedIssues.length,
       activeWorkCount: workload.activeWorkCount ?? workload.activeCount,
       reviewCount: workload.reviewCount ?? 0,
       qaCount: workload.qaCount ?? 0,
@@ -194,7 +208,7 @@ export function runWorkflowCapacityAudit(reportData: AuditReportData): WorkflowC
         (workload.capacityBreakdown?.activeSegmentHours ?? 0),
       estimatedMonthlyHours: workload.estimatedMonthlyHours ?? 0,
       capacityLoadPercent: workload.capacityLoadPercent ?? 0,
-      capacityLevel: workload.level,
+      capacityLevel: capacityLevelFromPercent(workload.capacityLoadPercent ?? 0),
       capacityDataState:
         workload.capacityDataState ?? capacityDataStateFromWorkload(workload),
     });
