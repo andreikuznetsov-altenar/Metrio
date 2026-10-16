@@ -3,11 +3,10 @@ import {
   differenceInCalendarDays,
   format,
   parseISO,
-  subMonths,
-  subYears,
 } from 'date-fns';
 import type { DateRangeKey } from '../performance';
-import { getLastNDaysRange } from '../periods/dateRange';
+import { getLocalDateKey } from '../periods/dateRange';
+import { addCalendarDays } from '../calendar/workingCalendar';
 
 import { appNow } from "../../platform/appClock";
 /** Legacy session values may still carry `quarter` from older builds. */
@@ -41,26 +40,32 @@ export function isKnownDateRangePreset(
   );
 }
 
+/** `dateKey` shifted by whole calendar months; a day past the target month's end clamps to its last day. */
+function shiftDateKeyByMonths(dateKey: string, months: number): string {
+  const [year, month, day] = dateKey.split('-').map(Number);
+  const target = new Date(Date.UTC(year, month - 1 + months, 1));
+  const lastDay = new Date(
+    Date.UTC(target.getUTCFullYear(), target.getUTCMonth() + 1, 0),
+  ).getUTCDate();
+  target.setUTCDate(Math.min(day, lastDay));
+  return target.toISOString().slice(0, 10);
+}
+
+/**
+ * Preset bounds on the canonical reporting calendar. "Today" is the reporting-calendar date of
+ * `now` (the same date trends and snapshots use), never the host-OS date, so the selected range
+ * and the trend windows agree in every host time zone.
+ */
 export function presetToBounds(
   preset: DateRangeKey,
   now = appNow(),
 ): { from: string; to: string } {
-  const dateTo = format(now, 'yyyy-MM-dd');
-  if (preset === '7d') {
-    const { start } = getLastNDaysRange(7, now);
-    return { from: format(start, 'yyyy-MM-dd'), to: dateTo };
-  }
-  if (preset === '30d') {
-    const { start } = getLastNDaysRange(30, now);
-    return { from: format(start, 'yyyy-MM-dd'), to: dateTo };
-  }
-  if (preset === '3m') {
-    return { from: format(subMonths(now, 3), 'yyyy-MM-dd'), to: dateTo };
-  }
-  if (preset === '6m') {
-    return { from: format(subMonths(now, 6), 'yyyy-MM-dd'), to: dateTo };
-  }
-  return { from: format(subYears(now, 1), 'yyyy-MM-dd'), to: dateTo };
+  const to = getLocalDateKey(now);
+  if (preset === '7d') return { from: addCalendarDays(to, -7), to };
+  if (preset === '30d') return { from: addCalendarDays(to, -30), to };
+  if (preset === '3m') return { from: shiftDateKeyByMonths(to, -3), to };
+  if (preset === '6m') return { from: shiftDateKeyByMonths(to, -6), to };
+  return { from: shiftDateKeyByMonths(to, -12), to };
 }
 
 export function createPerformanceDateRange(
