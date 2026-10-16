@@ -1,5 +1,8 @@
 import type { Person } from "../people/types";
 import type { WorkloadRow } from "../performance";
+import { capacityLevelFromPercent } from "../workflows/capacityWorkload";
+import { workloadDisplayLabel } from "./workloadDisplay";
+import { CAPACITY_INSUFFICIENT_LABEL } from "./capacityPresentation";
 import {
   personalCapacityLoadPercent,
   resolveWorkloadUnitForViewer,
@@ -63,11 +66,15 @@ export function buildTeamWorkloadDonutSegments(
         loadKind: unit.kind,
       };
     }
+    const capacityLabel =
+      row.capacityDataState === "measured" && row.capacityLoadPercent != null
+        ? workloadDisplayLabel(capacityLevelFromPercent(row.capacityLoadPercent))
+        : CAPACITY_INSUFFICIENT_LABEL;
     return {
       personId: row.personId,
       personName: row.personName ?? row.personId,
       weight: workloadDonutWeight(row),
-      workloadLabel: row.workload,
+      workloadLabel: capacityLabel,
       detailLabel: workloadDonutDetailLabel(row),
       loadKind: "personal",
     };
