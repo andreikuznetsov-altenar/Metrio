@@ -35,13 +35,15 @@ function issue(key: string, status = 'In Progress'): AuditIssue {
 }
 
 describe('workflowCapacityAudit', () => {
-  it('legacy model can mark overloaded from high assign count without capacity cycles', () => {
+  it('current queue can be overloaded independently of historical capacity cycles', () => {
     const issues = Array.from({ length: 15 }, (_, i) => issue(`UX-${i}`));
     const legacy = calculateLegacyWorkloadAssessment(issues, params);
-    const capacity = calculateWorkload(issues, params);
+    const workload = calculateWorkload(issues, params);
     expect(legacy.level).toBe('overloaded');
-    expect(capacity.level).toBe('normal');
-    expect(capacity.capacityLoadPercent).toBe(0);
+    expect(workload.level).toBe('overloaded');
+    expect(workload.score).toBeGreaterThanOrEqual(10);
+    expect(workload.capacityDataState).toBe('insufficient_history');
+    expect(workload.capacityLoadPercent).toBe(0);
   });
 
   it('formats grouped audit report', () => {
