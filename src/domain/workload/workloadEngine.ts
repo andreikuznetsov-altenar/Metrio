@@ -114,6 +114,10 @@ function isOnVacation(availability?: PersonAvailability): boolean {
 export interface CalculateWorkloadOptions {
   mappings?: WorkflowProfileMapping[];
   now?: Date;
+  /** Historical issues this person touched; current queue still comes from `issues`. */
+  capacityIssues?: AuditIssue[];
+  /** Canonical person whose assignee-history intervals should count for capacity. */
+  capacitySubjectCanonical?: string;
 }
 
 function currentQueueScore(
@@ -257,11 +261,15 @@ export function calculateWorkload(
 
   // Historical capacity remains available for analytics, but it is explicitly
   // not allowed to drive today's Light/Balanced/High/Overloaded badge.
+  const capacityIssues = [
+    ...new Map((options.capacityIssues ?? uniqueIssues).map((issue) => [issue.issueKey, issue])).values(),
+  ];
   const capacityBreakdown = calculateCapacityBreakdown({
-    issues: uniqueIssues,
+    issues: capacityIssues,
     params,
     mappings: options.mappings,
     now: options.now,
+    subjectCanonical: options.capacitySubjectCanonical,
   });
   const capacityDataState = capacityBreakdown.capacityDataState;
   const capacityLoadPercent = capacityBreakdown.capacityLoadPercent;
