@@ -131,7 +131,7 @@ export function workloadLabelForPerson(person: Person | undefined): WorkloadDisp
 export function buildWorkloadRowFields(
   person: Person | undefined,
   counts: { activeWork: number; atRisk: number },
-): Pick<WorkloadRow, 'workload' | 'capacityDataState' | 'availability' | 'activeWork' | 'atRisk'> & {
+): Pick<WorkloadRow, 'workload' | 'capacityDataState' | 'availability' | 'activeWork' | 'assignedWork' | 'atRisk'> & {
   capacityLoadPercent?: number;
   estimatedMonthlyHours?: number;
   monthlyCapacityHours?: number;
@@ -141,6 +141,7 @@ export function buildWorkloadRowFields(
   const workload = workloadLabelForPerson(person);
   const base = {
     activeWork: counts.activeWork,
+    assignedWork: currentWorkload?.currentAssignedIssueCount ?? counts.activeWork,
     atRisk: counts.atRisk,
     workload,
     capacityDataState,
