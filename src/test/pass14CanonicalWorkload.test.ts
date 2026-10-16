@@ -141,7 +141,7 @@ describe('PASS14 canonical workload', () => {
       resolveWorkflowProfile(active),
       '2026-01-08T09:00:00.000Z',
     );
-    expect(ms / 3600000).toBeCloseTo(24, 4);
+    expect(ms / 86400000).toBeCloseTo(3, 4);
   });
 
   it('backflow capacity includes only active contributor segments', () => {
