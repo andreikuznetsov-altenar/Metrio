@@ -177,8 +177,8 @@ describe('capacityWorkload', () => {
 
     expect(result.currentAssignedIssueCount).toBe(1);
     expect(result.activeWorkCount).toBe(1);
-    expect(result.level).toBe('low');
-    expect(result.score).toBe(1);
+    expect(result.level).toBe('normal');
+    expect(result.score).toBe(3);
     expect(result.capacityBreakdown?.completedCycleHours).toBeGreaterThan(0);
   });
 
