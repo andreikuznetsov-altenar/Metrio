@@ -38,7 +38,7 @@ const personalSnapshot: TeamSnapshot = {
       issues: [],
     },
   ],
-  summary: { available: 1, onVacation: 0, vacationSoon: 0, highWorkload: 0, problematic: 0 },
+  summary: { available: 1, onVacation: 0, vacationSoon: 0, heavyOrOverloaded: 0, problematic: 0 },
 };
 
 vi.mock('@tauri-apps/api/core', () => ({
@@ -56,7 +56,7 @@ vi.mock('@tauri-apps/plugin-opener', () => ({
 const snapshot: TeamSnapshot = {
   mode: 'team',
   persons: [],
-  summary: { available: 0, onVacation: 0, vacationSoon: 0, highWorkload: 0, problematic: 0 },
+  summary: { available: 0, onVacation: 0, vacationSoon: 0, heavyOrOverloaded: 0, problematic: 0 },
 };
 
 const reportData: AuditReportData = {
@@ -88,9 +88,9 @@ function minimalTeamLayout(
     teamThroughput: {
       hero: { label: 'Throughput', value: '25' },
       supporting: [
-        { label: 'First pass', value: '84%' },
+        { label: 'First Pass', value: '84%' },
         { label: 'Completed', value: '25' },
-        { label: 'Backflow events', value: '4' },
+        { label: 'Backflow Events', value: '4' },
       ],
     },
     individualThroughput: [],

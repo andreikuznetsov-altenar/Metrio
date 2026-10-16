@@ -1,4 +1,4 @@
-import { formatDuration } from "../../domain/jira/dates";
+import { formatWeekdayDuration } from "../../domain/jira/dates";
 import type { AnalyticsEvidence, AnalyticsEvidenceIssue } from "../../domain/analytics/analyticsEvidenceTypes";
 
 /** Strip Jira-style `Name <email>` for display rows. */
@@ -39,7 +39,7 @@ export function medianCycleMs(values: number[]): number | null {
 
 export function formatCycleDurationShort(ms: number | null | undefined): string | null {
   if (ms == null || ms < 0) return null;
-  const formatted = formatDuration(ms);
+  const formatted = formatWeekdayDuration(ms);
   return formatted || null;
 }
 

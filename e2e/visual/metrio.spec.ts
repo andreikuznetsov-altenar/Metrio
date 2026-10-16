@@ -224,18 +224,6 @@ test.describe("Metrio visual regression", () => {
     });
   });
 
-  test("efficiency KPI analytics drawer", async ({ page }) => {
-    await bootMetrio(page, "lead");
-    await page.getByRole("button", { name: /View Efficiency details/i }).click();
-    await expect(page.locator(".drawer--analytics")).toBeVisible();
-    await expect(page.locator('.drawer-root[data-drawer-phase="open"]')).toBeVisible();
-    await expect(page.getByRole("dialog")).toContainText("Efficiency");
-    await expect(page).toHaveScreenshot("analytics-efficiency-drawer.png", {
-      fullPage: true,
-      maxDiffPixelRatio: 0.02,
-    });
-  });
-
   test("performance overview loading overlay", async ({ page }) => {
     await page.addInitScript((fixtureId: string) => {
       localStorage.setItem("metrio-connection-connected", "true");
@@ -471,7 +459,7 @@ test.describe("Metrio visual regression", () => {
     await bootMetrio(page, "lead");
     await page
       .getByRole("button", {
-        name: /Overall performance score based on completion/i,
+        name: /Share of completed work accepted without returning/i,
       })
       .hover();
     await page.waitForTimeout(300);
@@ -610,7 +598,7 @@ test.describe("Metrio visual regression", () => {
 
   test("analytics-backflows-zero", async ({ page }) => {
     await bootMetrio(page, "lead");
-    await page.getByRole("button", { name: /View Backflows details/i }).click();
+    await page.getByRole("button", { name: /View Backflow Events details/i }).click();
     await expect(page.locator(".drawer--analytics")).toBeVisible({ timeout: 10_000 });
     await expect(page).toHaveScreenshot("analytics-backflows-zero.png", {
       fullPage: true,
@@ -636,7 +624,7 @@ test.describe("Metrio visual regression", () => {
     }, "lead");
     await page.goto("/");
     await openPerformanceFromHome(page);
-    await page.getByRole("button", { name: /View Backflows details/i }).click();
+    await page.getByRole("button", { name: /View Backflow Events details/i }).click();
     await expect(page.locator(".drawer--analytics")).toBeVisible({ timeout: 10_000 });
     await expect(page).toHaveScreenshot("analytics-backflows-zero-dark.png", {
       fullPage: true,
@@ -1046,7 +1034,8 @@ test.describe("Metrio visual regression", () => {
     await openPerformanceFromHome(page);
     await openFirstAttentionPerson(page);
     await page.locator(".drawer--person-detail").getByRole("tab", { name: "Work" }).click();
-    await expect(page.locator(".drawer--person-detail .person-detail-drawer__work-list")).toBeVisible();
+    // The Work tab lists Active work and (when task health flags any) Problematic tasks.
+    await expect(page.locator(".drawer--person-detail .person-detail-drawer__work-list").first()).toBeVisible();
     await expect(page).toHaveScreenshot("person-drawer-work-dark.png", {
       fullPage: true,
       maxDiffPixelRatio: 0.02,
@@ -2007,7 +1996,7 @@ test.describe("Metrio visual regression", () => {
 
   test("dashboard upcoming availability row", async ({ page }) => {
     await bootDashboardManager(page, 1440);
-    const card = page.getByRole("region", { name: "Team capacity" });
+    const card = page.getByRole("region", { name: "Current workload distribution" });
     await expect(card).toBeVisible();
     await expect(card).toHaveScreenshot("dashboard-upcoming-availability.png", {
       maxDiffPixelRatio: 0.02,
@@ -2659,7 +2648,7 @@ test.describe("Metrio visual regression", () => {
 
   test("team-backflow-events", async ({ page }) => {
     await bootMetrio(page, "lead");
-    await page.getByRole("button", { name: /View Backflows details/i }).click();
+    await page.getByRole("button", { name: /View Backflow Events details/i }).click();
     await expect(page.locator(".drawer--analytics")).toBeVisible();
     await expect(page.locator('.drawer-root[data-drawer-phase="open"]')).toBeVisible();
     await expect(page).toHaveScreenshot("team-backflow-events.png", {
@@ -2863,7 +2852,7 @@ test.describe("Metrio visual regression", () => {
     }, "lead");
     await page.goto("/?visualHomeTimeOff=1");
     await expect(page.getByTestId("dashboard-ready")).toBeVisible({ timeout: 30_000 });
-    const card = page.getByRole("region", { name: "Team capacity" });
+    const card = page.getByRole("region", { name: "Current workload distribution" });
     await expect(card).toBeVisible();
     await expect(card).toHaveScreenshot("upcoming-time-off.png", {
       maxDiffPixelRatio: 0.02,
@@ -2872,7 +2861,7 @@ test.describe("Metrio visual regression", () => {
 
   test("team-availability", async ({ page }) => {
     await bootDashboardManager(page, 1440);
-    const card = page.getByRole("region", { name: "Team capacity" });
+    const card = page.getByRole("region", { name: "Current workload distribution" });
     await expect(card).toBeVisible();
     await expect(card).toHaveScreenshot("team-availability.png", {
       maxDiffPixelRatio: 0.02,

@@ -1,3 +1,4 @@
+import { addCompletedCycleToDailyFlow, emptyDailyFlow, type DailyFlowFields } from '../history/dailyFlowFields';
 import { collectUniqueTeamIssues } from '../jira/uniqueIssues';
 import type { AuditIssue, ReportParams } from '../jira/types';
 import type { Person } from '../people/types';
@@ -127,20 +128,9 @@ export function countDailyFlowOnDate(
   dateKey: string,
   _params: ReportParams,
   contributorCanonical?: string,
-): {
-  completedOnDate: number;
-  backflowsOnDate: number;
-  firstPassOnDate: number;
-  cycleMsSumOnDate: number;
-  completedWithCycleOnDate: number;
-} {
+): DailyFlowFields {
   const range: DateRange = getLocalDayRangeFromKey(dateKey);
-
-  let completedOnDate = 0;
-  let backflowsOnDate = 0;
-  let firstPassOnDate = 0;
-  let cycleMsSumOnDate = 0;
-  let completedWithCycleOnDate = 0;
+  const bucket = emptyDailyFlow();
 
   for (const issue of issues) {
     const fullIssue = withFullIssueHistory(issue);
@@ -148,14 +138,9 @@ export function countDailyFlowOnDate(
     for (const cycle of extractCanonicalPerformanceCycles(fullIssue, profile)) {
       if (!cycle.completedAt || !isTimestampInRange(cycle.completedAt, range)) continue;
       if (contributorCanonical && cycle.ownerCanonical && cycle.ownerCanonical !== contributorCanonical) continue;
-      completedOnDate += 1;
-      if (cycle.isFirstPass) firstPassOnDate += 1;
-      if (cycle.cycleMs !== null) {
-        cycleMsSumOnDate += cycle.cycleMs;
-        completedWithCycleOnDate += 1;
-      }
+      addCompletedCycleToDailyFlow(bucket, cycle, contributorCanonical);
     }
-    backflowsOnDate += (fullIssue.events || []).filter((event) =>
+    bucket.backflowsOnDate += (fullIssue.events || []).filter((event) =>
       event.eventType === 'Status' &&
       isTimestampInRange(event.changedAt, range) &&
       isProfileBackflow(profile, event.fromValue, event.toValue, event) &&
@@ -163,11 +148,5 @@ export function countDailyFlowOnDate(
     ).length;
   }
 
-  return {
-    completedOnDate,
-    backflowsOnDate,
-    firstPassOnDate,
-    cycleMsSumOnDate,
-    completedWithCycleOnDate,
-  };
+  return bucket;
 }

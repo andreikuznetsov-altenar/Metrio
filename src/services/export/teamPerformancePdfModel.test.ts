@@ -12,9 +12,9 @@ const teamOverview: TeamPerformanceSnapshot = {
   directReportIds: ['p2'],
   summary: [
     { label: 'Throughput', value: '42' },
-    { label: 'First pass', value: '88%' },
+    { label: 'First Pass', value: '88%' },
     { label: 'Completed', value: '42' },
-    { label: 'Backflow events', value: '3' },
+    { label: 'Backflow Events', value: '3' },
   ],
   attention: [
     {
@@ -60,7 +60,7 @@ const teamSnapshot: TeamSnapshot = {
     available: 1,
     onVacation: 0,
     vacationSoon: 0,
-    highWorkload: 1,
+    heavyOrOverloaded: 1,
     problematic: 0,
   },
 };
@@ -100,9 +100,9 @@ describe('teamPerformancePdfModel', () => {
     expect(layout.teamName).toBeTruthy();
     expect(layout.teamThroughput.hero.value).toBe('42');
     expect(layout.teamThroughput.supporting.map((kpi) => kpi.label)).toEqual([
-      'First pass',
+      'First Pass',
       'Completed',
-      'Backflow events',
+      'Backflow Events',
     ]);
     expect(layout.digestSummary).toContain('Jul 2026');
     expect(layout.digestRecentChanges.title).toBe('Recent changes');

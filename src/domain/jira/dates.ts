@@ -178,6 +178,33 @@ export function formatDuration(ms: number | null | undefined): string {
   return parts.join(' ');
 }
 
+/**
+ * Stage-age / workflow-latency label. These ages count whole Mon-Fri weekdays (24h each), NOT 8h
+ * business days: say "weekdays" so they are never read as the business days used by Cycle,
+ * Execution and Review Time.
+ */
+export function formatWeekdayCount(days: number): string {
+  if (days <= 0) return '<1 weekday';
+  return `${days} weekday${days === 1 ? '' : 's'}`;
+}
+
+/**
+ * Weekday-elapsed duration (24h Mon-Fri days) e.g. "2 weekdays 3h". Use for stage ages and
+ * per-issue workflow latency; business-window durations use formatBusinessDuration.
+ */
+export function formatWeekdayDuration(ms: number | null | undefined): string {
+  if (ms === null || ms === undefined) return '';
+  const totalMinutes = Math.floor(Number(ms) / 60000);
+  const days = Math.floor(totalMinutes / (60 * 24));
+  const hours = Math.floor((totalMinutes % (60 * 24)) / 60);
+  const minutes = totalMinutes % 60;
+  const parts: string[] = [];
+  if (days) parts.push(formatWeekdayCount(days));
+  if (hours) parts.push(`${hours}h`);
+  if (!days && (minutes || parts.length === 0)) parts.push(`${minutes}m`);
+  return parts.join(' ');
+}
+
 /** Formats elapsed business-window time using the canonical eight-hour workday. */
 export function formatBusinessDuration(ms: number | null | undefined): string {
   if (ms === null || ms === undefined) return '';
@@ -193,6 +220,13 @@ export function formatBusinessDuration(ms: number | null | undefined): string {
   if (hours) parts.push(`${hours}h`);
   if (!days && (minutes || parts.length === 0)) parts.push(`${minutes}m`);
   return parts.join(' ');
+}
+
+/** Business days (WORKDAY_HOURS each) in a business-time duration. Never divide by 24h for these. */
+export const MS_PER_BUSINESS_DAY = WORKDAY_HOURS * 60 * 60 * 1000;
+
+export function businessMsToDays(ms: number): number {
+  return ms / MS_PER_BUSINESS_DAY;
 }
 
 export function getTodayIsoDate(): string {

@@ -4,12 +4,18 @@ import type { Person } from '../people/types';
 import { getOperationalIssues } from '../people/ownedIssues';
 import { getLocalDateKey } from '../periods/dateRange';
 import { withFullIssueHistory } from '../periods/issueCompletion';
-import { extractCanonicalPerformanceCycles } from '../workflows/canonicalPerformance';
+import { assigneeAt, extractCanonicalPerformanceCycles } from '../workflows/canonicalPerformance';
 import { isProfileBackflow } from '../workflows/profileCycles';
 import { resolveWorkflowProfile } from '../workflows/resolveWorkflowProfile';
 import type { DailyPersonSnapshot, DailyTeamSnapshot } from '../snapshots/types';
 import { resolveRequiredComparisonCoverage } from './historyRanges';
 import { SNAPSHOT_RETENTION_DAYS } from './constants';
+import {
+  addCompletedCycleToDailyFlow,
+  emptyDailyFlow,
+  sumDailyFlow,
+  type DailyFlowFields,
+} from './dailyFlowFields';
 import {
   DEFAULT_WORKING_CALENDAR,
   addCalendarDays,
@@ -17,21 +23,9 @@ import {
 } from '../calendar/workingCalendar';
 
 import { appNow } from "../../platform/appClock";
-export interface DailyFlowFields {
-  completedOnDate: number;
-  backflowsOnDate: number;
-  firstPassOnDate: number;
-  cycleMsSumOnDate: number;
-  completedWithCycleOnDate: number;
-}
+export type { DailyFlowFields } from './dailyFlowFields';
 
-export const EMPTY_DAILY_FLOW: DailyFlowFields = {
-  completedOnDate: 0,
-  backflowsOnDate: 0,
-  firstPassOnDate: 0,
-  cycleMsSumOnDate: 0,
-  completedWithCycleOnDate: 0,
-};
+export const EMPTY_DAILY_FLOW: DailyFlowFields = emptyDailyFlow();
 
 /** Enumerate local calendar date keys from start through end (inclusive). */
 export function enumerateLocalDateKeys(startKey: string, endKey: string): string[] {
@@ -62,10 +56,12 @@ export function indexPersonDailyFlow(
   issues: AuditIssue[],
   dateKeys: string[],
   _params: ReportParams,
+  /** Person scope: attribute cycles and backflow events to this canonical contributor only. */
+  contributorCanonical?: string,
 ): Map<string, DailyFlowFields> {
   const buckets = new Map<string, DailyFlowFields>();
   for (const key of dateKeys) {
-    buckets.set(key, { ...EMPTY_DAILY_FLOW });
+    buckets.set(key, emptyDailyFlow());
   }
 
   const minTs = DEFAULT_WORKING_CALENDAR.startOfDate(dateKeys[0])?.getTime() ?? Number.POSITIVE_INFINITY;
@@ -80,6 +76,9 @@ export function indexPersonDailyFlow(
         event.eventType === 'Status' &&
         isProfileBackflow(profile, event.fromValue, event.toValue, event)
       ) {
+        if (contributorCanonical && assigneeAt(fullIssue, event.changedAt) !== contributorCanonical) {
+          continue;
+        }
         const ts = Date.parse(event.changedAt);
         if (ts >= minTs && ts <= maxTs) {
           const key = getLocalDateKey(new Date(event.changedAt));
@@ -91,15 +90,13 @@ export function indexPersonDailyFlow(
 
     for (const cycle of extractCanonicalPerformanceCycles(fullIssue, profile)) {
       if (!cycle.completedAt) continue;
+      if (contributorCanonical && cycle.ownerCanonical && cycle.ownerCanonical !== contributorCanonical) {
+        continue;
+      }
       const completionKey = getLocalDateKey(new Date(cycle.completedAt));
       const bucket = buckets.get(completionKey);
       if (!bucket) continue;
-      bucket.completedOnDate += 1;
-      if (cycle.isFirstPass) bucket.firstPassOnDate += 1;
-      if (cycle.cycleMs !== null) {
-        bucket.cycleMsSumOnDate += cycle.cycleMs;
-        bucket.completedWithCycleOnDate += 1;
-      }
+      addCompletedCycleToDailyFlow(bucket, cycle, contributorCanonical);
     }
   }
 
@@ -111,9 +108,14 @@ export function buildHistoricalPersonSnapshots(
   dateKeys: string[],
   params: ReportParams,
 ): DailyPersonSnapshot[] {
-  const buckets = indexPersonDailyFlow(getOperationalIssues(person), dateKeys, params);
+  const buckets = indexPersonDailyFlow(
+    getOperationalIssues(person),
+    dateKeys,
+    params,
+    person.jira?.canonicalKey,
+  );
   return dateKeys.map((date) => {
-    const flow = buckets.get(date) || EMPTY_DAILY_FLOW;
+    const flow = buckets.get(date) || emptyDailyFlow();
     return {
       date,
       personId: person.id,
@@ -133,17 +135,7 @@ export function aggregateTeamFlowFromPersons(
   dateKeys: string[],
 ): DailyTeamSnapshot[] {
   return dateKeys.map((date) => {
-    const dayPersons = personSnapshots.filter((s) => s.date === date);
-    const flow = dayPersons.reduce(
-      (acc, s) => ({
-        completedOnDate: acc.completedOnDate + s.completedOnDate,
-        backflowsOnDate: acc.backflowsOnDate + s.backflowsOnDate,
-        firstPassOnDate: acc.firstPassOnDate + s.firstPassOnDate,
-        cycleMsSumOnDate: acc.cycleMsSumOnDate + s.cycleMsSumOnDate,
-        completedWithCycleOnDate: acc.completedWithCycleOnDate + s.completedWithCycleOnDate,
-      }),
-      { ...EMPTY_DAILY_FLOW },
-    );
+    const flow = sumDailyFlow(personSnapshots.filter((s) => s.date === date));
 
     return {
       date,
@@ -169,7 +161,7 @@ export function buildHistoricalTeamSnapshots(
     atRiskTaskCount: null,
     problematicTaskCount: null,
     overloadedPeople: null,
-    ...(buckets.get(date) || EMPTY_DAILY_FLOW),
+    ...(buckets.get(date) || emptyDailyFlow()),
   }));
 }
 

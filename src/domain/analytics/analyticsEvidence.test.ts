@@ -124,7 +124,7 @@ describe("buildAnalyticsEvidence", () => {
 
     expect(kpi.firstPassAcceptedCount).toBe(1);
     expect(kpi.completedCount).toBe(2);
-    expect(evidence.summaryLines.find((line) => line.label === "First pass")?.value).toBe("1");
+    expect(evidence.summaryLines.find((line) => line.label === "First Pass")?.value).toBe("1");
     expect(evidence.summaryLines.find((line) => line.label === "Rework")?.value).toBe("1");
   });
 

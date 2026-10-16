@@ -22,7 +22,7 @@ const snapshot: TeamSnapshot = {
     available: 5,
     onVacation: 0,
     vacationSoon: 0,
-    highWorkload: 1,
+    heavyOrOverloaded: 1,
     problematic: 2,
   },
 };

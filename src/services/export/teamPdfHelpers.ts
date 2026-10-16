@@ -83,14 +83,23 @@ export function pdfWorkloadTone(workloadLabel: string): PdfWorkloadTone {
 }
 
 export function workloadBalanceSubtitle(
-  rows: { personName: string; active: number }[],
+  rows: { personName: string; currentLoadPercent?: number | null }[],
 ): string | undefined {
   if (!rows.length) return undefined;
-  const highest = rows.reduce((best, row) => (row.active > best.active ? row : best), rows[0]);
-  if (highest.active <= 0) {
-    return 'No measured active work items for the team right now.';
+  const rated = rows.filter(
+    (row): row is { personName: string; currentLoadPercent: number } =>
+      typeof row.currentLoadPercent === 'number',
+  );
+  if (!rated.length) {
+    return 'Current workload is unavailable for the team right now.';
   }
-  return `${highest.personName} has the highest active workload (${highest.active}).`;
+  const highest = rated.reduce((best, row) =>
+    row.currentLoadPercent > best.currentLoadPercent ? row : best,
+  );
+  if (highest.currentLoadPercent <= 0) {
+    return 'No expected effort in the next 10 working days for the team.';
+  }
+  return `${highest.personName} has the highest current workload (${Math.round(highest.currentLoadPercent)}%).`;
 }
 
 /** Parity helper: same period KPI fields as Performance person detail / People views. */

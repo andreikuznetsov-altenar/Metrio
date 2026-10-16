@@ -93,16 +93,16 @@ export function DashboardEmployeeWorkSummary({
             <h2 className="executive-panel__title">Delivery quality</h2>
             <dl className="executive-employee-summary-card__stats">
               <div>
-                <dt>First pass</dt>
-                <dd>{metricValue(metrics, "First pass")}</dd>
+                <dt>First Pass</dt>
+                <dd>{metricValue(metrics, "First Pass")}</dd>
               </div>
               <div>
-                <dt>Backflow events</dt>
-                <dd>{metricValue(metrics, "Backflow events")}</dd>
+                <dt>Backflow Events</dt>
+                <dd>{metricValue(metrics, "Backflow Events")}</dd>
               </div>
               <div>
-                <dt>Cycle time</dt>
-                <dd>{metricValue(metrics, "Cycle time")}</dd>
+                <dt>Cycle Time</dt>
+                <dd>{metricValue(metrics, "Cycle Time")}</dd>
               </div>
             </dl>
           </article>

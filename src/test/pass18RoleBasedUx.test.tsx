@@ -54,7 +54,7 @@ describe("PASS 18 role-based UX", () => {
       <DashboardEmployeeWorkSummary
         trends={[{ label: "Completed", value: "6", chartSeries: [] }]}
         metrics={[
-          { label: "First pass", value: "84%" },
+          { label: "First Pass", value: "84%" },
           { label: "Backflows", value: "2" },
           { label: "Avg cycle", value: "3.1d" },
         ]}
@@ -115,11 +115,11 @@ describe("PASS 18 role-based UX", () => {
       scopeLabel: "Design organization",
       summary: [
         { label: "Efficiency", value: "88%" },
-        { label: "First pass", value: "84%" },
+        { label: "First Pass", value: "84%" },
         { label: "Completed", value: "31" },
         { label: "Backflows", value: "4" },
       ],
-      teamTrends: [{ teamId: team.teamId, teamName: team.teamName, label: "First pass improving" }],
+      teamTrends: [{ teamId: team.teamId, teamName: team.teamName, label: "First Pass improving" }],
       teamsNeedingAttention: [team],
       teams: [team],
       signals: [
@@ -229,7 +229,9 @@ describe("PASS 18 role-based UX", () => {
     });
     expect(managerModel.summary.map((metric) => metric.value)).toEqual([
       "31",
-      "84%",
+      // Both come from the same cycle counts (31 completed, 4 reworked): 27 / 31 and 4 / 31.
+      "87.1%",
+      "12.9%",
       "31",
       "4",
     ]);

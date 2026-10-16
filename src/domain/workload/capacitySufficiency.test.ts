@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { resolveCapacityDataState } from '../workflows/capacityWorkload';
 import {
-  CAPACITY_INSUFFICIENT_LABEL,
+  WORKLOAD_UNAVAILABLE_LABEL,
   capacityPresentationLabel,
   employeeCapacityKpi,
   measuredCapacityLabelFromPercent,
@@ -52,13 +52,13 @@ describe('capacity data sufficiency (WF8.1)', () => {
       personId: 'p1',
       activeWork: 3,
       atRisk: 0,
-      workload: CAPACITY_INSUFFICIENT_LABEL,
+      workload: WORKLOAD_UNAVAILABLE_LABEL,
       capacityDataState: 'insufficient_history',
       availability: 'Available',
     };
     const distribution = capacityDistribution([row]);
     expect(distribution.find((d) => d.label === 'Light')?.count).toBe(0);
-    expect(distribution.find((d) => d.label === CAPACITY_INSUFFICIENT_LABEL)?.count).toBe(1);
+    expect(distribution.find((d) => d.label === WORKLOAD_UNAVAILABLE_LABEL)?.count).toBe(1);
   });
 
   it('CASE B: measured 60.98% → Balanced', () => {
@@ -87,7 +87,7 @@ describe('capacity data sufficiency (WF8.1)', () => {
         personId: 'a',
         activeWork: 1,
         atRisk: 0,
-        workload: CAPACITY_INSUFFICIENT_LABEL,
+        workload: WORKLOAD_UNAVAILABLE_LABEL,
         capacityDataState: 'insufficient_history',
         availability: 'Available',
       },
@@ -95,13 +95,13 @@ describe('capacity data sufficiency (WF8.1)', () => {
         personId: 'b',
         activeWork: 2,
         atRisk: 0,
-        workload: CAPACITY_INSUFFICIENT_LABEL,
+        workload: WORKLOAD_UNAVAILABLE_LABEL,
         capacityDataState: 'insufficient_history',
         availability: 'Available',
       },
     ];
     const kpi = teamCapacityKpiFromRows(rows);
-    expect(kpi.badgeLabel).toBe(CAPACITY_INSUFFICIENT_LABEL);
+    expect(kpi.badgeLabel).toBe(WORKLOAD_UNAVAILABLE_LABEL);
     expect(kpi.badgeLabel).not.toBe('Balanced');
     expect(kpi.value).toBe('—');
   });
@@ -121,7 +121,7 @@ describe('capacity data sufficiency (WF8.1)', () => {
         personId: 'b',
         activeWork: 2,
         atRisk: 0,
-        workload: CAPACITY_INSUFFICIENT_LABEL,
+        workload: WORKLOAD_UNAVAILABLE_LABEL,
         capacityDataState: 'insufficient_history',
         availability: 'Available',
       },
@@ -140,7 +140,7 @@ describe('capacity data sufficiency (WF8.1)', () => {
     // Buckets follow each row's CURRENT workload label; capacityDataState does not move a person
     // out of Light. Only a row explicitly labelled as unrated (e.g. away) is "no history".
     expect(distribution.find((d) => d.label === 'Light')?.count).toBe(2);
-    expect(distribution.find((d) => d.label === CAPACITY_INSUFFICIENT_LABEL)?.count).toBe(1);
+    expect(distribution.find((d) => d.label === WORKLOAD_UNAVAILABLE_LABEL)?.count).toBe(1);
   });
 
   it('CASE G: zero completed cycles never overrides the current workload level', () => {
@@ -178,14 +178,14 @@ describe('capacity data sufficiency (WF8.1)', () => {
         personId: 'b',
         activeWork: 2,
         atRisk: 0,
-        workload: CAPACITY_INSUFFICIENT_LABEL,
+        workload: WORKLOAD_UNAVAILABLE_LABEL,
         capacityDataState: 'insufficient_history',
         availability: 'Available',
       },
     ];
     const distribution = capacityDistribution(rows);
     expect(distribution.find((d) => d.label === 'Heavy')?.count).toBe(1);
-    expect(distribution.find((d) => d.label === CAPACITY_INSUFFICIENT_LABEL)?.count).toBe(1);
+    expect(distribution.find((d) => d.label === WORKLOAD_UNAVAILABLE_LABEL)?.count).toBe(1);
 
     const kpi = teamCapacityKpiFromRows(rows);
     expect(kpi.value).toBe('1');

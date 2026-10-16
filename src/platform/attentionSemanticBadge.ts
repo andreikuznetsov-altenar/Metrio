@@ -11,7 +11,7 @@ const EXACT: Record<string, BadgeVariant> = {
   "No activity": "warning",
   Blocked: "danger",
   "On Hold": "warning",
-  "First pass": "success",
+  "First Pass": "success",
   Rework: "warning",
   Connected: "success",
   "Not configured": "neutral",

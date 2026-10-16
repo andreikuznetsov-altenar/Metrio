@@ -34,7 +34,7 @@ const snapshot: TeamSnapshot = {
       issues: [],
     },
   ],
-  summary: { available: 1, onVacation: 0, vacationSoon: 0, highWorkload: 0, problematic: 0 },
+  summary: { available: 1, onVacation: 0, vacationSoon: 0, heavyOrOverloaded: 0, problematic: 0 },
 };
 
 const reportData: AuditReportData = {

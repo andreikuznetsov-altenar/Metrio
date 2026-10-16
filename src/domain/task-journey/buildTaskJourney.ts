@@ -1,5 +1,5 @@
 import { format } from 'date-fns';
-import { formatDuration, getWeekdayElapsedDurationMs } from '../jira/dates';
+import { formatWeekdayCount, formatWeekdayDuration, getWeekdayElapsedDurationMs } from '../jira/dates';
 import type { AuditIssue, ReportParams } from '../jira/types';
 import { DEFAULT_OPERATIONAL_RULES } from '../operationalRules/operationalRulesDefaults';
 import type { OperationalRules } from '../operationalRules/operationalRulesTypes';
@@ -97,8 +97,7 @@ function canonicalStageLabel(issue: AuditIssue, status: string): string {
 function workingDaysLabelFromMs(ms: number | null): string {
   if (ms === null) return '—';
   const days = Math.floor(ms / (24 * 60 * 60 * 1000));
-  if (days <= 0) return '<1 working day';
-  return `${days} working day${days === 1 ? '' : 's'}`;
+  return formatWeekdayCount(days);
 }
 
 function buildStatusSegments(
@@ -271,7 +270,7 @@ function buildProblemBlock(
     detailLines.push(`Current stage: ${issue.currentStatus || '—'} · ${currentStageAgeLabel}`);
   }
   if (params.targetReviewDays) {
-    detailLines.push(`Target: ${params.targetReviewDays} days`);
+    detailLines.push(`Target: ${params.targetReviewDays} weekdays`);
   }
   if (health.backflowEventCount > 0) {
     detailLines.push(`Backflows: ${health.backflowEventCount}`);
@@ -305,7 +304,7 @@ function buildProblemBlock(
 
 export function formatSegmentDurationLabel(ms: number | null): string {
   if (ms === null) return '';
-  const compact = formatDuration(ms);
+  const compact = formatWeekdayDuration(ms);
   return compact || workingDaysLabelFromMs(ms);
 }
 

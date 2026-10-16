@@ -134,8 +134,22 @@ test.describe("PASS 28 drawer scroll geometry", () => {
       await page.locator(drawer).getByRole("tab", { name: "Work" }).click();
       await page.waitForTimeout(450);
       const work = await geometry(page, drawer);
+      // UX requirement: hidden views add no scroll height, nothing is clipped, and the panel
+      // scrolls only when its own (visible) content really overflows. Longer legitimate content
+      // (e.g. Task Health's Problematic tasks) may scroll; a short Work list never may.
       expectCanonical(work, "Work after Brief");
-      expect(work.scrolls, "a short Work panel must not scroll because of the hidden Brief view").toBe(false);
+      // no clipped content: the last visible element is inside the scrollable extent
+      expect(work.contentBottom, "no clipped content").toBeLessThanOrEqual(work.scroll + 1);
+      if (work.scrolls) {
+        // scrollbar is earned: visible content + the canonical inset exceeds the viewport...
+        expect(work.contentBottom + BOTTOM_INSET_MAX, "scrollbar without overflowing content").toBeGreaterThan(work.client);
+        // ...and nothing but that inset follows the last element (no blank scroll area)
+        expect(work.trailing, "blank scroll area left by a hidden view").toBeLessThanOrEqual(BOTTOM_INSET_MAX);
+      } else {
+        // short content: fits, and no internal scrollbar at all
+        expect(work.contentBottom, "short Work panel overflows without scrolling").toBeLessThanOrEqual(work.client + 1);
+        expect(work.scroll, "short Work panel must not scroll").toBeLessThanOrEqual(work.client + 1);
+      }
     });
 
     test(`Task journey drawer @ ${height}`, async ({ page }) => {

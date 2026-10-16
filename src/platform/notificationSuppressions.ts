@@ -9,7 +9,7 @@ import { appNow } from "./appClock";
  *  - `event`: the key already names one concrete event (assignment time, run period, milestone,
  *    vacation dates …). The tombstone is permanent (bounded by retention); a different event has a
  *    different key and still appears.
- *  - `episode`: the key names a live/state-derived condition (integration outage, "high workload",
+ *  - `episode`: the key names a live/state-derived condition (integration outage, "Heavy / Overloaded workload",
  *    "task problematic"). The tombstone lasts only while that condition lasts and is ended by
  *    `endNotificationEpisode` when the source reports the condition cleared, so a genuinely new
  *    occurrence later is not hidden forever.

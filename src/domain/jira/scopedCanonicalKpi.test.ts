@@ -301,7 +301,7 @@ describe("buildCanonicalKpiForPersonScope", () => {
     };
     const capacity = buildBranchCapacitySummary(persons);
     expect(capacity.totalPeople).toBe(3);
-    expect(capacity.insufficientHistoryPeople).toBe(0);
+    expect(capacity.unratedPeople).toBe(0);
     // Must not expose a single averaged capacity percentage field.
     expect(
       Object.keys(capacity).some((k) => /percent|average|avg/i.test(k)),

@@ -1,3 +1,4 @@
+import { reworkRateMetric } from "../performance/reworkRate";
 import { format, parseISO } from "date-fns";
 import type { BadgeVariant } from "../../components/Badge/Badge";
 import { buildKpiFromIssues } from "../jira/kpi";
@@ -46,10 +47,11 @@ import type { TimeOffEntry } from "../people/availability";
 import type { KpiSnapshotFile } from "../snapshots/types";
 import {
   compareTrendPeriods,
-  compareWeightedAvgCycleTrend,
+  compareMedianDurationTrend,
   compareWeightedFirstPassTrend,
 } from "../trends/trendEngine";
 import {
+  personDurationSamplePoints,
   personSparklinePoints,
   personTrendPoints,
 } from "../snapshots/snapshotEngine";
@@ -142,7 +144,7 @@ function mapWorkHistoryGroups(
         ? format(parseISO(entry.completedAt), "dd MMM yyyy")
         : "—",
       cycle: entry.cycleMs != null ? formatBusinessDuration(entry.cycleMs) : "—",
-      outcome: entry.firstPass ? "First pass" : "Rework",
+      outcome: entry.firstPass ? "First Pass" : "Rework",
       completedAtIso: entry.completedAt,
       cycleMs: entry.cycleMs,
       firstPass: entry.firstPass,
@@ -193,9 +195,9 @@ function buildPersonTrendCards(
     trendDays,
     trendAnchor,
   );
-  const avgCycleTrend = compareWeightedAvgCycleTrend(
-    personTrendPoints(kpiSnapshots, personId, "cycleMsSumOnDate"),
-    personTrendPoints(kpiSnapshots, personId, "completedWithCycleOnDate"),
+  const avgCycleTrend = compareMedianDurationTrend(
+    personDurationSamplePoints(kpiSnapshots, personId, "cycle"),
+    "cycleTime",
     trendDays,
     trendAnchor,
   );
@@ -217,13 +219,13 @@ function buildPersonTrendCards(
       sparkline: sparkCompleted,
       trendMetricKind: "count",
     }),
-    buildTrendCardData("First pass", firstPassTrend, {
+    buildTrendCardData("First Pass", firstPassTrend, {
       trendMetricKind: "percent",
     }),
-    buildTrendCardData("Cycle time", avgCycleTrend, {
+    buildTrendCardData("Cycle Time", avgCycleTrend, {
       trendMetricKind: "duration",
     }),
-    buildTrendCardData("Backflow events", backflowTrend, {
+    buildTrendCardData("Backflow Events", backflowTrend, {
       sparkline: sparkBackflows,
       trendMetricKind: "count",
     }),
@@ -361,17 +363,18 @@ export function buildPersonAnalyticsWorkspace(
       statusVariant: "neutral",
     },
     {
-      label: "First pass",
+      label: "First Pass",
       value: `${firstPassPercent(person)}%`,
       ...metricContextFromComparison(firstPassTrend, dateRangeKey, trendContextLabel),
     },
+    reworkRateMetric(perf),
     {
       label: "Completed",
       value: perf ? String(perf.completedCount) : "0",
       ...metricContextFromComparison(completedTrend, dateRangeKey, trendContextLabel),
     },
     {
-      label: "Backflow events",
+      label: "Backflow Events",
       value: perf ? String(perf.backflowEventCount) : "0",
       ...metricContextFromComparison(backflowTrend, dateRangeKey, trendContextLabel),
     },

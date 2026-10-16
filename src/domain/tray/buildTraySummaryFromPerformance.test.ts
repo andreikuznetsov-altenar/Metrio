@@ -109,7 +109,7 @@ describe("tray Throughput", () => {
     const model = buildTraySummaryFromPerformance(
       {
         homeRole: "manager",
-        teamSnapshot: { summary: [{ label: "First pass", value: "80%" }], workload: [] },
+        teamSnapshot: { summary: [{ label: "First Pass", value: "80%" }], workload: [] },
         deliveryRisk: [],
         scopeHealthEvidence: {
           role: "manager",

@@ -682,7 +682,7 @@ export function buildDocPerformanceFetchResult(
       available: persons.filter((entry) => entry.availability.state === "available").length,
       onVacation: persons.filter((entry) => entry.availability.state === "on_vacation").length,
       vacationSoon: persons.filter((entry) => entry.availability.state === "vacation_soon").length,
-      highWorkload: persons.filter(
+      heavyOrOverloaded: persons.filter(
         (entry) => entry.workload?.level === "high" || entry.workload?.level === "overloaded",
       ).length,
       problematic: persons.filter((entry) => (entry.workload?.atRiskCount ?? 0) > 0).length,

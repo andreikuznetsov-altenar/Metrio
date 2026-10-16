@@ -35,6 +35,5 @@ export function workloadBadgeVariantFromLabel(
   if (label === "Overloaded") return "danger";
   if (label === "Heavy") return "warning";
   if (label === "Light") return "success";
-  if (label === "Not enough history") return "neutral";
   return "neutral";
 }

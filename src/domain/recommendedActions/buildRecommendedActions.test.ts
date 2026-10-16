@@ -186,11 +186,11 @@ describe("Recommended Actions — Team Lead", () => {
     expect(a!.description).toBe("Nikita Volkov · starts in 5 days · 1 active · 1 in review");
   });
 
-  it("capacity uses the shared measured-capacity rule and ignores unmeasured people", () => {
+  it("capacity uses CURRENT workload; missing completed history never hides an overloaded person", () => {
     const [a] = buildRecommendedActions(lead({ teamWorkload: [row("a", "Heavy"), { ...row("b", "Overloaded"), capacityDataState: "insufficient_history" }, row("c", "Balanced")] }));
-    expect(a).toMatchObject({ id: "team-capacity", affectedCount: 1, title: "1 team member has elevated measured capacity", destination: { kind: "team_workload" }, actionLabel: "Open Team Workload" });
-    const two = buildRecommendedActions(lead({ teamWorkload: [row("a", "Heavy"), row("b", "Overloaded")] }));
-    expect(two[0]!.title).toBe("2 team members have elevated measured capacity");
+    expect(a).toMatchObject({ id: "team-capacity", affectedCount: 2, title: "2 team members are Heavy or Overloaded", destination: { kind: "team_workload" }, actionLabel: "Open Team Workload" });
+    const one = buildRecommendedActions(lead({ teamWorkload: [row("a", "Heavy"), row("c", "Balanced")] }));
+    expect(one[0]!.title).toBe("1 team member is Heavy or Overloaded");
   });
 
   it("delivery-risk concentration: conservative documented rule", () => {

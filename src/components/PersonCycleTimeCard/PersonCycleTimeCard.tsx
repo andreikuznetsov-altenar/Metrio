@@ -19,7 +19,7 @@ export function PersonCycleTimeCard({
   return (
     <Card className={["person-cycle-time-card", className].filter(Boolean).join(" ")}>
       <div className="person-cycle-time-card__head">
-        <span className="person-cycle-time-card__title">Cycle time</span>
+        <span className="person-cycle-time-card__title">Cycle Time</span>
         <HelpIcon label={CYCLE_HELP} />
       </div>
       <dl className="person-cycle-time-card__segments">

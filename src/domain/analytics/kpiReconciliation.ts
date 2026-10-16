@@ -178,7 +178,7 @@ export function reconcilePerformanceAnalytics(
 
   const dashboardFp = firstPassCounts(records);
   const evidenceFpNum = Number(
-    bundle.firstPass.summaryLines.find((line) => line.label === "First pass")?.value ?? -1,
+    bundle.firstPass.summaryLines.find((line) => line.label === "First Pass")?.value ?? -1,
   );
   const evidenceFpDen = Number(
     bundle.firstPass.summaryLines.find((line) => line.label === "Completed cycles")?.value ??
@@ -196,7 +196,7 @@ export function reconcilePerformanceAnalytics(
     reworkSumMatches;
 
   const evidenceBackflowEvents = Number(
-    bundle.backflows.summaryLines.find((line) => line.label === "Backflow events")?.value ?? -1,
+    bundle.backflows.summaryLines.find((line) => line.label === "Backflow Events")?.value ?? -1,
   );
   const backflowSemantic = "Qualifying backward workflow transitions occurring in the reporting period";
   const backflowMatches =
@@ -306,7 +306,7 @@ export function reconcileAnalyticsKpiEvidence(
       details: structured.completed.cycleDiagnostics,
     },
     {
-      metric: "First pass",
+      metric: "First Pass",
       semantic:
         "First-pass accepted cycles / completed cycles (integer counts; firstPass + rework = completed)",
       matches: structured.firstPass.matches,
@@ -315,7 +315,7 @@ export function reconcileAnalyticsKpiEvidence(
       details: structured.firstPass.cycleDiagnostics,
     },
     {
-      metric: "Backflow events",
+      metric: "Backflow Events",
       semantic: structured.backflows.semantic,
       matches: structured.backflows.matches,
       dashboardValue: `${structured.backflows.dashboardEvents} events`,
@@ -368,12 +368,12 @@ export function formatPerformanceAnalyticsReconciliation(
     `evidence: ${reconciliation.completed.evidence}`,
     reconciliation.completed.matches ? "PASS" : "FAIL",
     "",
-    "First pass",
+    "First Pass",
     `dashboard: ${reconciliation.firstPass.dashboardNumerator} / ${reconciliation.firstPass.dashboardDenominator}`,
     `evidence: ${reconciliation.firstPass.evidenceNumerator} / ${reconciliation.firstPass.evidenceDenominator}`,
     reconciliation.firstPass.matches ? "PASS" : "FAIL",
     "",
-    "Backflow events",
+    "Backflow Events",
     `dashboard events: ${reconciliation.backflows.dashboardEvents}`,
     `events: ${reconciliation.backflows.evidenceEvents}`,
     reconciliation.backflows.matches ? "PASS" : "FAIL",

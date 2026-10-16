@@ -58,7 +58,7 @@ function OutcomeSummary({
   const lines =
     evidence.metric === "first_pass"
       ? [
-          { label: "First pass", value: summaryLineValue(evidence, "First pass") },
+          { label: "First Pass", value: summaryLineValue(evidence, "First Pass") },
           { label: "Rework", value: summaryLineValue(evidence, "Rework") },
           {
             label: "Completed cycles",
@@ -168,7 +168,7 @@ export function AnalyticsDrilldownDrawer({
   const listHeading = (() => {
     if (!evidence) return null;
     if (evidence.metric === "avg_cycle") return "Longest cycles";
-    if (evidence.metric === "backflows") return "Backflow events";
+    if (evidence.metric === "backflows") return "Backflow Events";
     return null;
   })();
 
@@ -241,12 +241,12 @@ export function AnalyticsDrilldownDrawer({
           {evidence.metric === "first_pass" && evidence.detailLevel === "task" ? (
             <div className="analytics-drawer__filter">
               <SegmentedControl
-                ariaLabel="First pass filter"
+                ariaLabel="First Pass filter"
                 fullWidth
                 value={firstPassFilter}
                 options={[
                   { value: "all", label: "All" },
-                  { value: "first_pass", label: "First pass" },
+                  { value: "first_pass", label: "First Pass" },
                   { value: "rework", label: "Rework" },
                 ]}
                 onChange={setFirstPassFilter}

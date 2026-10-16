@@ -38,7 +38,8 @@ function capacityKpiFromWorkload(workload: WorkloadRow[]): DashboardKpiCard {
   const summary = teamCapacityKpiFromRows(workload);
   return {
     id: "capacity",
-    label: "Capacity",
+    // Count of people whose CURRENT workload is Heavy or Overloaded (not scheduling capacity).
+    label: "Heavy / Overloaded",
     value: summary.value,
     badge: { label: summary.badgeLabel, variant: summary.badgeVariant },
     tooltip: summary.tooltip,
@@ -51,7 +52,7 @@ export function buildEmployeeDashboardKpis(input: {
   workload: WorkloadResult | null;
   availability?: PersonAvailability;
 }): DashboardKpiCard[] {
-  const pick = ["Throughput", "First pass", "Completed"] as const;
+  const pick = ["Throughput", "First Pass", "Completed"] as const;
   const cards: DashboardKpiCard[] = pick.map((label) => {
     const metric = input.metrics.find((m) => m.label === label);
     return {
@@ -144,7 +145,7 @@ export function buildManagerDashboardKpis(input: {
     },
     {
       id: "first-pass",
-      label: "First pass",
+      label: "First Pass",
       value: input.firstPassRate,
     },
     {
@@ -186,10 +187,10 @@ export function buildDirectorDashboardKpis(input: {
     },
     {
       id: "capacity-imbalance",
-      label: "Capacity imbalance",
+      label: "Workload imbalance",
       value: String(input.capacityImbalance),
       badge: badgeForCount(input.capacityImbalance, "Balanced"),
-      tooltip: "Gap between heavy/overloaded and light capacity levels across measured team members.",
+      tooltip: "Gap between Heavy / Overloaded and Light people by Current workload.",
     },
   ];
 }

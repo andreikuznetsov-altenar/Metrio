@@ -259,7 +259,7 @@ describe('PASS14.2 historical coverage and trends', () => {
     const snapshot = {
       mode: 'team',
       persons: [person('p1')],
-      summary: { available: 1, onVacation: 0, vacationSoon: 0, highWorkload: 0, problematic: 0 },
+      summary: { available: 1, onVacation: 0, vacationSoon: 0, heavyOrOverloaded: 0, problematic: 0 },
     } as TeamSnapshot;
     const result = runHistoricalBootstrap(
       coveredFile('2026-08-13', '2026-10-07'),

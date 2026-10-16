@@ -13,9 +13,13 @@ export function buildEmployeeFocusActions(input: {
 }): ActionItem[] {
   const { workspace, myWeek, selfPersonId } = input;
   const items: ActionItem[] = [];
+  // One focus item per Jira issue: an issue that is both an attention signal and a problematic
+  // work row (or also in Review) is still ONE thing for the person to look at.
+  const listed = new Set<string>();
 
   for (const signal of workspace.attention.slice(0, 8)) {
-    if (!signal.issueKey) continue;
+    if (!signal.issueKey || listed.has(signal.issueKey)) continue;
+    listed.add(signal.issueKey);
     items.push({
       id: `focus-attention-${signal.issueKey}`,
       kind: "task_attention",
@@ -29,6 +33,8 @@ export function buildEmployeeFocusActions(input: {
   }
 
   for (const row of workspace.problematicWork.slice(0, 4)) {
+    if (listed.has(row.key)) continue;
+    listed.add(row.key);
     items.push({
       id: `focus-problem-${row.key}`,
       kind: "task_attention",
@@ -42,6 +48,8 @@ export function buildEmployeeFocusActions(input: {
   }
 
   for (const row of myWeek.inReview.slice(0, 3)) {
+    if (listed.has(row.key)) continue;
+    listed.add(row.key);
     items.push({
       id: `focus-review-${row.key}`,
       kind: "review_bottleneck",

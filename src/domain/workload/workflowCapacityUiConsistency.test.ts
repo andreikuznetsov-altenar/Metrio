@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { capacityDistribution } from '../home/executiveDashboardModel';
-import { CAPACITY_INSUFFICIENT_LABEL } from './capacityPresentation';
+import { WORKLOAD_UNAVAILABLE_LABEL } from './capacityPresentation';
 import { runWorkflowCapacityAudit } from '../workflows/workflowCapacityAudit';
 import { buildPerformanceViewModels } from '../../services/performance/performanceViewModel';
 import type { PerformanceFetchResult } from '../../services/performance/performanceTypes';
@@ -88,7 +88,7 @@ function buildResult(persons: Person[]): PerformanceFetchResult {
       available: persons.length,
       onVacation: 0,
       vacationSoon: 0,
-      highWorkload: 0,
+      heavyOrOverloaded: 0,
       problematic: 0,
     },
   };
@@ -145,6 +145,6 @@ describe('workflow capacity UI consistency', () => {
     expect(total).toBe(1);
     // The distribution must agree with the row: same person, same current-workload label.
     expect(distribution.find((d) => d.label === 'Light')?.count).toBe(1);
-    expect(distribution.find((d) => d.label === CAPACITY_INSUFFICIENT_LABEL)?.count).toBe(0);
+    expect(distribution.find((d) => d.label === WORKLOAD_UNAVAILABLE_LABEL)?.count).toBe(0);
   });
 });

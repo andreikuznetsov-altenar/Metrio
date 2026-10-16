@@ -79,7 +79,7 @@ export function EmployeeWorkHistoryView({
           onChange={setFilter}
           options={[
             { value: "all", label: "All" },
-            { value: "first_pass", label: "First pass" },
+            { value: "first_pass", label: "First Pass" },
             { value: "rework", label: "Rework" },
           ]}
         />

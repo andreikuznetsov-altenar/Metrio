@@ -20,9 +20,9 @@ describe("buildManagerDashboardKpis", () => {
     });
     expect(cards.map((c) => c.label)).toEqual([
       "Throughput",
-      "First pass",
+      "First Pass",
       "Delivery risk",
-      "Capacity",
+      "Heavy / Overloaded",
     ]);
 
     const throughput = cards[0];
@@ -72,7 +72,7 @@ describe("buildManagerExecutiveModel TEAM HEALTH wiring", () => {
     performanceSnapshot: {
       metrics: [
         { label: "Throughput", value: "30" },
-        { label: "First pass", value: "80%" },
+        { label: "First Pass", value: "80%" },
       ],
     },
     focus: [] as never[],
@@ -87,7 +87,7 @@ describe("buildManagerExecutiveModel TEAM HEALTH wiring", () => {
       teamSnapshot: {
         summary: [
           { label: "Throughput", value: "31" },
-          { label: "First pass", value: "84%" },
+          { label: "First Pass", value: "84%" },
         ],
         workload: [],
       },
@@ -98,7 +98,7 @@ describe("buildManagerExecutiveModel TEAM HEALTH wiring", () => {
       teamSnapshot: {
         summary: [
           { label: "Throughput", value: "12" },
-          { label: "First pass", value: "90%" },
+          { label: "First Pass", value: "90%" },
         ],
         workload: [],
       },
@@ -133,7 +133,7 @@ describe("buildManagerExecutiveModel TEAM HEALTH wiring", () => {
       const model = buildManagerExecutiveModel({
         ...base,
         teamSnapshot: {
-          summary: [performanceThroughput, { label: "First pass", value: period.firstPass }],
+          summary: [performanceThroughput, { label: "First Pass", value: period.firstPass }],
           workload: [],
         },
         deliveryRiskCount: 44,
@@ -152,7 +152,7 @@ describe("buildEmployeeDashboardKpis", () => {
     const cards = buildEmployeeDashboardKpis({
       metrics: [
         { label: "Throughput", value: "12" },
-        { label: "First pass", value: "90%" },
+        { label: "First Pass", value: "90%" },
         { label: "Completed", value: "12" },
       ],
       workload: testWorkload({

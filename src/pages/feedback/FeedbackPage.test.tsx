@@ -43,7 +43,7 @@ const surveyStoreState = {
 const appStoreState = {
   prefs: DEFAULT_PREFERENCES,
   teamDetection: { mode: 'team' as const, ok: true, employee: null, fullTeam: [], directReports: [] },
-  teamSnapshot: { mode: 'team', persons: [], summary: { available: 0, onVacation: 0, vacationSoon: 0, highWorkload: 0, problematic: 0 } },
+  teamSnapshot: { mode: 'team', persons: [], summary: { available: 0, onVacation: 0, vacationSoon: 0, heavyOrOverloaded: 0, problematic: 0 } },
   updatePrefs,
 };
 

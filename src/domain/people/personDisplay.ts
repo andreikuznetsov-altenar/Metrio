@@ -1,3 +1,4 @@
+import { firstPassPercentFromCounts } from '../performance/reworkRate';
 import { resolveAvailabilityPresentation } from '../availability/availabilityPresentation';
 import type { Person } from './types';
 import type { ReportParams } from '../jira/types';
@@ -28,9 +29,8 @@ export function buildPersonReportKeyIndex(persons: Person[]): Record<string, str
 export function firstPassPercent(person: Person): number {
   const perf = person.performance;
   if (!perf) return 0;
-  if (perf.firstPassRatePercent != null) return perf.firstPassRatePercent;
-  if (!perf.completedCount) return 0;
-  return Math.round((perf.firstPassAcceptedCount / perf.completedCount) * 10000) / 100;
+  // First Pass = completed cycles without rework, coordinated with Rework Rate (adds up to 100).
+  return firstPassPercentFromCounts(perf) ?? perf.firstPassRatePercent ?? 0;
 }
 
 export function personActiveCount(person: Person, params: ReportParams | null): number {

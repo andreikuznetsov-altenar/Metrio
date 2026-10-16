@@ -109,6 +109,10 @@ test.describe("PASS 14.6A interactions", () => {
       });
       return;
     }
+    // Hover only once the drawer has finished opening: a hover during the slide-in lands on the
+    // icon's old position and never reaches it.
+    await expect(page.locator('.drawer-root[data-drawer-phase="open"]')).toBeVisible();
+    await help.scrollIntoViewIfNeeded();
     await help.hover();
     const tooltip = page.getByTestId("metrio-tooltip");
     await expect(tooltip).toBeVisible({ timeout: 15_000 });

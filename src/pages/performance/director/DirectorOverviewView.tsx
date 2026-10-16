@@ -128,7 +128,7 @@ export function DirectorOverviewView({
                 />
                 <SortableTableHeader
                   columnId="capacity"
-                  label="Capacity"
+                  label="Current workload"
                   sort={sort}
                   onToggle={toggleSort}
                 />
@@ -149,7 +149,7 @@ export function DirectorOverviewView({
                   <td>
                     <CapacityBadgeMix
                       parts={parseCapacitySummaryLabel(team.capacitySummaryLabel)}
-                      ariaLabel={team.capacitySummaryLabel ?? "No measured capacity"}
+                      ariaLabel={team.capacitySummaryLabel ?? "No current workload"}
                     />
                   </td>
                   <td>{capacityByTeamId.get(team.teamId)?.label ?? "—"}</td>

@@ -11,7 +11,7 @@ export const analyticsDrilldownDescription: Record<AnalyticsDrilldownMetric, str
 
 export const analyticsDrilldownTitle: Record<AnalyticsDrilldownMetric, string> = {
   completed: "Completed",
-  first_pass: "First pass",
-  backflows: "Backflow events",
+  first_pass: "First Pass",
+  backflows: "Backflow Events",
   avg_cycle: "Median cycle time",
 };

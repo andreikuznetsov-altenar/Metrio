@@ -13,7 +13,7 @@ import {
 import "./analytics-issue-row.css";
 
 function outcomeBadge(outcome: AnalyticsEvidenceIssue["outcome"]) {
-  if (outcome === "first_pass") return { label: "First pass", variant: "success" as const };
+  if (outcome === "first_pass") return { label: "First Pass", variant: "success" as const };
   if (outcome === "rework") return { label: "Rework", variant: "warning" as const };
   if (outcome === "backflow") return { label: "Backflow", variant: "danger" as const };
   return null;

@@ -1,3 +1,4 @@
+import { firstPassPercentFromCounts, reworkRateMetric } from '../../domain/performance/reworkRate';
 import { format, parseISO } from 'date-fns';
 import { firstPassPercent, personActiveCount, personAtRiskCount, personProblematicCount, personRouteKey } from '../../domain/people/personDisplay';
 import { buildTeamDigestSections } from '../../domain/digests/weeklyDigest';
@@ -9,10 +10,17 @@ import { inclusiveRangeDayCount } from '../../domain/performance/performanceDate
 import { buildDeliveryRiskItems } from '../../domain/radar/deliveryRisk';
 import { buildTeamRadar, summarizeTeamRadar } from '../../domain/radar/teamRadar';
 import type { KpiSnapshotFile } from '../../domain/snapshots/types';
-import { teamSparklinePoints, teamTrendPoints, personTrendPoints } from '../../domain/snapshots/snapshotEngine';
+import {
+  personDurationSamplePoints,
+  personTrendPoints,
+  teamDurationSamplePoints,
+  teamSparklinePoints,
+  teamTrendPoints,
+} from '../../domain/snapshots/snapshotEngine';
 import {
   compareTrendPeriods,
-  compareWeightedAvgCycleTrend,
+  compareMedianDurationTrend,
+  compareWeightedReworkRateTrend,
   compareWeightedFirstPassTrend,
 } from '../../domain/trends/trendEngine';
 import { buildWorkloadBalance } from '../../domain/workload/workloadBalance';
@@ -65,7 +73,8 @@ function buildTeamOverviewSections(
   ]);
 
   const throughput = reportData.teamKpi.throughputCount ?? reportData.teamKpi.completedCount;
-  const firstPass = firstPassMetrics?.official.firstPassRatePercent ?? 0;
+  const firstPass =
+    firstPassPercentFromCounts(reportData.teamKpi) ?? firstPassMetrics?.official.firstPassRatePercent ?? 0;
   const trendDays = inclusiveRangeDayCount(params.dateFrom, params.dateTo);
   const trendAnchor = new Date(`${params.dateTo}T12:00:00`);
 
@@ -76,9 +85,15 @@ function buildTeamOverviewSections(
     trendDays,
     trendAnchor,
   );
-  const avgCycleTrend = compareWeightedAvgCycleTrend(
-    teamTrendPoints(kpiSnapshots, 'cycleMsSumOnDate'),
-    teamTrendPoints(kpiSnapshots, 'completedWithCycleOnDate'),
+  const avgCycleTrend = compareMedianDurationTrend(
+    teamDurationSamplePoints(kpiSnapshots, 'cycle'),
+    'cycleTime',
+    trendDays,
+    trendAnchor,
+  );
+  const reworkRateTrend = compareWeightedReworkRateTrend(
+    teamTrendPoints(kpiSnapshots, 'completedOnDate'),
+    teamTrendPoints(kpiSnapshots, 'reworkedCyclesOnDate'),
     trendDays,
     trendAnchor,
   );
@@ -104,13 +119,14 @@ function buildTeamOverviewSections(
     },
     {
       title: 'KPI overview',
-      subtitle: `${snapshot.summary.available} available · ${snapshot.summary.onVacation} on vacation · ${snapshot.summary.highWorkload} high workload · ${snapshot.summary.problematic} problematic tasks`,
+      subtitle: `${snapshot.summary.available} available · ${snapshot.summary.onVacation} on vacation · ${snapshot.summary.heavyOrOverloaded} Heavy / Overloaded · ${snapshot.summary.problematic} problematic tasks`,
       keyValues: [
         { label: 'Throughput', value: String(throughput) },
-        { label: 'First pass rate', value: `${firstPass}%` },
+        { label: 'First Pass rate', value: `${firstPass}%` },
         { label: 'Completed', value: String(reportData.teamKpi.completedCount) },
+        { label: 'Rework Rate', value: reworkRateMetric(reportData.teamKpi).value },
         { label: 'Reworked cycles', value: String(reportData.teamKpi.reworkedCycleCount) },
-        { label: 'Backflow events', value: String(reportData.teamKpi.backflowEventCount) },
+        { label: 'Backflow Events', value: String(reportData.teamKpi.backflowEventCount) },
       ],
     },
     {
@@ -130,13 +146,19 @@ function buildTeamOverviewSections(
             : firstPassTrend.sufficiencyMessage || '—',
         },
         {
-          label: 'Cycle time',
+          label: 'Rework Rate',
+          value: reworkRateTrend.sufficient
+            ? `${reworkRateTrend.current.toFixed(0)}% (${reworkRateTrend.label})`
+            : reworkRateTrend.sufficiencyMessage || '—',
+        },
+        {
+          label: 'Cycle Time (median)',
           value: avgCycleTrend.sufficient
-            ? `${avgCycleTrend.current.toFixed(1)} days (${avgCycleTrend.label})`
+            ? `${avgCycleTrend.current.toFixed(1)} business days (${avgCycleTrend.label})`
             : avgCycleTrend.sufficiencyMessage || '—',
         },
         {
-          label: 'Backflow events',
+          label: 'Backflow Events',
           value: backflowTrend.sufficient
             ? `${Math.round(backflowTrend.current)} (${backflowTrend.label})`
             : backflowTrend.sufficiencyMessage || '—',
@@ -146,12 +168,16 @@ function buildTeamOverviewSections(
     },
     {
       title: 'Workload Balance',
-      subtitle: workload.rows[0]
-        ? `${workload.rows[0].personName} has the highest active workload in the team.`
-        : undefined,
-      rowHeaders: ['Person', 'Active', 'At risk', 'Workload'],
+      subtitle: workload.insights.find((insight) => insight.type === 'highest_workload')?.message,
+      rowHeaders: ['Person', 'Current workload', 'Active', 'At risk', 'Level'],
       rows: workload.rows.map((row) => ({
-        cells: [row.personName, String(row.activeCount), String(row.atRiskCount), row.level],
+        cells: [
+          row.personName,
+          row.currentLoadPercent === null ? '—' : `${Math.round(row.currentLoadPercent)}%`,
+          String(row.activeCount),
+          String(row.atRiskCount),
+          row.level,
+        ],
       })),
     },
   ];
@@ -254,7 +280,7 @@ export function buildPerformanceExportData(input: {
     sections = [
       {
         title: 'Team members',
-        rowHeaders: ['Person', 'Throughput', 'First pass', 'Active', 'Problematic'],
+        rowHeaders: ['Person', 'Throughput', 'First Pass', 'Active', 'Problematic'],
         rows: snapshot.persons.map((p) => ({
           cells: [
             p.bamboo.displayName,
@@ -290,7 +316,7 @@ export function buildPerformanceExportData(input: {
           { label: 'Currently active', value: String(week.summary.currentlyActive) },
           { label: 'At risk', value: String(week.summary.atRisk) },
           { label: 'In review', value: String(week.summary.inReview) },
-          { label: 'Backflow events this week', value: String(week.summary.backflowsThisWeek) },
+          { label: 'Backflow Events this week', value: String(week.summary.backflowsThisWeek) },
         ],
       },
       {
@@ -329,10 +355,10 @@ export function buildPerformanceExportData(input: {
         title: 'KPI detail',
         keyValues: [
           { label: 'Throughput', value: String(throughput) },
-          { label: 'First pass', value: `${firstPass}%` },
+          { label: 'First Pass', value: `${firstPass}%` },
           { label: 'Completed (range)', value: String(person.performance?.completedCount ?? 0) },
           { label: 'Reworked cycles (range)', value: String(person.performance?.reworkedCycleCount ?? 0) },
-          { label: 'Backflow events (range)', value: String(person.performance?.backflowEventCount ?? 0) },
+          { label: 'Backflow Events (range)', value: String(person.performance?.backflowEventCount ?? 0) },
         ],
       },
     ];
@@ -341,8 +367,7 @@ export function buildPerformanceExportData(input: {
     if (coverage) metadata.historyCoverage = coverage.label;
     const completed = personTrendPoints(kpiSnapshots, person.id, 'completedOnDate');
     const firstPass = personTrendPoints(kpiSnapshots, person.id, 'firstPassOnDate');
-    const cycleSum = personTrendPoints(kpiSnapshots, person.id, 'cycleMsSumOnDate');
-    const completedWithCycle = personTrendPoints(kpiSnapshots, person.id, 'completedWithCycleOnDate');
+    const reworked = personTrendPoints(kpiSnapshots, person.id, 'reworkedCyclesOnDate');
     const backflows = personTrendPoints(kpiSnapshots, person.id, 'backflowsOnDate');
     const hasHistory = kpiSnapshots.personSnapshots.some((s) => s.personId === person.id);
     const trendDays = inclusiveRangeDayCount(reportData.params.dateFrom, reportData.params.dateTo);
@@ -354,9 +379,15 @@ export function buildPerformanceExportData(input: {
       trendDays,
       trendAnchor,
     );
-    const avgCycleTrend = compareWeightedAvgCycleTrend(
-      cycleSum,
-      completedWithCycle,
+    const avgCycleTrend = compareMedianDurationTrend(
+      personDurationSamplePoints(kpiSnapshots, person.id, 'cycle'),
+      'cycleTime',
+      trendDays,
+      trendAnchor,
+    );
+    const reworkRateTrend = compareWeightedReworkRateTrend(
+      completed,
+      reworked,
       trendDays,
       trendAnchor,
     );
@@ -382,13 +413,19 @@ export function buildPerformanceExportData(input: {
                   : '—',
               },
               {
-                label: 'Cycle time',
-                value: avgCycleTrend.sufficient
-                  ? `${avgCycleTrend.current.toFixed(1)} days`
+                label: 'Rework Rate',
+                value: reworkRateTrend.sufficient
+                  ? `${reworkRateTrend.current.toFixed(0)}%`
                   : '—',
               },
               {
-                label: 'Backflow events',
+                label: 'Cycle Time (median)',
+                value: avgCycleTrend.sufficient
+                  ? `${avgCycleTrend.current.toFixed(1)} business days`
+                  : '—',
+              },
+              {
+                label: 'Backflow Events',
                 value: backflowTrend.sufficient
                   ? String(Math.round(backflowTrend.current))
                   : '—',

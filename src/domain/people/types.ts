@@ -61,7 +61,7 @@ export interface TeamSnapshot {
     available: number;
     onVacation: number;
     vacationSoon: number;
-    highWorkload: number;
+    heavyOrOverloaded: number;
     problematic: number;
   };
 }

@@ -36,7 +36,7 @@ const snapshot: TeamPerformanceSnapshot = {
   directReportIds: ["person-01"],
   summary: [
     { label: "Efficiency", value: "86%" },
-    { label: "First pass", value: "93%" },
+    { label: "First Pass", value: "93%" },
     { label: "Completed", value: "5" },
     { label: "Backflows", value: "2" },
   ],

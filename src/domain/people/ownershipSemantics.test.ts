@@ -96,7 +96,7 @@ describe('current vs historical ownership', () => {
         available: 2,
         onVacation: 0,
         vacationSoon: 0,
-        highWorkload: 0,
+        heavyOrOverloaded: 0,
         problematic: 0,
       },
       persons: [andreiHistorical, valeriia],
@@ -129,7 +129,7 @@ describe('current vs historical ownership', () => {
         available: 2,
         onVacation: 0,
         vacationSoon: 0,
-        highWorkload: 0,
+        heavyOrOverloaded: 0,
         problematic: 0,
       },
       persons: [

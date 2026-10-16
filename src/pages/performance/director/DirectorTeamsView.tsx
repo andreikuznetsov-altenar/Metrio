@@ -84,7 +84,7 @@ export function DirectorTeamsView({
             <dd>{selected.completed}</dd>
           </div>
           <div>
-            <dt>First pass</dt>
+            <dt>First Pass</dt>
             <dd>{selected.firstPassPercent}%</dd>
           </div>
           <div>
@@ -144,7 +144,7 @@ export function DirectorTeamsView({
               />
               <SortableTableHeader
                 columnId="firstPass"
-                label="First pass"
+                label="First Pass"
                 sort={sort}
                 onToggle={toggleSort}
                 className="performance-table__num"

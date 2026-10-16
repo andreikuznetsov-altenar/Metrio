@@ -92,7 +92,7 @@ export const WEEKLY_DIGEST_VISUAL: OperationalDigest = sampleDigest({
       title: "This week",
       lines: [
         "Completed: 1",
-        "First pass: 100%",
+        "First Pass: 100%",
         "Avg cycle: 0.1d",
         "Backflows: 1",
       ],
@@ -108,7 +108,7 @@ export const WEEKLY_DIGEST_VISUAL: OperationalDigest = sampleDigest({
       lines: [
         "20 tasks at delivery risk",
         "5 people on Team Radar",
-        "2 with high or overloaded workload",
+        "2 Heavy / Overloaded",
       ],
     },
     {

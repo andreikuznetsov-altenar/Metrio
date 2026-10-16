@@ -1,3 +1,4 @@
+import { workloadDisplayLabel } from "../domain/workload/workloadDisplay";
 import type { AppPreferences } from "./preferences";
 import type { Person } from "../domain/people/types";
 import type { ReportParams } from "../domain/jira/types";
@@ -32,8 +33,9 @@ function workloadTransition(
   if (nextLevel !== "high" && nextLevel !== "overloaded") return null;
   if (!prevLevel) return null;
 
-  const title = "Workload changed";
-  const message = `${person.bamboo.displayName} is ${nextLevel}`;
+  const title = "Current workload changed";
+  // Same display vocabulary as every surface (Light / Balanced / Heavy / Overloaded).
+  const message = `${person.bamboo.displayName} is ${workloadDisplayLabel(nextLevel)}`;
   return {
     type: "workload_change",
     title,

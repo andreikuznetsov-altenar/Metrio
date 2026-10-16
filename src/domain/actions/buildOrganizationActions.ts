@@ -19,7 +19,7 @@ export function buildOrganizationActions(input: {
       id: "org-workload-concentration",
       kind: "workload",
       severity: "warning",
-      title: `${input.overloadedCount} people are overloaded`,
+      title: `${input.overloadedCount} ${input.overloadedCount === 1 ? "person is" : "people are"} Overloaded`,
       count: input.overloadedCount,
       target: { kind: "performance", view: "people" },
       source: "jira",

@@ -34,12 +34,12 @@ export function buildLeadershipRecommendations(input: {
       continue;
     }
 
-    if (m.capacity.heavy + m.capacity.overloaded >= 1 && m.capacity.insufficientHistoryPeople >= 2) {
+    if (m.capacity.heavy + m.capacity.overloaded >= 1 && m.capacity.light >= 2) {
       candidates.push({
         id: `branch-capacity-${branch.leaderId}`,
         severity: "watch",
-        title: `${leader} capacity is uneven`,
-        explanation: `${m.capacity.heavy + m.capacity.overloaded} people are Heavy or Overloaded while ${m.capacity.insufficientHistoryPeople} do not yet have enough history. Review allocation with ${leader}.`,
+        title: `${leader} current workload is uneven`,
+        explanation: `${m.capacity.heavy + m.capacity.overloaded} people are Heavy or Overloaded while ${m.capacity.light} are Light. Rebalance current workload with ${leader}.`,
         actionLabel: "Open Performance",
         actionKind: "open_performance",
         priority: branchPriority(branch),

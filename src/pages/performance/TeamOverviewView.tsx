@@ -33,8 +33,8 @@ import {
   workloadBadgeVariantFromLabel,
 } from "../../domain/performance/performanceStatusBadges";
 import {
-  CAPACITY_INSUFFICIENT_LABEL,
-  CAPACITY_INSUFFICIENT_TOOLTIP,
+  WORKLOAD_UNAVAILABLE_LABEL,
+  WORKLOAD_UNAVAILABLE_TOOLTIP,
 } from "../../domain/workload/capacityPresentation";
 import {
   TrendInsufficientHistory,
@@ -85,9 +85,10 @@ export interface TeamOverviewViewProps {
 
 const METRIC_HELP: Record<string, string> = {
   Throughput: performanceHelp.throughput,
-  "First pass": performanceHelp.firstPass,
+  "First Pass": performanceHelp.firstPass,
+  "Rework Rate": performanceHelp.reworkRate,
   Completed: performanceHelp.completed,
-  "Backflow events": performanceHelp.backflows,
+  "Backflow Events": performanceHelp.backflows,
 };
 
 function severityBadgeVariant(
@@ -263,7 +264,7 @@ export function TeamOverviewView({
         /long review/i.test(row.riskReason),
       ).length,
       backflowSignals: Number(
-        snapshot.summary.find((m) => m.label === "Backflow events")?.value ?? 0,
+        snapshot.summary.find((m) => m.label === "Backflow Events")?.value ?? 0,
       ),
     }),
     [secondary.deliveryRisk, snapshot.summary],
@@ -329,7 +330,7 @@ export function TeamOverviewView({
         <div className="performance-metrics">
           {summaryMetrics.map((metric, metricIndex) => {
             const drilldownEnabled = Boolean(onOpenMetricDrilldown) &&
-              ["First pass", "Completed", "Backflow events"].includes(metric.label);
+              ["First Pass", "Completed", "Backflow Events"].includes(metric.label);
             const cardClass = drilldownEnabled
               ? "performance-metric-card performance-metric-card--interactive"
               : "performance-metric-card";
@@ -697,8 +698,8 @@ export function TeamOverviewView({
                     <Badge
                       variant={workloadBadgeVariant(row.workload)}
                       title={
-                        row.workload === CAPACITY_INSUFFICIENT_LABEL
-                          ? CAPACITY_INSUFFICIENT_TOOLTIP
+                        row.workload === WORKLOAD_UNAVAILABLE_LABEL
+                          ? WORKLOAD_UNAVAILABLE_TOOLTIP
                           : undefined
                       }
                     >

@@ -192,8 +192,8 @@ export function buildProjectCockpit(input: BuildProjectCockpitInput): ProjectCoc
 
   const kpis: MetricCardData[] = [
     { label: "Completed", value: String(kpi.completedCount) },
-    { label: "First pass", value: `${firstPass}%` },
-    { label: "Backflow events", value: String(kpi.backflowEventCount) },
+    { label: "First Pass", value: `${firstPass}%` },
+    { label: "Backflow Events", value: String(kpi.backflowEventCount) },
     {
       label: "Median cycle",
       value: kpi.medianCycleMs

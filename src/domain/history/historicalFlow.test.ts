@@ -243,8 +243,11 @@ describe('historicalFlow', () => {
         completedOnDate: 2,
         backflowsOnDate: 1,
         firstPassOnDate: 2,
+        reworkedCyclesOnDate: 0,
         cycleMsSumOnDate: 0,
         completedWithCycleOnDate: 0,
+        cycleMsSamplesOnDate: [],
+        executionMsSamplesOnDate: [],
       },
       {
         date: '2026-02-28',
@@ -257,8 +260,11 @@ describe('historicalFlow', () => {
         completedOnDate: 1,
         backflowsOnDate: 0,
         firstPassOnDate: 1,
+        reworkedCyclesOnDate: 0,
         cycleMsSumOnDate: 0,
         completedWithCycleOnDate: 0,
+        cycleMsSamplesOnDate: [],
+        executionMsSamplesOnDate: [],
       },
     ];
     const team = aggregateTeamFlowFromPersons(personSnapshots, ['2026-02-28']);

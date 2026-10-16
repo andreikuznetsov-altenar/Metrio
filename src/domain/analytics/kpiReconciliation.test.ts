@@ -82,7 +82,7 @@ describe("reconcileAnalyticsKpiEvidence", () => {
     expect(report.allMatch).toBe(true);
     expect(formatKpiReconciliationReport(report)).toContain("OVERALL: PASS");
     expect(report.results.find((row) => row.metric === "Completed")?.matches).toBe(true);
-    expect(report.results.find((row) => row.metric === "Backflow events")?.semantic).toMatch(
+    expect(report.results.find((row) => row.metric === "Backflow Events")?.semantic).toMatch(
       /backward workflow transitions/i,
     );
 

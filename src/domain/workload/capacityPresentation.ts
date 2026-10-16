@@ -8,12 +8,16 @@ import {
 import type { WorkloadResult } from './workloadEngine';
 import { workloadDisplayLabel, type WorkloadDisplayLabel } from './workloadDisplay';
 
-export const CAPACITY_INSUFFICIENT_LABEL = 'Not enough history' as const;
+/**
+ * Shown only when Current workload cannot be rated (no workload result, or the person is away for
+ * the whole planning horizon). Completed-work history never decides this.
+ */
+export const WORKLOAD_UNAVAILABLE_LABEL = 'Workload unavailable' as const;
 
-export type CapacityPresentationLabel = WorkloadDisplayLabel | typeof CAPACITY_INSUFFICIENT_LABEL;
+export type CapacityPresentationLabel = WorkloadDisplayLabel | typeof WORKLOAD_UNAVAILABLE_LABEL;
 
-export const CAPACITY_INSUFFICIENT_TOOLTIP =
-  'No completed work cycles in the selected period. Current Jira work is shown separately.';
+export const WORKLOAD_UNAVAILABLE_TOOLTIP =
+  'Current workload is unavailable (no workload data, or away for the whole planning horizon). Historical load is a separate measurement.';
 
 function isAway(availability?: PersonAvailability): boolean {
   if (!availability) return false;
@@ -45,16 +49,16 @@ export function capacityPresentationLabel(
   availability?: PersonAvailability,
 ): CapacityPresentationLabel {
   if (!workload) {
-    return CAPACITY_INSUFFICIENT_LABEL;
+    return WORKLOAD_UNAVAILABLE_LABEL;
   }
   if (isAway(availability)) {
-    return CAPACITY_INSUFFICIENT_LABEL;
+    return WORKLOAD_UNAVAILABLE_LABEL;
   }
   return workloadDisplayLabel(workload.level);
 }
 
 export function isMeasuredCapacityLabel(label: CapacityPresentationLabel): label is WorkloadDisplayLabel {
-  return label !== CAPACITY_INSUFFICIENT_LABEL;
+  return label !== WORKLOAD_UNAVAILABLE_LABEL;
 }
 
 export function employeeCapacityKpi(input: {
@@ -78,13 +82,13 @@ export function employeeCapacityKpi(input: {
       value: '—',
       badgeLabel: input.availability?.label || 'Away',
       badgeVariant: 'neutral',
-      tooltip: `${input.availability?.label || 'Away'}. ${CAPACITY_INSUFFICIENT_TOOLTIP}`,
+      tooltip: `${input.availability?.label || 'Away'}. ${WORKLOAD_UNAVAILABLE_TOOLTIP}`,
     };
   }
 
   // Badge and value are both CURRENT workload (open Jira queue demand against available hours).
   // Historical load is a different measurement and only appears, explicitly labelled, in the tooltip.
-  const label = wl ? workloadDisplayLabel(wl.level) : CAPACITY_INSUFFICIENT_LABEL;
+  const label = wl ? workloadDisplayLabel(wl.level) : WORKLOAD_UNAVAILABLE_LABEL;
   const variant: 'neutral' | 'success' | 'warning' | 'danger' =
     label === 'Overloaded' ? 'danger' : label === 'Heavy' ? 'warning' : label === 'Light' ? 'success' : 'neutral';
   const currentPercent = wl?.currentLoadPercent;
@@ -98,7 +102,7 @@ export function employeeCapacityKpi(input: {
       value: '—',
       badgeLabel: label,
       badgeVariant: variant,
-      tooltip: `${operational}. ${CAPACITY_INSUFFICIENT_TOOLTIP}`,
+      tooltip: `${operational}. ${WORKLOAD_UNAVAILABLE_TOOLTIP}`,
     };
   }
 
@@ -123,7 +127,7 @@ export interface TeamCapacityKpiSummary {
  * People table shows); historical capacity percent is not consulted.
  */
 export function teamCapacityKpiFromRows(workload: WorkloadRow[]): TeamCapacityKpiSummary {
-  const rated = workload.filter((row) => row.workload !== CAPACITY_INSUFFICIENT_LABEL);
+  const rated = workload.filter((row) => row.workload !== WORKLOAD_UNAVAILABLE_LABEL);
   const unrated = workload.length - rated.length;
   const overloaded = rated.filter((row) => row.workload === 'Overloaded').length;
   const heavy = rated.filter((row) => row.workload === 'Heavy').length;
@@ -132,7 +136,7 @@ export function teamCapacityKpiFromRows(workload: WorkloadRow[]): TeamCapacityKp
   if (rated.length === 0) {
     return {
       value: '—',
-      badgeLabel: CAPACITY_INSUFFICIENT_LABEL,
+      badgeLabel: WORKLOAD_UNAVAILABLE_LABEL,
       badgeVariant: 'neutral',
       tooltip: 'No team members have a current workload to rate.',
     };

@@ -42,7 +42,7 @@ describe("leadership branch metric parity", () => {
     const snapshot: TeamSnapshot = {
       mode: "team",
       persons: ids.map((id) => person(id)),
-      summary: { available: ids.length, onVacation: 0, vacationSoon: 0, highWorkload: 0, problematic: 0 },
+      summary: { available: ids.length, onVacation: 0, vacationSoon: 0, heavyOrOverloaded: 0, problematic: 0 },
     };
     const model = buildOrganizationModel({
       snapshot,

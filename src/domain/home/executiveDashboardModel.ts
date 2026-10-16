@@ -4,8 +4,7 @@ import type { WorkloadRow } from "../performance";
 import type { WorkloadResult } from "../workload/workloadEngine";
 import {
   capacityPresentationLabel,
-  CAPACITY_INSUFFICIENT_LABEL,
-  capacityDataStateFromWorkload,
+  WORKLOAD_UNAVAILABLE_LABEL,
   isMeasuredCapacityLabel,
 } from "../workload/capacityPresentation";
 import {
@@ -133,7 +132,7 @@ export function buildScopeHealthSummary(
   if (role === "employee") {
     const capacityLabel = selfWorkload
       ? capacityPresentationLabel(selfWorkload)
-      : CAPACITY_INSUFFICIENT_LABEL;
+      : WORKLOAD_UNAVAILABLE_LABEL;
     const overloaded =
       isMeasuredCapacityLabel(capacityLabel) &&
       (capacityLabel === "Overloaded" || capacityLabel === "Heavy");
@@ -143,19 +142,18 @@ export function buildScopeHealthSummary(
         line:
           focusCount > 0
             ? `${focusCount} item${focusCount === 1 ? "" : "s"} need your attention`
-            : `Capacity is ${capacityLabel.toLowerCase()}`,
+            : `Current workload: ${capacityLabel}`,
         tooltip:
           "Scope health combines your focus queue and Current workload from the open Jira queue.",
       };
     }
-    const insufficient =
-      capacityDataStateFromWorkload(selfWorkload) === "insufficient_history";
+    const unavailable = !isMeasuredCapacityLabel(capacityLabel);
     return {
       severity: "healthy",
       line: "Your scope looks healthy",
-      tooltip: insufficient
-        ? "No urgent focus items. Completed-cycle capacity is not measured for this period."
-        : "No urgent focus items and capacity is within normal range.",
+      tooltip: unavailable
+        ? "No urgent focus items. Current workload is unavailable (away for the planning horizon or no workload data)."
+        : "No urgent focus items and current workload is within the normal range.",
     };
   }
 
@@ -196,20 +194,20 @@ export function buildScopeHealthSummary(
     return {
       severity: deliveryRiskCount >= 5 || problematic > 0 ? "critical" : "watch",
       line: `${deliveryRiskCount} delivery risks · ${overloaded} overloaded`,
-      tooltip: "Team health uses delivery risk, long review, and capacity levels for direct reports.",
+      tooltip: "Team health uses delivery risk, long review, and Current workload levels for direct reports.",
     };
   }
   if (longReview > 0 || deliveryRiskCount > 0 || overloaded > 0) {
     return {
       severity: "watch",
-      line: "Monitor delivery and capacity this week",
+      line: "Monitor delivery and Current workload this week",
       tooltip: "Early signals in review time or workload distribution.",
     };
   }
   return {
     severity: "healthy",
     line: "Team scope looks healthy",
-    tooltip: "Delivery and capacity are within expected bounds.",
+    tooltip: "Delivery and Current workload are within expected bounds.",
   };
 }
 
@@ -360,8 +358,8 @@ export function buildManagerExecutiveModel(input: {
     metricValue(input.performanceSnapshot.metrics, "Throughput") ?? null,
   );
   const firstPass =
-    summary.find((m) => m.label === "First pass")?.value ??
-    metricValue(input.performanceSnapshot.metrics, "First pass") ??
+    summary.find((m) => m.label === "First Pass")?.value ??
+    metricValue(input.performanceSnapshot.metrics, "First Pass") ??
     "—";
 
   return {
@@ -465,8 +463,8 @@ export function buildDirectorExecutiveModel(input: {
 
 export function capacityDistribution(
   workload: WorkloadRow[],
-): { label: "Light" | "Balanced" | "Heavy" | "Overloaded" | typeof CAPACITY_INSUFFICIENT_LABEL; count: number }[] {
-  const labels = ["Light", "Balanced", "Heavy", "Overloaded", CAPACITY_INSUFFICIENT_LABEL] as const;
+): { label: "Light" | "Balanced" | "Heavy" | "Overloaded" | typeof WORKLOAD_UNAVAILABLE_LABEL; count: number }[] {
+  const labels = ["Light", "Balanced", "Heavy", "Overloaded", WORKLOAD_UNAVAILABLE_LABEL] as const;
   return labels.map((label) => ({
     label,
     count: workload.filter((row) => capacityLabelForRow(row) === label).length,

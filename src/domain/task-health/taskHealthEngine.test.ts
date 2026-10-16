@@ -36,8 +36,9 @@ function issue(partial: Partial<AuditIssue>): AuditIssue {
 }
 
 describe('TaskHealthEngine active stage', () => {
-  it('detects at_risk from current-stage age', () => {
-    const now = new Date('2025-09-04T10:00:00.000Z');
+  it('detects at_risk when the Active stage reaches its (stage-specific) attention age', () => {
+    // Active attention = review rule (3) + in-progress grace (2) = 5 weekdays for the default profile.
+    const now = new Date('2025-09-08T10:00:00.000Z');
     const active = issue({
       currentStatus: 'In Progress',
       events: [
@@ -56,7 +57,12 @@ describe('TaskHealthEngine active stage', () => {
       ],
       rangeEvents: [],
     });
-    const health = classifyTaskHealth({ issue: active, params, now });
+    const health = classifyTaskHealth({
+      issue: active,
+      params,
+      now,
+      thresholds: { noActivityDays: 30 },
+    });
     expect(health.status).toBe('at_risk');
     expect(health.currentStageAgeMs).toBeGreaterThan(0);
   });
@@ -85,7 +91,7 @@ describe('TaskHealthEngine active stage', () => {
     expect(health.status).toBe('problematic');
   });
 
-  it('detects backflow as problematic', () => {
+  it('treats a fresh unresolved return from review as at_risk rework, not a permanent defect', () => {
     const now = new Date('2025-09-04T10:00:00.000Z');
     const active = issue({
       currentStatus: 'In Progress',
@@ -105,11 +111,15 @@ describe('TaskHealthEngine active stage', () => {
       ],
       rangeEvents: [],
     });
-    expect(classifyTaskHealth({ issue: active, params, now }).status).toBe('problematic');
+    const health = classifyTaskHealth({ issue: active, params, now });
+    expect(health.status).toBe('at_risk');
+    expect(health.reasonCode).toBe('unresolved_rework');
+    expect(health.reworkState).toBe('unresolved');
   });
 
   it('detects no activity', () => {
-    const now = new Date('2025-09-20T10:00:00.000Z');
+    // Within the Active target (so staleness, not an overdue stage, is the finding).
+    const now = new Date('2025-09-09T10:00:00.000Z');
     const active = issue({
       currentStatus: 'In Progress',
       issueCreated: '2025-09-01T10:00:00.000Z',

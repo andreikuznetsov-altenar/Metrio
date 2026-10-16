@@ -16,6 +16,11 @@ import {
 } from './taskSignals';
 import type { RadarSeverity, TeamRadarItem, RadarSignal } from './types';
 import type { OperationalRules } from '../operationalRules/operationalRulesTypes';
+import {
+  aggregateCurrentEffort,
+  currentWorkloadPercent,
+  personalCurrentEffort,
+} from '../workload/hierarchicalWorkload';
 import { DEFAULT_OPERATIONAL_RULES } from '../operationalRules/operationalRulesDefaults';
 
 import { appNow } from "../../platform/appClock";
@@ -44,7 +49,7 @@ function dedupeSignals(signals: RadarSignal[]): RadarSignal[] {
 function buildPersonRadarItem(
   person: Person,
   params: ReportParams,
-  teamAverageActive: number,
+  teamLoadPercent: number | null,
   now: Date,
   rules: OperationalRules,
 ): TeamRadarItem | null {
@@ -78,30 +83,39 @@ function buildPersonRadarItem(
     signals.push({
       id: 'workload:overloaded',
       severity: 'critical',
-      label: 'Overloaded workload',
+      label: 'Overloaded current workload',
     });
   } else if (workload === 'high' && atRiskCount >= 2) {
     severity = maxSeverity(severity, 'critical');
     signals.push({
       id: 'workload:high-risk',
       severity: 'critical',
-      label: `High workload with ${atRiskCount} at-risk tasks`,
+      label: `Heavy current workload with ${atRiskCount} at-risk tasks`,
     });
   } else if (workload === 'high') {
     severity = maxSeverity(severity, 'warning');
     signals.push({
       id: 'workload:high',
       severity: 'warning',
-      label: 'High workload',
+      label: 'Heavy current workload',
     });
   }
 
-  if (activeCount > teamAverageActive * 1.5 && activeCount >= 4 && workload !== 'overloaded') {
+  // Compared on Current workload (expected effort / available hours), not on task counts.
+  const personLoadPercent = currentWorkload?.currentLoadPercent ?? null;
+  if (
+    personLoadPercent !== null &&
+    teamLoadPercent !== null &&
+    teamLoadPercent > 0 &&
+    personLoadPercent >= 50 &&
+    personLoadPercent > teamLoadPercent * 1.5 &&
+    workload !== 'overloaded'
+  ) {
     severity = maxSeverity(severity, 'warning');
     signals.push({
       id: 'workload:above-team',
       severity: 'warning',
-      label: 'Workload significantly above team average',
+      label: 'Current workload significantly above team average',
     });
   }
 
@@ -149,17 +163,18 @@ export function buildTeamRadar(
 ): TeamRadarItem[] {
   if (snapshot.mode !== 'team') return [];
 
-  const activeCounts = snapshot.persons.map(
-    (p) => currentWorkloadForPerson(p)?.activeCount ?? getActiveIssues(p).length,
+  // Team Current workload is pooled (Σ expected / Σ available), never an average of person %.
+  const personsById = new Map(snapshot.persons.map((person) => [person.id, person]));
+  const teamLoadPercent = currentWorkloadPercent(
+    aggregateCurrentEffort(
+      snapshot.persons.map((person) => person.id),
+      (id) => personalCurrentEffort(personsById.get(id)),
+    ),
   );
-  const teamAverageActive =
-    activeCounts.length > 0
-      ? activeCounts.reduce((sum, n) => sum + n, 0) / activeCounts.length
-      : 0;
 
   const items = snapshot.persons
     .map((person) =>
-      buildPersonRadarItem(person, params, teamAverageActive, now, rules),
+      buildPersonRadarItem(person, params, teamLoadPercent, now, rules),
     )
     .filter((item): item is TeamRadarItem => !!item);
 

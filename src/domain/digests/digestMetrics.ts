@@ -29,6 +29,7 @@ export function collectTeamDigestMetrics(input: {
   const rules = input.rules ?? DEFAULT_OPERATIONAL_RULES;
   const now = input.now ?? appNow();
   const attentionIssueKeys: string[] = [];
+  const problematicIssueKeys = new Set<string>();
   for (const person of input.snapshot.persons) {
     for (const issue of getActiveIssues(person, input.params)) {
       const attention = classifyIssueAttention(
@@ -38,6 +39,7 @@ export function collectTeamDigestMetrics(input: {
         rules,
       );
       if (attention) attentionIssueKeys.push(issue.issueKey);
+      if (attention?.health.status === "problematic") problematicIssueKeys.add(issue.issueKey);
     }
   }
   const overloaded = input.snapshot.persons.filter(
@@ -50,7 +52,7 @@ export function collectTeamDigestMetrics(input: {
   ).length;
   return {
     deliveryRiskCount: input.deliveryRisk.length,
-    problematicTaskCount: attentionIssueKeys.length,
+    problematicTaskCount: problematicIssueKeys.size,
     completedInWeek: input.completedInWeek,
     backflowInWeek: input.backflowInWeek,
     attentionIssueKeys: [...new Set(attentionIssueKeys)].sort(),

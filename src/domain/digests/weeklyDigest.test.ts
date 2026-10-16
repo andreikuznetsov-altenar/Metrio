@@ -66,7 +66,7 @@ const snapshot: TeamSnapshot = {
       ],
     },
   ],
-  summary: { available: 1, onVacation: 0, vacationSoon: 0, highWorkload: 0, problematic: 0 },
+  summary: { available: 1, onVacation: 0, vacationSoon: 0, heavyOrOverloaded: 0, problematic: 0 },
 };
 
 const reportData: AuditReportData = {
@@ -128,7 +128,7 @@ describe('weeklyDigest', () => {
       'Team',
       new Date('2026-03-04T12:00:00'),
     );
-    expect(digest).toContain('Backflow events: 1');
+    expect(digest).toContain('Backflow Events: 1');
     expect(digest).toContain('Completed: 0');
   });
 

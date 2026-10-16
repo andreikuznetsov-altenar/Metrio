@@ -105,7 +105,7 @@ describe("analytics evidence matrix — team", () => {
     const kpi = buildKpiFromIssues(issues, {}, params);
     const evidence = assertInvariant("first_pass", { issues, kpi });
     expect(evidence.issues).toHaveLength(5);
-    expect(evidence.summaryLines.find((l) => l.label === "First pass")?.value).toBe("5");
+    expect(evidence.summaryLines.find((l) => l.label === "First Pass")?.value).toBe("5");
     expect(evidence.summaryLines.find((l) => l.label === "Rework")?.value).toBe("0");
   });
 

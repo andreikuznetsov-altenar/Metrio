@@ -370,7 +370,7 @@
   align-self: start;
 }
 
-/* Person drawer KPI block: Throughput / First pass / Completed / Backflows as a balanced 2 × 2 grid. */
+/* Person drawer KPI block: Throughput / First Pass / Completed / Backflows as a balanced 2 × 2 grid. */
 .person-performance-metrics .performance-metrics.performance-metrics--two-by-two {
   grid-template-columns: repeat(2, minmax(0, 1fr));
   column-gap: var(--space-3);

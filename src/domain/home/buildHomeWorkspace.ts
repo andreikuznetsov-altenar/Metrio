@@ -185,7 +185,7 @@ function buildPersonalSection(
   }
 
   const metrics = employeeSnapshot?.metrics ?? workspace?.performanceKpis ?? [];
-  const pick = ["Throughput", "First pass", "Completed"];
+  const pick = ["Throughput", "First Pass", "Completed"];
   const performanceSnapshot = {
     metrics: pick
       .map((label) => metrics.find((m) => m.label === label))
@@ -300,7 +300,7 @@ function summarizeDelivery(
 }
 
 function parseStageDays(age: string): number {
-  const match = age.match(/(\d+)\s*day/i);
+  const match = age.match(/(\d+)\s*(?:week)?day/i);
   return match ? Number(match[1]) : 0;
 }
 

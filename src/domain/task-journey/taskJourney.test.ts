@@ -188,7 +188,7 @@ describe('canonical attention reasons', () => {
       ],
     });
     const attention = classifyIssueAttention(issue, params, now);
-    expect(attention?.reason).toMatch(/Review for \d+ day|exceeds target duration/i);
+    expect(attention?.reason).toMatch(/Review for \d+ weekday|exceeds target duration/i);
     expect(attention?.reason).not.toMatch(/no_activity/);
   });
 
@@ -215,7 +215,8 @@ describe('canonical attention reasons', () => {
       ],
     });
     const attention = classifyIssueAttention(issue, params, now);
-    expect(attention?.reason).toBe('Backflow detected');
+    expect(attention?.reason).toBe('Returned from Review, not resubmitted');
+    expect(attention?.health.reworkState).toBe('unresolved');
   });
 
   it('E — multiple backflows', () => {
@@ -234,8 +235,9 @@ describe('canonical attention reasons', () => {
       ],
     });
     const attention = classifyIssueAttention(issue, params, now);
-    expect(attention?.reason).toBe('Backflow detected');
+    expect(attention?.reason).toMatch(/^Review → In Progress ×2, not resubmitted/);
     expect(attention?.health.backflowEventCount).toBeGreaterThanOrEqual(2);
+    expect(attention?.health.openCycleReworkEvents).toBe(2);
   });
 
   it('G — dependency blocker enriches journey reason', () => {

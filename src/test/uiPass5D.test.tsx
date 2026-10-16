@@ -16,7 +16,7 @@ describe("UI Repair Pass 5D", () => {
 
   it("humanizes machine enums for display", () => {
     expect(humanizeMachineEnum("not_configured")).toBe("Not configured");
-    expect(humanizeMachineEnum("first_pass")).toBe("First pass");
+    expect(humanizeMachineEnum("first_pass")).toBe("First Pass");
     expect(humanizeMachineEnum("permission_limited")).toBe("Limited permissions");
   });
 

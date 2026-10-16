@@ -9,6 +9,7 @@ import {
   requiredHeadcount,
   type CapacityDataState,
 } from '../workflows/capacityWorkload';
+import { workloadDisplayLabel } from './workloadDisplay';
 import { appNow } from '../../platform/appClock';
 import { computeCurrentEffort } from './effort/currentEffortModel';
 import { buildEffortHistory } from './effort/history';
@@ -154,13 +155,6 @@ export interface CalculateWorkloadOptions {
   volumeAdapters?: VolumeAdapter[];
 }
 
-function workloadLevelLabel(level: WorkloadLevel): string {
-  if (level === 'low') return 'Light';
-  if (level === 'high') return 'High';
-  if (level === 'overloaded') return 'Overloaded';
-  return 'Balanced';
-}
-
 export function calculateWorkload(
   issues: AuditIssue[],
   params: ReportParams,
@@ -221,7 +215,7 @@ export function calculateWorkload(
     if (stage.canonicalStage === 'active') inProgressCount++;
     if (health.status === 'problematic') problematicCount++;
     if (health.status === 'at_risk') atRiskCount++;
-    if (health.status === 'problematic' && health.reasons.some((r) => /exceeds target/i.test(r))) overdueCount++;
+    if (health.status === 'problematic' && health.reasonCode === 'stage_overdue') overdueCount++;
   });
 
   const operational = countOperationalWorkload(uniqueIssues, params, options.mappings);
@@ -247,7 +241,7 @@ export function calculateWorkload(
     overdueCount,
     summary: awayForHorizon
       ? (availability?.label || 'Away')
-      : `${workloadLevelLabel(level)} workload · ${details}`,
+      : `${workloadDisplayLabel(level)} workload · ${details}`,
     capacityLoadPercent,
     estimatedMonthlyHours: capacityBreakdown.estimatedMonthlyHours,
     monthlyCapacityHours: MONTHLY_CAPACITY_HOURS,

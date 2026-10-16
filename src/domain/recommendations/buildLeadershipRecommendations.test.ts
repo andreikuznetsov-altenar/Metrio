@@ -22,7 +22,7 @@ function branch(partial: Partial<LeadershipBranch> & { leaderId: string; leaderN
       capacity: {
         totalPeople: 5,
         measuredPeople: 3,
-        insufficientHistoryPeople: 2,
+        unratedPeople: 2,
         light: 0,
         balanced: 1,
         heavy: 2,

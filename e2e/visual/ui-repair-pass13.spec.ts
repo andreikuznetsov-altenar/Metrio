@@ -293,7 +293,7 @@ test.describe("UI Repair Pass 13 acceptance", () => {
 
   test("drawer-kpi-close-lifecycle", async ({ page }) => {
     await bootMetrio(page);
-    await page.getByRole("button", { name: /View Efficiency details/i }).click();
+    await page.getByRole("button", { name: /View First Pass details/i }).click();
     const drawer = page.locator(".drawer--analytics");
     await expect(drawer).toBeVisible({ timeout: 15_000 });
     await page.keyboard.press("Escape");

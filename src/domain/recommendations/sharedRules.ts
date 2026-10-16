@@ -18,11 +18,10 @@ export function leaveActionItems(...lists: ActionItem[][]): ActionItem[] {
   return out;
 }
 
-/** Team members with elevated MEASURED capacity (Heavy / Overloaded; unmeasured people are ignored). */
+/**
+ * Team members whose CURRENT workload is Heavy or Overloaded. Completed-work history never gates
+ * this: someone with a full queue and no finished tasks yet is still overloaded.
+ */
 export function elevatedCapacityRows(rows: WorkloadRow[]): WorkloadRow[] {
-  return rows.filter(
-    (row) =>
-      row.capacityDataState !== "insufficient_history" &&
-      (row.workload === "Heavy" || row.workload === "Overloaded"),
-  );
+  return rows.filter((row) => row.workload === "Heavy" || row.workload === "Overloaded");
 }

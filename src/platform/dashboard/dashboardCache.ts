@@ -10,8 +10,11 @@ import type { PerformanceFetchResult } from "../../services/performance/performa
  * v4 (Capacity/Time V2): cached historical-capacity percentages were calculated with the
  * normalized monthly-throughput formula and a host-local business calendar; they are now
  * merged execution business-hours over available working hours in the configured zone.
+ * v5 (Signals V2): cached Task Health, Delivery Risk severity, workload balance ordering and
+ * KPI snapshots follow stage/profile attention targets, current-vs-historical rework and
+ * Current-workload-only hierarchy; older cached derived values are not reused.
  */
-export const DASHBOARD_CACHE_SCHEMA_VERSION = 4;
+export const DASHBOARD_CACHE_SCHEMA_VERSION = 5;
 
 const VISUAL_DASHBOARD_CACHE_KEY = "metrio-visual-dashboard-cache";
 

@@ -503,6 +503,7 @@ function buildKpiHistory(
     let backflows = 0;
     let cycleMsSum = 0;
     let completedWithCycle = 0;
+    const pooledCycleSamples: number[] = [];
     file.personSnapshots
       .filter((snapshot) => snapshot.date === dateKey)
       .forEach((snapshot, personIndex) => {
@@ -514,6 +515,10 @@ function buildKpiHistory(
         snapshot.backflowsOnDate = backflow;
         snapshot.cycleMsSumOnDate = cycleDays * 24 * 60 * 60 * 1000;
         snapshot.completedWithCycleOnDate = 1;
+        // Cycle Time (Metrics V2) is a median of raw business-time samples, never a stored average.
+        const cycleSampleMs = cycleDays * 8 * 60 * 60 * 1000;
+        snapshot.cycleMsSamplesOnDate = [cycleSampleMs];
+        pooledCycleSamples.push(cycleSampleMs);
         completed += 1;
         firstPass += snapshot.firstPassOnDate;
         backflows += backflow;
@@ -527,6 +532,7 @@ function buildKpiHistory(
       teamDay.backflowsOnDate = backflows;
       teamDay.cycleMsSumOnDate = cycleMsSum;
       teamDay.completedWithCycleOnDate = completedWithCycle;
+      teamDay.cycleMsSamplesOnDate = pooledCycleSamples;
     }
   }
   return file;
@@ -586,7 +592,7 @@ export function buildVisualPerformanceFetchResult(
       available: persons.length,
       onVacation: 0,
       vacationSoon: 1,
-      highWorkload: 1,
+      heavyOrOverloaded: 1,
       problematic: 1,
     },
   };

@@ -13,6 +13,22 @@ export interface PersonPerformanceMetricsProps {
   onOpenMetric?: (metric: MetricCardData, source: HTMLElement) => void;
 }
 
+/**
+ * The narrow-drawer KPI block is a deliberate balanced 2 x 2 grid. Rework Rate (the complement of
+ * First Pass) therefore sits on the First Pass card instead of becoming a fifth, orphaned card.
+ */
+export function foldReworkRateIntoFirstPass(kpis: MetricCardData[]): MetricCardData[] {
+  const rework = kpis.find((metric) => metric.label === "Rework Rate");
+  if (!rework) return kpis;
+  return kpis
+    .filter((metric) => metric.label !== "Rework Rate")
+    .map((metric) =>
+      metric.label === "First Pass"
+        ? { ...metric, detail: `Rework Rate ${rework.value}` }
+        : metric,
+    );
+}
+
 export function PersonPerformanceMetrics({
   kpis,
   cycleTime,
@@ -24,7 +40,7 @@ export function PersonPerformanceMetrics({
   return (
     <div className="person-performance-metrics">
       <PersonAnalyticsMetricGrid
-        metrics={kpis}
+        metrics={layout === "two-by-two" ? foldReworkRateIntoFirstPass(kpis) : kpis}
         className={
           layout === "two-by-two"
             ? "performance-metrics performance-metrics--two-by-two"
@@ -44,7 +60,8 @@ export function PersonPerformanceMetrics({
 
 export const PERSON_KPI_HELP: Record<string, string> = {
   Throughput: performanceHelp.throughput,
-  "First pass": performanceHelp.firstPass,
+  "First Pass": performanceHelp.firstPass,
+  "Rework Rate": performanceHelp.reworkRate,
   Completed: performanceHelp.completed,
-  "Backflow events": performanceHelp.backflows,
+  "Backflow Events": performanceHelp.backflows,
 };

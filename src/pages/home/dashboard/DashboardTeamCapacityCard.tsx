@@ -34,10 +34,10 @@ export function DashboardTeamCapacityCard({
   return (
     <section
       className="executive-panel"
-      aria-label="Team capacity"
+      aria-label="Team availability and workload"
       data-testid="dashboard-team-capacity"
     >
-      <h2 className="executive-panel__title">Team capacity</h2>
+      <h2 className="executive-panel__title">Availability &amp; workload</h2>
       <div className="executive-team-capacity__summary">
         <Badge variant="success">Available {available}</Badge>
         <Badge variant="neutral">Leave {awayNextWeek}</Badge>

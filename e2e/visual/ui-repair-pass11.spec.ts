@@ -235,7 +235,7 @@ test.describe("UI Repair Pass 11 visual acceptance", () => {
     );
   });
 
-  test("capacity-insufficient-production-path", async ({ page }) => {
+  test("capacity-history-does-not-gate-current-workload", async ({ page }) => {
     await page.addInitScript((fixtureId: string) => {
       localStorage.setItem("metrio-connection-connected", "true");
       localStorage.setItem("metrio-dev-fixture", fixtureId);
@@ -246,9 +246,11 @@ test.describe("UI Repair Pass 11 visual acceptance", () => {
     await expect(page.getByTestId("app-shell")).toBeVisible({ timeout: 30_000 });
     await openPerformanceFromHome(page);
     await clickSubnav(page, /^overview$/i);
-    await expect(page.locator(".performance-table--team-workload tbody")).toContainText(
-      "Not enough history",
-    );
+    // Historical sufficiency affects historical metrics only: the Current Workload column keeps
+    // its Light / Balanced / Heavy / Overloaded labels even when no history is measurable.
+    const body = page.locator(".performance-table--team-workload tbody");
+    await expect(body).toContainText(/Light|Balanced|Heavy|Overloaded/);
+    await expect(body).not.toContainText("Not enough history");
   });
 
   for (const width of [1280, 1440, 1728] as const) {

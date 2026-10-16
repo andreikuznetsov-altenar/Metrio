@@ -152,23 +152,23 @@ describe('PASS 15.5I team PDF + workload', () => {
     const teamSnapshot: TeamSnapshot = {
       mode: 'team',
       persons: [andrei, daria],
-      summary: { available: 2, onVacation: 0, vacationSoon: 0, highWorkload: 0, problematic: 0 },
+      summary: { available: 2, onVacation: 0, vacationSoon: 0, heavyOrOverloaded: 0, problematic: 0 },
     };
     const teamOverview: TeamPerformanceSnapshot = {
       directReportIds: ['daria'],
       summary: [
         { label: 'Throughput', value: '25' },
-        { label: 'First pass', value: '84%', contextLabel: '+1.2 pp' },
+        { label: 'First Pass', value: '84%', contextLabel: '+1.2 pp' },
         { label: 'Completed', value: '25', contextLabel: '-17' },
-        { label: 'Backflow events', value: '4', contextLabel: '-24' },
+        { label: 'Backflow Events', value: '4', contextLabel: '-24' },
       ],
       attention: [],
       attentionTotalCount: 0,
       trends: [
         { label: 'Completed', value: '25', chartSeries: [{ date: '2026-07-09', value: 1 }, { date: '2026-10-09', value: 3 }] },
-        { label: 'First pass', value: '84%', chartSeries: [{ date: '2026-07-09', value: 80 }, { date: '2026-10-09', value: 84 }] },
-        { label: 'Cycle time', value: '3.2d', chartSeries: [{ date: '2026-07-09', value: 4 }, { date: '2026-10-09', value: 3 }] },
-        { label: 'Backflow events', value: '4', chartSeries: [{ date: '2026-07-09', value: 2 }, { date: '2026-10-09', value: 4 }] },
+        { label: 'First Pass', value: '84%', chartSeries: [{ date: '2026-07-09', value: 80 }, { date: '2026-10-09', value: 84 }] },
+        { label: 'Cycle Time', value: '3.2d', chartSeries: [{ date: '2026-07-09', value: 4 }, { date: '2026-10-09', value: 3 }] },
+        { label: 'Backflow Events', value: '4', chartSeries: [{ date: '2026-07-09', value: 2 }, { date: '2026-10-09', value: 4 }] },
       ],
       workload: [
         {
@@ -207,9 +207,9 @@ describe('PASS 15.5I team PDF + workload', () => {
     expect(layout.teamThroughput.hero.value).toBe('25');
     expect([layout.teamThroughput.hero, ...layout.teamThroughput.supporting].map((k) => k.label)).toEqual([
       'Throughput',
-      'First pass',
+      'First Pass',
       'Completed',
-      'Backflow events',
+      'Backflow Events',
     ]);
     expect(pdfStyles.teamKpiCard.width).toBe('23.5%');
     expect(pdfStyles.teamKpiCard.minHeight).toBe(78);
@@ -248,7 +248,7 @@ describe('PASS 15.5I team PDF + workload', () => {
       teamSnapshot: {
         mode: 'team',
         persons: [personFixture('p1', 'Sam', 'sam@co.com', 'Designer')],
-        summary: { available: 1, onVacation: 0, vacationSoon: 0, highWorkload: 0, problematic: 0 },
+        summary: { available: 1, onVacation: 0, vacationSoon: 0, heavyOrOverloaded: 0, problematic: 0 },
       },
       reportData: {
         params,

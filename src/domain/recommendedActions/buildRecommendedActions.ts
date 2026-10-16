@@ -12,6 +12,7 @@
  * startDate / dueDate / completionDate but no confirmed creation timestamp. Using startDate, dueDate,
  * updates or first-seen time as a proxy would fabricate a creation date, so the rule is disabled.
  */
+import { workloadDisplayLabel } from "../workload/workloadDisplay";
 import type { ActionItem } from "../actions/actionTypes";
 import { resolveAvailabilityPresentation } from "../availability/availabilityPresentation";
 import { calendarDaysUntil, formatLeaveCountdown } from "../availability/leaveCalendar";
@@ -141,18 +142,20 @@ function employeeActions(input: EmployeeRecommendationInput): RecommendedAction[
   const { now, selfWorkload, selfAvailability } = input;
   const out: RecommendedAction[] = [...staleActions(input.ownedIssues, now, "employee")];
 
-  if (
-    selfWorkload &&
-    selfWorkload.capacityDataState !== "insufficient_history" &&
-    (selfWorkload.level === "high" || selfWorkload.level === "overloaded") &&
-    selfWorkload.activeCount > 0
-  ) {
+  // Current workload only (expected effort vs available hours). Completed-work history is not a gate.
+  if (selfWorkload && (selfWorkload.level === "high" || selfWorkload.level === "overloaded")) {
+    const effortNote =
+      selfWorkload.currentLoadPercent != null &&
+      selfWorkload.expectedEffortHours != null &&
+      selfWorkload.availableHoursInHorizon != null
+        ? ` Expected effort is about ${selfWorkload.expectedEffortHours}h against ${selfWorkload.availableHoursInHorizon}h available over the next 10 working days (${Math.round(selfWorkload.currentLoadPercent)}%).`
+        : "";
     out.push({
       id: "high-workload",
       type: "high_workload",
       priority: 3,
-      title: "Your active workload is high",
-      description: `You currently have ${selfWorkload.activeCount} active ${plural(selfWorkload.activeCount, "task", "tasks")}. Review priorities and tasks that can be completed or reassigned.`,
+      title: `Your current workload is ${workloadDisplayLabel(selfWorkload.level)}`,
+      description: `You currently have ${selfWorkload.activeCount} active ${plural(selfWorkload.activeCount, "task", "tasks")}.${effortNote} Review priorities and tasks that can be completed or reassigned.`,
       actionLabel: "View work",
       destination: { kind: "my_work" },
       affectedCount: selfWorkload.activeCount,
@@ -207,7 +210,7 @@ function leadActions(input: TeamLeadRecommendationInput): RecommendedAction[] {
       id: "team-capacity",
       type: "team_capacity",
       priority: 3,
-      title: `${hot.length} team ${plural(hot.length, "member has", "members have")} elevated measured capacity`,
+      title: `${hot.length} team ${plural(hot.length, "member is", "members are")} Heavy or Overloaded`,
       description: "Review active work and redistribute tasks to people with available capacity.",
       actionLabel: "Open Team Workload",
       destination: { kind: "team_workload" },

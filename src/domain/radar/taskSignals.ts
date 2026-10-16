@@ -1,10 +1,15 @@
-import { formatDuration } from '../jira/dates';
 import type { AuditIssue, ReportParams } from '../jira/types';
 import {
   classifyTaskHealth,
   getCurrentStageAgeMs,
   type TaskHealthResult,
 } from '../task-health/taskHealthEngine';
+import {
+  applyOwnerLeaveEscalation,
+  assessDeliveryRiskSeverity,
+  type DeliveryRiskAssessment,
+} from './deliveryRiskSeverity';
+import type { TaskHealthReasonCode } from '../task-health/taskHealthEngine';
 import { DEFAULT_OPERATIONAL_RULES } from '../operationalRules/operationalRulesDefaults';
 import { taskHealthThresholdsFromRules } from '../operationalRules/normalizeOperationalRules';
 import type { OperationalRules } from '../operationalRules/operationalRulesTypes';
@@ -14,6 +19,7 @@ import type { RadarSeverity } from './types';
 import { resolveWorkflowProfile } from '../workflows/resolveWorkflowProfile';
 import { resolveWorkflowStage } from '../workflows/resolveWorkflowStage';
 
+import { formatWeekdayCount, formatWeekdayDuration } from '../jira/dates';
 import { formatLeaveCountdown } from '../availability/leaveCalendar';
 import { appNow } from "../../platform/appClock";
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
@@ -27,8 +33,7 @@ export function stageAgeDays(issue: AuditIssue, now: Date): number | null {
 export function formatStageAgeLabel(issue: AuditIssue, now: Date): string {
   const days = stageAgeDays(issue, now);
   if (days === null) return '—';
-  if (days === 0) return '<1 day';
-  return `${days} day${days === 1 ? '' : 's'}`;
+  return formatWeekdayCount(days);
 }
 
 export function getActiveIssues(person: Person, params?: ReportParams): AuditIssue[] {
@@ -44,12 +49,71 @@ export function getActiveIssues(person: Person, params?: ReportParams): AuditIss
   });
 }
 
+export interface IssueAttention {
+  severity: RadarSeverity;
+  reason: string;
+  reasonCode: TaskHealthReasonCode;
+  /** Delivery Risk rule id (C1..C3, W1..W5, I1) — see deliveryRiskSeverity.ts. */
+  rule: DeliveryRiskAssessment['rule'];
+  health: TaskHealthResult;
+}
+
+function wholeDays(days: number | null): number {
+  return days === null ? 0 : Math.floor(days);
+}
+
+function attentionReason(
+  health: TaskHealthResult,
+  assessment: DeliveryRiskAssessment,
+  noActivityDays: number,
+): string {
+  const base = attentionReasonBase(health, assessment);
+  const staleNote =
+    health.isStale && assessment.reasonCode !== 'no_activity' && assessment.reasonCode !== 'blocked'
+      ? `; no activity for ${noActivityDays}+ calendar days`
+      : '';
+  return `${base}${staleNote}`;
+}
+
+function attentionReasonBase(
+  health: TaskHealthResult,
+  assessment: DeliveryRiskAssessment,
+): string {
+  const days = wholeDays(health.currentStageAgeDays);
+  const dayLabel = formatWeekdayCount(days);
+  const targetNote = health.stageTarget
+    ? ` (target ${health.stageTarget.targetDays})`
+    : '';
+  switch (assessment.reasonCode) {
+    case 'blocked':
+      return health.currentStageAgeDays === null
+        ? 'Blocked or on hold'
+        : `Blocked or on hold for ${dayLabel}`;
+    case 'stage_overdue':
+    case 'stage_attention':
+      if (health.stageKind === 'review') return `Review for ${dayLabel}${targetNote}`;
+      if (health.stageKind === 'qa') return `QA for ${dayLabel}${targetNote}`;
+      return `In Progress for ${dayLabel}${targetNote}`;
+    case 'repeated_rework':
+      return `Review → In Progress ×${health.openCycleReworkEvents}, not resubmitted`;
+    case 'unresolved_rework':
+      return 'Returned from Review, not resubmitted';
+    default:
+      return health.reasons[0] || 'Needs attention';
+  }
+}
+
+/**
+ * Open-task attention for Delivery Risk. Severity comes from explicit rules
+ * (`assessDeliveryRiskSeverity`) over current Task Health; historical rework that has been
+ * resubmitted produces no signal.
+ */
 export function classifyIssueAttention(
   issue: AuditIssue,
   params: ReportParams,
   now = appNow(),
   rules: OperationalRules = DEFAULT_OPERATIONAL_RULES,
-): { severity: RadarSeverity; reason: string; health: TaskHealthResult } | null {
+): IssueAttention | null {
   const thresholds = taskHealthThresholdsFromRules(rules);
   const health = classifyTaskHealth({ issue, params, now, thresholds });
   if (health.isCompleted) return null;
@@ -57,102 +121,54 @@ export function classifyIssueAttention(
   const status = issue.currentStatus || '';
   const workflowStage = resolveWorkflowStage(resolveWorkflowProfile(issue), status);
   if (!workflowStage.countsAsAttentionEligible) return null;
-  const stageDays = stageAgeDays(issue, now);
-  const reviewDays = rules.taskAttention.reviewAttentionDays;
-  const inProgressDays =
-    rules.taskAttention.reviewAttentionDays +
-    rules.taskAttention.inProgressGraceDays;
 
-  if (health.status === 'problematic' || health.status === 'no_activity') {
-    const reason = health.reasons[0] || 'Needs attention';
-    return { severity: 'critical', reason, health };
-  }
+  const assessment = assessDeliveryRiskSeverity(health, {
+    blockedCriticalDays: rules.taskAttention.noActivityDays,
+  });
+  if (!assessment) return null;
 
-  if (workflowStage.countsAsHold) {
-    return { severity: 'critical', reason: 'Blocked or on hold', health };
-  }
-
-  if (health.backflowEventCount >= 2) {
-    return {
-      severity: 'warning',
-      reason: `Review → In Progress ×${health.backflowEventCount}`,
-      health,
-    };
-  }
-
-  if (health.backflowEventCount === 1) {
-    return { severity: 'warning', reason: 'Returned from Review', health };
-  }
-
-  if (stageDays !== null && workflowStage.countsAsReview && stageDays >= reviewDays) {
-    return {
-      severity: 'warning',
-      reason: `Review for ${stageDays} day${stageDays === 1 ? '' : 's'}`,
-      health,
-    };
-  }
-
-  if (stageDays !== null && workflowStage.countsAsActiveWork && stageDays >= inProgressDays) {
-    return {
-      severity: 'warning',
-      reason: `In Progress for ${stageDays} days`,
-      health,
-    };
-  }
-
-  if (health.status === 'at_risk') {
-    return { severity: 'warning', reason: health.reasons[0] || 'At risk', health };
-  }
-
-  if (
-    stageDays !== null &&
-    stageDays >= rules.taskAttention.stageAgeAttentionDays
-  ) {
-    return {
-      severity: 'warning',
-      reason: `No activity for ${stageDays} days`,
-      health,
-    };
-  }
-
-  return null;
+  return {
+    severity: assessment.severity,
+    reason: attentionReason(health, assessment, rules.taskAttention.noActivityDays),
+    reasonCode: assessment.reasonCode,
+    rule: assessment.rule,
+    health,
+  };
 }
 
 /** Badge label for attention tables — never use raw task health "stable" for actionable signals. */
 export function attentionPresentationSignalLabel(attention: {
   reason: string;
   health: TaskHealthResult;
+  reasonCode?: TaskHealthReasonCode;
 }): string {
-  const reason = attention.reason.trim();
-  const lower = reason.toLowerCase();
-
-  if (attention.health.status === "no_activity" || lower.includes("no activity")) {
-    return "No activity";
+  const code = attention.reasonCode ?? attention.health.reasonCode;
+  switch (code) {
+    case 'blocked':
+      return 'Blocked';
+    case 'no_activity':
+      return 'No activity';
+    case 'repeated_rework':
+    case 'unresolved_rework':
+      return 'Rework';
+    case 'stage_overdue':
+    case 'stage_attention':
+      if (attention.health.stageKind === 'review') return 'Long Review';
+      if (attention.health.stageKind === 'qa') return 'Long QA';
+      return 'Stale progress';
+    default:
+      break;
   }
-  if (attention.health.status === "problematic") {
-    return "Problematic";
-  }
-  if (lower.includes("blocked") || lower.includes("on hold")) {
-    return "Blocked";
-  }
-  if (/^review for /i.test(reason)) {
-    return "Long Review";
-  }
-  if (lower.includes("returned from review") || lower.includes("review → in progress")) {
-    return "Rework";
-  }
-  if (lower.includes("backflow")) {
-    return "Rework";
-  }
-  if (attention.health.status === "at_risk") {
-    return "At risk";
-  }
-  if (lower.includes("in progress for")) {
-    return "Stale progress";
-  }
-  return "Needs attention";
+  if (attention.health.status === 'problematic') return 'Problematic';
+  if (attention.health.status === 'at_risk') return 'At risk';
+  return 'Needs attention';
 }
 
+/**
+ * Person-level leave notice for Team Radar. Leave alone is Info. Open at-risk work lifts it to
+ * Warning; open problematic work is Warning, and Critical only when leave starts tomorrow
+ * (bounded escalation shared with Delivery Risk).
+ */
 export function vacationRiskSeverity(
   person: Person,
   atRiskCount: number,
@@ -160,7 +176,9 @@ export function vacationRiskSeverity(
 ): RadarSeverity | null {
   const state = person.availability.state;
   if (state !== 'vacation_soon' && state !== 'vacation_tomorrow') return null;
-  if (problematicCount > 0 || atRiskCount > 0) return 'critical';
+  const window = state === 'vacation_tomorrow' ? 'tomorrow' : 'soon';
+  if (problematicCount > 0) return applyOwnerLeaveEscalation('warning', window);
+  if (atRiskCount > 0) return applyOwnerLeaveEscalation('info', window);
   return 'info';
 }
 
@@ -177,5 +195,5 @@ export function vacationDaysLabel(person: Person): string | null {
 
 export function formatCycleMs(ms: number | null | undefined): string {
   if (!ms) return '—';
-  return formatDuration(ms);
+  return formatWeekdayDuration(ms);
 }

@@ -3,7 +3,8 @@ import type { DeliveryRiskItem } from "../radar/types";
 export interface BranchCapacitySummary {
   totalPeople: number;
   measuredPeople: number;
-  insufficientHistoryPeople: number;
+  /** People whose Current workload cannot be rated (no workload data, or away for the horizon). */
+  unratedPeople: number;
   light: number;
   balanced: number;
   heavy: number;
@@ -23,6 +24,19 @@ export interface LeadershipBranchMetrics {
   reworkedCycleCount: number;
   throughputCount: number;
   capacity: BranchCapacitySummary;
+  /** Current workload of the branch: Σ expected effort / Σ available hours (10 working days). */
+  currentWorkload: {
+    expectedEffortHours: number;
+    availableHoursInHorizon: number;
+    percent: number | null;
+    label: string;
+  };
+  /** Historical load of the branch: Σ merged hands-on hours / Σ scheduled available hours. */
+  historicalLoad: {
+    executionHoursInPeriod: number;
+    availableHoursInPeriod: number;
+    percent: number | null;
+  };
   awayNow: number;
   awaySoon: number;
 }

@@ -5,6 +5,7 @@ import { buildCanonicalKpiForPersonScope } from "../jira/scopedCanonicalKpi";
 import type { TopLevelManagerBranch } from "./orgRole";
 import type { ResolvedEmployee } from "../../services/bamboo/orgResolver";
 import {
+  WORKLOAD_UNAVAILABLE_LABEL,
   capacityPresentationLabel,
   isMeasuredCapacityLabel,
 } from "../workload/capacityPresentation";
@@ -14,13 +15,21 @@ import type {
   LeadershipBranchMetrics,
 } from "./leadershipBranchTypes";
 import { dedupeIssueKeys } from "./leadershipBranches";
+import { dedupeDeliveryRiskByIssueKey } from "../radar/deliveryRisk";
+import {
+  aggregateCurrentEffort,
+  currentWorkloadPercent,
+  personalCurrentEffort,
+} from "../workload/hierarchicalWorkload";
+import { aggregateHistoricalLoad, capacityLevelFromPercent } from "../workflows/capacityWorkload";
+import { workloadDisplayLabel } from "../workload/workloadDisplay";
 
 export function buildBranchCapacitySummary(persons: Person[]): BranchCapacitySummary {
   const seen = new Set<string>();
   const summary: BranchCapacitySummary = {
     totalPeople: 0,
     measuredPeople: 0,
-    insufficientHistoryPeople: 0,
+    unratedPeople: 0,
     light: 0,
     balanced: 0,
     heavy: 0,
@@ -34,15 +43,15 @@ export function buildBranchCapacitySummary(persons: Person[]): BranchCapacitySum
 
     const wl = person.workload ?? null;
     if (!wl) {
-      summary.insufficientHistoryPeople += 1;
+      summary.unratedPeople += 1;
       continue;
     }
 
-    // Current workload is available even when the separate historical-capacity metric has no
-    // completed-cycle samples. Never gate the current distribution on historical sufficiency.
+    // Current workload is available even when Historical load has no completed-cycle samples.
+    // The current distribution is never gated on completed-work history.
     const label = capacityPresentationLabel(wl, person.availability);
     if (!isMeasuredCapacityLabel(label)) {
-      summary.insufficientHistoryPeople += 1;
+      summary.unratedPeople += 1;
       continue;
     }
 
@@ -74,27 +83,20 @@ export function formatBranchCapacitySummaryLabel(capacity: BranchCapacitySummary
   if (capacity.overloaded > 0) parts.push(`${capacity.overloaded} Overloaded`);
   if (capacity.balanced > 0) parts.push(`${capacity.balanced} Balanced`);
   if (capacity.light > 0) parts.push(`${capacity.light} Light`);
-  if (capacity.insufficientHistoryPeople > 0) {
-    parts.push(`${capacity.insufficientHistoryPeople} no history`);
+  if (capacity.unratedPeople > 0) {
+    parts.push(`${capacity.unratedPeople} unavailable`);
   }
   return parts.length ? parts.join(" · ") : "—";
 }
 
+/** Delivery-risk items of the branch's people, one per Jira issue key (most severe wins). */
 function branchDeliveryRiskItems(
   personIds: Set<string>,
   deliveryRisk: DeliveryRiskItem[],
 ): DeliveryRiskItem[] {
-  const byKey = new Map<string, DeliveryRiskItem>();
-  for (const item of deliveryRisk) {
-    if (!personIds.has(item.personId)) continue;
-    const key = item.issueKey.trim();
-    if (!key) continue;
-    const existing = byKey.get(key);
-    if (!existing || item.severity === "critical") {
-      byKey.set(key, item);
-    }
-  }
-  return [...byKey.values()];
+  return dedupeDeliveryRiskByIssueKey(
+    deliveryRisk.filter((item) => personIds.has(item.personId)),
+  );
 }
 
 export function aggregateLeadershipBranchMetrics(input: {
@@ -128,8 +130,14 @@ export function aggregateLeadershipBranchMetrics(input: {
   for (const item of branchRisk) {
     if (item.severity === "critical") attentionCritical += 1;
     else if (item.severity === "warning") attentionWatch += 1;
-    if (/^Review for \d+ day/i.test(item.reason)) longReviewCount += 1;
-    if (/problematic|blocked|on hold/i.test(item.reason)) problematicCount += 1;
+    // Structured Task Health fields — never parse the human-readable reason.
+    if (
+      item.stageKind === "review" &&
+      (item.reasonCode === "stage_overdue" || item.reasonCode === "stage_attention")
+    ) {
+      longReviewCount += 1;
+    }
+    if (item.healthStatus === "problematic") problematicCount += 1;
   }
 
   const activeWorkCount = branchPersons.reduce(
@@ -153,6 +161,16 @@ export function aggregateLeadershipBranchMetrics(input: {
   }
 
   const capacity = buildBranchCapacitySummary(branchPersons);
+  const effort = aggregateCurrentEffort(
+    uniqueIds,
+    (id) => personalCurrentEffort(personById.get(id)),
+  );
+  const currentPercent = currentWorkloadPercent(effort);
+  const historical = aggregateHistoricalLoad(
+    branchPersons
+      .map((person) => person.workload?.capacityBreakdown)
+      .filter((breakdown): breakdown is NonNullable<typeof breakdown> => Boolean(breakdown)),
+  );
 
   return {
     activeWorkCount,
@@ -167,6 +185,22 @@ export function aggregateLeadershipBranchMetrics(input: {
     reworkedCycleCount: kpi.reworkedCycleCount,
     throughputCount: kpi.throughputCount ?? kpi.completedCount,
     capacity,
+    // Σ expected effort / Σ available hours (raw numerators and denominators, never averaged %).
+    currentWorkload: {
+      expectedEffortHours: effort ? Math.round(effort.expectedEffortHours * 10) / 10 : 0,
+      availableHoursInHorizon: effort ? Math.round(effort.availableHoursInHorizon * 10) / 10 : 0,
+      percent: currentPercent === null ? null : Math.round(currentPercent * 10) / 10,
+      label:
+        currentPercent === null
+          ? WORKLOAD_UNAVAILABLE_LABEL
+          : workloadDisplayLabel(capacityLevelFromPercent(currentPercent)),
+    },
+    // Historical load: Σ merged hands-on hours / Σ scheduled available hours.
+    historicalLoad: {
+      executionHoursInPeriod: Math.round(historical.executionHoursInPeriod * 10) / 10,
+      availableHoursInPeriod: Math.round(historical.availableHoursInPeriod * 10) / 10,
+      percent: historical.availableHoursInPeriod > 0 ? historical.capacityLoadPercent : null,
+    },
     awayNow,
     awaySoon,
   };

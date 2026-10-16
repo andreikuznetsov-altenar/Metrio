@@ -1,3 +1,4 @@
+import { businessMsToDays } from '../jira/dates';
 import type { TeamSnapshot } from '../people/types';
 import type { AuditReportData } from '../jira/types';
 import type { TeamRadarItem } from '../radar/types';
@@ -45,11 +46,11 @@ export function buildTeamWeeklyDigest(
     '',
     `Completed: ${weekFlow.completedCount}`,
     `First Pass: ${weekFlow.firstPassPercent}%`,
-    `Median cycle: ${weekFlow.medianCycleMs == null ? '—' : (weekFlow.medianCycleMs / 86400000).toFixed(1)} days`,
-    `Backflow events: ${weekFlow.backflowEventCount}`,
+    `Cycle Time (median): ${weekFlow.medianCycleMs == null ? '—' : businessMsToDays(weekFlow.medianCycleMs).toFixed(1)} business days`,
+    `Backflow Events: ${weekFlow.backflowEventCount}`,
     '',
     'Attention:',
-    `- ${overloaded} people have High/Overloaded workload`,
+    `- ${overloaded} people have Heavy/Overloaded current workload`,
     `- ${deliveryRisk.length} tasks are at risk`,
     `- ${vacationSoon} people start vacation soon`,
     radarSummary.peopleNeedingAttention
@@ -135,12 +136,12 @@ export function buildTeamDigestSections(
   const periodRows: DigestRow[] = [
     { label: 'Completed', value: String(weekFlow.completedCount) },
     { label: 'First Pass', value: `${weekFlow.firstPassPercent}%` },
-    { label: 'Median cycle', value: weekFlow.medianCycleMs == null ? '—' : `${(weekFlow.medianCycleMs / 86400000).toFixed(1)} days` },
-    { label: 'Backflow events', value: String(weekFlow.backflowEventCount) },
+    { label: 'Cycle Time (median)', value: weekFlow.medianCycleMs == null ? '—' : `${businessMsToDays(weekFlow.medianCycleMs).toFixed(1)} business days` },
+    { label: 'Backflow Events', value: String(weekFlow.backflowEventCount) },
   ];
 
   const attentionRows: DigestRow[] = [
-    { label: 'High/Overloaded workload', value: String(overloaded) },
+    { label: 'Heavy/Overloaded current workload', value: String(overloaded) },
     { label: 'Tasks at risk', value: String(deliveryRisk.length) },
     { label: 'Vacation soon', value: String(vacationSoon) },
     {

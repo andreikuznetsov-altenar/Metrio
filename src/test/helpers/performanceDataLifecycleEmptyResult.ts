@@ -14,7 +14,7 @@ const emptyTeam: TeamSnapshot = {
     available: 0,
     onVacation: 0,
     vacationSoon: 0,
-    highWorkload: 0,
+    heavyOrOverloaded: 0,
     problematic: 0,
   },
 };

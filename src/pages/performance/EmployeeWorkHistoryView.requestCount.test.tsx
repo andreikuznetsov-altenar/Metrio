@@ -40,7 +40,7 @@ const historyProps = {
           project: "UX",
           completedOn: "1 Mar 2026",
           cycle: "2d",
-          outcome: "First pass",
+          outcome: "First Pass",
           firstPass: true,
         },
       ],

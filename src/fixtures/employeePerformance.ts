@@ -26,7 +26,7 @@ export function getEmployeePerformanceSnapshot(
       tooltip: "Successful completion cycles in the selected range.",
     },
     {
-      label: "First pass",
+      label: "First Pass",
       value: `${74 + (seed % 12)}%`,
       status: "+2% vs prior",
       statusVariant: "success",
@@ -39,7 +39,7 @@ export function getEmployeePerformanceSnapshot(
       tooltip: "Items you completed in the selected range.",
     },
     {
-      label: "Backflow events",
+      label: "Backflow Events",
       value: `${1 + (seed % 2)}`,
       status: "Stable",
       statusVariant: "neutral",
@@ -92,16 +92,16 @@ export function getEmployeePerformanceSnapshot(
         sparkline: [3, 4, 4, 5, 5, 6, 7],
       },
       {
-        label: "First pass",
+        label: "First Pass",
         value: `${72 + (seed % 8)}%`,
         sparkline: [64, 66, 67, 69, 70, 71, 73],
       },
       {
-        label: "Cycle time",
+        label: "Cycle Time",
         value: `${2 + (seed % 3)}.4d`,
       },
       {
-        label: "Backflow events",
+        label: "Backflow Events",
         value: `${1 + (seed % 2)}`,
         sparkline: [2, 2, 1, 2, 1, 1, 1],
       },
@@ -148,7 +148,7 @@ export function getEmployeePerformanceSnapshot(
             project: "MET",
             completedOn: "Sep 24",
             cycle: "2.0d",
-            outcome: "First pass",
+            outcome: "First Pass",
           },
         ],
       },

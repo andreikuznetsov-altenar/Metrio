@@ -64,6 +64,7 @@ describe("buildOrganizationSignals", () => {
           personRouteKey: p.id,
           status: issue.currentStatus || "In Review",
           health: "stale",
+          stageKind: "review" as const,
           stageLabel: "7d",
           reason: "No activity",
           severity: "warning",

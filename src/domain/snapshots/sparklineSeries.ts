@@ -1,5 +1,6 @@
 import type { KpiSnapshotFile } from "./types";
 import { teamSparklinePoints } from "./snapshotEngine";
+import { MS_PER_BUSINESS_DAY } from "../jira/dates";
 
 import { appNow } from "../../platform/appClock";
 function mergeRateSeries(
@@ -48,7 +49,7 @@ export function teamFirstPassRateSparklinePoints(
   return mergeRateSeries(firstPass, completed);
 }
 
-/** Daily average cycle (days) for team sparklines. */
+/** Daily sample-weighted mean cycle (business days) for team sparklines. */
 export function teamAvgCycleDaysSparklinePoints(
   file: KpiSnapshotFile,
   days = 56,
@@ -56,7 +57,7 @@ export function teamAvgCycleDaysSparklinePoints(
 ): { date: string; value: number }[] {
   const sumWindow = teamSparklinePoints(file, "cycleMsSumOnDate", days, now);
   const countWindow = teamSparklinePoints(file, "completedWithCycleOnDate", days, now);
-  return mergeRatioSeries(sumWindow, countWindow, 1 / (24 * 60 * 60 * 1000));
+  return mergeRatioSeries(sumWindow, countWindow, 1 / MS_PER_BUSINESS_DAY);
 }
 
 export function sparklineValuesFromPoints(points: { value: number }[]): number[] {

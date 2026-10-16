@@ -36,7 +36,7 @@ describe('buildDeliveryRiskItems', () => {
   it('includes blocked tasks', () => {
     const snapshot: TeamSnapshot = {
       mode: 'team',
-      summary: { available: 1, onVacation: 0, vacationSoon: 0, highWorkload: 0, problematic: 0 },
+      summary: { available: 1, onVacation: 0, vacationSoon: 0, heavyOrOverloaded: 0, problematic: 0 },
       persons: [
         {
           id: '1',

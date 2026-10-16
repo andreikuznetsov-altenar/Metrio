@@ -123,7 +123,7 @@ function BranchMemberRows({
               <CollapsibleCell open={isShown}>{member.attentionLabel}</CollapsibleCell>
               <CollapsibleCell open={isShown}>{member.deliveryRiskCount}</CollapsibleCell>
               <CollapsibleCell open={isShown}>
-                <CapacityBadgeMix parts={member.capacityParts} ariaLabel="Capacity" />
+                <CapacityBadgeMix parts={member.capacityParts} ariaLabel="Current workload" />
               </CollapsibleCell>
               <CollapsibleCell open={isShown}>{member.availabilityLabel}</CollapsibleCell>
               <CollapsibleCell open={isShown} className="performance-branch-action-col">
@@ -307,7 +307,7 @@ export function LeadershipBranchesPerformanceView({
             <dd>{selected.deliveryRiskCount}</dd>
           </div>
           <div>
-            <dt>Capacity</dt>
+            <dt>Current workload</dt>
             <dd>{selected.capacityLabel}</dd>
           </div>
           <div>
@@ -372,7 +372,7 @@ export function LeadershipBranchesPerformanceView({
               />
               <SortableTableHeader
                 columnId="capacity"
-                label="Capacity"
+                label="Current workload"
                 sort={sort}
                 onToggle={toggleSort}
               />

@@ -47,7 +47,7 @@ describe("PASS31 Work history", () => {
         firstPassCount: 1,
         reviewReturns: 1,
         rows: [
-          { key: "CAS-232", title: "Update provider filter chips", project: "CAS", completedOn: "12 Oct 2026", cycle: "3d 1h", outcome: "First pass", firstPass: true },
+          { key: "CAS-232", title: "Update provider filter chips", project: "CAS", completedOn: "12 Oct 2026", cycle: "3d 1h", outcome: "First Pass", firstPass: true },
           { key: "CORE-4821", title: "Improve bet slip error recovery", project: "CORE", completedOn: "7 Oct 2026", cycle: "10d 1h", outcome: "Rework", firstPass: false },
         ],
       },

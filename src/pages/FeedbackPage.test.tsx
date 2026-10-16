@@ -24,7 +24,7 @@ vi.mock("../app/FeedbackTeamProvider", () => ({
     teamSnapshot: {
       mode: "team",
       persons: [],
-      summary: { available: 0, onVacation: 0, vacationSoon: 0, highWorkload: 0, problematic: 0 },
+      summary: { available: 0, onVacation: 0, vacationSoon: 0, heavyOrOverloaded: 0, problematic: 0 },
     },
     updatePrefs: vi.fn(),
   }),

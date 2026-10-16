@@ -20,7 +20,7 @@ function weeklyDigest(periodLabel: string): OperationalDigest {
       {
         id: "week",
         title: "This week",
-        lines: ["Completed: 1", "First pass: 100%"],
+        lines: ["Completed: 1", "First Pass: 100%"],
       },
       {
         id: "delivery",
@@ -45,7 +45,7 @@ describe("digestDrawerFormat", () => {
     const week = cards.find((card) => card.id === "week");
     expect(week?.metrics).toEqual([
       { label: "Completed", value: "1" },
-      { label: "First pass", value: "100%" },
+      { label: "First Pass", value: "100%" },
     ]);
     const delivery = cards.find((card) => card.id === "delivery");
     expect(delivery?.body).toContain("No significant delivery changes");

@@ -255,7 +255,7 @@ export function buildAnalyticsEvidence(input: BuildAnalyticsEvidenceInput): Anal
       detailLevel: "task",
       summaryLines: [
         { label: "Tasks with backflow", value: String(mapped.length) },
-        { label: "Backflow events", value: String(totalEvents) },
+        { label: "Backflow Events", value: String(totalEvents) },
       ],
       issues: sortIssues(metric, mapped),
       totalCountable: totalEvents,
@@ -286,7 +286,7 @@ export function buildAnalyticsEvidence(input: BuildAnalyticsEvidenceInput): Anal
         description,
         detailLevel: "task",
         summaryLines: [
-          { label: "First pass", value: String(firstPass) },
+          { label: "First Pass", value: String(firstPass) },
           { label: "Rework", value: String(rework) },
           { label: "Completed cycles", value: String(mapped.length) },
         ],

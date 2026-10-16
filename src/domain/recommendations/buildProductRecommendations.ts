@@ -146,9 +146,9 @@ export function buildProductRecommendations(
       pushUnique(out, seen, {
         id: "team-capacity-hot",
         severity: hot.some((r) => r.workload === "Overloaded") ? "critical" : "watch",
-        title: `${hot.length} team member${hot.length === 1 ? "" : "s"} with elevated measured capacity`,
+        title: `${hot.length} team ${hot.length === 1 ? "member is" : "members are"} Heavy or Overloaded`,
         explanation:
-          "Review active work and redistribute tasks to people with measured available capacity.",
+          "Review active work and redistribute tasks to people with available capacity.",
         actionLabel: "Open Team Workload",
         actionKind: "open_team_workload",
         priority: 4,

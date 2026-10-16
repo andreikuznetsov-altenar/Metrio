@@ -131,7 +131,7 @@ describe("buildProjectCockpit KPI parity", () => {
     expect(cockpit.kpis.find((k) => k.label === "Completed")?.value).toBe(
       String(kpiDirect.completedCount),
     );
-    expect(cockpit.kpis.find((k) => k.label === "Backflow events")?.value).toBe(
+    expect(cockpit.kpis.find((k) => k.label === "Backflow Events")?.value).toBe(
       String(kpiDirect.backflowEventCount),
     );
     expect(cockpit.summary.completedInPeriod).toBe(kpiDirect.completedCount);

@@ -1,5 +1,5 @@
 import { endOfDay, format, parseISO } from 'date-fns';
-import { parseDateStartOfDay } from '../../domain/jira/dates';
+import { businessMsToDays, parseDateStartOfDay } from '../../domain/jira/dates';
 import type { DateRange } from '../../domain/periods/dateRange';
 import { buildDeliveryRiskItems } from '../../domain/radar/deliveryRisk';
 import type { TeamPerformanceSnapshot } from '../../domain/performance';
@@ -44,7 +44,7 @@ export function formatPdfReportRangeTitle(range: ReportRangeIso): string {
 function pickTeamKpis(summary: TeamPerformanceSnapshot['summary']) {
   const byLabel = new Map(summary.map((metric) => [metric.label, metric]));
   const hero = byLabel.get('Throughput');
-  const supportingLabels = ['First pass', 'Completed', 'Backflow events'] as const;
+  const supportingLabels = ['First Pass', 'Completed', 'Backflow Events'] as const;
   return {
     hero: {
       label: 'Throughput',
@@ -88,7 +88,7 @@ export function buildTeamPerformancePdfLayout(input: {
 
   const medianCycleDays =
     periodFlow.medianCycleMs !== null
-      ? (periodFlow.medianCycleMs / (24 * 60 * 60 * 1000)).toFixed(1)
+      ? businessMsToDays(periodFlow.medianCycleMs).toFixed(1)
       : '—';
 
   const digestSummary =
@@ -107,10 +107,10 @@ export function buildTeamPerformancePdfLayout(input: {
       trendDays,
       trendAnchor,
     );
-    recentRows.push({ label: 'First pass', value: fpTrend.label });
+    recentRows.push({ label: 'First Pass', value: fpTrend.label });
   } else {
     recentRows.push({
-      label: 'First pass',
+      label: 'First Pass',
       value: `${fpSufficiency.daysRecorded}/${fpSufficiency.recommended} days`,
     });
   }
@@ -185,9 +185,9 @@ export function buildTeamPerformancePdfLayout(input: {
     workload: row.workload,
   }));
 
-  const numericActive = workloadRows.map((row) => ({
-    personName: row.personName,
-    active: Number.parseInt(row.active, 10) || 0,
+  const workloadForSubtitle = teamOverview.workload.map((row) => ({
+    personName: row.personName ?? '—',
+    currentLoadPercent: row.currentLoadPercent ?? null,
   }));
 
   const vectorLogoPreferred =
@@ -235,7 +235,7 @@ export function buildTeamPerformancePdfLayout(input: {
     digestRecentChanges,
     teamTrends,
     workloadBalance: {
-      subtitle: workloadBalanceSubtitle(numericActive),
+      subtitle: workloadBalanceSubtitle(workloadForSubtitle),
       rows: workloadRows,
     },
     deliveryRiskDetails,

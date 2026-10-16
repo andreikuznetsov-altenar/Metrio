@@ -222,7 +222,7 @@ describe('current workload is derived from the current queue only', () => {
     expect(filterOwnedIssues(shared, 'daria').map((i) => i.issueKey)).toEqual(['M-1']);
     const snapshot = {
       mode: 'team',
-      summary: { available: 2, onVacation: 0, vacationSoon: 0, highWorkload: 0, problematic: 0 },
+      summary: { available: 2, onVacation: 0, vacationSoon: 0, heavyOrOverloaded: 0, problematic: 0 },
       persons: [
         { id: 'v', ownedIssues: filterOwnedIssues(shared, 'valeriia'), issues: shared },
         { id: 'd', ownedIssues: filterOwnedIssues(shared, 'daria'), issues: shared },
@@ -311,7 +311,7 @@ describe('every surface resolves the same current workload for the same person',
     const teamSnapshot: TeamSnapshot = {
       persons: [p],
       mode: 'team',
-      summary: { available: 1, onVacation: 0, vacationSoon: 0, highWorkload: 0, problematic: 0 },
+      summary: { available: 1, onVacation: 0, vacationSoon: 0, heavyOrOverloaded: 0, problematic: 0 },
     };
     const reportData: AuditReportData = {
       params,

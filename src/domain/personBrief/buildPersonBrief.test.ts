@@ -13,7 +13,7 @@ function workspaceStub(): PersonAnalyticsWorkspace {
     contextLine: "Last 30 days",
     performanceKpis: [
       { label: "Completed", value: "5", contextLabel: "vs 7", contextCaption: "vs previous 30 days" },
-      { label: "First pass", value: "80%" },
+      { label: "First Pass", value: "80%" },
       { label: "Backflows", value: "1" },
     ],
     cycleTime: [{ label: "P → R", value: "2.1 days" }],
@@ -45,7 +45,7 @@ function workspaceStub(): PersonAnalyticsWorkspace {
             key: "UX-9",
             title: "Done task",
             completedOn: "2 Oct",
-            outcome: "First pass",
+            outcome: "First Pass",
             project: "UX",
             cycle: "3d",
           },

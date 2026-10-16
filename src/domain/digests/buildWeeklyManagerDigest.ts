@@ -1,3 +1,4 @@
+import { businessMsToDays } from "../jira/dates";
 import type { TeamSnapshot } from "../people/types";
 import type { AuditReportData } from "../jira/types";
 import type { TeamRadarItem } from "../radar/types";
@@ -71,9 +72,9 @@ export function buildWeeklyManagerDigest(
       title: "This week",
       lines: [
         `Completed: ${weekFlow.completedCount}`,
-        `First pass: ${weekFlow.firstPassPercent}%`,
-        `Median cycle: ${weekFlow.medianCycleMs == null ? "—" : (weekFlow.medianCycleMs / 86400000).toFixed(1)} days`,
-        `Backflow events: ${weekFlow.backflowEventCount}`,
+        `First Pass: ${weekFlow.firstPassPercent}%`,
+        `Cycle Time (median): ${weekFlow.medianCycleMs == null ? "—" : businessMsToDays(weekFlow.medianCycleMs).toFixed(1)} business days`,
+        `Backflow Events: ${weekFlow.backflowEventCount}`,
       ],
     },
     {
@@ -89,7 +90,7 @@ export function buildWeeklyManagerDigest(
         radarSummary.peopleNeedingAttention
           ? `${radarSummary.peopleNeedingAttention} people on Team Radar`
           : "No team radar escalations",
-        `${currentMetrics.overloadedPeople} with high or overloaded workload`,
+        `${currentMetrics.overloadedPeople} Heavy / Overloaded`,
       ],
     },
     {

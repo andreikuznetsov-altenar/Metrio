@@ -132,16 +132,9 @@ test.describe("Executive acceptance — light 1440×900", () => {
     await expect(page).toHaveScreenshot("16-analytics-first-pass.png", SHOT);
   });
 
-  test("17-analytics-efficiency", async ({ page }) => {
-    await bootMetrio(page, "lead");
-    await page.getByRole("button", { name: /View Efficiency details/i }).click();
-    await expect(page.locator(".drawer--analytics")).toBeVisible();
-    await expect(page).toHaveScreenshot("17-analytics-efficiency.png", SHOT);
-  });
-
   test("18-analytics-backflows", async ({ page }) => {
     await bootMetrio(page, "lead");
-    await page.getByRole("button", { name: /View Backflows details/i }).click();
+    await page.getByRole("button", { name: /View Backflow Events details/i }).click();
     await expect(page.locator(".drawer--analytics")).toBeVisible();
     await expect(page).toHaveScreenshot("18-analytics-backflows.png", SHOT);
   });

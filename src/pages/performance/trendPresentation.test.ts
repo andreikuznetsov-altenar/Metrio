@@ -63,7 +63,7 @@ describe("trendPresentation", () => {
 
   it("maps first pass decrease as down arrow and negative semantic", () => {
     const card = buildTrendCardData(
-      "First pass",
+      "First Pass",
       comparison({
         absoluteDelta: -28.6,
         direction: "down",

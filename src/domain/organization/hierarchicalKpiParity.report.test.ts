@@ -100,7 +100,7 @@ describe("PASS 15.2 hierarchical KPI real-hierarchy report", () => {
         available: persons.length,
         onVacation: 0,
         vacationSoon: 0,
-        highWorkload: 0,
+        heavyOrOverloaded: 0,
         problematic: 0,
       },
     };

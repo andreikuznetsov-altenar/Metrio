@@ -15,10 +15,10 @@ export function DashboardTeamCapacityVisual({
   return (
     <section
       className="executive-panel executive-dashboard__span-6 executive-panel--metric"
-      aria-label="Team capacity distribution"
+      aria-label="Current workload distribution"
       data-testid="dashboard-team-capacity-visual"
     >
-      <h2 className="executive-panel__title">Capacity distribution</h2>
+      <h2 className="executive-panel__title">Current workload distribution</h2>
       <div className="executive-capacity-visual metrio-bar-chart">
         {buckets.map((bucket) => (
           <div key={bucket.label} className="metrio-bar-row">

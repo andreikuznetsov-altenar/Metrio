@@ -43,7 +43,7 @@ function CompletedRow({ item }: { item: EmployeeCompletedRowView }) {
         <div className="person-work-row__head">
           <JiraIssueLink issueKey={item.key} className="performance-work-row__key" />
           {item.outcome ? (
-            <Badge variant={item.outcome === "First pass" ? "success" : "warning"}>
+            <Badge variant={item.outcome === "First Pass" ? "success" : "warning"}>
               {item.outcome}
             </Badge>
           ) : null}

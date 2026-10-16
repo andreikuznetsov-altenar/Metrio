@@ -9,6 +9,7 @@ import {
   VACATION_SOON_DAYS_MAX,
   VACATION_SOON_DAYS_MIN,
 } from "./operationalRulesDefaults";
+import type { TaskHealthThresholds } from "../task-health/taskHealthEngine";
 import type {
   OperationalRules,
   VacationReminderMilestone,
@@ -97,10 +98,19 @@ export function normalizeOperationalRules(
   };
 }
 
-export function taskHealthThresholdsFromRules(rules: OperationalRules) {
+/**
+ * Task Health thresholds from the operational rules. Stage bases feed the per-profile, per-stage
+ * attention targets (Active = review attention + in-progress grace; Review/QA = review attention).
+ */
+export function taskHealthThresholdsFromRules(rules: OperationalRules): TaskHealthThresholds {
+  const review = rules.taskAttention.reviewAttentionDays;
   return {
     noActivityDays: rules.taskAttention.noActivityDays,
-    atRiskRatio: 0.75,
+    stageBases: {
+      reviewAttentionDays: review,
+      activeAttentionDays: review + rules.taskAttention.inProgressGraceDays,
+      qaAttentionDays: review,
+    },
   };
 }
 

@@ -9,37 +9,49 @@ import type {
   DailyPersonSnapshot,
   DailyTeamSnapshot,
   KpiSnapshotFile,
-  LegacyDailyPersonSnapshot,
   SnapshotSource,
 } from './types';
-import { KPI_SNAPSHOT_SCHEMA_VERSION } from './types';
+import { KPI_SNAPSHOT_METHODOLOGY, KPI_SNAPSHOT_SCHEMA_VERSION } from './types';
+import type { DailyFlowFields } from '../history/dailyFlowFields';
+import { sumDailyFlow } from '../history/dailyFlowFields';
 import { addCalendarDays } from '../calendar/workingCalendar';
+import { MS_PER_BUSINESS_DAY } from '../jira/dates';
 
 import { appNow } from "../../platform/appClock";
 export const EMPTY_KPI_SNAPSHOT_FILE: KpiSnapshotFile = {
   schemaVersion: KPI_SNAPSHOT_SCHEMA_VERSION,
+  methodology: KPI_SNAPSHOT_METHODOLOGY,
   personSnapshots: [],
   teamSnapshots: [],
 };
 
-function normalizePersonSnapshot(
-  raw: Partial<DailyPersonSnapshot> & LegacyDailyPersonSnapshot,
-): DailyPersonSnapshot {
+function normalizeFlow(raw: Partial<DailyFlowFields>): DailyFlowFields {
+  const completed = raw.completedOnDate ?? 0;
+  const firstPass = raw.firstPassOnDate ?? 0;
+  return {
+    completedOnDate: completed,
+    backflowsOnDate: raw.backflowsOnDate ?? 0,
+    firstPassOnDate: firstPass,
+    reworkedCyclesOnDate: raw.reworkedCyclesOnDate ?? Math.max(0, completed - firstPass),
+    cycleMsSumOnDate: raw.cycleMsSumOnDate ?? 0,
+    completedWithCycleOnDate: raw.completedWithCycleOnDate ?? 0,
+    cycleMsSamplesOnDate: [...(raw.cycleMsSamplesOnDate ?? [])],
+    executionMsSamplesOnDate: [...(raw.executionMsSamplesOnDate ?? [])],
+  };
+}
+
+function normalizePersonSnapshot(raw: Partial<DailyPersonSnapshot>): DailyPersonSnapshot {
   const source: SnapshotSource = raw.source || 'live_daily';
   const isHistorical = source === 'historical_jira';
   return {
-    date: raw.date,
-    personId: raw.personId,
+    date: raw.date || '',
+    personId: raw.personId || '',
     source,
     activeCount: isHistorical ? null : (raw.activeCount ?? 0),
     workloadLevel: isHistorical ? null : (raw.workloadLevel || 'normal'),
     atRiskCount: isHistorical ? null : (raw.atRiskCount ?? 0),
     problematicCount: isHistorical ? null : (raw.problematicCount ?? 0),
-    completedOnDate: raw.completedOnDate ?? 0,
-    backflowsOnDate: raw.backflowsOnDate ?? 0,
-    firstPassOnDate: raw.firstPassOnDate ?? 0,
-    cycleMsSumOnDate: raw.cycleMsSumOnDate ?? 0,
-    completedWithCycleOnDate: raw.completedWithCycleOnDate ?? 0,
+    ...normalizeFlow(raw),
   };
 }
 
@@ -52,93 +64,30 @@ function normalizeTeamSnapshot(raw: Partial<DailyTeamSnapshot>): DailyTeamSnapsh
     atRiskTaskCount: isHistorical ? null : (raw.atRiskTaskCount ?? 0),
     problematicTaskCount: isHistorical ? null : (raw.problematicTaskCount ?? 0),
     overloadedPeople: isHistorical ? null : (raw.overloadedPeople ?? 0),
-    completedOnDate: raw.completedOnDate ?? 0,
-    backflowsOnDate: raw.backflowsOnDate ?? 0,
-    firstPassOnDate: raw.firstPassOnDate ?? 0,
-    cycleMsSumOnDate: raw.cycleMsSumOnDate ?? 0,
-    completedWithCycleOnDate: raw.completedWithCycleOnDate ?? 0,
-  };
-}
-
-function migrateV2ToV3(file: KpiSnapshotFile): KpiSnapshotFile {
-  return {
-    ...file,
-    schemaVersion: KPI_SNAPSHOT_SCHEMA_VERSION,
-    personSnapshots: file.personSnapshots.map((snapshot) => ({
-      ...snapshot,
-      source: snapshot.source || 'live_daily',
-      activeCount: snapshot.activeCount ?? 0,
-      workloadLevel: snapshot.workloadLevel ?? 'normal',
-      atRiskCount: snapshot.atRiskCount ?? 0,
-      problematicCount: snapshot.problematicCount ?? 0,
-    })),
-    teamSnapshots: file.teamSnapshots.map((snapshot) => ({
-      ...snapshot,
-      source: snapshot.source || 'live_daily',
-      atRiskTaskCount: snapshot.atRiskTaskCount ?? 0,
-      problematicTaskCount: snapshot.problematicTaskCount ?? 0,
-      overloadedPeople: snapshot.overloadedPeople ?? 0,
-    })),
+    ...normalizeFlow(raw),
   };
 }
 
 /**
- * Pre-v6 snapshots contain derived workflow/workload values that cannot be
- * recomputed safely without the raw Jira history, so they are invalidated.
+ * Loads a persisted snapshot file. Derived snapshots from any other schema version or
+ * methodology stamp are INVALIDATED (returned empty), never converted: their flow values mix
+ * earlier metric semantics (V1 backflow counts, host-local day buckets, mean-of-means durations)
+ * and their state counts use the old Task Health rules. Raw Jira history is not stored here, so
+ * the historical bootstrap rebuilds the series under the current methodology.
  */
 export function migrateKpiSnapshotFile(
   raw: Partial<KpiSnapshotFile> & { schemaVersion?: number },
 ): KpiSnapshotFile {
   const version = raw.schemaVersion ?? 1;
-  // Pre-v6 flow values either mix V1 metric semantics or use host-local day and
-  // business-time boundaries. Raw Jira history is not stored here, so
-  // invalidate only this derived cache and let historical bootstrap rebuild it.
-  if (version < 6) {
-    return { ...EMPTY_KPI_SNAPSHOT_FILE };
+  if (version !== KPI_SNAPSHOT_SCHEMA_VERSION || raw.methodology !== KPI_SNAPSHOT_METHODOLOGY) {
+    return { ...EMPTY_KPI_SNAPSHOT_FILE, personSnapshots: [], teamSnapshots: [] };
   }
-  const personSnapshots = (raw.personSnapshots || []).map((snapshot) =>
-    normalizePersonSnapshot(snapshot as LegacyDailyPersonSnapshot & Partial<DailyPersonSnapshot>),
-  );
-  const teamSnapshots = (raw.teamSnapshots || []).map((snapshot) => normalizeTeamSnapshot(snapshot));
-
-  let file: KpiSnapshotFile = {
-    schemaVersion: version,
-    personSnapshots,
-    teamSnapshots,
-    historicalCoverage: raw.historicalCoverage,
-  };
-
-  if (version < 2) {
-    file = {
-      schemaVersion: 2,
-      personSnapshots: personSnapshots.map((snapshot) => ({
-        ...snapshot,
-        source: 'live_daily',
-        completedOnDate: 0,
-        backflowsOnDate: 0,
-        firstPassOnDate: 0,
-        cycleMsSumOnDate: 0,
-        completedWithCycleOnDate: 0,
-      })),
-      teamSnapshots: teamSnapshots.map((snapshot) => ({
-        ...snapshot,
-        source: 'live_daily',
-        completedOnDate: 0,
-        backflowsOnDate: 0,
-        firstPassOnDate: 0,
-        cycleMsSumOnDate: 0,
-        completedWithCycleOnDate: 0,
-      })),
-    };
-  }
-
-  if (file.schemaVersion < KPI_SNAPSHOT_SCHEMA_VERSION) {
-    file = migrateV2ToV3(file);
-  }
-
   return {
-    ...file,
     schemaVersion: KPI_SNAPSHOT_SCHEMA_VERSION,
+    methodology: KPI_SNAPSHOT_METHODOLOGY,
+    personSnapshots: (raw.personSnapshots || []).map((snapshot) => normalizePersonSnapshot(snapshot)),
+    teamSnapshots: (raw.teamSnapshots || []).map((snapshot) => normalizeTeamSnapshot(snapshot)),
+    historicalCoverage: raw.historicalCoverage,
   };
 }
 
@@ -191,8 +140,9 @@ export function recordDailySnapshots(
     });
   }
 
+  // Strictly Overloaded (> 100% Current workload). Heavy is a separate, lower level.
   const overloadedPeople = snapshot.persons.filter(
-    (p) => p.workload?.level === 'overloaded' || p.workload?.level === 'high',
+    (p) => (p.personalWorkload ?? p.workload)?.level === 'overloaded',
   ).length;
 
   let atRiskTaskCount = 0;
@@ -222,80 +172,135 @@ type FlowField =
   | 'completedOnDate'
   | 'backflowsOnDate'
   | 'firstPassOnDate'
+  | 'reworkedCyclesOnDate'
   | 'cycleMsSumOnDate'
   | 'completedWithCycleOnDate';
 
 type StateField = 'problematicCount' | 'activeCount' | 'atRiskCount';
+
+/** Duration sums are business-time; a "day" is a business day, never 24h. */
+const MS_PER_DAY = MS_PER_BUSINESS_DAY;
 
 export function personTrendPoints(
   file: KpiSnapshotFile,
   personId: string,
   field: FlowField | StateField,
 ) {
-  return file.personSnapshots
-    .filter((s) => s.personId === personId)
-    .sort((a, b) => a.date.localeCompare(b.date))
-    .map((s) => {
-      let value: number;
-      if (field === 'cycleMsSumOnDate') {
-        value = (s.cycleMsSumOnDate || 0) / (24 * 60 * 60 * 1000);
-      } else if (field === 'problematicCount' || field === 'activeCount' || field === 'atRiskCount') {
-        value = s[field] ?? 0;
-      } else {
-        value = s[field];
-      }
-      return { date: s.date, value };
-    });
+  const points: { date: string; value: number }[] = [];
+  for (const s of file.personSnapshots
+    .filter((row) => row.personId === personId)
+    .sort((a, b) => a.date.localeCompare(b.date))) {
+    if (field === 'cycleMsSumOnDate') {
+      points.push({ date: s.date, value: (s.cycleMsSumOnDate || 0) / MS_PER_DAY });
+    } else if (field === 'problematicCount' || field === 'activeCount' || field === 'atRiskCount') {
+      // State metric: a null day was never sampled. It is unknown, NOT zero.
+      const value = s[field];
+      if (value !== null) points.push({ date: s.date, value });
+    } else {
+      points.push({ date: s.date, value: s[field] });
+    }
+  }
+  return points;
 }
 
 export function teamTrendPoints(
   file: KpiSnapshotFile,
   field: FlowField | 'problematicTaskCount' | 'overloadedPeople' | 'atRiskTaskCount',
 ) {
-  return file.teamSnapshots
-    .sort((a, b) => a.date.localeCompare(b.date))
-    .map((s) => {
-      let value: number;
-      if (field === 'cycleMsSumOnDate') {
-        value = (s.cycleMsSumOnDate || 0) / (24 * 60 * 60 * 1000);
-      } else if (
-        field === 'problematicTaskCount' ||
-        field === 'overloadedPeople' ||
-        field === 'atRiskTaskCount'
-      ) {
-        value = s[field] ?? 0;
-      } else {
-        value = s[field];
-      }
-      return { date: s.date, value };
-    });
+  const points: { date: string; value: number }[] = [];
+  for (const s of [...file.teamSnapshots].sort((a, b) => a.date.localeCompare(b.date))) {
+    if (field === 'cycleMsSumOnDate') {
+      points.push({ date: s.date, value: (s.cycleMsSumOnDate || 0) / MS_PER_DAY });
+    } else if (
+      field === 'problematicTaskCount' ||
+      field === 'overloadedPeople' ||
+      field === 'atRiskTaskCount'
+    ) {
+      // State metric: unknown (never sampled) days are skipped, not counted as zero.
+      const value = s[field];
+      if (value !== null) points.push({ date: s.date, value });
+    } else {
+      points.push({ date: s.date, value: s[field] });
+    }
+  }
+  return points;
 }
 
+/**
+ * Daily points across all people in the file.
+ *  - flow fields are summed per day (events add up);
+ *  - `problematicCount` is a sampled STATE: the team total on each sampled day (sum of the
+ *    people's counts), later averaged across days. Days with no sample are omitted.
+ */
 export function personTrendFieldPoints(
   file: KpiSnapshotFile,
-  field: 'completedOnDate' | 'firstPassOnDate' | 'backflowsOnDate' | 'problematicCount',
+  field:
+    | 'completedOnDate'
+    | 'firstPassOnDate'
+    | 'reworkedCyclesOnDate'
+    | 'backflowsOnDate'
+    | 'problematicCount',
 ): { date: string; value: number }[] {
+  const byDate = new Map<string, number>();
   if (field === 'problematicCount') {
-    const byDate = new Map<string, { sum: number; count: number }>();
     file.personSnapshots.forEach((snapshot) => {
       if (snapshot.problematicCount === null) return;
-      const entry = byDate.get(snapshot.date) || { sum: 0, count: 0 };
-      entry.sum += snapshot.problematicCount;
-      entry.count += 1;
-      byDate.set(snapshot.date, entry);
+      byDate.set(snapshot.date, (byDate.get(snapshot.date) || 0) + snapshot.problematicCount);
     });
-    return [...byDate.entries()]
-      .sort((a, b) => a[0].localeCompare(b[0]))
-      .map(([date, { sum, count }]) => ({ date, value: count > 0 ? sum / count : 0 }));
+  } else {
+    file.personSnapshots.forEach((snapshot) => {
+      byDate.set(snapshot.date, (byDate.get(snapshot.date) || 0) + snapshot[field]);
+    });
   }
-
-  const byDate = new Map<string, number>();
-  file.personSnapshots.forEach((snapshot) => {
-    byDate.set(snapshot.date, (byDate.get(snapshot.date) || 0) + snapshot[field]);
-  });
   return [...byDate.entries()]
     .sort((a, b) => a[0].localeCompare(b[0]))
     .map(([date, value]) => ({ date, value }));
+}
+
+export type DurationSampleKind = 'cycle' | 'execution';
+
+export interface DurationSamplePoint {
+  date: string;
+  /** Raw business-time durations (ms) of cycles completed on `date`. */
+  samples: number[];
+}
+
+function samplesOf(row: DailyFlowFields, kind: DurationSampleKind): number[] {
+  return kind === 'cycle' ? row.cycleMsSamplesOnDate : row.executionMsSamplesOnDate;
+}
+
+export function teamDurationSamplePoints(
+  file: KpiSnapshotFile,
+  kind: DurationSampleKind,
+): DurationSamplePoint[] {
+  return [...file.teamSnapshots]
+    .sort((a, b) => a.date.localeCompare(b.date))
+    .map((row) => ({ date: row.date, samples: samplesOf(row, kind) }));
+}
+
+export function personDurationSamplePoints(
+  file: KpiSnapshotFile,
+  personId: string,
+  kind: DurationSampleKind,
+): DurationSamplePoint[] {
+  return file.personSnapshots
+    .filter((row) => row.personId === personId)
+    .sort((a, b) => a.date.localeCompare(b.date))
+    .map((row) => ({ date: row.date, samples: samplesOf(row, kind) }));
+}
+
+/** Pooled samples of every person in the file, per day (samples are pooled, never averaged). */
+export function peopleDurationSamplePoints(
+  file: KpiSnapshotFile,
+  kind: DurationSampleKind,
+): DurationSamplePoint[] {
+  const byDate = new Map<string, DailyFlowFields[]>();
+  for (const row of file.personSnapshots) {
+    byDate.set(row.date, [...(byDate.get(row.date) ?? []), row]);
+  }
+  return [...byDate.entries()]
+    .sort((a, b) => a[0].localeCompare(b[0]))
+    .map(([date, rows]) => ({ date, samples: samplesOf(sumDailyFlow(rows), kind) }));
 }
 
 /** Sparkline data for last N days of flow metrics. */

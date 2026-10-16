@@ -1,3 +1,4 @@
+import { firstPassPercentFromCounts, reworkRateMetric } from "../../domain/performance/reworkRate";
 import { format, parseISO } from "date-fns";
 import type { BadgeVariant } from "../../components/Badge/Badge";
 import { formatBusinessDuration } from "../../domain/jira/dates";
@@ -51,11 +52,12 @@ import {
 } from "../../domain/radar/taskSignals";
 import {
   compareTrendPeriods,
-  compareWeightedAvgCycleTrend,
+  compareMedianDurationTrend,
   compareWeightedFirstPassTrend,
   trendSufficiency,
 } from "../../domain/trends/trendEngine";
 import {
+  teamDurationSamplePoints,
   teamSparklinePoints,
   teamTrendPoints,
 } from "../../domain/snapshots/snapshotEngine";
@@ -211,18 +213,15 @@ export function buildPerformanceViewModels(
   );
 
   const teamKpi = reportData.teamKpi;
-  const firstPassRate = teamKpi.firstPassRatePercent ?? 0;
+  // Displayed together with Rework Rate: both come from the same counts and add up to 100.
+  const firstPassRate =
+    firstPassPercentFromCounts(teamKpi) ?? teamKpi.firstPassRatePercent ?? 0;
 
   const trendAnchor = displayRange
     ? new Date(`${displayRange.to}T12:00:00`)
     : appNow();
   const completedTrendPoints = teamTrendPoints(kpiSnapshots, "completedOnDate");
   const firstPassTrendPoints = teamTrendPoints(kpiSnapshots, "firstPassOnDate");
-  const cycleSumTrendPoints = teamTrendPoints(kpiSnapshots, "cycleMsSumOnDate");
-  const cycleCountTrendPoints = teamTrendPoints(
-    kpiSnapshots,
-    "completedWithCycleOnDate",
-  );
   const backflowTrendPoints = teamTrendPoints(kpiSnapshots, "backflowsOnDate");
 
   const completedTrend = compareTrendPeriods(
@@ -237,9 +236,10 @@ export function buildPerformanceViewModels(
     trendDays,
     trendAnchor,
   );
-  const avgCycleTrend = compareWeightedAvgCycleTrend(
-    cycleSumTrendPoints,
-    cycleCountTrendPoints,
+  // Cycle Time: median of the pooled raw samples of each period (sample-aware, business days).
+  const avgCycleTrend = compareMedianDurationTrend(
+    teamDurationSamplePoints(kpiSnapshots, "cycle"),
+    "cycleTime",
     trendDays,
     trendAnchor,
   );
@@ -258,17 +258,18 @@ export function buildPerformanceViewModels(
       statusVariant: "neutral",
     },
     {
-      label: "First pass",
+      label: "First Pass",
       value: `${firstPassRate}%`,
       ...metricContextFromComparison(firstPassTrend, dateRangeKey, trendContextLabel),
     },
+    reworkRateMetric(teamKpi),
     {
       label: "Completed",
       value: String(teamKpi.completedCount),
       ...metricContextFromComparison(completedTrend, dateRangeKey, trendContextLabel),
     },
     {
-      label: "Backflow events",
+      label: "Backflow Events",
       value: String(teamKpi.backflowEventCount),
       ...metricContextFromComparison(backflowTrend, dateRangeKey, trendContextLabel),
     },
@@ -336,10 +337,10 @@ export function buildPerformanceViewModels(
       trendMetricKind: "count",
       sufficiency: completedSufficiency,
     }),
-    buildTrendCardData("First pass", firstPassTrend, {
+    buildTrendCardData("First Pass", firstPassTrend, {
       sparkline: sparkFirstPass,
       chartSeries: chartSeriesForTrend(
-          "First pass",
+          "First Pass",
           firstPassChartPoints,
           displayRange,
           teamTrendIssues,
@@ -348,10 +349,10 @@ export function buildPerformanceViewModels(
       trendMetricKind: "percent",
       sufficiency: completedSufficiency,
     }),
-    buildTrendCardData("Cycle time", avgCycleTrend, {
+    buildTrendCardData("Cycle Time", avgCycleTrend, {
       sparkline: sparkAvgCycle,
       chartSeries: chartSeriesForTrend(
-          "Cycle time",
+          "Cycle Time",
           avgCycleChartPoints,
           displayRange,
           teamTrendIssues,
@@ -360,10 +361,10 @@ export function buildPerformanceViewModels(
       trendMetricKind: "duration",
       sufficiency: completedSufficiency,
     }),
-    buildTrendCardData("Backflow events", backflowTrend, {
+    buildTrendCardData("Backflow Events", backflowTrend, {
       sparkline: sparkBackflows,
       chartSeries: chartSeriesForTrend(
-          "Backflow events",
+          "Backflow Events",
           backflowChartPoints,
           displayRange,
           teamTrendIssues,
@@ -652,7 +653,7 @@ function employeeCompletedRowView(
       : undefined,
     cycle: cycleMs != null ? formatBusinessDuration(cycleMs) : undefined,
     outcome: health.isFirstPass
-      ? "First pass"
+      ? "First Pass"
       : health.isCompleted
         ? "Rework"
         : undefined,
@@ -785,7 +786,7 @@ function buildPersonDetailSnapshot(
           ? format(parseISO(entry.completedAt), "dd MMM yyyy")
           : "—",
         cycle: entry.cycleMs != null ? formatBusinessDuration(entry.cycleMs) : "—",
-        outcome: entry.firstPass ? "First pass" : "Rework",
+        outcome: entry.firstPass ? "First Pass" : "Rework",
       })),
   };
 }

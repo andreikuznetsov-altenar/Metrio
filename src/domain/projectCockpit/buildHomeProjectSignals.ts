@@ -5,7 +5,7 @@ import { DEFAULT_OPERATIONAL_RULES } from "../operationalRules/operationalRulesD
 import { projectKeyFromIssueKey } from "../workGraph/issueProjectKey";
 
 function parseStageDays(age: string): number {
-  const match = age.match(/(\d+)\s*day/i);
+  const match = age.match(/(\d+)\s*(?:week)?day/i);
   return match ? Number(match[1]) : 0;
 }
 

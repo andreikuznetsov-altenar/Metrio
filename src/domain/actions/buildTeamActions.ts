@@ -39,7 +39,7 @@ export function buildTeamActions(input: BuildTeamActionsInput): ActionItem[] {
         id: `workload-${row.personId}`,
         kind: "workload",
         severity: "warning",
-        title: `${row.personName ?? "Team member"} has an overloaded workload`,
+        title: `${row.personName ?? "Team member"} is Overloaded`,
         description: `${assignedLabel} · ${activeLabel}`,
         personId: row.personId,
         personName: row.personName,
@@ -151,7 +151,7 @@ export function buildTeamActions(input: BuildTeamActionsInput): ActionItem[] {
 }
 
 function parseStageDays(age: string): number {
-  const match = age.match(/(\d+)\s*day/i);
+  const match = age.match(/(\d+)\s*(?:week)?day/i);
   return match ? Number(match[1]) : 0;
 }
 

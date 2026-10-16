@@ -1,5 +1,6 @@
 import { isNewStarter } from "../onboarding/newStarter";
 import type { DeliveryRiskItem } from "../radar/types";
+import { dedupeDeliveryRiskByIssueKey } from "../radar/deliveryRisk";
 import type { Person } from "../people/types";
 import type { FeedbackActionSummary } from "../feedback/feedbackActionSummary";
 import type { TeamGroup } from "./teamGrouping";
@@ -25,13 +26,12 @@ export function buildOrganizationSignals(input: {
   const signals: OrganizationSignal[] = [];
 
   for (const team of input.teams) {
-    const teamDelivery = input.deliveryRisk.filter((item) =>
-      team.persons.some((person) => person.id === item.personId),
+    const teamPersonIds = new Set(team.persons.map((person) => person.id));
+    const teamDelivery = dedupeDeliveryRiskByIssueKey(
+      input.deliveryRisk.filter((item) => teamPersonIds.has(item.personId)),
     );
 
-    const reviewCount = teamDelivery.filter((item) =>
-      /review/i.test(item.status),
-    ).length;
+    const reviewCount = teamDelivery.filter((item) => item.stageKind === "review").length;
     if (reviewCount >= REVIEW_BOTTLENECK_MIN) {
       signals.push({
         id: signalId(team.teamId, "review_bottleneck"),

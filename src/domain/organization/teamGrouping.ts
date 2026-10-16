@@ -6,6 +6,18 @@ export interface TeamGroup {
   persons: Person[];
 }
 
+/** Each person once, first occurrence wins. Branch/team totals must never double count a person. */
+export function uniquePersonsById(persons: Person[]): Person[] {
+  const seen = new Set<string>();
+  const unique: Person[] = [];
+  for (const person of persons) {
+    if (seen.has(person.id)) continue;
+    seen.add(person.id);
+    unique.push(person);
+  }
+  return unique;
+}
+
 export function teamKeyForPerson(person: Person): string {
   const department = person.bamboo.department?.trim();
   if (department) {

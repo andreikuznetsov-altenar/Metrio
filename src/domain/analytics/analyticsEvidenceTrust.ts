@@ -66,7 +66,7 @@ export function analyticsEvidenceInvariant(evidence: AnalyticsEvidence): boolean
   }
   if (evidence.metric === "first_pass") {
     const firstPass = Number(
-      evidence.summaryLines.find((line) => line.label === "First pass")?.value ?? -1,
+      evidence.summaryLines.find((line) => line.label === "First Pass")?.value ?? -1,
     );
     const rework = Number(
       evidence.summaryLines.find((line) => line.label === "Rework")?.value ?? -1,

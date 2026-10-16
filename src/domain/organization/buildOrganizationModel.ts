@@ -1,3 +1,4 @@
+import { firstPassPercentFromCounts, reworkRateMetric, reworkTrendNote } from "../performance/reworkRate";
 import { formatBusinessDuration } from "../jira/dates";
 import type { Person } from "../people/types";
 import type { KpiData, ReportParams } from "../jira/types";
@@ -5,14 +6,14 @@ import { buildCanonicalKpiForPersonScope } from "../jira/scopedCanonicalKpi";
 import type { MetricCardData } from "../performance";
 import type { DeliveryRiskItem } from "../radar/types";
 import type { FeedbackActionSummary } from "../feedback/feedbackActionSummary";
-import { buildDeliveryRiskItems } from "../radar/deliveryRisk";
+import { buildDeliveryRiskItems, dedupeDeliveryRiskByIssueKey } from "../radar/deliveryRisk";
 import type { TeamSnapshot } from "../people/types";
 import type { AuthorizedPeopleScope } from "./authorizedPeopleScope";
 import {
   buildOrganizationSignals,
   newStarterAggregate,
 } from "./buildOrganizationSignals";
-import { groupPersonsByTeam, type TeamGroup } from "./teamGrouping";
+import { groupPersonsByTeam, uniquePersonsById, type TeamGroup } from "./teamGrouping";
 import {
   buildLeadershipBranchRow,
   groupPersonsByLeadershipBranch,
@@ -29,10 +30,12 @@ import type {
 } from "./organizationTypes";
 
 function buildTeamRow(
-  team: TeamGroup,
+  group: TeamGroup,
   deliveryRisk: DeliveryRiskItem[],
   params: ReportParams,
 ): OrganizationTeamRow {
+  // Each person and each Jira issue key is counted exactly once, however teams are grouped.
+  const team = { ...group, persons: uniquePersonsById(group.persons) };
   const kpi = buildCanonicalKpiForPersonScope({
     persons: team.persons,
     params,
@@ -41,8 +44,9 @@ function buildTeamRow(
     kpi.completedCount > 0
       ? Math.round((kpi.firstPassAcceptedCount / kpi.completedCount) * 100)
       : 0;
-  const teamRisk = deliveryRisk.filter((item) =>
-    team.persons.some((person) => person.id === item.personId),
+  const teamPersonIds = new Set(team.persons.map((person) => person.id));
+  const teamRisk = dedupeDeliveryRiskByIssueKey(
+    deliveryRisk.filter((item) => teamPersonIds.has(item.personId)),
   );
   const attentionSeverity = teamRisk.some((r) => r.severity === "critical")
     ? 0
@@ -91,10 +95,8 @@ function buildSummaryMetrics(
   summaryKpi?: KpiData,
 ): MetricCardData[] {
   const kpi = summaryKpi ?? buildCanonicalKpiForPersonScope({ persons, params });
-  const firstPassRate =
-    kpi.completedCount > 0
-      ? Math.round((kpi.firstPassAcceptedCount / kpi.completedCount) * 100)
-      : 0;
+  // First Pass and Rework Rate are displayed together from the same counts, so they add up to 100.
+  const firstPassRate = firstPassPercentFromCounts(kpi) ?? 0;
   return [
     {
       label: "Throughput",
@@ -103,15 +105,16 @@ function buildSummaryMetrics(
       statusVariant: "neutral",
     },
     {
-      label: "First pass",
+      label: "First Pass",
       value: `${firstPassRate}%`,
     },
+    reworkRateMetric(kpi),
     {
       label: "Completed",
       value: String(kpi.completedCount),
     },
     {
-      label: "Backflow events",
+      label: "Backflow Events",
       value: String(kpi.backflowEventCount),
     },
   ];
@@ -134,8 +137,8 @@ function buildTeamTrends(
         insufficientHistory: true,
       };
     }
-    const backflowNote =
-      kpi.reworkedCycleCount >= 3 ? "Rework elevated" : "Delivery stable";
+    // A RATE with a minimum completed sample (see reworkRate.ts) - never an absolute count.
+    const backflowNote = reworkTrendNote(kpi);
     const cycleNote = kpi.medianCycleMs
       ? `Median cycle ${formatBusinessDuration(kpi.medianCycleMs)}`
       : "Cycle data limited";
@@ -243,9 +246,10 @@ export function filterDeliveryRiskForTeam(
   teamPersonIds: Set<string>,
   filter?: "review" | "all",
 ): DeliveryRiskItem[] {
-  let rows = items.filter((item) => teamPersonIds.has(item.personId));
+  let rows = dedupeDeliveryRiskByIssueKey(items.filter((item) => teamPersonIds.has(item.personId)));
   if (filter === "review") {
-    rows = rows.filter((item) => /review/i.test(item.status));
+    // Canonical Review stage of the task's workflow profile — not a status-name guess.
+    rows = rows.filter((item) => item.stageKind === "review");
   }
   return rows;
 }

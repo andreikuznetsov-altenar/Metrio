@@ -19,6 +19,8 @@ export interface MetricCardData {
   status?: string;
   statusVariant?: BadgeVariant;
   tooltip?: string;
+  /** Secondary line under the value (e.g. the Rework Rate folded into First Pass in narrow drawers). */
+  detail?: string;
   contextLabel?: string;
   contextSemantic?: MetricContextSemantic;
   contextCaption?: string;

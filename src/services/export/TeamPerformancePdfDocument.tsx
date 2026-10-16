@@ -66,7 +66,7 @@ function TeamReportHeader({ layout }: { layout: TeamPerformancePdfLayout }) {
 }
 
 function isContinuousTrend(label: string): boolean {
-  return label === 'First pass' || label === 'Cycle time';
+  return label === 'First Pass' || label === 'Cycle Time';
 }
 
 function SmoothTrendChart({
@@ -183,7 +183,7 @@ export function TeamPerformancePdfDocument({ layout }: { layout: TeamPerformance
                   </View>
                   <View style={pdfStyles.individualMetricsRow}>
                     <View style={pdfStyles.individualMetricRow}>
-                      <Text style={pdfStyles.individualMetricLabel}>First pass</Text>
+                      <Text style={pdfStyles.individualMetricLabel}>First Pass</Text>
                       <Text style={pdfStyles.individualMetricValue}>{card.firstPass}</Text>
                     </View>
                     <View style={pdfStyles.individualMetricRow}>
@@ -191,7 +191,7 @@ export function TeamPerformancePdfDocument({ layout }: { layout: TeamPerformance
                       <Text style={pdfStyles.individualMetricValue}>{card.completed}</Text>
                     </View>
                     <View style={pdfStyles.individualMetricRow}>
-                      <Text style={pdfStyles.individualMetricLabel}>Backflow events</Text>
+                      <Text style={pdfStyles.individualMetricLabel}>Backflow Events</Text>
                       <Text style={pdfStyles.individualMetricValue}>{card.backflows}</Text>
                     </View>
                   </View>

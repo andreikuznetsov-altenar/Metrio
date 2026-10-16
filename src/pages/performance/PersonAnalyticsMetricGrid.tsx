@@ -10,10 +10,11 @@ import "../../components/KpiCard/kpi-card.css";
 
 const METRIC_HELP: Record<string, string> = {
   Throughput: performanceHelp.throughput,
-  "First pass": performanceHelp.firstPass,
+  "First Pass": performanceHelp.firstPass,
+  "Rework Rate": performanceHelp.reworkRate,
   Completed: performanceHelp.completed,
-  "Backflow events": performanceHelp.backflows,
-  "Cycle time":
+  "Backflow Events": performanceHelp.backflows,
+  "Cycle Time":
     "Median elapsed business time from contributor-cycle start to successful completion.",
 };
 
@@ -37,7 +38,7 @@ function metricValueBlock(metric: MetricCardData) {
   return <div className="performance-metric-card__value">{metric.value}</div>;
 }
 
-const DRILLDOWN_LABELS = new Set(["First pass", "Completed", "Backflow events"]);
+const DRILLDOWN_LABELS = new Set(["First Pass", "Completed", "Backflow Events"]);
 
 export interface PersonAnalyticsMetricGridProps {
   metrics: MetricCardData[];
@@ -84,6 +85,7 @@ export function PersonAnalyticsMetricGrid({
                 onClick={(event) => onOpenMetric(metric, event.currentTarget)}
               >
                 {metricValueBlock(metric)}
+                {metric.detail ? <div className="performance-metric-card__detail">{metric.detail}</div> : null}
                 {metric.contextLabel ? (
                   <div
                     className={`performance-metric-card__context performance-metric-card__context--${metric.contextSemantic || "neutral"}`}
@@ -119,6 +121,7 @@ export function PersonAnalyticsMetricGrid({
             ) : (
               <>
                 {metricValueBlock(metric)}
+                {metric.detail ? <div className="performance-metric-card__detail">{metric.detail}</div> : null}
                 {metric.contextLabel ? (
                   <div
                     className={`performance-metric-card__context performance-metric-card__context--${metric.contextSemantic || "neutral"}`}

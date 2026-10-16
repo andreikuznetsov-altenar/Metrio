@@ -72,7 +72,7 @@ function briefStub(): PersonBriefModel {
     workload: "Normal",
     performanceKpis: [
       { label: "Completed", value: "5", contextLabel: "vs 7" },
-      { label: "First pass", value: "80%" },
+      { label: "First Pass", value: "80%" },
       { label: "Backflows", value: "1" },
     ],
     cycleTime: [{ label: "P → R", value: "2.1 days" }],

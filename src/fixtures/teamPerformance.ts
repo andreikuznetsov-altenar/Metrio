@@ -22,9 +22,9 @@ function hash(id: string): number {
 function pickAttention(directReportIds: string[]): AttentionPerson[] {
   const items: AttentionPerson[] = [];
   const reasons = [
-    "Cycle time trending above team target",
+    "Cycle Time trending above team target",
     "First-pass rate dropped this week",
-    "Active load exceeds planned capacity",
+    "Current workload exceeds available hours",
     "Upcoming time off with open commitments",
   ];
 
@@ -89,16 +89,16 @@ function buildTrends(
       sparkline: [8, 10, 9, 12, 11, 14, 13],
     },
     {
-      label: "First pass",
+      label: "First Pass",
       value: `${72 + (base % 10)}%`,
       sparkline: [62, 65, 68, 66, 70, 71, 74],
     },
     {
-      label: "Cycle time",
+      label: "Cycle Time",
       value: `${3 + (base % 4)}.2d`,
     },
     {
-      label: "Backflow events",
+      label: "Backflow Events",
       value: `${2 + (base % 3)}`,
       sparkline: [4, 3, 4, 2, 3, 2, 1],
     },
@@ -131,7 +131,7 @@ export function getTeamPerformanceSnapshot(
         tooltip: "Successful completion cycles in the selected range.",
       },
       {
-        label: "First pass",
+        label: "First Pass",
         value: `${firstPass}%`,
         status: "+3% vs prior",
         statusVariant: "accent",
@@ -144,7 +144,7 @@ export function getTeamPerformanceSnapshot(
         tooltip: "Items completed by your direct reports in the selected range.",
       },
       {
-        label: "Backflow events",
+        label: "Backflow Events",
         value: `${backflows}`,
         status: backflows > 2 ? "Elevated" : "Stable",
         statusVariant: backflows > 2 ? "warning" : "neutral",

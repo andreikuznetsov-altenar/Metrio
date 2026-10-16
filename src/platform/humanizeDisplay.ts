@@ -6,7 +6,7 @@ const ENUM_LABELS: Record<string, string> = {
   authentication_required: "Authentication required",
   in_progress: "In progress",
   not_started: "Not started",
-  first_pass: "First pass",
+  first_pass: "First Pass",
   rework: "Rework",
   backflow: "Backflow",
   pulse: "Pulse",

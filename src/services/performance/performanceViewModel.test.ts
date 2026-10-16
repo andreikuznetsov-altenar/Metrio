@@ -136,7 +136,7 @@ function buildResult(
       available: persons.length,
       onVacation: 0,
       vacationSoon: 0,
-      highWorkload: 0,
+      heavyOrOverloaded: 0,
       problematic: 0,
     },
   };
@@ -183,7 +183,7 @@ describe("buildPerformanceViewModels", () => {
     const vm = buildPerformanceViewModels(data, "1114");
     const throughput = vm.teamOverview.summary.find((m) => m.label === "Throughput");
     const completed = vm.teamOverview.summary.find((m) => m.label === "Completed");
-    const backflows = vm.teamOverview.summary.find((m) => m.label === "Backflow events");
+    const backflows = vm.teamOverview.summary.find((m) => m.label === "Backflow Events");
     expect(throughput?.value).toBe("10");
     expect(completed?.value).toBe("10");
     expect(backflows?.value).toBe("2");

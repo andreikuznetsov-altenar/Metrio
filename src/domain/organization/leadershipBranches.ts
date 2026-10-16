@@ -6,6 +6,8 @@ import type { OrganizationTeamRow } from "./organizationTypes";
 import { formatBusinessDuration } from "../jira/dates";
 import type { ReportParams } from "../jira/types";
 import { buildCanonicalKpiForPersonScope } from "../jira/scopedCanonicalKpi";
+import { dedupeDeliveryRiskByIssueKey } from "../radar/deliveryRisk";
+import { uniquePersonsById } from "./teamGrouping";
 import {
   buildBranchCapacitySummary,
   formatBranchCapacitySummaryLabel,
@@ -29,9 +31,11 @@ export function groupPersonsByLeadershipBranch(input: {
 
   return input.branches.map((branch) => {
     const leader = rosterById.get(branch.managerId);
-    const persons = branch.descendantIds
-      .map((id) => personById.get(id))
-      .filter((p): p is Person => Boolean(p));
+    const persons = uniquePersonsById(
+      [...new Set(branch.descendantIds)]
+        .map((id) => personById.get(id))
+        .filter((p): p is Person => Boolean(p)),
+    );
     return {
       branchId: branch.managerId,
       leaderId: branch.managerId,
@@ -59,8 +63,9 @@ export function buildLeadershipBranchRow(
     kpi.completedCount > 0
       ? Math.round((kpi.firstPassAcceptedCount / kpi.completedCount) * 100)
       : 0;
-  const branchRisk = deliveryRisk.filter((item) =>
-    group.persons.some((person) => person.id === item.personId),
+  const branchPersonIds = new Set(group.persons.map((person) => person.id));
+  const branchRisk = dedupeDeliveryRiskByIssueKey(
+    deliveryRisk.filter((item) => branchPersonIds.has(item.personId)),
   );
   const uniqueAttentionCount = countUniqueDeliveryRiskForBranch(group, deliveryRisk);
   const attentionSeverity = branchRisk.some((r) => r.severity === "critical")

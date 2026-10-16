@@ -34,7 +34,7 @@ export function summarizeTeam(
     vacationSoon: persons.filter(
       (p) => p.availability.state === 'vacation_soon' || p.availability.state === 'vacation_tomorrow',
     ).length,
-    highWorkload: persons.filter(
+    heavyOrOverloaded: persons.filter(
       (p) =>
         p.availability.state === 'available' &&
         (p.workload?.level === 'high' || p.workload?.level === 'overloaded'),

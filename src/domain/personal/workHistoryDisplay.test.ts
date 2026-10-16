@@ -9,7 +9,7 @@ function row(partial: Partial<WorkHistoryRow>): WorkHistoryRow {
     project: "UX",
     completedOn: "—",
     cycle: "—",
-    outcome: "First pass",
+    outcome: "First Pass",
     ...partial,
   };
 }
@@ -31,7 +31,7 @@ describe("formatWorkHistoryRowMeta", () => {
           cycleMs: 21 * 24 * 60 * 60 * 1000 + 5 * 60 * 60 * 1000,
         }),
       ),
-    ).toMatch(/Cycle \d+(\.\d+)?d/);
+    ).toMatch(/Cycle \d+ weekdays?/);
   });
 
   it("omits placeholder dashes", () => {

@@ -22,7 +22,7 @@ const HISTORY_TEMPLATES: WorkHistoryRow[] = [
     project: "MET",
     completedOn: "Sep 24",
     cycle: "2.0d",
-    outcome: "First pass",
+    outcome: "First Pass",
   },
   {
     key: "MET-117",
@@ -38,7 +38,7 @@ const HISTORY_TEMPLATES: WorkHistoryRow[] = [
     project: "MET",
     completedOn: "Sep 11",
     cycle: "1.6d",
-    outcome: "First pass",
+    outcome: "First Pass",
   },
 ];
 
@@ -53,7 +53,7 @@ export function getPersonDetailSnapshot(personId: string): PersonDetailSnapshot 
           {
             label: "Watch",
             variant: "warning",
-            reason: "Cycle time above personal target",
+            reason: "Cycle Time above personal target",
           },
         ]
       : seed % 4 === 0

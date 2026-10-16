@@ -12,7 +12,7 @@ import {
   type CapacityDataState,
 } from './capacityWorkload';
 import {
-  CAPACITY_INSUFFICIENT_LABEL,
+  WORKLOAD_UNAVAILABLE_LABEL,
   capacityDataStateFromWorkload,
 } from '../workload/capacityPresentation';
 import { capacityDistribution } from '../home/executiveDashboardModel';
@@ -413,8 +413,8 @@ export function buildCapacityUiConsistencyReport(input: {
       uiRow != null &&
       uiState === auditRow.capacityDataState &&
       (auditRow.capacityDataState === 'insufficient_history'
-        ? uiLabel === CAPACITY_INSUFFICIENT_LABEL
-        : uiLabel !== CAPACITY_INSUFFICIENT_LABEL);
+        ? uiLabel === WORKLOAD_UNAVAILABLE_LABEL
+        : uiLabel !== WORKLOAD_UNAVAILABLE_LABEL);
 
     if (!match) allMatch = false;
     lines.push(
@@ -428,13 +428,13 @@ export function buildCapacityUiConsistencyReport(input: {
     );
   }
 
-  const bucketLabels = ['Light', 'Balanced', 'Heavy', 'Overloaded', CAPACITY_INSUFFICIENT_LABEL] as const;
+  const bucketLabels = ['Light', 'Balanced', 'Heavy', 'Overloaded', WORKLOAD_UNAVAILABLE_LABEL] as const;
   const auditBuckets: Record<string, number> = Object.fromEntries(
     bucketLabels.map((label) => [label, 0]),
   );
   for (const row of input.audit.personRows) {
     if (row.capacityDataState === 'insufficient_history') {
-      auditBuckets[CAPACITY_INSUFFICIENT_LABEL] += 1;
+      auditBuckets[WORKLOAD_UNAVAILABLE_LABEL] += 1;
       continue;
     }
     const mapped =

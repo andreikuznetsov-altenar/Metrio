@@ -1,3 +1,4 @@
+import { businessMsToDays } from '../jira/dates';
 import {
   calendarPeriodDateKeys,
   previousCalendarPeriodDateKeys,
@@ -11,13 +12,30 @@ import {
 import { appNow } from "../../platform/appClock";
 export type TrendDirection = 'up' | 'down' | 'flat' | 'unknown';
 
-export type TrendAggregation = 'sum' | 'average' | 'weighted_rate' | 'weighted_average';
+/**
+ * How a metric aggregates over a comparison period.
+ *  - sum / average            single daily series: events add up (flow); sampled state is the mean of the sampled days
+ *  - weighted_rate            Σ numerator / Σ denominator (First Pass, Rework Rate) — never a sum of daily percentages
+ *  - weighted_average         Σ duration / Σ samples (sample-weighted mean, secondary)
+ *  - sample_median            median of the pooled raw duration samples (Cycle / Execution Time, primary)
+ * Ratio and sample aggregations cannot be computed from one derived series; they have dedicated
+ * `compare…` functions that take their primitives.
+ */
+export type TrendAggregation =
+  | 'sum'
+  | 'average'
+  | 'weighted_rate'
+  | 'weighted_average'
+  | 'sample_median';
 
 export type TrendMetricId =
   | 'completed'
   | 'backflows'
   | 'firstPass'
+  | 'reworkRate'
   | 'avgCycle'
+  | 'cycleTime'
+  | 'executionTime'
   | 'problematic'
   | 'active'
   | 'atRisk'
@@ -47,7 +65,7 @@ export const TREND_METRICS: Record<TrendMetricId, TrendMetricDescriptor> = {
     id: 'backflows',
     aggregation: 'sum',
     favorableDirection: 'down',
-    label: 'Backflow events',
+    label: 'Backflow Events',
   },
   firstPass: {
     id: 'firstPass',
@@ -55,11 +73,29 @@ export const TREND_METRICS: Record<TrendMetricId, TrendMetricDescriptor> = {
     favorableDirection: 'up',
     label: 'First Pass',
   },
+  reworkRate: {
+    id: 'reworkRate',
+    aggregation: 'weighted_rate',
+    favorableDirection: 'down',
+    label: 'Rework Rate',
+  },
   avgCycle: {
     id: 'avgCycle',
     aggregation: 'weighted_average',
     favorableDirection: 'down',
-    label: 'Cycle time',
+    label: 'Cycle Time (mean)',
+  },
+  cycleTime: {
+    id: 'cycleTime',
+    aggregation: 'sample_median',
+    favorableDirection: 'down',
+    label: 'Cycle Time',
+  },
+  executionTime: {
+    id: 'executionTime',
+    aggregation: 'sample_median',
+    favorableDirection: 'down',
+    label: 'Execution Time',
   },
   problematic: {
     id: 'problematic',
@@ -97,6 +133,9 @@ export interface TrendComparison {
   sufficient: boolean;
   sufficiencyMessage: string | null;
   unknown: boolean;
+  /** Samples/denominator behind each side for ratio and duration metrics. */
+  currentSamples?: number;
+  previousSamples?: number;
 }
 
 export interface TrendSufficiency {
@@ -168,21 +207,14 @@ export function trendSufficiencyForDisplayRange(
 
 export function compareTrendPeriodsForDisplayRange(
   points: TrendPoint[],
-  metric: 'completed' | 'firstPass' | 'avgCycle' | 'backflows' | 'problematic',
+  metric: 'completed' | 'backflows' | 'problematic',
   displayRange: PerformanceDateRange,
 ): TrendComparison {
   const previous = previousComparableRange(displayRange);
   const sufficiency = trendSufficiencyForDisplayRange(points, displayRange);
   const currentPoints = trendPointsInIsoRange(points, displayRange.from, displayRange.to);
   const previousPoints = trendPointsInIsoRange(points, previous.from, previous.to);
-  const idMap: Record<string, TrendMetricId> = {
-    completed: 'completed',
-    backflows: 'backflows',
-    firstPass: 'firstPass',
-    avgCycle: 'avgCycle',
-    problematic: 'problematic',
-  };
-  const descriptor = TREND_METRICS[idMap[metric]];
+  const descriptor = TREND_METRICS[metric];
   const current = aggregatePoints(currentPoints, descriptor.aggregation);
   const prior = aggregatePoints(previousPoints, descriptor.aggregation);
   const delta = absoluteDelta(current, prior);
@@ -271,10 +303,16 @@ function sufficiencyMessage(sufficiency: TrendSufficiency): string {
   return `Not enough history yet (${sufficiency.daysRecorded} days recorded, ${sufficiency.recommended} recommended)`;
 }
 
+/**
+ * Single-series aggregation. Ratio and duration metrics are NOT computable from one derived
+ * series — summing daily percentages or averages is meaningless — so they are rejected loudly.
+ */
 function aggregatePoints(points: TrendPoint[], aggregation: TrendAggregation): number {
   if (aggregation === 'sum') return sumValue(points);
   if (aggregation === 'average') return averageValue(points);
-  return sumValue(points);
+  throw new Error(
+    `Trend aggregation "${aggregation}" needs its numerator/denominator or raw samples; use compareWeightedFirstPassTrend, compareWeightedReworkRateTrend or compareMedianDurationTrend.`,
+  );
 }
 
 export function compareTrendWithAggregation(
@@ -342,50 +380,46 @@ export function compareTrendWithAggregation(
 /** @deprecated Use compareTrendWithAggregation with TREND_METRICS instead. */
 export function compareTrendPeriods(
   points: TrendPoint[],
-  metric: 'completed' | 'firstPass' | 'avgCycle' | 'backflows' | 'problematic',
+  metric: 'completed' | 'backflows' | 'problematic',
   periodDays = 28,
   now = appNow(),
 ): TrendComparison {
-  const idMap: Record<string, TrendMetricId> = {
-    completed: 'completed',
-    backflows: 'backflows',
-    firstPass: 'firstPass',
-    avgCycle: 'avgCycle',
-    problematic: 'problematic',
-  };
-  const descriptor = TREND_METRICS[idMap[metric]];
+  const descriptor = TREND_METRICS[metric];
   return compareTrendWithAggregation(points, descriptor, periodDays, now, {
     requireSamples: metric !== 'completed' && metric !== 'backflows',
   });
 }
 
-export function compareWeightedFirstPassTrend(
-  completedPoints: TrendPoint[],
-  firstPassPoints: TrendPoint[],
-  periodDays = 28,
-  now = appNow(),
+/**
+ * Σ numerator / Σ denominator over each comparison period, as a percentage. Daily rates are never
+ * summed or averaged: the numerator and denominator series are summed first.
+ */
+function compareWeightedRate(
+  metric: 'firstPass' | 'reworkRate',
+  numeratorPoints: TrendPoint[],
+  denominatorPoints: TrendPoint[],
+  periodDays: number,
+  now: Date,
 ): TrendComparison {
-  const sufficiency = trendSufficiency(completedPoints, periodDays, now);
-  const currentCompleted = sumValue(currentPeriod(completedPoints, periodDays, now));
-  const previousCompleted = sumValue(previousPeriod(completedPoints, periodDays, now));
-  const currentFirstPass = sumValue(currentPeriod(firstPassPoints, periodDays, now));
-  const previousFirstPass = sumValue(previousPeriod(firstPassPoints, periodDays, now));
+  const sufficiency = trendSufficiency(denominatorPoints, periodDays, now);
+  const currentDenominator = sumValue(currentPeriod(denominatorPoints, periodDays, now));
+  const previousDenominator = sumValue(previousPeriod(denominatorPoints, periodDays, now));
+  const currentNumerator = sumValue(currentPeriod(numeratorPoints, periodDays, now));
+  const previousNumerator = sumValue(previousPeriod(numeratorPoints, periodDays, now));
 
-  const current =
-    currentCompleted > 0 ? (currentFirstPass / currentCompleted) * 100 : 0;
-  const previous =
-    previousCompleted > 0 ? (previousFirstPass / previousCompleted) * 100 : 0;
+  const current = currentDenominator > 0 ? (currentNumerator / currentDenominator) * 100 : 0;
+  const previous = previousDenominator > 0 ? (previousNumerator / previousDenominator) * 100 : 0;
   const delta = absoluteDelta(current, previous);
   const pp = percentagePointDelta(current, previous);
   const sufficient =
-    sufficiency.sufficient && currentCompleted > 0 && previousCompleted > 0;
+    sufficiency.sufficient && currentDenominator > 0 && previousDenominator > 0;
 
   return {
     current,
     previous,
     absoluteDelta: delta,
     percentagePointDelta: pp,
-    direction: sufficient ? directionForMetric('firstPass', delta) : 'unknown',
+    direction: sufficient ? directionForMetric(metric, delta) : 'unknown',
     label: sufficient && pp !== null ? `${pp > 0 ? '+' : ''}${pp.toFixed(1)} pp` : '—',
     sufficient,
     sufficiencyMessage: sufficient
@@ -394,9 +428,35 @@ export function compareWeightedFirstPassTrend(
         ? 'Not enough completed samples in both comparison periods'
         : sufficiencyMessage(sufficiency),
     unknown: !sufficiency.sufficient,
+    currentSamples: currentDenominator,
+    previousSamples: previousDenominator,
   };
 }
 
+/** First Pass trend: Σ first-pass cycles / Σ completed. */
+export function compareWeightedFirstPassTrend(
+  completedPoints: TrendPoint[],
+  firstPassPoints: TrendPoint[],
+  periodDays = 28,
+  now = appNow(),
+): TrendComparison {
+  return compareWeightedRate('firstPass', firstPassPoints, completedPoints, periodDays, now);
+}
+
+/** Rework Rate trend: Σ reworked cycles / Σ completed. */
+export function compareWeightedReworkRateTrend(
+  completedPoints: TrendPoint[],
+  reworkedPoints: TrendPoint[],
+  periodDays = 28,
+  now = appNow(),
+): TrendComparison {
+  return compareWeightedRate('reworkRate', reworkedPoints, completedPoints, periodDays, now);
+}
+
+/**
+ * Sample-weighted MEAN duration (Σ duration / Σ samples), in business days. Secondary to the
+ * pooled median; kept for callers that only have duration sums.
+ */
 export function compareWeightedAvgCycleTrend(
   cycleSumPoints: TrendPoint[],
   completedWithCyclePoints: TrendPoint[],
@@ -431,14 +491,92 @@ export function compareWeightedAvgCycleTrend(
         ? 'Not enough completed-cycle samples in both comparison periods'
         : sufficiencyMessage(sufficiency),
     unknown: !sufficiency.sufficient,
+    currentSamples: currentCompleted,
+    previousSamples: previousCompleted,
+  };
+}
+
+/** Minimum raw duration samples in EACH comparison period for a duration trend. */
+export const MIN_DURATION_SAMPLES = 3;
+
+export interface DurationSampleSeriesPoint {
+  date: string;
+  /** Raw business-time durations (ms) of cycles completed on `date`. */
+  samples: number[];
+}
+
+function poolSamples(
+  points: DurationSampleSeriesPoint[],
+  keys: Set<string>,
+): number[] {
+  const pooled: number[] = [];
+  for (const point of points) {
+    if (keys.has(point.date)) pooled.push(...point.samples);
+  }
+  return pooled;
+}
+
+function medianOf(values: number[]): number {
+  const sorted = [...values].sort((a, b) => a - b);
+  const mid = Math.floor(sorted.length / 2);
+  return sorted.length % 2 ? sorted[mid]! : (sorted[mid - 1]! + sorted[mid]!) / 2;
+}
+
+/**
+ * Cycle / Execution Time trend: median of the POOLED raw samples of each period (business days).
+ * Sample-aware: both periods need `MIN_DURATION_SAMPLES` samples, a day with many completions
+ * weighs more than a day with one, and a mean of daily means is never used. The median is the
+ * primary duration statistic of Metrics V2.
+ */
+export function compareMedianDurationTrend(
+  samplePoints: DurationSampleSeriesPoint[],
+  metric: 'cycleTime' | 'executionTime' = 'cycleTime',
+  periodDays = 28,
+  now = appNow(),
+): TrendComparison {
+  const coveragePoints = samplePoints.map((point) => ({ date: point.date, value: 1 }));
+  const sufficiency = trendSufficiency(coveragePoints, periodDays, now);
+  const currentKeys = new Set(calendarPeriodDateKeys(periodDays, now));
+  const previousKeys = new Set(previousCalendarPeriodDateKeys(periodDays, now));
+  const currentSamples = poolSamples(samplePoints, currentKeys);
+  const previousSamples = poolSamples(samplePoints, previousKeys);
+
+  const enoughSamples =
+    currentSamples.length >= MIN_DURATION_SAMPLES &&
+    previousSamples.length >= MIN_DURATION_SAMPLES;
+  const current = currentSamples.length ? businessMsToDays(medianOf(currentSamples)) : 0;
+  const previous = previousSamples.length ? businessMsToDays(medianOf(previousSamples)) : 0;
+  const delta = absoluteDelta(current, previous);
+  const sufficient = sufficiency.sufficient && enoughSamples;
+
+  return {
+    current,
+    previous,
+    absoluteDelta: delta,
+    percentagePointDelta: null,
+    direction: sufficient ? directionForMetric(metric, delta) : 'unknown',
+    label: sufficient ? `${delta > 0 ? '+' : ''}${delta.toFixed(1)} business days` : '—',
+    sufficient,
+    sufficiencyMessage: sufficient
+      ? null
+      : sufficiency.sufficient
+        ? `Not enough completed-cycle samples (${currentSamples.length} current, ${previousSamples.length} previous; at least ${MIN_DURATION_SAMPLES} each)`
+        : sufficiencyMessage(sufficiency),
+    unknown: !sufficiency.sufficient,
+    currentSamples: currentSamples.length,
+    previousSamples: previousSamples.length,
   };
 }
 
 export const TREND_METRIC_TOOLTIPS: Record<string, string> = {
   'First Pass':
     'Share of completed work that reached completion without a qualifying review backflow.',
-  'Cycle time':
-    'End-to-end cycle duration for work completed in the selected period.',
-  'Backflow events': 'Qualifying backward status transitions during the period.',
+  'Rework Rate':
+    'Share of completed cycles that contained at least one qualifying review backflow: Σ reworked cycles / Σ completed.',
+  'Cycle Time':
+    'Median end-to-end cycle duration (business days) of the cycles completed in the period.',
+  'Execution Time':
+    'Median hands-on execution duration (business days) of the cycles completed in the period.',
+  'Backflow Events': 'Qualifying backward status transitions during the period (sum).',
   Completed: 'Tasks completed during the period.',
 };

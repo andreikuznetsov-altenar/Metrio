@@ -18,10 +18,9 @@ export function countReviewAttentionMatches(
     for (const issue of getOperationalIssues(person)) {
       const attention = classifyIssueAttention(issue, params, now, rules);
       if (!attention) continue;
-      const status = issue.currentStatus || "";
       const days = stageAgeDays(issue, now);
       if (
-        /review/i.test(status) &&
+        attention.health.stageKind === "review" &&
         days !== null &&
         days >= rules.taskAttention.reviewAttentionDays
       ) {
@@ -43,7 +42,7 @@ export function countNoActivityMatches(
   for (const person of snapshot.persons) {
     for (const issue of getOperationalIssues(person)) {
       const attention = classifyIssueAttention(issue, params, now, rules);
-      if (attention?.reason.toLowerCase().includes("no activity")) {
+      if (attention?.health.isStale) {
         count += 1;
       }
     }

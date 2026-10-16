@@ -9,7 +9,8 @@ export interface DashboardAttentionStat {
 }
 
 function countOverloaded(workload: WorkloadRow[]): number {
-  return workload.filter((row) => /high|overload/i.test(row.workload)).length;
+  // Display vocabulary is Light / Balanced / Heavy / Overloaded; this stat is "overloaded" only.
+  return workload.filter((row) => row.workload === "Overloaded").length;
 }
 
 export function buildDashboardAttentionOverview(input: {
