@@ -100,6 +100,27 @@ export interface WorkloadResult {
   capacityContributorIssueCount?: number;
   capacityBreakdown?: ReturnType<typeof calculateCapacityBreakdown>;
   capacityDataState?: CapacityDataState;
+  /**
+   * Problematic / at-risk issues in stages that actually consume the person's effort
+   * (active, review, QA). These - not the health-wide counts above - feed the score and level:
+   * a task that is merely On Hold is already weighted by its stage and is delivery risk, not load.
+   */
+  loadProblematicCount?: number;
+  loadAtRiskCount?: number;
+  /** Exact per-issue contributions that add up to `score` (explainability / diagnostics). */
+  scoreBreakdown?: WorkloadScoreItem[];
+}
+
+export interface WorkloadScoreItem {
+  issueKey: string;
+  status: string;
+  stage: string;
+  stageScore: number;
+  problematic: boolean;
+  atRisk: boolean;
+  overdue: boolean;
+  riskScore: number;
+  total: number;
 }
 
 function isOnVacation(availability?: PersonAvailability): boolean {
@@ -120,33 +141,71 @@ export interface CalculateWorkloadOptions {
   capacitySubjectCanonical?: string;
 }
 
-function currentQueueScore(
-  operational: ReturnType<typeof countOperationalWorkload>,
-  counts: {
-    problematicCount: number;
-    atRiskCount: number;
-    overdueCount: number;
-  },
-  thresholds: WorkloadThresholds,
-): number {
+function stageWeight(stage: ReturnType<typeof resolveWorkflowStage>): number {
   // Current queue stages deliberately carry different weights. Review/QA still
   // consume attention, while waiting/hold/backlog are weaker load signals than
   // hands-on active execution.
-  const stageScore =
-    operational.activeWorkCount +
-    operational.reviewCount * 0.5 +
-    operational.qaCount * 0.5 +
-    operational.waitingCount * 0.25 +
-    operational.holdCount * 0.1 +
-    operational.backlogCount * 0.25 +
-    operational.unknownCount * 0.25;
+  return (
+    (stage.countsAsActiveWork ? 1 : 0) +
+    (stage.countsAsReview ? 0.5 : 0) +
+    (stage.countsAsQa ? 0.5 : 0) +
+    (stage.countsAsWaiting ? 0.25 : 0) +
+    (stage.countsAsHold ? 0.1 : 0) +
+    (stage.canonicalStage === 'backlog' ? 0.25 : 0) +
+    (stage.canonicalStage === 'unknown' ? 0.25 : 0)
+  );
+}
 
-  const riskScore =
-    counts.problematicCount * thresholds.problematicWeight +
-    counts.atRiskCount * thresholds.atRiskWeight +
-    counts.overdueCount * thresholds.overdueWeight;
+/**
+ * Per-issue contribution of the CURRENT queue. Each issue is counted exactly once:
+ * - stage weight, from where the task is now;
+ * - at most one risk weight, only for stages that consume effort (active/review/QA).
+ *   "Exceeds target duration" is a flavour of problematic, not an additional penalty, and
+ *   On Hold / waiting / backlog tasks never add risk (their stage weight already is their load).
+ */
+export function buildCurrentWorkloadBreakdown(
+  issues: AuditIssue[],
+  params: ReportParams,
+  thresholds: WorkloadThresholds = DEFAULT_WORKLOAD_THRESHOLDS,
+  mappings?: WorkflowProfileMapping[],
+  now?: Date,
+): WorkloadScoreItem[] {
+  const items: WorkloadScoreItem[] = [];
+  const seen = new Set<string>();
+  for (const issue of issues) {
+    if (seen.has(issue.issueKey)) continue;
+    seen.add(issue.issueKey);
+    if (!isWorkflowCapacityEligible(issue)) continue;
+    const profile = resolveWorkflowProfile(issue, { mappings });
+    const stage = resolveWorkflowStage(profile, issue.currentStatus || '');
+    if (stage.isCompletion || stage.isTerminal || stage.canonicalStage === 'cancelled') continue;
 
-  return Math.round((stageScore + riskScore) * 10) / 10;
+    const loadBearing = stage.countsAsActiveWork || stage.countsAsReview || stage.countsAsQa;
+    const health = loadBearing ? classifyTaskHealth({ issue, params, now }) : null;
+    const problematic = health?.status === 'problematic';
+    const atRisk = health?.status === 'at_risk';
+    const overdue = Boolean(problematic && health?.reasons.some((r) => /exceeds target/i.test(r)));
+    const riskScore = problematic
+      ? overdue
+        ? Math.max(thresholds.problematicWeight, thresholds.overdueWeight)
+        : thresholds.problematicWeight
+      : atRisk
+        ? thresholds.atRiskWeight
+        : 0;
+    const stageScore = stageWeight(stage);
+    items.push({
+      issueKey: issue.issueKey,
+      status: issue.currentStatus || '',
+      stage: stage.canonicalStage,
+      stageScore,
+      problematic,
+      atRisk,
+      overdue,
+      riskScore,
+      total: Math.round((stageScore + riskScore) * 100) / 100,
+    });
+  }
+  return items;
 }
 
 function currentQueueLevel(
@@ -242,20 +301,26 @@ export function calculateWorkload(
     if (stage.canonicalStage === 'active') inProgressCount++;
     if (health.status === 'problematic') problematicCount++;
     if (health.status === 'at_risk') atRiskCount++;
-    if (health.reasons.some((r) => r.includes('exceeded'))) overdueCount++;
+    if (health.status === 'problematic' && health.reasons.some((r) => /exceeds target/i.test(r))) overdueCount++;
   });
 
   const operational = countOperationalWorkload(uniqueIssues, params, options.mappings);
   const activeCount = countActiveIssues(uniqueIssues, params, options.mappings);
-  const score = currentQueueScore(
-    operational,
-    { problematicCount, atRiskCount, overdueCount },
+  const scoreBreakdown = buildCurrentWorkloadBreakdown(
+    uniqueIssues,
+    params,
     thresholds,
+    options.mappings,
+    options.now,
   );
+  const score =
+    Math.round(scoreBreakdown.reduce((sum, item) => sum + item.total, 0) * 10) / 10;
+  const loadProblematicCount = scoreBreakdown.filter((item) => item.problematic).length;
+  const loadAtRiskCount = scoreBreakdown.filter((item) => item.atRisk).length;
   const level = currentQueueLevel(
     score,
     operational,
-    { problematicCount, atRiskCount },
+    { problematicCount: loadProblematicCount, atRiskCount: loadAtRiskCount },
     thresholds,
   );
 
@@ -307,5 +372,8 @@ export function calculateWorkload(
     capacityContributorIssueCount: operational.capacityContributorIssueCount,
     capacityBreakdown,
     capacityDataState,
+    loadProblematicCount,
+    loadAtRiskCount,
+    scoreBreakdown,
   };
 }

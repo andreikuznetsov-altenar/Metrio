@@ -33,8 +33,8 @@ export function buildTeamActions(input: BuildTeamActionsInput): ActionItem[] {
     for (const row of snapshot.workload) {
       if (row.workload !== "Overloaded") continue;
       const assigned = row.assignedWork ?? row.activeWork;
-      const activeLabel = `${row.activeWork} active ${row.activeWork === 1 ? "task" : "tasks"}`;
-      const assignedLabel = `${assigned} unfinished ${assigned === 1 ? "task" : "tasks"}`;
+      const activeLabel = `${row.activeWork} in progress`;
+      const assignedLabel = `${assigned} assigned ${assigned === 1 ? "task" : "tasks"}`;
       items.push({
         id: `workload-${row.personId}`,
         kind: "workload",

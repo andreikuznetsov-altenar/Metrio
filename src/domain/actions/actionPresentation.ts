@@ -112,7 +112,15 @@ function issuePreviewSubtext(description?: string): string | null {
 
 export function presentationContextLinesForItem(item: ActionItem): string[] {
   if (item.kind === "workload" && item.count != null) {
-    return [`${item.count} active tasks`];
+    // `count` is the person's whole unfinished queue, not hands-on execution; the description
+    // ("14 unfinished tasks · 1 active task") carries both, so show it instead of calling the
+    // whole queue "active".
+    const parts = item.description
+      ?.split("·")
+      .map((part) => part.trim())
+      .filter(Boolean);
+    if (parts?.length) return parts;
+    return [`${item.count} assigned ${item.count === 1 ? "task" : "tasks"}`];
   }
 
   if (item.kind === "review_bottleneck") {
