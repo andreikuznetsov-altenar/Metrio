@@ -136,8 +136,9 @@ describe('workflow capacity UI consistency', () => {
     const vm = buildPerformanceViewModels(data, '914');
     const row = vm.teamOverview?.workload[0];
     expect(row?.capacityDataState).toBe('insufficient_history');
-    expect(row?.workload).toBe(CAPACITY_INSUFFICIENT_LABEL);
-    expect(row?.workload).not.toBe('Light');
+    // Current workload and historical-capacity sufficiency are independent:
+    // one active task is Light even when there are no completed cycles yet.
+    expect(row?.workload).toBe('Light');
 
     const distribution = capacityDistribution(vm.teamOverview?.workload ?? []);
     const total = distribution.reduce((sum, bucket) => sum + bucket.count, 0);
