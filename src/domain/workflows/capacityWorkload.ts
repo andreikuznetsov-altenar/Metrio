@@ -471,10 +471,10 @@ export function countOperationalWorkload(
   let currentAssignedIssueCount = 0;
 
   uniqueEligibleIssues(issues).forEach((issue) => {
-    currentAssignedIssueCount++;
     const profile = resolveWorkflowProfile(issue, { mappings });
     const stage = resolveWorkflowStage(profile, issue.currentStatus || '');
-    if (stage.isCompletion || stage.canonicalStage === 'cancelled') return;
+    if (stage.isCompletion || stage.isTerminal || stage.canonicalStage === 'cancelled') return;
+    currentAssignedIssueCount++;
     if (stage.countsAsActiveWork) activeWorkCount++;
     if (stage.countsAsReview) reviewCount++;
     if (stage.countsAsQa) qaCount++;
