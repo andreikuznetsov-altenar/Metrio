@@ -234,7 +234,7 @@ export function calculateWorkload(
   let inProgressCount = 0;
 
   uniqueIssues.forEach((issue) => {
-    const health = classifyTaskHealth({ issue, params });
+    const health = classifyTaskHealth({ issue, params, now: options.now });
     if (health.isCompleted) return;
 
     const profile = resolveWorkflowProfile(issue, { mappings: options.mappings });
