@@ -61,6 +61,8 @@ export interface WorkloadRow {
   personId: string;
   personName?: string;
   activeWork: number;
+  /** Current unfinished Jira issues assigned to this person, across all workflow stages. */
+  assignedWork?: number;
   atRisk: number;
   workload: CapacityPresentationLabel;
   availability: string;
