@@ -214,16 +214,26 @@ describe('capacityWorkload', () => {
       '2026-08-31T09:00:00',
     );
 
-    const breakdown = calculateCapacityBreakdown({
+    const valeriia = calculateCapacityBreakdown({
       issues: [issue],
       params: september,
       now: new Date('2026-09-30T12:00:00'),
+      subjectCanonical: 'valeria',
+    });
+    const daria = calculateCapacityBreakdown({
+      issues: [issue],
+      params: september,
+      now: new Date('2026-09-30T12:00:00'),
+      subjectCanonical: 'daria',
     });
 
     // Full In Progress elapsed-business time is 120h. Daria owned 48h of it,
-    // so Valeriia receives only the remaining 72h.
-    expect(breakdown.completedCyclesInPeriod).toBe(1);
-    expect(breakdown.completedCycleHours).toBe(72);
+    // so Valeriia receives only the remaining 72h and Daria keeps her 48h.
+    expect(valeriia.completedCyclesInPeriod).toBe(1);
+    expect(valeriia.completedCycleHours).toBe(72);
+    expect(daria.completedCyclesInPeriod).toBe(1);
+    expect(daria.completedCycleHours).toBe(48);
+    expect(valeriia.completedCycleHours + daria.completedCycleHours).toBe(120);
   });
 
   it('does not double-count parallel contributor intervals for the same person', () => {
