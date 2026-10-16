@@ -40,6 +40,11 @@ export interface CapacityWorkloadInput {
   params: ReportParams;
   mappings?: WorkflowProfileMapping[];
   now?: Date;
+  /**
+   * Person whose historical capacity is being calculated. When provided, task
+   * intervals are intersected with that person's assignee-history segments.
+   */
+  subjectCanonical?: string;
 }
 
 interface CapacityInterval {
@@ -238,13 +243,14 @@ function contributorIntervalsForWindow(
   window: CapacityInterval,
   throughMs: number,
   params?: ReportParams,
+  subjectCanonical?: string,
 ): CapacityInterval[] {
-  const subjectCanonical = issue.currentAssigneeCanonical;
+  const subject = subjectCanonical ?? issue.currentAssigneeCanonical;
   const statusIntervals = contributorStatusIntervals(issue, profile, throughMs);
   const assigned = intersectWithSubjectAssignments(
     statusIntervals,
     issue,
-    subjectCanonical,
+    subject,
     throughMs,
   );
   return assigned
@@ -282,8 +288,8 @@ function businessDurationMs(intervals: CapacityInterval[]): number {
   }, 0);
 }
 
-function subjectBucketKey(issue: AuditIssue): string {
-  return issue.currentAssigneeCanonical || `issue:${issue.issueKey}`;
+function subjectBucketKey(issue: AuditIssue, subjectCanonical?: string): string {
+  return subjectCanonical || issue.currentAssigneeCanonical || `issue:${issue.issueKey}`;
 }
 
 function sumBusinessDurationBySubject(
@@ -372,7 +378,7 @@ export function calculateCapacityBreakdown(input: CapacityWorkloadInput): Capaci
     const cycles = extractProfileContributorCycles(issue, profile, params).filter(
       (cycle) => cycle.completedAt && isDateWithinRange(cycle.completedAt, params),
     );
-    const bucketKey = subjectBucketKey(issue);
+    const bucketKey = subjectBucketKey(issue, input.subjectCanonical);
 
     cycles.forEach((cycle) => {
       const cycleStartMs = validMs(cycle.startedAt);
@@ -384,6 +390,7 @@ export function calculateCapacityBreakdown(input: CapacityWorkloadInput): Capaci
         { startMs: cycleStartMs, endMs: cycleEndMs },
         cycleEndMs,
         params,
+        input.subjectCanonical,
       );
       if (businessDurationMs(intervals) <= 0) return;
       completedCyclesInPeriod += 1;
@@ -410,6 +417,8 @@ export function calculateCapacityBreakdown(input: CapacityWorkloadInput): Capaci
         profile,
         { startMs: enteredAtMs, endMs: nowMs },
         nowMs,
+        undefined,
+        input.subjectCanonical,
       );
       const bucket = activeIntervalsBySubject.get(bucketKey) || [];
       bucket.push(...intervals);
