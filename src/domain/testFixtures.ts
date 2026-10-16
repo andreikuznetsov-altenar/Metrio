@@ -8,7 +8,8 @@ export function testWorkload(overrides: Partial<WorkloadResult> & Pick<WorkloadR
     (overrides.capacityDataState === 'insufficient_history' ? 0 : 3);
   const capacityDataState =
     overrides.capacityDataState ?? resolveCapacityDataState(completedCyclesInPeriod);
-  const capacityLoadPercent = overrides.capacityLoadPercent ?? overrides.score ?? 45;
+  const capacityLoadPercent = overrides.capacityLoadPercent ?? 45;
+  const operationalScore = overrides.score ?? overrides.activeCount ?? 2;
   const estimatedMonthlyHours = overrides.estimatedMonthlyHours ?? 72;
   const capacityBreakdown =
     overrides.capacityBreakdown ??
@@ -25,7 +26,7 @@ export function testWorkload(overrides: Partial<WorkloadResult> & Pick<WorkloadR
     } satisfies NonNullable<WorkloadResult['capacityBreakdown']>);
 
   return {
-    score: overrides.score ?? capacityLoadPercent,
+    score: operationalScore,
     activeCount: overrides.activeCount ?? 2,
     inProgressCount: overrides.inProgressCount ?? 1,
     inReviewCount: overrides.inReviewCount ?? 0,
