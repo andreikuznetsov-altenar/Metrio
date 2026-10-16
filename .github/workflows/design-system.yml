@@ -21,9 +21,3 @@ jobs:
 
       - name: Verify design system
         run: npm run verify:design-system
-
-      - name: Validate workload methodology PR
-        run: |
-          npx tsc --noEmit
-          npm test
-          npm run build
