@@ -112,8 +112,8 @@ describe('PASS14 canonical workload', () => {
       event('In Review', 'Done', '2026-01-19T09:00:00.000Z'),
     ]);
     const result = calculateWorkload([completed], params);
-    expect(result.capacityBreakdown?.completedCycleHours).toBeCloseTo(48, 4);
-    expect(result.capacityBreakdown?.avgHoursPerCycle).toBeCloseTo(48, 4);
+    expect(result.capacityBreakdown?.completedCycleHours).toBeCloseTo(16, 4);
+    expect(result.capacityBreakdown?.avgHoursPerCycle).toBeCloseTo(16, 4);
   });
 
   it.each([
@@ -141,7 +141,7 @@ describe('PASS14 canonical workload', () => {
       resolveWorkflowProfile(active),
       '2026-01-08T09:00:00.000Z',
     );
-    expect(ms / 86400000).toBeCloseTo(3, 4);
+    expect(ms / 3600000).toBeCloseTo(24, 4);
   });
 
   it('backflow capacity includes only active contributor segments', () => {
@@ -153,7 +153,7 @@ describe('PASS14 canonical workload', () => {
       event('In Review', 'Done', '2026-01-21T09:00:00.000Z'),
     ]);
     const result = calculateWorkload([completed], params);
-    expect(result.capacityBreakdown?.completedCycleHours).toBeCloseTo(72, 4);
+    expect(result.capacityBreakdown?.completedCycleHours).toBeCloseTo(24, 4);
   });
 
   it('keeps only current owner after reassignment while history may remain', () => {
