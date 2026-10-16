@@ -16,7 +16,7 @@ const base = (overrides: Partial<WorkloadRow>): WorkloadRow => ({
   personId: "p1",
   activeWork: 3,
   atRisk: 0,
-  workload: "Normal",
+  workload: "Balanced",
   availability: "Available",
   ...overrides,
 });
