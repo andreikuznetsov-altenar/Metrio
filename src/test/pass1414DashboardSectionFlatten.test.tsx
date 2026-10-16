@@ -137,7 +137,7 @@ describe("PASS 14.14 Team Actions task-count drilldown", () => {
       />,
     );
     expect(screen.queryByTestId("grouped-issue-count-link")).toBeNull();
-    expect(screen.getByText("4 active tasks")).toBeTruthy();
+    expect(screen.getByText("4 assigned tasks")).toBeTruthy();
   });
 
   it("DashboardQueuePanel uses flat section wrapper", () => {

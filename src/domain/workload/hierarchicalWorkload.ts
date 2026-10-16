@@ -103,6 +103,8 @@ export function buildOrgGraphFromPersons(persons: Person[]): Map<string, OrgNode
 export interface ResolvedWorkloadUnit {
   personId: string;
   kind: WorkloadUnitKind;
+  /** Current-queue workload level of the person (personal units); team units average capacity. */
+  currentLevel?: string;
   loadPercent: number | null;
   activeWorkFallback: number;
   capacityDataState: WorkloadRow["capacityDataState"];
@@ -121,6 +123,7 @@ export function resolveWorkloadUnitForViewer(
     return {
       personId: person.id,
       kind: "personal",
+      currentLevel: personal?.level,
       loadPercent: personalPercent(person.id),
       activeWorkFallback: activeFallback,
       capacityDataState: capacityState,
@@ -132,6 +135,7 @@ export function resolveWorkloadUnitForViewer(
     return {
       personId: person.id,
       kind: "personal",
+      currentLevel: personal?.level,
       loadPercent: personalPercent(person.id),
       activeWorkFallback: activeFallback,
       capacityDataState: capacityState,
@@ -154,6 +158,9 @@ export function resolveWorkloadUnitForViewer(
 }
 
 export function workloadStatusLabelForUnit(unit: ResolvedWorkloadUnit): string {
+  if (unit.kind === "personal" && unit.currentLevel) {
+    return workloadDisplayLabel(unit.currentLevel);
+  }
   if (unit.capacityDataState === "insufficient_history" || unit.loadPercent == null) {
     return "Not enough history";
   }

@@ -143,7 +143,8 @@ describe('workflow capacity UI consistency', () => {
     const distribution = capacityDistribution(vm.teamOverview?.workload ?? []);
     const total = distribution.reduce((sum, bucket) => sum + bucket.count, 0);
     expect(total).toBe(1);
-    expect(distribution.find((d) => d.label === CAPACITY_INSUFFICIENT_LABEL)?.count).toBe(1);
-    expect(distribution.find((d) => d.label === 'Light')?.count).toBe(0);
+    // The distribution must agree with the row: same person, same current-workload label.
+    expect(distribution.find((d) => d.label === 'Light')?.count).toBe(1);
+    expect(distribution.find((d) => d.label === CAPACITY_INSUFFICIENT_LABEL)?.count).toBe(0);
   });
 });

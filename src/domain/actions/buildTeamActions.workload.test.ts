@@ -36,8 +36,9 @@ describe("buildTeamActions workload copy", () => {
 
     const workload = actions.find((action) => action.kind === "workload");
     expect(workload?.title).toBe("Valeriia Pavlova has an overloaded workload");
-    expect(workload?.description).toBe("14 unfinished tasks · 1 active task");
+    expect(workload?.description).toBe("14 assigned tasks · 1 in progress");
     expect(workload?.count).toBe(14);
     expect(workload?.title).not.toContain("1 active tasks");
+    expect(workload?.description).not.toMatch(/\b1 active tasks\b/);
   });
 });

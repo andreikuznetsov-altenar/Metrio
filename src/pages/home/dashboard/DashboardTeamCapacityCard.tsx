@@ -4,20 +4,10 @@ import { PersonAvatar } from "../../../components/PersonAvatar/PersonAvatar";
 import type { ManagerAvailabilityRow } from "../../../domain/availability/teamAvailabilityContext";
 import type { TeamPerformanceSnapshot, WorkloadRow } from "../../../domain/performance";
 import { workloadBadgeVariantFromLabel } from "../../../domain/performance/performanceStatusBadges";
-import {
-  CAPACITY_INSUFFICIENT_LABEL,
-  measuredCapacityLabelFromPercent,
-} from "../../../domain/workload/capacityPresentation";
 
+/** Current workload label (same source as the People table); historical capacity is not used. */
 function capacityLabel(row: WorkloadRow): string {
-  if (
-    row.capacityDataState === "insufficient_history" ||
-    row.capacityLoadPercent == null ||
-    !Number.isFinite(row.capacityLoadPercent)
-  ) {
-    return CAPACITY_INSUFFICIENT_LABEL;
-  }
-  return measuredCapacityLabelFromPercent(row.capacityLoadPercent);
+  return row.workload;
 }
 
 function countOverloadedCapacity(snapshot: TeamPerformanceSnapshot | null): number {

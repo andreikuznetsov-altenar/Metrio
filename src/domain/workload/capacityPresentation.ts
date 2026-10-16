@@ -36,22 +36,21 @@ export function capacityDataStateFromWorkload(
   return resolveCapacityDataState(completed);
 }
 
+/**
+ * User-facing Light / Balanced / Heavy / Overloaded label. It is the CURRENT workload level
+ * (open Jira queue); historical capacity (completed-cycle hours / percent) never decides it.
+ */
 export function capacityPresentationLabel(
   workload: WorkloadResult | null | undefined,
   availability?: PersonAvailability,
 ): CapacityPresentationLabel {
-  if (workload?.capacityDataState === 'insufficient_history') {
-    return CAPACITY_INSUFFICIENT_LABEL;
-  }
-  if (capacityDataStateFromWorkload(workload) === 'insufficient_history') {
+  if (!workload) {
     return CAPACITY_INSUFFICIENT_LABEL;
   }
   if (isAway(availability)) {
     return CAPACITY_INSUFFICIENT_LABEL;
   }
-  return workloadDisplayLabel(
-    capacityLevelFromPercent(workload?.capacityLoadPercent ?? 0),
-  );
+  return workloadDisplayLabel(workload.level);
 }
 
 export function isMeasuredCapacityLabel(label: CapacityPresentationLabel): label is WorkloadDisplayLabel {
@@ -83,18 +82,20 @@ export function employeeCapacityKpi(input: {
     };
   }
 
-  if (state === 'insufficient_history') {
+  // The badge is the CURRENT workload level; the percentage is the separate historical
+  // elapsed-business-time capacity metric and is only shown when it was measured.
+  const label = wl ? workloadDisplayLabel(wl.level) : CAPACITY_INSUFFICIENT_LABEL;
+  if (state === 'insufficient_history' || !wl) {
     return {
-      capacityDataState: state,
+      capacityDataState: 'insufficient_history',
       value: '—',
-      badgeLabel: CAPACITY_INSUFFICIENT_LABEL,
-      badgeVariant: 'neutral',
-      tooltip: `${CAPACITY_INSUFFICIENT_TOOLTIP} ${operational}.`,
+      badgeLabel: label,
+      badgeVariant: label === 'Overloaded' ? 'danger' : label === 'Heavy' ? 'warning' : label === 'Light' ? 'success' : 'neutral',
+      tooltip: `${operational}. ${CAPACITY_INSUFFICIENT_TOOLTIP}`,
     };
   }
 
-  const percent = wl?.capacityLoadPercent ?? 0;
-  const label = workloadDisplayLabel(capacityLevelFromPercent(percent));
+  const percent = wl.capacityLoadPercent ?? 0;
   return {
     capacityDataState: 'measured',
     value: `${Math.round(percent)}%`,
@@ -107,7 +108,7 @@ export function employeeCapacityKpi(input: {
           : label === 'Light'
             ? 'success'
             : 'neutral',
-    tooltip: `${operational}. Measured from completed contributor cycles in this period.`,
+    tooltip: `${operational}. The level reflects the current Jira queue; ${Math.round(percent)}% is historical elapsed business time of completed cycles (not hours worked).`,
   };
 }
 
@@ -118,52 +119,42 @@ export interface TeamCapacityKpiSummary {
   tooltip: string;
 }
 
+/**
+ * Team-level count of elevated people. Uses each row's CURRENT workload label (the same label the
+ * People table shows); historical capacity percent is not consulted.
+ */
 export function teamCapacityKpiFromRows(workload: WorkloadRow[]): TeamCapacityKpiSummary {
-  const measured = workload.filter((row) => row.capacityDataState !== 'insufficient_history');
-  const insufficient = workload.length - measured.length;
-  const overloaded = measured.filter(
-    (row) => capacityLevelFromPercent(row.capacityLoadPercent ?? 0) === 'overloaded',
-  ).length;
-  const heavy = measured.filter(
-    (row) => capacityLevelFromPercent(row.capacityLoadPercent ?? 0) === 'high',
-  ).length;
+  const rated = workload.filter((row) => row.workload !== CAPACITY_INSUFFICIENT_LABEL);
+  const unrated = workload.length - rated.length;
+  const overloaded = rated.filter((row) => row.workload === 'Overloaded').length;
+  const heavy = rated.filter((row) => row.workload === 'Heavy').length;
   const hot = overloaded + heavy;
 
-  if (measured.length === 0) {
+  if (rated.length === 0) {
     return {
       value: '—',
       badgeLabel: CAPACITY_INSUFFICIENT_LABEL,
       badgeVariant: 'neutral',
-      tooltip: 'No team members have enough completed cycle history in this period.',
+      tooltip: 'No team members have a current workload to rate.',
     };
   }
 
-  if (hot === 0 && insufficient === 0) {
-    return {
-      value: '0',
-      badgeLabel: 'Balanced',
-      badgeVariant: 'neutral',
-      tooltip: '0 overloaded · 0 heavy across measured team members.',
-    };
-  }
+  const unratedSuffix = unrated > 0 ? ` · ${unrated} away or unrated` : '';
 
   if (hot === 0) {
     return {
       value: '0',
       badgeLabel: 'Balanced',
       badgeVariant: 'neutral',
-      tooltip: `${insufficient} without enough history · 0 overloaded · 0 heavy.`,
+      tooltip: `0 overloaded · 0 heavy across the current Jira queues${unratedSuffix}.`,
     };
   }
-
-  const historySuffix =
-    insufficient > 0 ? ` · ${insufficient} without enough history` : '';
 
   return {
     value: String(hot),
     badgeLabel: hot === 1 ? '1 elevated' : `${hot} elevated`,
     badgeVariant: overloaded > 0 ? 'danger' : 'warning',
-    tooltip: `${heavy} heavy · ${overloaded} overloaded${historySuffix}.`,
+    tooltip: `${heavy} heavy · ${overloaded} overloaded (current Jira queues)${unratedSuffix}.`,
   };
 }
 

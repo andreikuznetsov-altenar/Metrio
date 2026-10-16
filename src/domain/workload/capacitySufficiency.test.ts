@@ -12,7 +12,7 @@ import type { WorkloadRow } from '../performance';
 import { testWorkload } from '../testFixtures';
 
 describe('capacity data sufficiency (WF8.1)', () => {
-  it('CASE A: zero completed cycles → insufficient history, not Light/Balanced buckets', () => {
+  it('CASE A: zero completed cycles → capacity not measured, but the current-queue label still shows', () => {
     const state = resolveCapacityDataState(0);
     expect(state).toBe('insufficient_history');
 
@@ -35,14 +35,15 @@ describe('capacity data sufficiency (WF8.1)', () => {
       },
     });
 
+    // Current workload comes from the open Jira queue (level 'normal' = Balanced); the missing
+    // completed-cycle history only means the historical capacity percentage is not measured.
     const label = capacityPresentationLabel(workload);
-    expect(label).toBe(CAPACITY_INSUFFICIENT_LABEL);
-    expect(label).not.toBe('Light');
-    expect(label).not.toBe('Balanced');
+    expect(label).toBe('Balanced');
 
     const kpi = employeeCapacityKpi({ workload });
-    expect(kpi.badgeLabel).toBe(CAPACITY_INSUFFICIENT_LABEL);
+    expect(kpi.badgeLabel).toBe('Balanced');
     expect(kpi.value).toBe('—');
+    expect(kpi.capacityDataState).toBe('insufficient_history');
 
     const row: WorkloadRow = {
       personId: 'p1',
@@ -133,11 +134,13 @@ describe('capacity data sufficiency (WF8.1)', () => {
     const distribution = capacityDistribution(rows);
     const total = distribution.reduce((sum, bucket) => sum + bucket.count, 0);
     expect(total).toBe(rows.length);
-    expect(distribution.find((d) => d.label === 'Light')?.count).toBe(1);
-    expect(distribution.find((d) => d.label === CAPACITY_INSUFFICIENT_LABEL)?.count).toBe(2);
+    // Buckets follow each row's CURRENT workload label; capacityDataState does not move a person
+    // out of Light. Only a row explicitly labelled as unrated (e.g. away) is "no history".
+    expect(distribution.find((d) => d.label === 'Light')?.count).toBe(2);
+    expect(distribution.find((d) => d.label === CAPACITY_INSUFFICIENT_LABEL)?.count).toBe(1);
   });
 
-  it('CASE G: stale measured flag with zero cycles still insufficient', () => {
+  it('CASE G: zero completed cycles never overrides the current workload level', () => {
     const workload = testWorkload({
       level: 'low',
       capacityDataState: 'measured',
@@ -154,7 +157,7 @@ describe('capacity data sufficiency (WF8.1)', () => {
         capacityDataState: 'insufficient_history',
       },
     });
-    expect(capacityPresentationLabel(workload)).toBe(CAPACITY_INSUFFICIENT_LABEL);
+    expect(capacityPresentationLabel(workload)).toBe('Light');
   });
 
   it('CASE E: mixed measurable + insufficient → neutral no-data count in distribution', () => {
@@ -163,7 +166,7 @@ describe('capacity data sufficiency (WF8.1)', () => {
         personId: 'a',
         activeWork: 1,
         atRisk: 0,
-        workload: 'Balanced',
+        workload: 'Heavy',
         capacityDataState: 'measured',
         capacityLoadPercent: 90,
         availability: 'Available',
@@ -183,6 +186,6 @@ describe('capacity data sufficiency (WF8.1)', () => {
 
     const kpi = teamCapacityKpiFromRows(rows);
     expect(kpi.value).toBe('1');
-    expect(kpi.tooltip).toMatch(/without enough history/);
+    expect(kpi.tooltip).toMatch(/away or unrated/);
   });
 });

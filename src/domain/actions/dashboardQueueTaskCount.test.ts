@@ -43,7 +43,8 @@ describe("dashboardQueueTaskCount", () => {
       source: "jira",
     };
     const lines = presentationContextLinesForItem(workload);
-    expect(lines[0]).toBe("8 active tasks");
+    // `count` is the whole assigned queue, never "active" execution.
+    expect(lines[0]).toBe("8 assigned tasks");
     expect(shouldLinkQueueTaskCount(workload, lines)).toBe(false);
   });
 

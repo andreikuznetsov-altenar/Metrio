@@ -2,8 +2,6 @@ import type { HomeRoleVariant } from "./homeTypes";
 import type { HomeDeliverySummary } from "./homeTypes";
 import type { WorkloadRow } from "../performance";
 import type { WorkloadResult } from "../workload/workloadEngine";
-import { capacityLevelFromPercent } from "../workflows/capacityWorkload";
-import { workloadDisplayLabel } from "../workload/workloadDisplay";
 import {
   capacityPresentationLabel,
   CAPACITY_INSUFFICIENT_LABEL,
@@ -98,17 +96,9 @@ function metricValue(
   return metrics.find((m) => m.label === label)?.value;
 }
 
-function capacityLabelForRow(
-  row: WorkloadRow,
-): "Light" | "Balanced" | "Heavy" | "Overloaded" | typeof CAPACITY_INSUFFICIENT_LABEL {
-  if (
-    row.capacityDataState === "insufficient_history" ||
-    row.capacityLoadPercent == null ||
-    !Number.isFinite(row.capacityLoadPercent)
-  ) {
-    return CAPACITY_INSUFFICIENT_LABEL;
-  }
-  return workloadDisplayLabel(capacityLevelFromPercent(row.capacityLoadPercent));
+/** Current workload label of the row (same source as the People table). */
+function capacityLabelForRow(row: WorkloadRow): WorkloadRow["workload"] {
+  return row.workload;
 }
 
 function countCapacityHot(workload: WorkloadRow[]): number {
