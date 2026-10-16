@@ -35,6 +35,36 @@ export function endOfDay(date: Date): Date {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate(), 23, 59, 59, 999);
 }
 
+/** Port of legacy getWorkingDurationMs_ — excludes weekends, preserves legacy elapsed-time KPI semantics. */
+export function getWorkingDurationMs(
+  fromValue: string | null | undefined,
+  toValue: string | null | undefined,
+): number | null {
+  const start = parseJiraDateSafe(fromValue);
+  const end = parseJiraDateSafe(toValue);
+
+  if (!start || !end) return null;
+  if (end <= start) return 0;
+
+  let total = 0;
+  let cursor = new Date(start);
+
+  while (cursor < end) {
+    const dayEnd = endOfDay(cursor);
+
+    const segmentStart = new Date(Math.max(cursor.getTime(), start.getTime()));
+    const segmentEnd = new Date(Math.min(dayEnd.getTime(), end.getTime()));
+
+    if (!isWeekend(segmentStart) && segmentEnd > segmentStart) {
+      total += segmentEnd.getTime() - segmentStart.getTime();
+    }
+
+    cursor = new Date(dayEnd.getTime() + 1);
+  }
+
+  return total;
+}
+
 function atLocalHour(date: Date, hour: number): Date {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate(), hour, 0, 0, 0);
 }
@@ -44,14 +74,14 @@ function nextDayStart(date: Date): Date {
 }
 
 /**
- * Elapsed business time between two Jira timestamps.
+ * Elapsed business time for workload/capacity accounting.
  *
- * Metrio intentionally does not treat "time in status" as 24h/day effort.
- * Only weekdays inside the reporting workday (09:00–17:00 local time) count.
- * This is still elapsed business time, not a timesheet or a claim about actual
+ * This deliberately differs from getWorkingDurationMs(): capacity must not turn
+ * five weekdays in a Jira status into 120 hours. Only Mon–Fri 09:00–17:00 local
+ * time counts. It is still elapsed business time, not a timesheet or proof of
  * hands-on effort.
  */
-export function getWorkingDurationMs(
+export function getBusinessDurationMs(
   fromValue: string | null | undefined,
   toValue: string | null | undefined,
 ): number | null {
