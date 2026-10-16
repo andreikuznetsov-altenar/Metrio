@@ -1,4 +1,4 @@
-import { formatDuration } from '../jira/dates';
+import { formatBusinessDuration } from '../jira/dates';
 import {
   getISOWeekPeriodKey,
   getMonthPeriodKey,
@@ -103,7 +103,7 @@ export function formatMonthlyWorkHistorySummary(group: WorkHistoryGroup, monthLa
     'Selected work:',
   ];
   group.entries.slice(0, 10).forEach((entry) => {
-    const cycle = entry.cycleMs ? formatDuration(entry.cycleMs) : '—';
+    const cycle = entry.cycleMs ? formatBusinessDuration(entry.cycleMs) : '—';
     lines.push(`- ${entry.issueKey} - ${entry.summary} (${cycle})`);
   });
   return lines.join('\n');

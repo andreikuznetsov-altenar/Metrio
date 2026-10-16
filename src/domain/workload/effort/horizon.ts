@@ -1,29 +1,37 @@
-import { addDays, format, parseISO, startOfDay } from 'date-fns';
 import type { PersonAvailability } from '../../people/types';
 import type { LeavePeriod } from './types';
+import {
+  DEFAULT_WORKDAY_HOURS,
+  DEFAULT_WORKING_CALENDAR,
+  WorkingCalendar,
+  addCalendarDays,
+  zonedDateTimeToInstant,
+} from '../../calendar/workingCalendar';
 
 /** Rolling planning horizon and base capacity of the current-workload model. */
 export const HORIZON_WORKING_DAYS = 10;
-export const HOURS_PER_WORKING_DAY = 8;
-
-function isWeekday(date: Date): boolean {
-  const day = date.getDay();
-  return day !== 0 && day !== 6;
-}
+export const HOURS_PER_WORKING_DAY = DEFAULT_WORKDAY_HOURS;
 
 /** The next `days` working days starting today (or the next weekday when today is a weekend). */
-export function horizonWorkingDays(now: Date, days = HORIZON_WORKING_DAYS): Date[] {
+export function horizonWorkingDays(
+  now: Date,
+  days = HORIZON_WORKING_DAYS,
+  calendar: WorkingCalendar = DEFAULT_WORKING_CALENDAR,
+): Date[] {
   const out: Date[] = [];
-  let cursor = startOfDay(now);
+  let key = calendar.dateKey(now);
   while (out.length < days) {
-    if (isWeekday(cursor)) out.push(cursor);
-    cursor = addDays(cursor, 1);
+    if (calendar.isWorkingDay(key)) {
+      const instant = zonedDateTimeToInstant(key, 12, calendar.config.timeZone);
+      if (instant) out.push(instant);
+    }
+    key = addCalendarDays(key, 1);
   }
   return out;
 }
 
 function ymd(date: Date): string {
-  return format(date, 'yyyy-MM-dd');
+  return DEFAULT_WORKING_CALENDAR.dateKey(date);
 }
 
 /** Leave periods implied by the current availability (when it is a known absence). */
@@ -57,18 +65,23 @@ export function availableHoursInHorizon(
   leave: LeavePeriod[] = [],
   availability?: PersonAvailability,
   days = HORIZON_WORKING_DAYS,
+  calendar: WorkingCalendar = DEFAULT_WORKING_CALENDAR,
 ): AvailableCapacity {
-  const horizon = horizonWorkingDays(now, days);
+  const horizon = horizonWorkingDays(now, days, calendar);
   const periods = [...leave, ...leavePeriodsFromAvailability(availability, horizon)]
     .map((p) => ({ start: p.start.slice(0, 10), end: p.end.slice(0, 10) }))
-    .filter((p) => !Number.isNaN(parseISO(p.start).getTime()) && !Number.isNaN(parseISO(p.end).getTime()));
+    .filter((p) => /^\d{4}-\d{2}-\d{2}$/.test(p.start) && /^\d{4}-\d{2}-\d{2}$/.test(p.end));
   let leaveDays = 0;
   for (const day of horizon) {
     const key = ymd(day);
     if (periods.some((p) => key >= p.start && key <= p.end)) leaveDays += 1;
   }
   return {
-    hours: (horizon.length - leaveDays) * HOURS_PER_WORKING_DAY,
+    hours: horizon.reduce((sum, day) => {
+      const key = calendar.dateKey(day);
+      if (periods.some((p) => key >= p.start && key <= p.end)) return sum;
+      return sum + calendar.workingHoursForDate(key);
+    }, 0),
     workingDays: horizon.length,
     leaveWorkingDays: leaveDays,
   };

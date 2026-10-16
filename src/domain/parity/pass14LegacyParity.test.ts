@@ -182,15 +182,32 @@ function writeParityReport() {
   writeFileSync(reportPath, `${lines.join('\n')}\n`, 'utf8');
 }
 
+/**
+ * The legacy script measured a day boundary as 23:59:59.999, losing 1 ms per
+ * crossed midnight, and used host-local midnight. Production uses exact
+ * reporting-calendar boundaries. Durations are therefore compared at one-second
+ * resolution; every non-duration field must still match exactly.
+ */
+function roundDurationsToSeconds<T>(value: T): T {
+  return JSON.parse(
+    JSON.stringify(value, (key, v) =>
+      typeof v === 'number' && /ms$/i.test(key) ? Math.round(v / 1000) * 1000 : v,
+    ),
+  ) as T;
+}
+
 describe('PASS 14.4 legacy Apps Script parity harness', () => {
   it('ports getCycleSegments_ into production getCycleSegments on identical events', () => {
     for (const fixture of UX_FIXTURES) {
       for (const issue of fixture.issues) {
         const legacy = legacyGetCycleSegments_(issue, fixture.params);
         const metrio = getCycleSegments(issue, fixture.params);
-        expect(metrio, `${fixture.id} ${issue.issueKey} cycle segments`).toEqual(legacy);
-        expect(buildCompletedCyclesFromSegments(metrio)).toEqual(
-          legacyBuildCompletedCyclesFromSegments_(legacy),
+        expect(
+          roundDurationsToSeconds(metrio),
+          `${fixture.id} ${issue.issueKey} cycle segments`,
+        ).toEqual(roundDurationsToSeconds(legacy));
+        expect(roundDurationsToSeconds(buildCompletedCyclesFromSegments(metrio))).toEqual(
+          roundDurationsToSeconds(legacyBuildCompletedCyclesFromSegments_(legacy)),
         );
       }
     }

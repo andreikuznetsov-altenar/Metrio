@@ -20,6 +20,7 @@ describe('capacity data sufficiency (WF8.1)', () => {
       level: 'normal',
       capacityDataState: 'insufficient_history',
       capacityLoadPercent: 0,
+      currentLoadPercent: 55,
       currentAssignedIssueCount: 17,
       activeWorkCount: 3,
       capacityBreakdown: {
@@ -42,7 +43,9 @@ describe('capacity data sufficiency (WF8.1)', () => {
 
     const kpi = employeeCapacityKpi({ workload });
     expect(kpi.badgeLabel).toBe('Balanced');
-    expect(kpi.value).toBe('—');
+    // The card value is the CURRENT workload percent; unmeasured Historical load is not mentioned.
+    expect(kpi.value).toBe('55%');
+    expect(kpi.tooltip).not.toMatch(/Historical load/);
     expect(kpi.capacityDataState).toBe('insufficient_history');
 
     const row: WorkloadRow = {
@@ -187,5 +190,21 @@ describe('capacity data sufficiency (WF8.1)', () => {
     const kpi = teamCapacityKpiFromRows(rows);
     expect(kpi.value).toBe('1');
     expect(kpi.tooltip).toMatch(/away or unrated/);
+  });
+
+  it('Current workload value and badge never come from Historical load', () => {
+    const workload = testWorkload({
+      level: 'low',
+      capacityDataState: 'measured',
+      capacityLoadPercent: 92,
+      currentLoadPercent: 20,
+      currentAssignedIssueCount: 2,
+      activeWorkCount: 1,
+    });
+    const kpi = employeeCapacityKpi({ workload });
+    expect(kpi.value).toBe('20%');
+    expect(kpi.badgeLabel).toBe('Light');
+    expect(kpi.tooltip).toMatch(/Historical load \(separate\): 92%/);
+    expect(capacityPresentationLabel(workload)).toBe('Light');
   });
 });

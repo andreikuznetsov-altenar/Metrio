@@ -10,6 +10,11 @@ import { resolveWorkflowProfile } from '../workflows/resolveWorkflowProfile';
 import type { DailyPersonSnapshot, DailyTeamSnapshot } from '../snapshots/types';
 import { resolveRequiredComparisonCoverage } from './historyRanges';
 import { SNAPSHOT_RETENTION_DAYS } from './constants';
+import {
+  DEFAULT_WORKING_CALENDAR,
+  addCalendarDays,
+  enumerateDateKeys,
+} from '../calendar/workingCalendar';
 
 import { appNow } from "../../platform/appClock";
 export interface DailyFlowFields {
@@ -30,15 +35,7 @@ export const EMPTY_DAILY_FLOW: DailyFlowFields = {
 
 /** Enumerate local calendar date keys from start through end (inclusive). */
 export function enumerateLocalDateKeys(startKey: string, endKey: string): string[] {
-  const keys: string[] = [];
-  const start = new Date(`${startKey}T12:00:00`);
-  const end = new Date(`${endKey}T12:00:00`);
-  const cursor = new Date(start);
-  while (cursor.getTime() <= end.getTime()) {
-    keys.push(getLocalDateKey(cursor));
-    cursor.setDate(cursor.getDate() + 1);
-  }
-  return keys;
+  return enumerateDateKeys(startKey, endKey);
 }
 
 export function getBootstrapDateRange(
@@ -71,8 +68,8 @@ export function indexPersonDailyFlow(
     buckets.set(key, { ...EMPTY_DAILY_FLOW });
   }
 
-  const minTs = Date.parse(`${dateKeys[0]}T00:00:00`);
-  const maxTs = Date.parse(`${dateKeys[dateKeys.length - 1]}T23:59:59.999`);
+  const minTs = DEFAULT_WORKING_CALENDAR.startOfDate(dateKeys[0])?.getTime() ?? Number.POSITIVE_INFINITY;
+  const maxTs = DEFAULT_WORKING_CALENDAR.endOfDate(dateKeys[dateKeys.length - 1])?.getTime() ?? Number.NEGATIVE_INFINITY;
 
   for (const issue of issues) {
     const fullIssue = withFullIssueHistory(issue);
@@ -192,9 +189,7 @@ export function pruneSnapshotsBeforeDate<T extends { date: string }>(
 }
 
 export function getRetentionCutoffKey(now = appNow()): string {
-  const cutoff = new Date(now);
-  cutoff.setDate(cutoff.getDate() - SNAPSHOT_RETENTION_DAYS);
-  return getLocalDateKey(cutoff);
+  return addCalendarDays(getLocalDateKey(now), -SNAPSHOT_RETENTION_DAYS);
 }
 
 export function buildHistoryScopeKey(input: {

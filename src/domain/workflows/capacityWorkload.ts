@@ -1,10 +1,14 @@
-import { differenceInCalendarDays, parseISO } from 'date-fns';
 import {
-  getBusinessDurationMs,
   isDateWithinRange,
+  parseJiraDateSafe,
   parseDateEndOfDay,
   parseDateStartOfDay,
 } from '../jira/dates';
+import {
+  DEFAULT_WORKING_CALENDAR,
+  WorkingCalendar,
+  enumerateDateKeys,
+} from '../calendar/workingCalendar';
 import type { AuditIssue, IssueEvent, ReportParams } from '../jira/types';
 import type { WorkloadLevel } from '../workload/workloadEngine';
 import { isWorkflowCapacityEligible } from './eligibility';
@@ -12,6 +16,7 @@ import { extractProfileContributorCycles } from './profileCycles';
 import { resolveWorkflowProfile } from './resolveWorkflowProfile';
 import { canonicalStageForStatus, resolveWorkflowStage } from './resolveWorkflowStage';
 import type { WorkflowProfile, WorkflowProfileMapping } from './types';
+import type { LeavePeriod } from '../workload/effort/types';
 
 import { appNow } from "../../platform/appClock";
 
@@ -24,6 +29,12 @@ export function resolveCapacityDataState(completedCyclesInPeriod: number): Capac
 }
 
 export interface CapacityBreakdown {
+  /** Merged hands-on occupancy in the reporting period; elapsed demand proxy, not hours worked. */
+  executionHoursInPeriod: number;
+  /** Scheduled working hours in the measured period after known leave/holidays. */
+  availableHoursInPeriod: number;
+  /** Alias kept explicit for audit/export language. */
+  availabilityAdjustedHours: number;
   completedCycleHours: number;
   activeSegmentHours: number;
   avgHoursPerCycle: number;
@@ -45,6 +56,10 @@ export interface CapacityWorkloadInput {
    * intervals are intersected with that person's assignee-history segments.
    */
   subjectCanonical?: string;
+  /** Historical leave is applied only when reliable ranges are supplied. */
+  leave?: LeavePeriod[];
+  /** Optional person/company calendar; defaults deterministically to Europe/Malta. */
+  calendar?: WorkingCalendar;
 }
 
 interface CapacityInterval {
@@ -65,9 +80,8 @@ function uniqueEligibleIssues(issues: AuditIssue[]): AuditIssue[] {
 }
 
 function validMs(value: string | null | undefined): number | null {
-  if (!value) return null;
-  const ms = new Date(value).getTime();
-  return Number.isFinite(ms) ? ms : null;
+  const ms = parseJiraDateSafe(value)?.getTime();
+  return ms != null && Number.isFinite(ms) ? ms : null;
 }
 
 function normalized(value: string | null | undefined): string {
@@ -278,11 +292,14 @@ function mergeIntervals(intervals: CapacityInterval[]): CapacityInterval[] {
   return merged;
 }
 
-function businessDurationMs(intervals: CapacityInterval[]): number {
+function businessDurationMs(
+  intervals: CapacityInterval[],
+  calendar: WorkingCalendar = DEFAULT_WORKING_CALENDAR,
+): number {
   return mergeIntervals(intervals).reduce((sum, interval) => {
-    const ms = getBusinessDurationMs(
-      new Date(interval.startMs).toISOString(),
-      new Date(interval.endMs).toISOString(),
+    const ms = calendar.businessTimeOverlapMs(
+      new Date(interval.startMs),
+      new Date(interval.endMs),
     );
     return sum + Math.max(0, ms ?? 0);
   }, 0);
@@ -294,19 +311,17 @@ function subjectBucketKey(issue: AuditIssue, subjectCanonical?: string): string 
 
 function sumBusinessDurationBySubject(
   intervalsBySubject: Map<string, CapacityInterval[]>,
+  calendar: WorkingCalendar = DEFAULT_WORKING_CALENDAR,
 ): number {
   let total = 0;
   intervalsBySubject.forEach((intervals) => {
-    total += businessDurationMs(intervals);
+    total += businessDurationMs(intervals, calendar);
   });
   return total;
 }
 
 export function daysInReportingPeriod(params: ReportParams): number {
-  const from = parseISO(params.dateFrom);
-  const to = parseISO(params.dateTo);
-  const diff = differenceInCalendarDays(to, from);
-  return Math.max(1, diff + 1);
+  return Math.max(1, enumerateDateKeys(params.dateFrom, params.dateTo).length);
 }
 
 export function capacityLevelFromPercent(loadPercent: number): WorkloadLevel {
@@ -367,11 +382,21 @@ export function calculateCapacityBreakdown(input: CapacityWorkloadInput): Capaci
   const { issues, params } = input;
   const now = input.now || appNow();
   const nowMs = now.getTime();
+  const calendar = input.calendar ?? DEFAULT_WORKING_CALENDAR;
   const daysInPeriod = daysInReportingPeriod(params);
 
   let completedCyclesInPeriod = 0;
   const completedIntervalsBySubject = new Map<string, CapacityInterval[]>();
   const activeIntervalsBySubject = new Map<string, CapacityInterval[]>();
+  const historicalIntervalsBySubject = new Map<string, CapacityInterval[]>();
+
+  const reportRange = reportRangeMs(params);
+  const reportEndMs = reportRange.endMs ?? nowMs;
+  const throughMs = Math.min(nowMs, reportEndMs);
+  const reportWindow: CapacityInterval = {
+    startMs: reportRange.startMs ?? Number.NEGATIVE_INFINITY,
+    endMs: reportEndMs,
+  };
 
   uniqueEligibleIssues(issues).forEach((issue) => {
     const profile = resolveWorkflowProfile(issue, { mappings: input.mappings });
@@ -379,6 +404,24 @@ export function calculateCapacityBreakdown(input: CapacityWorkloadInput): Capaci
       (cycle) => cycle.completedAt && isDateWithinRange(cycle.completedAt, params),
     );
     const bucketKey = subjectBucketKey(issue, input.subjectCanonical);
+
+    // A current status without changelog evidence does not prove that the issue
+    // occupied execution time in an earlier historical range.
+    const historical = sortedStatusEvents(issue).length === 0
+      ? []
+      : intersectWithSubjectAssignments(
+          contributorStatusIntervals(issue, profile, throughMs),
+          issue,
+          input.subjectCanonical ?? issue.currentAssigneeCanonical,
+          throughMs,
+        )
+          .map((interval) => clipInterval(interval, reportWindow, params))
+          .filter((interval): interval is CapacityInterval => Boolean(interval));
+    if (historical.length) {
+      const bucket = historicalIntervalsBySubject.get(bucketKey) || [];
+      bucket.push(...historical);
+      historicalIntervalsBySubject.set(bucketKey, bucket);
+    }
 
     cycles.forEach((cycle) => {
       const cycleStartMs = validMs(cycle.startedAt);
@@ -392,7 +435,7 @@ export function calculateCapacityBreakdown(input: CapacityWorkloadInput): Capaci
         params,
         input.subjectCanonical,
       );
-      if (businessDurationMs(intervals) <= 0) return;
+      if (businessDurationMs(intervals, calendar) <= 0) return;
       completedCyclesInPeriod += 1;
       const bucket = completedIntervalsBySubject.get(bucketKey) || [];
       bucket.push(...intervals);
@@ -427,21 +470,33 @@ export function calculateCapacityBreakdown(input: CapacityWorkloadInput): Capaci
   });
 
   const completedCycleHours =
-    sumBusinessDurationBySubject(completedIntervalsBySubject) / 3600000;
+    sumBusinessDurationBySubject(completedIntervalsBySubject, calendar) / 3600000;
   const activeSegmentHours =
-    sumBusinessDurationBySubject(activeIntervalsBySubject) / 3600000;
+    sumBusinessDurationBySubject(activeIntervalsBySubject, calendar) / 3600000;
+  const executionHoursInPeriod =
+    sumBusinessDurationBySubject(historicalIntervalsBySubject, calendar) / 3600000;
+
+  const measuredEndKey = params.dateTo < calendar.dateKey(now) ? params.dateTo : calendar.dateKey(now);
+  const availableHoursInPeriod = measuredEndKey < params.dateFrom
+    ? 0
+    : calendar.availableWorkingHours(params.dateFrom, measuredEndKey, input.leave);
 
   const avgHoursPerCycle =
     completedCyclesInPeriod > 0 ? completedCycleHours / completedCyclesInPeriod : activeSegmentHours;
 
   const monthlyQuantity = (completedCyclesInPeriod / daysInPeriod) * 30;
-  const estimatedMonthlyHours = monthlyQuantity * avgHoursPerCycle;
+  const estimatedMonthlyHours = availableHoursInPeriod > 0
+    ? (executionHoursInPeriod / availableHoursInPeriod) * MONTHLY_CAPACITY_HOURS
+    : 0;
   const capacityLoadPercent =
-    MONTHLY_CAPACITY_HOURS > 0
-      ? Math.round((estimatedMonthlyHours / MONTHLY_CAPACITY_HOURS) * 1000) / 10
+    availableHoursInPeriod > 0
+      ? Math.round((executionHoursInPeriod / availableHoursInPeriod) * 1000) / 10
       : 0;
 
   return {
+    executionHoursInPeriod: Math.round(executionHoursInPeriod * 10) / 10,
+    availableHoursInPeriod,
+    availabilityAdjustedHours: availableHoursInPeriod,
     completedCycleHours,
     activeSegmentHours,
     avgHoursPerCycle,
@@ -450,7 +505,27 @@ export function calculateCapacityBreakdown(input: CapacityWorkloadInput): Capaci
     monthlyQuantity,
     estimatedMonthlyHours: Math.round(estimatedMonthlyHours * 10) / 10,
     capacityLoadPercent,
-    capacityDataState: resolveCapacityDataState(completedCyclesInPeriod),
+    capacityDataState:
+      executionHoursInPeriod > 0 ? 'measured' : resolveCapacityDataState(completedCyclesInPeriod),
+  };
+}
+
+/** Correctly weighted team Historical load; never averages person percentages. */
+export function aggregateHistoricalLoad(
+  breakdowns: readonly Pick<CapacityBreakdown, 'executionHoursInPeriod' | 'availableHoursInPeriod'>[],
+): { executionHoursInPeriod: number; availableHoursInPeriod: number; capacityLoadPercent: number } {
+  const totals = breakdowns.reduce(
+    (sum, row) => ({
+      executionHoursInPeriod: sum.executionHoursInPeriod + Math.max(0, row.executionHoursInPeriod),
+      availableHoursInPeriod: sum.availableHoursInPeriod + Math.max(0, row.availableHoursInPeriod),
+    }),
+    { executionHoursInPeriod: 0, availableHoursInPeriod: 0 },
+  );
+  return {
+    ...totals,
+    capacityLoadPercent: totals.availableHoursInPeriod > 0
+      ? Math.round((totals.executionHoursInPeriod / totals.availableHoursInPeriod) * 1000) / 10
+      : 0,
   };
 }
 

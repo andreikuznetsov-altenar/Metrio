@@ -38,7 +38,7 @@ export function capacityDataStateFromWorkload(
 
 /**
  * User-facing Light / Balanced / Heavy / Overloaded label. It is the CURRENT workload level
- * (open Jira queue); historical capacity (completed-cycle hours / percent) never decides it.
+ * (open Jira queue); Historical load never decides it.
  */
 export function capacityPresentationLabel(
   workload: WorkloadResult | null | undefined,
@@ -82,33 +82,32 @@ export function employeeCapacityKpi(input: {
     };
   }
 
-  // The badge is the CURRENT workload level; the percentage is the separate historical
-  // elapsed-business-time capacity metric and is only shown when it was measured.
+  // Badge and value are both CURRENT workload (open Jira queue demand against available hours).
+  // Historical load is a different measurement and only appears, explicitly labelled, in the tooltip.
   const label = wl ? workloadDisplayLabel(wl.level) : CAPACITY_INSUFFICIENT_LABEL;
-  if (state === 'insufficient_history' || !wl) {
+  const variant: 'neutral' | 'success' | 'warning' | 'danger' =
+    label === 'Overloaded' ? 'danger' : label === 'Heavy' ? 'warning' : label === 'Light' ? 'success' : 'neutral';
+  const currentPercent = wl?.currentLoadPercent;
+  const historical =
+    wl && state === 'measured' && wl.capacityLoadPercent != null
+      ? ` Historical load (separate): ${Math.round(wl.capacityLoadPercent)}% = merged hands-on business-window occupancy / available scheduled hours, not hours worked.`
+      : '';
+  if (!wl || currentPercent == null) {
     return {
       capacityDataState: 'insufficient_history',
       value: '—',
       badgeLabel: label,
-      badgeVariant: label === 'Overloaded' ? 'danger' : label === 'Heavy' ? 'warning' : label === 'Light' ? 'success' : 'neutral',
+      badgeVariant: variant,
       tooltip: `${operational}. ${CAPACITY_INSUFFICIENT_TOOLTIP}`,
     };
   }
 
-  const percent = wl.capacityLoadPercent ?? 0;
   return {
-    capacityDataState: 'measured',
-    value: `${Math.round(percent)}%`,
+    capacityDataState: state,
+    value: `${Math.round(currentPercent)}%`,
     badgeLabel: label,
-    badgeVariant:
-      label === 'Overloaded'
-        ? 'danger'
-        : label === 'Heavy'
-          ? 'warning'
-          : label === 'Light'
-            ? 'success'
-            : 'neutral',
-    tooltip: `${operational}. The level reflects the current Jira queue; ${Math.round(percent)}% is historical elapsed business time of completed cycles (not hours worked).`,
+    badgeVariant: variant,
+    tooltip: `${operational}. Current workload: ~${wl.expectedEffortHours ?? 0}h of expected effort over ${wl.availableHoursInHorizon ?? 0}h available in the planning horizon.${historical}`,
   };
 }
 

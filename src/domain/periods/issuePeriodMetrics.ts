@@ -2,7 +2,7 @@ import { collectUniqueTeamIssues } from '../jira/uniqueIssues';
 import type { AuditIssue, ReportParams } from '../jira/types';
 import type { Person } from '../people/types';
 import type { DateRange } from './dateRange';
-import { getCurrentWeekRange, getLastNDaysRange } from './dateRange';
+import { getCurrentWeekRange, getLastNDaysRange, getLocalDayRangeFromKey } from './dateRange';
 import { countBackflowEventsInRange, withFullIssueHistory } from './issueCompletion';
 import { isTimestampInRange } from './dateRange';
 import { assigneeAt, extractCanonicalPerformanceCycles } from '../workflows/canonicalPerformance';
@@ -134,9 +134,7 @@ export function countDailyFlowOnDate(
   cycleMsSumOnDate: number;
   completedWithCycleOnDate: number;
 } {
-  const dayStart = new Date(`${dateKey}T00:00:00`);
-  const dayEnd = new Date(`${dateKey}T23:59:59.999`);
-  const range: DateRange = { start: dayStart, end: dayEnd };
+  const range: DateRange = getLocalDayRangeFromKey(dateKey);
 
   let completedOnDate = 0;
   let backflowsOnDate = 0;

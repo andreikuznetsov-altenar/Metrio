@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  formatBusinessDuration,
   formatDuration,
   getBusinessDurationMs,
   getWorkingDurationMs,
@@ -56,6 +57,12 @@ describe('getBusinessDurationMs', () => {
     );
     expect(ms).toBe(5 * WORKDAY_HOURS * HOUR);
     expect(ms).toBe(40 * HOUR);
+  });
+});
+
+describe('formatBusinessDuration', () => {
+  it('does not present three business days as 72 elapsed hours', () => {
+    expect(formatBusinessDuration(24 * HOUR)).toBe('3 business days');
   });
 });
 

@@ -1,4 +1,4 @@
-import { formatDuration } from "../jira/dates";
+import { formatBusinessDuration } from "../jira/dates";
 import type { Person } from "../people/types";
 import type { KpiData, ReportParams } from "../jira/types";
 import { buildCanonicalKpiForPersonScope } from "../jira/scopedCanonicalKpi";
@@ -67,8 +67,8 @@ function buildTeamRow(
     attentionCount: teamRisk.length,
     completed: kpi.completedCount,
     firstPassPercent,
-    avgCycleLabel: kpi.avgProgressToReviewMs
-      ? formatDuration(kpi.avgProgressToReviewMs)
+    medianCycleLabel: kpi.medianCycleMs
+      ? formatBusinessDuration(kpi.medianCycleMs)
       : "—",
     upcomingLeave,
     attentionSeverity,
@@ -135,9 +135,9 @@ function buildTeamTrends(
       };
     }
     const backflowNote =
-      (kpi.reworkedCycleCount) >= 3 ? "Rework elevated" : "Delivery stable";
+      kpi.reworkedCycleCount >= 3 ? "Rework elevated" : "Delivery stable";
     const cycleNote = kpi.medianCycleMs
-      ? `Median cycle ${formatDuration(kpi.medianCycleMs)}`
+      ? `Median cycle ${formatBusinessDuration(kpi.medianCycleMs)}`
       : "Cycle data limited";
     return {
       teamId: team.teamId,

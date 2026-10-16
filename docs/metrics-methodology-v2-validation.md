@@ -59,11 +59,11 @@ Of the 76 KPI-eligible issues Andrei touched that have a completed cycle in the 
 
 | Measure | n | min | median | mean | P75 | max |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| Execution | 77 | 0.00 | 2.93 | 39.74 | 9.49 | 1589.03 |
-| Cycle | 83 | 0.00 | 54.41 | 681.07 | 963.51 | 4384.31 |
-| Review | 78 | 0.00 | 52.77 | 672.87 | 953.99 | 4362.02 |
+| Execution | 77 | 0.00 | 2.65 | 39.76 | 9.47 | 1588.94 |
+| Cycle | 83 | 0.00 | 53.47 | 680.89 | 961.51 | 4384.31 |
+| Review | 79 | 0.00 | 52.91 | 664.16 | 952.00 | 4362.02 |
 
-84 completed cycles; 7 have no measurable execution segment (excluded from the execution sample), 1 has no start-to-completion cycle sample. The audit cross-checks these against the production KPI's n / median / mean (all three match). Medians and means differ by one to two orders of magnitude because of real long-lived tickets (e.g. UX-2198, UX-2302, UX-2309 opened in 2024 and closed 12-15 Oct 2026 in a backlog clean-up). That is exactly why the median is the primary statistic and the mean is diagnostic only. Values are measured in the host timezone; Capacity/Time V2 makes the business-window calculation timezone-deterministic.
+84 completed cycles; 7 have no measurable execution segment (excluded from the execution sample), 1 has no start-to-completion cycle sample. The audit cross-checks these against the production KPI's n / median / mean (all three match). Medians and means differ by one to two orders of magnitude because of real long-lived tickets (e.g. UX-2198, UX-2302, UX-2309 opened in 2024 and closed 12-15 Oct 2026 in a backlog clean-up). That is exactly why the median is the primary statistic and the mean is diagnostic only. Values use the canonical Europe/Malta working calendar from Capacity/Time V2 and are byte-identical when the audit is run with host TZ set to UTC, Europe/Malta, America/New_York or Pacific/Auckland (before Capacity/Time V2 they drifted by up to ~0.3h in the median with the host timezone).
 
 ### Cache and persisted-field compatibility
 

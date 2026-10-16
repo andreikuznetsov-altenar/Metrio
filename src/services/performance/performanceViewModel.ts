@@ -1,6 +1,6 @@
 import { format, parseISO } from "date-fns";
 import type { BadgeVariant } from "../../components/Badge/Badge";
-import { formatDuration } from "../../domain/jira/dates";
+import { formatBusinessDuration } from "../../domain/jira/dates";
 import type { AuditReportData, ReportParams } from "../../domain/jira/types";
 import type { Person } from "../../domain/people/types";
 import { buildPlannedTimeOffRows } from "../../domain/people/plannedTimeOff";
@@ -650,7 +650,7 @@ function employeeCompletedRowView(
     completedOn: completedAt
       ? format(parseISO(completedAt), "d MMM")
       : undefined,
-    cycle: cycleMs != null ? formatDuration(cycleMs) : undefined,
+    cycle: cycleMs != null ? formatBusinessDuration(cycleMs) : undefined,
     outcome: health.isFirstPass
       ? "First pass"
       : health.isCompleted
@@ -784,7 +784,7 @@ function buildPersonDetailSnapshot(
         completedOn: entry.completedAt
           ? format(parseISO(entry.completedAt), "dd MMM yyyy")
           : "—",
-        cycle: entry.cycleMs != null ? formatDuration(entry.cycleMs) : "—",
+        cycle: entry.cycleMs != null ? formatBusinessDuration(entry.cycleMs) : "—",
         outcome: entry.firstPass ? "First pass" : "Rework",
       })),
   };

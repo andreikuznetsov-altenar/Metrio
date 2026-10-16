@@ -1,7 +1,7 @@
 import { format, parseISO } from "date-fns";
 import type { BadgeVariant } from "../../components/Badge/Badge";
 import { buildKpiFromIssues } from "../jira/kpi";
-import { formatDuration } from "../jira/dates";
+import { formatBusinessDuration } from "../jira/dates";
 import type { AuditIssue, ReportParams } from "../jira/types";
 import type { Person } from "../people/types";
 import { buildPlannedTimeOffRows, type PlannedTimeOffRow } from "../people/plannedTimeOff";
@@ -141,7 +141,7 @@ function mapWorkHistoryGroups(
       completedOn: entry.completedAt
         ? format(parseISO(entry.completedAt), "dd MMM yyyy")
         : "—",
-      cycle: entry.cycleMs != null ? formatDuration(entry.cycleMs) : "—",
+      cycle: entry.cycleMs != null ? formatBusinessDuration(entry.cycleMs) : "—",
       outcome: entry.firstPass ? "First pass" : "Rework",
       completedAtIso: entry.completedAt,
       cycleMs: entry.cycleMs,

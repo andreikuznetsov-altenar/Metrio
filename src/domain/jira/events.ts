@@ -1,4 +1,4 @@
-import { getWorkingDurationMs } from './dates';
+import { getWeekdayElapsedDurationMs } from './dates';
 import { isReverseTransition } from './transitions';
 import { getCanonicalTeamMember, normalizeTeamIdentity } from './users';
 import type { IssueEvent, TeamIdentityIndex } from './types';
@@ -81,7 +81,7 @@ export function buildIssueEvents(
     if (e.eventType !== 'Status') return;
 
     e.timeSincePreviousStatusMs = prevStatusAt
-      ? getWorkingDurationMs(prevStatusAt, e.changedAt)
+      ? getWeekdayElapsedDurationMs(prevStatusAt, e.changedAt)
       : null;
 
     prevStatusAt = e.changedAt;

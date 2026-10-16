@@ -6,9 +6,12 @@ import type { PerformanceFetchResult } from "../../services/performance/performa
  * v2 invalidated snapshots derived before canonical execution/review semantics.
  * v3 (Metrics V2): KpiData drops the pre-V2 ambiguous backflow counter and the Efficiency
  * score in favour of `reworkedCycleCount` / `backflowEventCount`, and the issue-event flag is
- * now `excludeFromBackflow`; older caches must be refetched.
+ * now `excludeFromBackflow`.
+ * v4 (Capacity/Time V2): cached historical-capacity percentages were calculated with the
+ * normalized monthly-throughput formula and a host-local business calendar; they are now
+ * merged execution business-hours over available working hours in the configured zone.
  */
-export const DASHBOARD_CACHE_SCHEMA_VERSION = 3;
+export const DASHBOARD_CACHE_SCHEMA_VERSION = 4;
 
 const VISUAL_DASHBOARD_CACHE_KEY = "metrio-visual-dashboard-cache";
 

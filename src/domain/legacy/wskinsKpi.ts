@@ -1,7 +1,7 @@
 /**
  * LEGACY / PARITY ONLY. Port of WskinsAudit.gs KPI builders. Not used by production metrics.
  */
-import { getWorkingDurationMs } from '../jira/dates';
+import { getWeekdayElapsedDurationMs } from '../jira/dates';
 import { isDateWithinRange } from '../jira/dates';
 import type { AuditIssue, ReportParams } from '../jira/types';
 import type { LegacyKpiData } from './legacyKpiTypes';
@@ -76,7 +76,7 @@ export function calculateWskinsMainTaskKpiContribution(
       completedCount++;
       completedMarked = true;
 
-      const ms = getWorkingDurationMs(inProgressStartedAt, e.changedAt);
+      const ms = getWeekdayElapsedDurationMs(inProgressStartedAt, e.changedAt);
       if (ms !== null && ms > 0) {
         workDurationsMs.push(ms);
       }
@@ -137,7 +137,7 @@ export function calculateWskinsSubtaskKpiContribution(
       eventInRange
     ) {
       reviewSubmittedCount++;
-      const ms = getWorkingDurationMs(activeWorkStartedAt, e.changedAt);
+      const ms = getWeekdayElapsedDurationMs(activeWorkStartedAt, e.changedAt);
       if (ms !== null && ms > 0) {
         workDurationsMs.push(ms);
       }

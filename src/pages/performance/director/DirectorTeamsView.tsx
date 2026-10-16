@@ -45,7 +45,7 @@ export function DirectorTeamsView({
         case "firstPass":
           return row.firstPassPercent;
         case "avgCycle":
-          return row.avgCycleLabel;
+          return row.medianCycleLabel;
         case "leave":
           return row.upcomingLeave;
         default:
@@ -89,7 +89,7 @@ export function DirectorTeamsView({
           </div>
           <div>
             <dt>Median cycle</dt>
-            <dd>{selected.avgCycleLabel}</dd>
+            <dd>{selected.medianCycleLabel}</dd>
           </div>
           <div>
             <dt>Upcoming leave</dt>
@@ -179,7 +179,7 @@ export function DirectorTeamsView({
                 <td className="performance-table__num">{team.attentionCount}</td>
                 <td className="performance-table__num">{team.completed}</td>
                 <td className="performance-table__num">{team.firstPassPercent}%</td>
-                <td>{team.avgCycleLabel}</td>
+                <td>{team.medianCycleLabel}</td>
                 <td className="performance-table__num">{team.upcomingLeave}</td>
               </tr>
             ))}

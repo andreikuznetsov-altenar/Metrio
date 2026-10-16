@@ -1,42 +1,65 @@
 import { appNow } from "../../platform/appClock";
+import {
+  DEFAULT_REPORTING_TIME_ZONE,
+  DEFAULT_WORKDAY_END_HOUR,
+  DEFAULT_WORKDAY_HOURS,
+  DEFAULT_WORKDAY_START_HOUR,
+  DEFAULT_WORKING_CALENDAR,
+  dateKeyInTimeZone,
+  zonedDateTimeToInstant,
+} from '../calendar/workingCalendar';
 
-export const WORKDAY_START_HOUR = 9;
-export const WORKDAY_END_HOUR = 17;
-export const WORKDAY_HOURS = WORKDAY_END_HOUR - WORKDAY_START_HOUR;
+export const WORKDAY_START_HOUR = DEFAULT_WORKDAY_START_HOUR;
+export const WORKDAY_END_HOUR = DEFAULT_WORKDAY_END_HOUR;
+export const WORKDAY_HOURS = DEFAULT_WORKDAY_HOURS;
+export const REPORTING_TIME_ZONE = DEFAULT_REPORTING_TIME_ZONE;
 
 export function parseDateStartOfDay(value: string | null | undefined): Date | null {
   if (!value) return null;
-  const d = new Date(`${value}T00:00:00`);
-  return Number.isNaN(d.getTime()) ? null : d;
+  return DEFAULT_WORKING_CALENDAR.startOfDate(value.slice(0, 10));
 }
 
 export function parseDateEndOfDay(value: string | null | undefined): Date | null {
   if (!value) return null;
-  const d = new Date(`${value}T23:59:59.999`);
-  return Number.isNaN(d.getTime()) ? null : d;
+  return DEFAULT_WORKING_CALENDAR.endOfDate(value.slice(0, 10));
 }
 
 export function parseJiraDateSafe(value: string | null | undefined): Date | null {
   if (!value) return null;
+  // Jira commonly returns an explicit offset. Test fixtures and some cached
+  // legacy payloads omit it; interpret those wall-clock values in the reporting
+  // timezone instead of inheriting the host OS timezone.
+  if (!/(?:Z|[+-]\d{2}:?\d{2})$/i.test(value)) {
+    const match = /^(\d{4}-\d{2}-\d{2})T(\d{2}):(\d{2})(?::(\d{2})(?:\.(\d{1,3}))?)?$/.exec(value);
+    if (match) {
+      return zonedDateTimeToInstant(
+        match[1],
+        Number(match[2]),
+        REPORTING_TIME_ZONE,
+        Number(match[3]),
+        Number(match[4] ?? 0),
+        Number((match[5] ?? '0').padEnd(3, '0')),
+      );
+    }
+  }
   const d = new Date(value);
   return Number.isNaN(d.getTime()) ? null : d;
 }
 
 export function isWeekend(date: Date): boolean {
-  const day = date.getDay();
-  return day === 0 || day === 6;
+  return !DEFAULT_WORKING_CALENDAR.isWorkingDay(dateKeyInTimeZone(date));
 }
 
 export function startOfDay(date: Date): Date {
-  return new Date(date.getFullYear(), date.getMonth(), date.getDate(), 0, 0, 0, 0);
+  return DEFAULT_WORKING_CALENDAR.startOfDate(dateKeyInTimeZone(date)) ?? new Date(date);
 }
 
 export function endOfDay(date: Date): Date {
-  return new Date(date.getFullYear(), date.getMonth(), date.getDate(), 23, 59, 59, 999);
+  return DEFAULT_WORKING_CALENDAR.endOfDate(dateKeyInTimeZone(date)) ?? new Date(date);
 }
 
-/** Port of legacy getWorkingDurationMs_ — excludes weekends, preserves legacy elapsed-time KPI semantics. */
-export function getWorkingDurationMs(
+/** Weekday elapsed workflow latency. Counts full local weekdays, not working hours. */
+export function getWeekdayElapsedDurationMs(
   fromValue: string | null | undefined,
   toValue: string | null | undefined,
 ): number | null {
@@ -46,31 +69,15 @@ export function getWorkingDurationMs(
   if (!start || !end) return null;
   if (end <= start) return 0;
 
-  let total = 0;
-  let cursor = new Date(start);
-
-  while (cursor < end) {
-    const dayEnd = endOfDay(cursor);
-
-    const segmentStart = new Date(Math.max(cursor.getTime(), start.getTime()));
-    const segmentEnd = new Date(Math.min(dayEnd.getTime(), end.getTime()));
-
-    if (!isWeekend(segmentStart) && segmentEnd > segmentStart) {
-      total += segmentEnd.getTime() - segmentStart.getTime();
-    }
-
-    cursor = new Date(dayEnd.getTime() + 1);
-  }
-
-  return total;
+  return DEFAULT_WORKING_CALENDAR.weekdayElapsedMs(start, end);
 }
 
-function atLocalHour(date: Date, hour: number): Date {
-  return new Date(date.getFullYear(), date.getMonth(), date.getDate(), hour, 0, 0, 0);
-}
-
-function nextDayStart(date: Date): Date {
-  return new Date(date.getFullYear(), date.getMonth(), date.getDate() + 1, 0, 0, 0, 0);
+/** @deprecated Use getWeekdayElapsedDurationMs for explicit latency semantics. */
+export function getWorkingDurationMs(
+  fromValue: string | null | undefined,
+  toValue: string | null | undefined,
+): number | null {
+  return getWeekdayElapsedDurationMs(fromValue, toValue);
 }
 
 /**
@@ -81,7 +88,7 @@ function nextDayStart(date: Date): Date {
  * time counts. It is still elapsed business time, not a timesheet or proof of
  * hands-on effort.
  */
-export function getBusinessDurationMs(
+export function getBusinessWindowDurationMs(
   fromValue: string | null | undefined,
   toValue: string | null | undefined,
 ): number | null {
@@ -91,25 +98,15 @@ export function getBusinessDurationMs(
   if (!start || !end) return null;
   if (end <= start) return 0;
 
-  let total = 0;
-  let day = startOfDay(start);
+  return DEFAULT_WORKING_CALENDAR.businessTimeOverlapMs(start, end);
+}
 
-  while (day < end) {
-    if (!isWeekend(day)) {
-      const workStart = atLocalHour(day, WORKDAY_START_HOUR);
-      const workEnd = atLocalHour(day, WORKDAY_END_HOUR);
-      const segmentStart = new Date(Math.max(start.getTime(), workStart.getTime()));
-      const segmentEnd = new Date(Math.min(end.getTime(), workEnd.getTime()));
-
-      if (segmentEnd > segmentStart) {
-        total += segmentEnd.getTime() - segmentStart.getTime();
-      }
-    }
-
-    day = nextDayStart(day);
-  }
-
-  return total;
+/** Compatibility alias for the canonical business-window duration. */
+export function getBusinessDurationMs(
+  fromValue: string | null | undefined,
+  toValue: string | null | undefined,
+): number | null {
+  return getBusinessWindowDurationMs(fromValue, toValue);
 }
 
 /** Working duration of [from, to] overlapped with inclusive report dateFrom/dateTo. */
@@ -128,7 +125,25 @@ export function getWorkingDurationMsWithinRange(
   const clippedStart = from && start < from ? from : start;
   const clippedEnd = to && end > to ? to : end;
   if (clippedEnd <= clippedStart) return 0;
-  return getWorkingDurationMs(clippedStart.toISOString(), clippedEnd.toISOString());
+  return getWeekdayElapsedDurationMs(clippedStart.toISOString(), clippedEnd.toISOString());
+}
+
+/** Business-window duration of [from, to] clipped to an inclusive reporting range. */
+export function getBusinessWindowDurationMsWithinRange(
+  fromValue: string | null | undefined,
+  toValue: string | null | undefined,
+  params?: { dateFrom?: string; dateTo?: string },
+): number | null {
+  const start = parseJiraDateSafe(fromValue);
+  const end = parseJiraDateSafe(toValue);
+  if (!start || !end) return null;
+  if (end <= start) return 0;
+  const from = parseDateStartOfDay(params?.dateFrom);
+  const to = parseDateEndOfDay(params?.dateTo);
+  const clippedStart = from && start < from ? from : start;
+  const clippedEnd = to && end > to ? to : end;
+  if (clippedEnd <= clippedStart) return 0;
+  return getBusinessWindowDurationMs(clippedStart.toISOString(), clippedEnd.toISOString());
 }
 
 export function isDateWithinRange(
@@ -163,12 +178,25 @@ export function formatDuration(ms: number | null | undefined): string {
   return parts.join(' ');
 }
 
+/** Formats elapsed business-window time using the canonical eight-hour workday. */
+export function formatBusinessDuration(ms: number | null | undefined): string {
+  if (ms === null || ms === undefined) return '';
+
+  const totalMinutes = Math.floor(Math.max(0, Number(ms)) / 60000);
+  const businessDayMinutes = WORKDAY_HOURS * 60;
+  const days = Math.floor(totalMinutes / businessDayMinutes);
+  const hours = Math.floor((totalMinutes % businessDayMinutes) / 60);
+  const minutes = totalMinutes % 60;
+
+  const parts: string[] = [];
+  if (days) parts.push(`${days} business ${days === 1 ? 'day' : 'days'}`);
+  if (hours) parts.push(`${hours}h`);
+  if (!days && (minutes || parts.length === 0)) parts.push(`${minutes}m`);
+  return parts.join(' ');
+}
+
 export function getTodayIsoDate(): string {
-  const now = appNow();
-  const y = now.getFullYear();
-  const m = String(now.getMonth() + 1).padStart(2, '0');
-  const d = String(now.getDate()).padStart(2, '0');
-  return `${y}-${m}-${d}`;
+  return dateKeyInTimeZone(appNow());
 }
 
 export function isValidDate(value: string): boolean {

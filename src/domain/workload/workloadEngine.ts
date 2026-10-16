@@ -185,6 +185,7 @@ export function calculateWorkload(
     mappings: options.mappings,
     now,
     subjectCanonical: options.capacitySubjectCanonical,
+    leave: options.leave,
   });
   const capacityDataState = capacityBreakdown.capacityDataState;
   const capacityLoadPercent = capacityBreakdown.capacityLoadPercent;

@@ -1,4 +1,5 @@
 import { subDays, subMonths, format, parseISO } from 'date-fns';
+import { dateKeyInTimeZone } from '../calendar/workingCalendar';
 import { getTodayIsoDate } from '../jira/dates';
 import {
   inclusiveRangeDayCount,
@@ -39,7 +40,7 @@ export function resolveRequiredComparisonCoverage(
     subDays(parseISO(displayRange.to), WORK_HISTORY_WINDOW_DAYS - 1),
     'yyyy-MM-dd',
   );
-  const today = format(now, 'yyyy-MM-dd');
+  const today = dateKeyInTimeZone(now);
   return {
     displayRange,
     comparisonRange,

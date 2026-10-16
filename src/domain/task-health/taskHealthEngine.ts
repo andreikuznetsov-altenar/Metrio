@@ -1,4 +1,4 @@
-import { getWorkingDurationMs } from '../jira/dates';
+import { getWeekdayElapsedDurationMs } from '../jira/dates';
 import { getStatusEventsSorted } from '../jira/events';
 import type { AuditIssue, ReportParams } from '../jira/types';
 import {
@@ -78,7 +78,7 @@ export function getCurrentStageStartedAt(issue: AuditIssue): string | null {
 export function getCurrentStageAgeMs(issue: AuditIssue, now: Date): number | null {
   const startedAt = getCurrentStageStartedAt(issue);
   if (!startedAt) return null;
-  return getWorkingDurationMs(startedAt, now.toISOString());
+  return getWeekdayElapsedDurationMs(startedAt, now.toISOString());
 }
 
 /** Centralized task health classification */

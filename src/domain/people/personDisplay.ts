@@ -4,7 +4,7 @@ import type { ReportParams } from '../jira/types';
 import { getOperationalIssues } from './ownedIssues';
 import { countActiveIssues, type WorkloadResult } from '../workload/workloadEngine';
 import { classifyTaskHealth } from '../task-health/taskHealthEngine';
-import { formatDuration } from '../jira/dates';
+import { formatBusinessDuration } from '../jira/dates';
 import { workloadDisplayLabel, type WorkloadDisplayLabel } from '../workload/workloadDisplay';
 import {
   capacityDataStateFromWorkload,
@@ -69,13 +69,13 @@ export function avgCycleSegments(
   if (perf.medianExecutionMs) {
     segments.push({
       label: 'Execution',
-      value: formatDuration(perf.medianExecutionMs),
+      value: formatBusinessDuration(perf.medianExecutionMs),
     });
   }
   if (perf.medianCycleMs) {
     segments.push({
       label: 'Cycle',
-      value: formatDuration(perf.medianCycleMs),
+      value: formatBusinessDuration(perf.medianCycleMs),
     });
   }
   return segments;

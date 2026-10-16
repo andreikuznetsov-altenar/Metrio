@@ -45,10 +45,16 @@ describe("dashboardCache", () => {
     ).toBeNull();
   });
 
-  it("invalidates v2 caches that still carry the legacy KPI shape (pre-V2 backflow counter and Efficiency score)", () => {
-    expect(DASHBOARD_CACHE_SCHEMA_VERSION).toBeGreaterThanOrEqual(3);
+  it("invalidates v2 caches that carry the pre-V2 KPI shape (backflow counter and Efficiency score)", () => {
     expect(
       validateDashboardCache({ ...sampleFile(), schemaVersion: 2 }, lookup),
+    ).toBeNull();
+  });
+
+  it("invalidates v3 caches that stored historical-capacity percentages from the old formula", () => {
+    expect(DASHBOARD_CACHE_SCHEMA_VERSION).toBeGreaterThanOrEqual(4);
+    expect(
+      validateDashboardCache({ ...sampleFile(), schemaVersion: 3 }, lookup),
     ).toBeNull();
   });
 

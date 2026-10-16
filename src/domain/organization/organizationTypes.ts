@@ -41,7 +41,7 @@ export interface OrganizationTeamRow {
   attentionCount: number;
   completed: number;
   firstPassPercent: number;
-  avgCycleLabel: string;
+  medianCycleLabel: string;
   upcomingLeave: number;
   attentionSeverity: number;
   capacitySummaryLabel?: string;

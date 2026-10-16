@@ -132,7 +132,7 @@ describe('PASS14 canonical workload', () => {
     expect(ms).toBe(expected);
   });
 
-  it('current active segment contributes its working duration', () => {
+  it('current active segment contributes business-window hours, not 24h weekdays', () => {
     const active = issue('UX-30', 'In Progress', [
       event('To Do', 'In Progress', '2026-01-05T09:00:00.000Z'),
     ]);
@@ -141,7 +141,8 @@ describe('PASS14 canonical workload', () => {
       resolveWorkflowProfile(active),
       '2026-01-08T09:00:00.000Z',
     );
-    expect(ms / 86400000).toBeCloseTo(3, 4);
+    // Mon 10:00 → Thu 10:00 Malta = 7h + 8h + 8h + 1h of 09:00–17:00 time.
+    expect(ms / 3600000).toBeCloseTo(24, 4);
   });
 
   it('backflow capacity includes only active contributor segments', () => {

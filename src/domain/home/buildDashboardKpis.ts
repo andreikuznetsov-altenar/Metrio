@@ -45,7 +45,7 @@ function capacityKpiFromWorkload(workload: WorkloadRow[]): DashboardKpiCard {
   };
 }
 
-/** Employee KPI strip — transparent workflow outcomes plus current capacity load. */
+/** Employee KPI strip — transparent workflow outcomes plus Current workload. */
 export function buildEmployeeDashboardKpis(input: {
   metrics: Pick<MetricCardData, "label" | "value">[];
   workload: WorkloadResult | null;
@@ -67,8 +67,8 @@ export function buildEmployeeDashboardKpis(input: {
   });
 
   cards.push({
-    id: "capacity-load",
-    label: "Capacity load",
+    id: "current-workload",
+    label: "Current workload",
     value: capacity.value,
     badge: { label: capacity.badgeLabel, variant: capacity.badgeVariant },
     tooltip: capacity.tooltip,

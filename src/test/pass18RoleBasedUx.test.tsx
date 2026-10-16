@@ -104,7 +104,7 @@ describe("PASS 18 role-based UX", () => {
       attentionCount: 2,
       completed: 31,
       firstPassPercent: 84,
-      avgCycleLabel: "3.0d",
+      medianCycleLabel: "3.0d",
       upcomingLeave: 1,
       attentionSeverity: 2,
       capacitySummaryLabel: "1 Heavy · 2 Balanced · 1 Light",

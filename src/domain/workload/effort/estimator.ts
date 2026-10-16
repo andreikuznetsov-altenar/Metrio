@@ -1,4 +1,5 @@
 import type { AuditIssue } from '../../jira/types';
+import { dateKeyInTimeZone } from '../../calendar/workingCalendar';
 import { HORIZON_WORKING_DAYS } from './horizon';
 import type {
   EffortEstimateSource,
@@ -265,8 +266,5 @@ export function estimateStartProbability(
 }
 
 function localKey(date: Date): string {
-  const y = date.getFullYear();
-  const m = String(date.getMonth() + 1).padStart(2, '0');
-  const d = String(date.getDate()).padStart(2, '0');
-  return `${y}-${m}-${d}`;
+  return dateKeyInTimeZone(date);
 }

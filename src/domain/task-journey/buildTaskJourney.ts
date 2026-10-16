@@ -1,5 +1,5 @@
 import { format } from 'date-fns';
-import { formatDuration, getWorkingDurationMs } from '../jira/dates';
+import { formatDuration, getWeekdayElapsedDurationMs } from '../jira/dates';
 import type { AuditIssue, ReportParams } from '../jira/types';
 import { DEFAULT_OPERATIONAL_RULES } from '../operationalRules/operationalRulesDefaults';
 import type { OperationalRules } from '../operationalRules/operationalRulesTypes';
@@ -112,7 +112,7 @@ function buildStatusSegments(
   if (!statusEvents.length) {
     if (currentStatus && currentStatus !== '—') {
       const startedAt = issue.issueCreated || now.toISOString();
-      const stageDurationMs = getWorkingDurationMs(startedAt, now.toISOString());
+      const stageDurationMs = getWeekdayElapsedDurationMs(startedAt, now.toISOString());
       segments.push({
         kind: 'status_transition',
         fromStatus: '',
@@ -144,8 +144,8 @@ function buildStatusSegments(
         segmentStatus.toLowerCase() === currentStatus.toLowerCase());
 
     const stageDurationMs = isCurrent || !next
-      ? getWorkingDurationMs(segmentStart, now.toISOString())
-      : getWorkingDurationMs(segmentStart, segmentEnd);
+      ? getWeekdayElapsedDurationMs(segmentStart, now.toISOString())
+      : getWeekdayElapsedDurationMs(segmentStart, segmentEnd);
 
     segments.push({
       kind: 'status_transition',
@@ -167,7 +167,7 @@ function buildStatusSegments(
   const lastSegment = segments[segments.length - 1];
   if (lastSegment && !lastSegment.isCurrent && currentStatus) {
     const startedAt = statusEvents[statusEvents.length - 1].changedAt;
-    const stageDurationMs = getWorkingDurationMs(startedAt, now.toISOString());
+    const stageDurationMs = getWeekdayElapsedDurationMs(startedAt, now.toISOString());
     segments.push({
       kind: 'status_transition',
       fromStatus: lastSegment.toStatus,

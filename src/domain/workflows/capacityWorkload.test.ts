@@ -3,12 +3,14 @@ import type { AuditIssue, IssueEvent, ReportParams } from '../jira/types';
 import { calculateWorkload } from '../workload/workloadEngine';
 import {
   calculateCapacityBreakdown,
+  aggregateHistoricalLoad,
   capacityLevelFromPercent,
   daysInReportingPeriod,
   MONTHLY_CAPACITY_HOURS,
 } from './capacityWorkload';
 import { extractProfileContributorCycles } from './profileCycles';
 import { getProfileById } from './profileRegistry';
+import { WorkingCalendar } from '../calendar/workingCalendar';
 
 const HOUR = 60 * 60 * 1000;
 
@@ -122,6 +124,19 @@ describe('capacityWorkload', () => {
     expect(capacityLevelFromPercent(60)).toBe('normal');
     expect(capacityLevelFromPercent(90)).toBe('high');
     expect(capacityLevelFromPercent(110)).toBe('overloaded');
+  });
+
+  it('weights team historical load by raw execution and availability', () => {
+    const team = aggregateHistoricalLoad([
+      { executionHoursInPeriod: 80, availableHoursInPeriod: 80 },
+      { executionHoursInPeriod: 160, availableHoursInPeriod: 800 },
+    ]);
+    expect(team).toEqual({
+      executionHoursInPeriod: 240,
+      availableHoursInPeriod: 880,
+      capacityLoadPercent: 27.3,
+    });
+    expect(team.capacityLoadPercent).not.toBe(60);
   });
 
   it('aggregates mixed project cycles with profile-aware extraction', () => {
@@ -265,6 +280,83 @@ describe('capacityWorkload', () => {
     expect(breakdown.completedCyclesInPeriod).toBe(2);
     expect(breakdown.completedCycleHours * HOUR).toBe(8 * HOUR);
     expect(breakdown.completedCycleHours).toBe(8);
+    expect(breakdown.executionHoursInPeriod).toBe(8);
+    expect(breakdown.availableHoursInPeriod).toBe(176);
+    expect(breakdown.capacityLoadPercent).toBe(4.5);
+  });
+
+  it('sums sequential execution and reduces the denominator for reliable leave', () => {
+    const january2026: ReportParams = { ...params, dateFrom: '2026-01-05', dateTo: '2026-01-09' };
+    const first = uxIssue('UX-S1', [
+      statusEvent('To Do', 'In Progress', '2026-01-05T09:00:00'),
+      statusEvent('In Progress', 'Done', '2026-01-05T17:00:00'),
+    ], 'Done');
+    const second = uxIssue('UX-S2', [
+      statusEvent('To Do', 'In Progress', '2026-01-06T09:00:00'),
+      statusEvent('In Progress', 'Done', '2026-01-06T17:00:00'),
+    ], 'Done');
+    const breakdown = calculateCapacityBreakdown({
+      issues: [first, second],
+      params: january2026,
+      now: new Date('2026-01-10T12:00:00Z'),
+      leave: [{ start: '2026-01-08', end: '2026-01-09' }],
+    });
+    expect(breakdown.executionHoursInPeriod).toBe(16);
+    expect(breakdown.availableHoursInPeriod).toBe(24);
+    expect(breakdown.capacityLoadPercent).toBe(66.7);
+  });
+
+  it('excludes a supplied holiday from numerator and denominator', () => {
+    const calendar = new WorkingCalendar({ holidays: new Set(['2026-01-06']) });
+    const issue = uxIssue('UX-HOL', [
+      statusEvent('To Do', 'In Progress', '2026-01-05T09:00:00'),
+      statusEvent('In Progress', 'Done', '2026-01-06T17:00:00'),
+    ], 'Done');
+    const breakdown = calculateCapacityBreakdown({
+      issues: [issue],
+      params: { ...params, dateFrom: '2026-01-05', dateTo: '2026-01-06' },
+      now: new Date('2026-01-07T12:00:00Z'),
+      calendar,
+    });
+    expect(breakdown.executionHoursInPeriod).toBe(8);
+    expect(breakdown.availableHoursInPeriod).toBe(8);
+    expect(breakdown.capacityLoadPercent).toBe(100);
+  });
+
+  it('reconciles the direct ratio: execution hours / available hours x 100', () => {
+    const week: ReportParams = { ...params, dateFrom: '2026-01-05', dateTo: '2026-01-09' };
+    const issue = uxIssue('UX-DIRECT', [
+      statusEvent('To Do', 'In Progress', '2026-01-05T09:00:00'),
+      statusEvent('In Progress', 'Done', '2026-01-06T17:00:00'),
+    ], 'Done');
+    const breakdown = calculateCapacityBreakdown({
+      issues: [issue],
+      params: week,
+      now: new Date('2026-01-12T12:00:00Z'),
+    });
+    expect(breakdown.executionHoursInPeriod).toBe(16);
+    expect(breakdown.availableHoursInPeriod).toBe(40);
+    expect(breakdown.capacityLoadPercent).toBe(
+      Math.round((breakdown.executionHoursInPeriod / breakdown.availableHoursInPeriod) * 1000) / 10,
+    );
+    expect(breakdown.capacityLoadPercent).toBe(40);
+    // The 164h monthly figure is only a normalised equivalent, not the denominator.
+    expect(breakdown.estimatedMonthlyHours).toBe(Math.round(0.4 * MONTHLY_CAPACITY_HOURS * 10) / 10);
+  });
+
+  it('never reports a negative or >100% merged occupancy for a fully busy period', () => {
+    const week: ReportParams = { ...params, dateFrom: '2026-01-05', dateTo: '2026-01-09' };
+    const make = (key: string) => uxIssue(key, [
+      statusEvent('To Do', 'In Progress', '2026-01-05T00:00:00'),
+      statusEvent('In Progress', 'Done', '2026-01-10T00:00:00'),
+    ], 'Done');
+    const breakdown = calculateCapacityBreakdown({
+      issues: [make('UX-F1'), make('UX-F2'), make('UX-F3')],
+      params: week,
+      now: new Date('2026-01-12T12:00:00Z'),
+    });
+    expect(breakdown.executionHoursInPeriod).toBe(40);
+    expect(breakdown.capacityLoadPercent).toBe(100);
   });
 
   it('counts Valeriia current queue separately from the one In Progress task', () => {

@@ -13,6 +13,7 @@ import type {
   SnapshotSource,
 } from './types';
 import { KPI_SNAPSHOT_SCHEMA_VERSION } from './types';
+import { addCalendarDays } from '../calendar/workingCalendar';
 
 import { appNow } from "../../platform/appClock";
 export const EMPTY_KPI_SNAPSHOT_FILE: KpiSnapshotFile = {
@@ -82,17 +83,17 @@ function migrateV2ToV3(file: KpiSnapshotFile): KpiSnapshotFile {
 }
 
 /**
- * Pre-v5 snapshots contain derived workflow/workload values that cannot be
+ * Pre-v6 snapshots contain derived workflow/workload values that cannot be
  * recomputed safely without the raw Jira history, so they are invalidated.
  */
 export function migrateKpiSnapshotFile(
   raw: Partial<KpiSnapshotFile> & { schemaVersion?: number },
 ): KpiSnapshotFile {
   const version = raw.schemaVersion ?? 1;
-  // Pre-v5 flow values mix last-completion issue counting, mean durations and
-  // ambiguous "backflow" semantics. Raw Jira history is not stored here, so
+  // Pre-v6 flow values either mix V1 metric semantics or use host-local day and
+  // business-time boundaries. Raw Jira history is not stored here, so
   // invalidate only this derived cache and let historical bootstrap rebuild it.
-  if (version < 5) {
+  if (version < 6) {
     return { ...EMPTY_KPI_SNAPSHOT_FILE };
   }
   const personSnapshots = (raw.personSnapshots || []).map((snapshot) =>
@@ -305,9 +306,7 @@ export function personSparklinePoints(
   days = 56,
   now = appNow(),
 ): { date: string; value: number }[] {
-  const cutoff = new Date(now);
-  cutoff.setDate(cutoff.getDate() - Math.max(0, days - 1));
-  const cutoffKey = getLocalDateKey(cutoff);
+  const cutoffKey = addCalendarDays(getLocalDateKey(now), -Math.max(0, days - 1));
   const endKey = getLocalDateKey(now);
   return personTrendPoints(file, personId, field).filter(
     (p) => p.date >= cutoffKey && p.date <= endKey,
@@ -320,9 +319,7 @@ export function teamSparklinePoints(
   days = 56,
   now = appNow(),
 ): { date: string; value: number }[] {
-  const cutoff = new Date(now);
-  cutoff.setDate(cutoff.getDate() - Math.max(0, days - 1));
-  const cutoffKey = getLocalDateKey(cutoff);
+  const cutoffKey = addCalendarDays(getLocalDateKey(now), -Math.max(0, days - 1));
   const endKey = getLocalDateKey(now);
   return teamTrendPoints(file, field).filter(
     (p) => p.date >= cutoffKey && p.date <= endKey,

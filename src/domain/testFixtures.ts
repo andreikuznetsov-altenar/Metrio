@@ -16,6 +16,9 @@ export function testWorkload(overrides: Partial<WorkloadResult> & Pick<WorkloadR
   const capacityBreakdown =
     overrides.capacityBreakdown ??
     ({
+      executionHoursInPeriod: 10,
+      availableHoursInPeriod: 160,
+      availabilityAdjustedHours: 160,
       completedCycleHours: 10,
       activeSegmentHours: 0,
       avgHoursPerCycle: 3,

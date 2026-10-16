@@ -1,4 +1,8 @@
-import { getWorkingDurationMs, getWorkingDurationMsWithinRange } from '../jira/dates';
+import {
+  getBusinessWindowDurationMs,
+  getBusinessWindowDurationMsWithinRange,
+  getWeekdayElapsedDurationMs,
+} from '../jira/dates';
 import type { AuditIssue, IssueEvent, ReportParams } from '../jira/types';
 import { canonicalStageForStatus, resolveWorkflowStage } from './resolveWorkflowStage';
 import type { CanonicalStage, ProfileContributorCycle, WorkflowProfile } from './types';
@@ -62,9 +66,9 @@ export function extractProfileContributorCycles(
     if (!lastCapacityAt || !lastCanonical) return;
     const stage = profile.stages[lastCanonical];
     if (!stage?.countsAsCapacityContributor) return;
-    const ms = getWorkingDurationMs(lastCapacityAt, endedAt);
+    const ms = getBusinessWindowDurationMs(lastCapacityAt, endedAt);
     if (ms !== null && ms >= 0) activeCapacityMs += ms;
-    const inPeriod = getWorkingDurationMsWithinRange(lastCapacityAt, endedAt, params);
+    const inPeriod = getBusinessWindowDurationMsWithinRange(lastCapacityAt, endedAt, params);
     if (inPeriod !== null && inPeriod >= 0) activeCapacityMsInPeriod += inPeriod;
   };
 
@@ -128,13 +132,13 @@ export function extractProfileContributorCycles(
     if (completesCycle && cycleStart) {
       flushCapacityTo(event.changedAt);
       const reviewToDoneMs =
-        reviewStartedAt ? getWorkingDurationMs(reviewStartedAt, event.changedAt) : null;
+        reviewStartedAt ? getWeekdayElapsedDurationMs(reviewStartedAt, event.changedAt) : null;
       const fullCycleMs = cycleTodoStartedAt
-        ? getWorkingDurationMs(cycleTodoStartedAt, event.changedAt)
+        ? getWeekdayElapsedDurationMs(cycleTodoStartedAt, event.changedAt)
         : null;
       let progressToReviewMs: number | null = null;
       if (cycleTodoStartedAt && reviewStartedAt) {
-        progressToReviewMs = getWorkingDurationMs(cycleTodoStartedAt, reviewStartedAt);
+        progressToReviewMs = getWeekdayElapsedDurationMs(cycleTodoStartedAt, reviewStartedAt);
       }
 
       cycles.push({
@@ -183,7 +187,7 @@ export function getActiveCapacitySegmentMs(
     }
   }
 
-  const ms = getWorkingDurationMs(enteredAt, nowIso);
+  const ms = getBusinessWindowDurationMs(enteredAt, nowIso);
   return ms !== null && ms >= 0 ? ms : 0;
 }
 
@@ -214,7 +218,7 @@ export function extractProfileHoldTransitions(
       transitions.push({
         changedAt: event.changedAt,
         progressToHoldMs: activeStartedAt
-          ? getWorkingDurationMs(activeStartedAt, event.changedAt)
+          ? getBusinessWindowDurationMs(activeStartedAt, event.changedAt)
           : null,
       });
       activeStartedAt = null;

@@ -10,7 +10,7 @@ import type {
   AnalyticsEvidenceIssue,
   IssueAttribution,
 } from "./analyticsEvidenceTypes";
-import { formatDuration } from "../jira/dates";
+import { formatBusinessDuration } from "../jira/dates";
 import {
   analyticsEvidenceInvariant,
   ARCHIVED_AGGREGATE_NOTE,
@@ -145,7 +145,7 @@ function valueLabelForMetric(metric: AnalyticsDrilldownMetric, kpi: KpiData, buc
   }
   if (metric === "avg_cycle") {
     if (kpi.medianCycleMs == null) return "—";
-    return formatDuration(kpi.medianCycleMs) || "—";
+    return formatBusinessDuration(kpi.medianCycleMs) || "—";
   }
   if (metric === "completed") return String(kpi.completedCount);
   return String(kpi.backflowEventCount);
@@ -321,7 +321,7 @@ export function buildAnalyticsEvidence(input: BuildAnalyticsEvidenceInput): Anal
         metric,
         title,
         valueLabel:
-          medianMs != null ? formatDuration(medianMs) || "—" : valueLabelForMetric(metric, kpi),
+          medianMs != null ? formatBusinessDuration(medianMs) || "—" : valueLabelForMetric(metric, kpi),
         rangeLabel: bucketDate ? formatShortDate(`${bucketDate}T12:00:00.000Z`) : rangeLabel,
         targetLabel,
         comparisonLabel,
@@ -331,7 +331,7 @@ export function buildAnalyticsEvidence(input: BuildAnalyticsEvidenceInput): Anal
           { label: "Completed cycles", value: String(mapped.length) },
           {
             label: "Median cycle",
-            value: medianMs != null ? formatDuration(medianMs) || "—" : "—",
+            value: medianMs != null ? formatBusinessDuration(medianMs) || "—" : "—",
           },
         ],
         issues: sortIssues(metric, mapped),

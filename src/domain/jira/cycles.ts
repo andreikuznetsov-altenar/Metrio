@@ -1,4 +1,4 @@
-import { getWorkingDurationMs } from './dates';
+import { getWeekdayElapsedDurationMs } from './dates';
 import {
   isProgressToHoldTransition,
   isProgressToReviewTransition,
@@ -43,7 +43,7 @@ export function getCycleSegments(issue: AuditIssue, _params?: ReportParams): Cyc
 
     if (isProgressToReviewTransition(e.fromValue, e.toValue)) {
       if (progressStartedAt) {
-        const progressToReviewMs = getWorkingDurationMs(progressStartedAt, e.changedAt);
+        const progressToReviewMs = getWeekdayElapsedDurationMs(progressStartedAt, e.changedAt);
 
         if (progressToReviewMs !== null && progressToReviewMs >= 0) {
           reviewStartedAt = e.changedAt;
@@ -67,7 +67,7 @@ export function getCycleSegments(issue: AuditIssue, _params?: ReportParams): Cyc
 
     if (isProgressToHoldTransition(e.fromValue, e.toValue)) {
       if (progressStartedAt) {
-        const progressToHoldMs = getWorkingDurationMs(progressStartedAt, e.changedAt);
+        const progressToHoldMs = getWeekdayElapsedDurationMs(progressStartedAt, e.changedAt);
 
         if (progressToHoldMs !== null && progressToHoldMs >= 0) {
           segments.push({
@@ -97,8 +97,8 @@ export function getCycleSegments(issue: AuditIssue, _params?: ReportParams): Cyc
         return;
       }
 
-      const reviewToDoneMs = getWorkingDurationMs(reviewStartedAt, e.changedAt);
-      const fullCycleMs = getWorkingDurationMs(cycleTodoStartedAt, e.changedAt);
+      const reviewToDoneMs = getWeekdayElapsedDurationMs(reviewStartedAt, e.changedAt);
+      const fullCycleMs = getWeekdayElapsedDurationMs(cycleTodoStartedAt, e.changedAt);
 
       segments.push({
         type: 'review_to_done',

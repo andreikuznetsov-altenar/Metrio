@@ -148,7 +148,7 @@ describe("buildManagerExecutiveModel TEAM HEALTH wiring", () => {
 });
 
 describe("buildEmployeeDashboardKpis", () => {
-  it("includes capacity load with tooltip context", () => {
+  it("includes Current workload with tooltip context", () => {
     const cards = buildEmployeeDashboardKpis({
       metrics: [
         { label: "Throughput", value: "12" },
@@ -163,7 +163,7 @@ describe("buildEmployeeDashboardKpis", () => {
       }),
     });
     expect(cards).toHaveLength(4);
-    expect(cards[3].label).toBe("Capacity load");
+    expect(cards[3].label).toBe("Current workload");
     expect(cards[3].tooltip).toMatch(/6 assigned · 4 active/);
   });
 });

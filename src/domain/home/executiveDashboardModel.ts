@@ -145,7 +145,7 @@ export function buildScopeHealthSummary(
             ? `${focusCount} item${focusCount === 1 ? "" : "s"} need your attention`
             : `Capacity is ${capacityLabel.toLowerCase()}`,
         tooltip:
-          "Scope health combines your focus queue and capacity load from workflow-aware workload.",
+          "Scope health combines your focus queue and Current workload from the open Jira queue.",
       };
     }
     const insufficient =

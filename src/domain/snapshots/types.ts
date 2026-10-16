@@ -1,5 +1,9 @@
-/** V5: canonical cycle methodology (event backflows, median-first durations, owner attribution). */
-export const KPI_SNAPSHOT_SCHEMA_VERSION = 5;
+/**
+ * V6: V5 canonical cycle methodology (event backflows, median-first durations, owner attribution)
+ * plus explicit reporting-timezone day buckets and business-window durations.
+ * Older derived snapshots are invalidated, never mixed into the new series.
+ */
+export const KPI_SNAPSHOT_SCHEMA_VERSION = 6;
 
 export type SnapshotSource = 'live_daily' | 'historical_jira';
 

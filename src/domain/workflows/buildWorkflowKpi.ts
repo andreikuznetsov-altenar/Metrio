@@ -1,4 +1,5 @@
 import { isDateWithinRange } from '../jira/dates';
+import { DEFAULT_WORKING_CALENDAR, enumerateDateKeys } from '../calendar/workingCalendar';
 import type { AuditIssue, KpiData, ReportParams } from '../jira/types';
 import { isWorkflowKpiEligible } from './eligibility';
 import {
@@ -30,13 +31,10 @@ export function median(items: number[]): number | null {
 }
 
 function workingDays(params: ReportParams): number {
-  const start = new Date(`${params.dateFrom}T12:00:00`);
-  const end = new Date(`${params.dateTo}T12:00:00`);
-  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime()) || end < start) return 1;
-  let total = 0;
-  for (let cursor = start; cursor <= end; cursor = new Date(cursor.getTime() + 86400000)) {
-    if (cursor.getDay() !== 0 && cursor.getDay() !== 6) total += 1;
-  }
+  // Working days come from the canonical calendar (Mon–Fri, no guessed holidays).
+  const total = enumerateDateKeys(params.dateFrom.slice(0, 10), params.dateTo.slice(0, 10)).filter((key) =>
+    DEFAULT_WORKING_CALENDAR.isWorkingDay(key),
+  ).length;
   return Math.max(1, total);
 }
 

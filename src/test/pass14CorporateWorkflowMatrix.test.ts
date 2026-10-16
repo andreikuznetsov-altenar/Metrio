@@ -350,7 +350,8 @@ describe('PASS14 corporate workflow matrix', () => {
     expect(cycles).toHaveLength(1);
     expect(cycles[0].hasBackflow).toBe(true);
     expect(cycles[0].isFirstPass).toBe(false);
-    // Only two active segments contribute; twelve review days do not.
-    expect(cycles[0].activeCapacityMs / 86400000).toBeCloseTo(3, 4);
+    // Only two active segments contribute (16h + 8h of business-window time);
+    // twelve review days do not.
+    expect(cycles[0].activeCapacityMs / 3600000).toBeCloseTo(24, 4);
   });
 });

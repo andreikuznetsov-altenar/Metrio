@@ -99,6 +99,32 @@ describe('snapshotEngine', () => {
     expect(file.personSnapshots[0]?.date).toBe('2026-03-04');
   });
 
+  it('invalidates v5 snapshots whose day buckets and durations used host-local boundaries', () => {
+    const migrated = migrateKpiSnapshotFile({
+      schemaVersion: 5,
+      personSnapshots: [
+        {
+          date: '2026-02-01',
+          personId: '1',
+          activeCount: 2,
+          workloadLevel: 'normal',
+          atRiskCount: 0,
+          problematicCount: 0,
+          completedOnDate: 1,
+          backflowsOnDate: 0,
+          firstPassOnDate: 1,
+          cycleMsSumOnDate: 0,
+          completedWithCycleOnDate: 0,
+          source: 'historical_jira',
+        },
+      ],
+      teamSnapshots: [],
+    } as unknown as Parameters<typeof migrateKpiSnapshotFile>[0]);
+    expect(migrated.schemaVersion).toBe(KPI_SNAPSHOT_SCHEMA_VERSION);
+    expect(migrated.personSnapshots).toEqual([]);
+    expect(migrated.historicalCoverage).toBeUndefined();
+  });
+
   it('invalidates pre-v4 derived team snapshots', () => {
     const migrated = migrateKpiSnapshotFile({
       schemaVersion: 2,

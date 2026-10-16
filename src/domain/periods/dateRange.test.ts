@@ -16,7 +16,7 @@ describe('dateRange', () => {
   it('defines current week from Monday local time', () => {
     const wednesday = new Date('2026-03-04T15:00:00');
     const range = getCurrentWeekRange(wednesday);
-    expect(range.start.getDay()).toBe(1);
+    expect(getLocalDateKey(range.start)).toBe('2026-03-02');
     expect(isTimestampInRange('2026-03-04T10:00:00', range)).toBe(true);
     expect(isTimestampInRange('2026-03-01T10:00:00', range)).toBe(false);
   });

@@ -3,7 +3,7 @@ import type { DeliveryRiskItem } from "../radar/types";
 import type { TopLevelManagerBranch } from "./orgRole";
 import type { ResolvedEmployee } from "../../services/bamboo/orgResolver";
 import type { OrganizationTeamRow } from "./organizationTypes";
-import { formatDuration } from "../jira/dates";
+import { formatBusinessDuration } from "../jira/dates";
 import type { ReportParams } from "../jira/types";
 import { buildCanonicalKpiForPersonScope } from "../jira/scopedCanonicalKpi";
 import {
@@ -89,8 +89,8 @@ export function buildLeadershipBranchRow(
     capacitySummaryLabel: formatBranchCapacitySummaryLabel(capacity),
     completed: kpi.completedCount,
     firstPassPercent,
-    avgCycleLabel: kpi.avgProgressToReviewMs
-      ? formatDuration(kpi.avgProgressToReviewMs)
+    medianCycleLabel: kpi.medianCycleMs
+      ? formatBusinessDuration(kpi.medianCycleMs)
       : "—",
     upcomingLeave,
     attentionSeverity,

@@ -49,7 +49,7 @@ describe("onboarding checklist", () => {
       bamboo: bambooClear,
       surveyData: null,
       jiraBaseUrl: "https://jira.example.com",
-      now: new Date("2026-10-02"),
+      now: new Date("2026-10-02T12:00:00Z"),
     });
     expect(model).not.toBeNull();
     expect(model!.dayNumber).toBe(19);
@@ -57,7 +57,7 @@ describe("onboarding checklist", () => {
   });
 
   it("hidden after day 60", () => {
-    expect(isNewStarter("2026-01-01", new Date("2026-03-15"))).toBe(false);
+    expect(isNewStarter("2026-01-01", new Date("2026-03-15T12:00:00Z"))).toBe(false);
     const model = buildOnboardingChecklist({
       person: person({
         bamboo: {
@@ -69,7 +69,7 @@ describe("onboarding checklist", () => {
       bamboo: bambooClear,
       surveyData: null,
       jiraBaseUrl: "https://jira.example.com",
-      now: new Date("2026-03-15"),
+      now: new Date("2026-03-15T12:00:00Z"),
     });
     expect(model).toBeNull();
   });
@@ -230,7 +230,7 @@ describe("onboarding checklist", () => {
       bamboo: bambooPending,
       surveyData: null,
       jiraBaseUrl: "https://jira.example.com",
-      now: new Date("2026-10-02"),
+      now: new Date("2026-10-02T12:00:00Z"),
     })!;
     const bambooItem = model.items.find((i) => i.category === "bamboo")!;
     const redacted = redactManagerChecklistItem({
@@ -260,7 +260,7 @@ describe("onboarding checklist", () => {
       bamboo: bambooClear,
       surveyData: null,
       jiraBaseUrl: "https://jira.example.com",
-      now: new Date("2026-10-02"),
+      now: new Date("2026-10-02T12:00:00Z"),
     })!;
     const meet = model.items.find((i) => i.id === "team-meet");
     expect(meet?.status).toBe("complete");
@@ -273,7 +273,7 @@ describe("onboarding checklist", () => {
       bamboo: bambooClear,
       surveyData: null,
       jiraBaseUrl: "https://jira.example.com",
-      now: new Date("2026-09-20"),
+      now: new Date("2026-09-20T12:00:00Z"),
     })!;
     const reminders = collectOnboardingReminders(model);
     expect(reminders.some((r) => r.trigger === "due")).toBe(true);

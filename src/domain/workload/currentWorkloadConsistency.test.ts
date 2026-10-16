@@ -179,7 +179,7 @@ describe('current workload is derived from the current queue only', () => {
     expect(withTerminal.effortBreakdown?.map((i) => i.issueKey)).not.toContain('D-1');
   });
 
-  it('historical capacity can change (even above 100%) without changing the current level', () => {
+  it('historical load can change (saturating near 100% of available hours) without changing the current level', () => {
     const queue = [current('A-1', 'In Progress')];
     const lightHistory = calculateWorkload(queue, params, undefined, undefined, {
       now: NOW,
@@ -193,7 +193,10 @@ describe('current workload is derived from the current queue only', () => {
       capacitySubjectCanonical: 'person-a',
     });
 
-    expect(heavyHistory.capacityLoadPercent!).toBeGreaterThan(100);
+    // Historical load is merged execution occupancy / available hours, so one
+    // continuous cycle saturates just below (never above) 100%.
+    expect(heavyHistory.capacityLoadPercent!).toBeGreaterThan(95);
+    expect(heavyHistory.capacityLoadPercent!).toBeLessThanOrEqual(100);
     expect(heavyHistory.capacityLoadPercent!).toBeGreaterThan(lightHistory.capacityLoadPercent!);
     expect(heavyHistory.level).toBe(lightHistory.level);
     expect(heavyHistory.score).toBe(lightHistory.score);
@@ -302,7 +305,7 @@ describe('every surface resolves the same current workload for the same person',
     const queue = representativeQueue('valeriia');
     const history = [completed('H-BIG', 'valeriia', 120, 0.25)];
     const p = person('v1', 'Valeriia Pavlova', 'valeriia', [...queue, ...history]);
-    expect(p.workload!.capacityLoadPercent!).toBeGreaterThan(100);
+    expect(p.workload!.capacityLoadPercent!).toBeGreaterThan(95);
     expect(p.workload!.level).toBe('low');
 
     const teamSnapshot: TeamSnapshot = {

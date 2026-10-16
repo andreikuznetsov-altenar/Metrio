@@ -4,8 +4,10 @@ import { computeCurrentEffort } from './effort/currentEffortModel';
 import { buildEffortHistory } from './effort/history';
 import type { EffortHistory } from './effort/types';
 import { calculateWorkload } from './workloadEngine';
+import { zonedDateTimeToInstant } from '../calendar/workingCalendar';
 
-const NOW = new Date(2026, 0, 19, 12, 0, 0, 0); // Monday, local time in every test TZ.
+// Monday 12:00 in the reporting calendar timezone, independent of the host timezone.
+const NOW = zonedDateTimeToInstant('2026-01-19', 12)!;
 const EMPTY_HISTORY: EffortHistory = { execution: [], reserveVisits: [], startWaits: [] };
 const params: ReportParams = {
   dateFrom: '2025-01-01',
@@ -16,7 +18,8 @@ const params: ReportParams = {
 };
 
 function localIso(year: number, month: number, day: number, hour: number): string {
-  return new Date(year, month - 1, day, hour, 0, 0, 0).toISOString();
+  const dateKey = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+  return zonedDateTimeToInstant(dateKey, hour)!.toISOString();
 }
 
 function event(fromValue: string, toValue: string, changedAt: string): IssueEvent {

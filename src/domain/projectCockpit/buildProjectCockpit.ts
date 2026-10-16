@@ -1,4 +1,4 @@
-import { formatDuration } from "../jira/dates";
+import { formatBusinessDuration } from "../jira/dates";
 import { buildKpiFromIssues } from "../jira/kpi";
 import type { ReportParams } from "../jira/types";
 import { resolveWorkflowProfile } from "../workflows/resolveWorkflowProfile";
@@ -197,7 +197,7 @@ export function buildProjectCockpit(input: BuildProjectCockpitInput): ProjectCoc
     {
       label: "Median cycle",
       value: kpi.medianCycleMs
-        ? formatDuration(kpi.medianCycleMs)
+        ? formatBusinessDuration(kpi.medianCycleMs)
         : "—",
     },
   ];

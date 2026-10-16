@@ -1,4 +1,4 @@
-import { getWorkingDurationMs } from "./dates";
+import { getWeekdayElapsedDurationMs } from "./dates";
 import type { AuditIssue, IssueEvent } from "./types";
 
 /** Jira state read back AFTER a transition was accepted. */
@@ -32,7 +32,7 @@ export function applyVerifiedIssueState(issue: AuditIssue, verified: VerifiedIss
   for (const event of fresh) {
     appended.push({
       ...event,
-      timeSincePreviousStatusMs: prevAt ? getWorkingDurationMs(prevAt, event.changedAt) : null,
+      timeSincePreviousStatusMs: prevAt ? getWeekdayElapsedDurationMs(prevAt, event.changedAt) : null,
     });
     prevAt = event.changedAt;
   }

@@ -11,7 +11,7 @@ export const performanceHelp = {
   teamTrends:
     "Change in team performance compared with the previous comparable period.",
   teamWorkload:
-    "Current unfinished Jira queue weighted by workflow stage and task-health risk. Active is the hands-on active-stage count; historical capacity is shown separately.",
+    "Expected near-term assignee effort divided by available working hours. Delivery risk and Historical load are shown separately.",
   timeOff: "Planned team time off over the next 12 months from BambooHR.",
   people:
     "Team performance, workload, availability and attention signals for the selected period.",
