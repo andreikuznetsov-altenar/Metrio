@@ -17,7 +17,7 @@ function statusEvent(changedAt: string, fromValue: string, toValue: string, isBa
     isBackflow,
     isHandoff: false,
     isReturnToTeam: false,
-    excludeFromEfficiencyBackflow: false,
+    excludeFromBackflow: false,
   };
 }
 
@@ -131,11 +131,11 @@ describe("buildProjectCockpit KPI parity", () => {
     expect(cockpit.kpis.find((k) => k.label === "Completed")?.value).toBe(
       String(kpiDirect.completedCount),
     );
-    expect(cockpit.kpis.find((k) => k.label === "Backflows")?.value).toBe(
-      String(kpiDirect.backflowCount),
+    expect(cockpit.kpis.find((k) => k.label === "Backflow events")?.value).toBe(
+      String(kpiDirect.backflowEventCount),
     );
     expect(cockpit.summary.completedInPeriod).toBe(kpiDirect.completedCount);
-    expect(cockpit.deliveryFlow.backflow).toBe(kpiDirect.backflowCount);
+    expect(cockpit.deliveryFlow.backflowEvents).toBe(kpiDirect.backflowEventCount);
   });
 
   it("formats period label with range and comparison", () => {

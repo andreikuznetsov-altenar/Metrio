@@ -34,9 +34,8 @@ export function buildTraySummaryModel(input: TraySummaryModelInput): TraySummary
 }
 
 export function indexLabelForRole(role: TraySummaryRole): string {
-  if (role === "employee") return "Personal index";
-  if (role === "director") return "Organization index";
-  return "Team index";
+  void role;
+  return "Throughput";
 }
 
 export function dedupeIssueKeys(keys: string[]): string[] {

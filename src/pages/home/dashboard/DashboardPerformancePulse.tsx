@@ -2,7 +2,7 @@ import type { TrendCardData } from "../../../domain/performance";
 import { TrendMiniChart } from "../../performance/TrendMiniChart";
 import { TrendValue } from "../../performance/TrendValue";
 
-const PULSE_LABELS = ["Completed", "First pass", "Backflows"] as const;
+const PULSE_LABELS = ["Completed", "First pass", "Backflow events"] as const;
 
 export interface DashboardPerformancePulseProps {
   trends: TrendCardData[];

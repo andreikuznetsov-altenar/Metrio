@@ -12,12 +12,10 @@ export function kpiMetricCount(metric: AnalyticsDrilldownMetric, kpi: KpiData): 
     case "completed":
       return kpi.completedCount;
     case "backflows":
-      return kpi.backflowCount;
+      return kpi.backflowEventCount;
     case "first_pass":
       return kpi.completedCount;
     case "avg_cycle":
-      return kpi.completedCount;
-    case "efficiency":
       return kpi.completedCount;
     default:
       return 0;
@@ -28,10 +26,10 @@ export function evidenceCycleCount(evidence: AnalyticsEvidence): number {
   if (evidence.detailLevel === "aggregate") return 0;
   if (evidence.metric === "backflows") {
     const events = evidence.issues.reduce(
-      (sum, row) => sum + (row.backflowCount ?? 0),
+      (sum, row) => sum + (row.backflowEventCount ?? 0),
       0,
     );
-    return evidence.bucketDate ? events : evidence.issues.length;
+    return events;
   }
   if (evidence.metric === "first_pass") {
     const completedCycles = evidence.summaryLines.find(
@@ -57,10 +55,6 @@ export function analyticsEvidenceInvariant(evidence: AnalyticsEvidence): boolean
     const kpiCount = kpiMetricCount(evidence.metric, evidence.kpi);
     if (kpiCount > 0 && evidence.issues.length > 0) return false;
     return true;
-  }
-
-  if (evidence.metric === "efficiency") {
-    return evidence.kpi.completedCount === 0 || evidence.issues.length > 0;
   }
 
   const kpiCount = kpiMetricCount(evidence.metric, evidence.kpi);
@@ -98,8 +92,7 @@ export function downgradeToAggregateIfNeeded(
   const kpiCount = kpiMetricCount(evidence.metric, evidence.kpi);
   const needsAggregate =
     kpiCount > 0 &&
-    cycleCount === 0 &&
-    (evidence.metric !== "efficiency" || evidence.kpi.completedCount > 0);
+    cycleCount === 0;
 
   if (needsAggregate) {
     return {
@@ -108,7 +101,6 @@ export function downgradeToAggregateIfNeeded(
       issues: [],
       totalCountable: 0,
       summaryLines: [],
-      efficiencyComponents: undefined,
       aggregateNote: TASK_DETAIL_UNAVAILABLE_NOTE,
     };
   }

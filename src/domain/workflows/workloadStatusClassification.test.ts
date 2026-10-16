@@ -40,7 +40,7 @@ function issue(status: string, key = "UX-1"): AuditIssue {
         isBackflow: false,
         isHandoff: false,
         isReturnToTeam: false,
-        excludeFromEfficiencyBackflow: false,
+        excludeFromBackflow: false,
       },
     ],
     rangeEvents: [],

@@ -211,35 +211,6 @@ export const pdfStyles = StyleSheet.create({
     marginTop: 2,
     lineHeight: 1.3,
   },
-  efficiencySupportGrid: {
-    flex: 1,
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-    alignContent: 'flex-start',
-  },
-  efficiencySupportCard: {
-    width: '31%',
-    minWidth: 90,
-    borderWidth: 1,
-    borderColor: '#e6e6e6',
-    borderRadius: 6,
-    padding: 10,
-    backgroundColor: '#fafafa',
-  },
-  efficiencySupportValue: {
-    fontSize: 20,
-    fontWeight: 700,
-    color: PDF_COLORS.text,
-    lineHeight: 1.15,
-    marginBottom: 4,
-  },
-  efficiencySupportLabel: {
-    fontSize: 9,
-    fontWeight: 500,
-    color: PDF_COLORS.textSecondary,
-    lineHeight: 1.25,
-  },
   individualGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -259,20 +230,20 @@ export const pdfStyles = StyleSheet.create({
     gap: 8,
     marginBottom: 8,
   },
-  individualEfficiencyRow: {
+  individualThroughputRow: {
     flexDirection: 'row',
     alignItems: 'baseline',
     gap: 6,
     marginTop: 4,
     marginBottom: 8,
   },
-  individualEfficiencyValue: {
+  individualThroughputValue: {
     fontSize: 21,
     fontWeight: 600,
     color: PDF_COLORS.text,
     lineHeight: 1.1,
   },
-  individualEfficiencyCaption: {
+  individualThroughputCaption: {
     fontSize: 9,
     fontWeight: 500,
     color: PDF_COLORS.textSecondary,

@@ -25,7 +25,7 @@ const peopleRow: TeamPeopleRow = {
   personId: "person-1",
   personName: "Maria Camilleri",
   role: "UX Designer",
-  efficiency: "88%",
+  throughput: "8",
   attentionSeverityLabel: "Stable",
   attentionReason: "No attention signals",
   attentionVariant: "success",

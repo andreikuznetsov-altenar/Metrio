@@ -62,8 +62,8 @@ export function AnalyticsIssueRow({
             issue.cycleLabel && issue.cycleLabel !== "—" ? issue.cycleLabel : null,
             completedLabel,
             durationLabel ? `Cycle ${durationLabel}` : null,
-            showBackflowSummary && (issue.backflowCount ?? 0) > 0
-              ? `${issue.backflowCount} backflow${(issue.backflowCount ?? 0) === 1 ? "" : "s"}`
+            showBackflowSummary && (issue.backflowEventCount ?? 0) > 0
+              ? `${issue.backflowEventCount} backflow${(issue.backflowEventCount ?? 0) === 1 ? "" : "s"}`
               : null,
           ].filter(Boolean) as string[]
         );

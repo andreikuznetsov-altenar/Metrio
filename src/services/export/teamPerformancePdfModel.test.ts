@@ -11,10 +11,10 @@ const reportRange = { from: '2026-07-08', to: '2026-10-08' };
 const teamOverview: TeamPerformanceSnapshot = {
   directReportIds: ['p2'],
   summary: [
-    { label: 'Efficiency', value: '91%' },
+    { label: 'Throughput', value: '42' },
     { label: 'First pass', value: '88%' },
     { label: 'Completed', value: '42' },
-    { label: 'Backflows', value: '3' },
+    { label: 'Backflow events', value: '3' },
   ],
   attention: [
     {
@@ -98,11 +98,11 @@ describe('teamPerformancePdfModel', () => {
 
     expect(layout.reportRange).toEqual(reportRange);
     expect(layout.teamName).toBeTruthy();
-    expect(layout.teamEfficiency.hero.value).toBe('91%');
-    expect(layout.teamEfficiency.supporting.map((kpi) => kpi.label)).toEqual([
+    expect(layout.teamThroughput.hero.value).toBe('42');
+    expect(layout.teamThroughput.supporting.map((kpi) => kpi.label)).toEqual([
       'First pass',
       'Completed',
-      'Backflows',
+      'Backflow events',
     ]);
     expect(layout.digestSummary).toContain('Jul 2026');
     expect(layout.digestRecentChanges.title).toBe('Recent changes');

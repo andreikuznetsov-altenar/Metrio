@@ -63,13 +63,13 @@ export function testKpi(overrides: Partial<KpiData> = {}): KpiData {
     completedCount: 0,
     firstPassAcceptedCount: 0,
     holdCount: 0,
-    backflowCount: 0,
+    reworkedCycleCount: 0,
+    backflowEventCount: 0,
     avgProgressToReviewMs: null,
     avgReviewToDoneMs: null,
     avgProgressToHoldMs: null,
     avgTodoToApprovedMs: null,
     targetReviewDays: 3,
-    efficiencyIndex: 0,
     ...overrides,
   };
 }

@@ -74,12 +74,12 @@ export interface PdfTeamRosterMember {
   avatarDataUrl?: string | null;
 }
 
-export interface PdfIndividualEfficiencyCard {
+export interface PdfIndividualThroughputCard {
   personId: string;
   name: string;
   jobTitle: string;
   avatarDataUrl?: string | null;
-  efficiency: string;
+  throughput: string;
   firstPass: string;
   completed: string;
   backflows: string;
@@ -108,11 +108,11 @@ export interface TeamPerformancePdfLayout {
   reportRange: ReportRangeIso;
   reportRangeTitle: string;
   roster: PdfTeamRosterMember[];
-  teamEfficiency: {
+  teamThroughput: {
     hero: PdfKpiTeaser;
     supporting: PdfKpiTeaser[];
   };
-  individualEfficiency: PdfIndividualEfficiencyCard[];
+  individualThroughput: PdfIndividualThroughputCard[];
   digestSummary: string;
   digestRecentChanges: PdfDigestTable;
   teamTrends: PdfTrendBlock[];

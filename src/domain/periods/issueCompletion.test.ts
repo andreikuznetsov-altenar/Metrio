@@ -50,7 +50,7 @@ describe('issueCompletion', () => {
             isBackflow: false,
             isHandoff: false,
             isReturnToTeam: false,
-            excludeFromEfficiencyBackflow: false,
+            excludeFromBackflow: false,
           },
           {
             eventType: 'Status',
@@ -62,7 +62,7 @@ describe('issueCompletion', () => {
             isBackflow: true,
             isHandoff: false,
             isReturnToTeam: false,
-            excludeFromEfficiencyBackflow: false,
+            excludeFromBackflow: false,
           },
           {
             eventType: 'Status',
@@ -74,7 +74,7 @@ describe('issueCompletion', () => {
             isBackflow: false,
             isHandoff: false,
             isReturnToTeam: false,
-            excludeFromEfficiencyBackflow: false,
+            excludeFromBackflow: false,
           },
         ],
       }),
@@ -109,7 +109,7 @@ describe('issueCompletion', () => {
             isBackflow: false,
             isHandoff: false,
             isReturnToTeam: false,
-            excludeFromEfficiencyBackflow: false,
+            excludeFromBackflow: false,
           },
           {
             eventType: 'Status',
@@ -121,7 +121,7 @@ describe('issueCompletion', () => {
             isBackflow: false,
             isHandoff: false,
             isReturnToTeam: false,
-            excludeFromEfficiencyBackflow: false,
+            excludeFromBackflow: false,
           },
           {
             eventType: 'Status',
@@ -133,7 +133,7 @@ describe('issueCompletion', () => {
             isBackflow: false,
             isHandoff: false,
             isReturnToTeam: false,
-            excludeFromEfficiencyBackflow: false,
+            excludeFromBackflow: false,
           },
         ],
       }),

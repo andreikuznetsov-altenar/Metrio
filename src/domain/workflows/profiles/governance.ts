@@ -3,7 +3,6 @@ import { createStatusMapProfile } from '../createStatusMapProfile';
 export const governanceWorkflowProfile = createStatusMapProfile({
   id: 'governance',
   label: 'Governance',
-  efficiencyModel: 'none',
   statusMap: {
     Draft: 'backlog',
     Backlog: 'backlog',

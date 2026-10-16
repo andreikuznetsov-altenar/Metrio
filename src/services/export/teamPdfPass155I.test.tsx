@@ -53,7 +53,7 @@ function activeIssue(key: string, assignee: string) {
         isBackflow: false,
         isHandoff: false,
         isReturnToTeam: false,
-        excludeFromEfficiencyBackflow: false,
+        excludeFromBackflow: false,
       },
     ],
     rangeEvents: [],
@@ -88,7 +88,7 @@ function personFixture(
     availability: { state: 'available', label: 'Available', isHoliday: false },
     workload: testWorkload({ level: 'normal', activeCount: ownedIssues.length }),
     personalWorkload: testWorkload({ level: 'normal', activeCount: ownedIssues.length }),
-    performance: testKpi({ efficiencyIndex: id === 'daria' ? 89 : 91, completedCount: 7, backflowCount: 1 }),
+    performance: testKpi({ completedCount: 7, reworkedCycleCount: 1, backflowEventCount: 1 }),
     issues,
     ownedIssues: [],
   };
@@ -104,7 +104,7 @@ describe('PASS 15.5I team PDF + workload', () => {
     expect(contributors.some((p) => p.bamboo.displayName.includes('Andrei'))).toBe(false);
   });
 
-  it('excludes leads from individual efficiency using org graph direct reports', () => {
+  it('excludes leads from individual throughput using org graph direct reports', () => {
     const andrei = personFixture('andrei', 'Andrei Kuznetsov', 'andrei@co.com', 'Head of UX Design');
     const daria = personFixture('daria', 'Daria Chernova', 'daria@co.com', 'Product Designer', 'andrei');
     const valeriia = personFixture('valeriia', 'Valeriia Pavlova', 'valeriia@co.com', 'Designer', 'andrei');
@@ -125,9 +125,9 @@ describe('PASS 15.5I team PDF + workload', () => {
   it('person KPI parity between PDF helper and Performance fields', () => {
     const daria = personFixture('daria', 'Daria Chernova', 'daria@co.com', 'Product Designer', 'andrei');
     const pdfKpis = buildCanonicalPersonPeriodKpis(daria);
-    expect(pdfKpis.efficiency).toBe('89%');
+    expect(pdfKpis.throughput).toBe('7');
     expect(pdfKpis.completed).toBe(String(daria.performance?.completedCount));
-    expect(pdfKpis.backflows).toBe(String(daria.performance?.backflowCount));
+    expect(pdfKpis.backflows).toBe(String(daria.performance?.backflowEventCount));
   });
 
   it('active workload counts owned issues when ownedIssues array is empty', () => {
@@ -157,18 +157,18 @@ describe('PASS 15.5I team PDF + workload', () => {
     const teamOverview: TeamPerformanceSnapshot = {
       directReportIds: ['daria'],
       summary: [
-        { label: 'Efficiency', value: '91%', status: 'Healthy', statusVariant: 'success' },
+        { label: 'Throughput', value: '25' },
         { label: 'First pass', value: '84%', contextLabel: '+1.2 pp' },
         { label: 'Completed', value: '25', contextLabel: '-17' },
-        { label: 'Backflows', value: '4', contextLabel: '-24' },
+        { label: 'Backflow events', value: '4', contextLabel: '-24' },
       ],
       attention: [],
       attentionTotalCount: 0,
       trends: [
         { label: 'Completed', value: '25', chartSeries: [{ date: '2026-07-09', value: 1 }, { date: '2026-10-09', value: 3 }] },
         { label: 'First pass', value: '84%', chartSeries: [{ date: '2026-07-09', value: 80 }, { date: '2026-10-09', value: 84 }] },
-        { label: 'Avg cycle', value: '3.2d', chartSeries: [{ date: '2026-07-09', value: 4 }, { date: '2026-10-09', value: 3 }] },
-        { label: 'Backflows', value: '4', chartSeries: [{ date: '2026-07-09', value: 2 }, { date: '2026-10-09', value: 4 }] },
+        { label: 'Cycle time', value: '3.2d', chartSeries: [{ date: '2026-07-09', value: 4 }, { date: '2026-10-09', value: 3 }] },
+        { label: 'Backflow events', value: '4', chartSeries: [{ date: '2026-07-09', value: 2 }, { date: '2026-10-09', value: 4 }] },
       ],
       workload: [
         {
@@ -204,17 +204,17 @@ describe('PASS 15.5I team PDF + workload', () => {
     });
 
     expect(layout.teamName).toBe('UX Design');
-    expect(layout.teamEfficiency.hero.value).toBe('91%');
-    expect([layout.teamEfficiency.hero, ...layout.teamEfficiency.supporting].map((k) => k.label)).toEqual([
-      'Efficiency',
+    expect(layout.teamThroughput.hero.value).toBe('25');
+    expect([layout.teamThroughput.hero, ...layout.teamThroughput.supporting].map((k) => k.label)).toEqual([
+      'Throughput',
       'First pass',
       'Completed',
-      'Backflows',
+      'Backflow events',
     ]);
     expect(pdfStyles.teamKpiCard.width).toBe('23.5%');
     expect(pdfStyles.teamKpiCard.minHeight).toBe(78);
     expect(pdfStyles.teamKpiValue.fontSize).toBe(21);
-    expect(layout.individualEfficiency.map((c) => c.name)).toEqual(['Daria Chernova']);
+    expect(layout.individualThroughput.map((c) => c.name)).toEqual(['Daria Chernova']);
     expect(layout.teamAttention).toBeUndefined();
     expect(layout.roster).toHaveLength(2);
     expect(layout.teamTrends).toHaveLength(4);
@@ -237,7 +237,7 @@ describe('PASS 15.5I team PDF + workload', () => {
       reportRange,
       teamOverview: {
         directReportIds: [],
-        summary: [{ label: 'Efficiency', value: '91%' }],
+        summary: [{ label: 'Throughput', value: '1' }],
         attention: [],
         attentionTotalCount: 0,
         trends: [],

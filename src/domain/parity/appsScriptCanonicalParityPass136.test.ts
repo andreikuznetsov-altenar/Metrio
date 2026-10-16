@@ -2,11 +2,12 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { reconcileAnalyticsKpiEvidence } from "../analytics/kpiReconciliation";
-import { buildKpiFromIssues, getEfficiencyScoreBreakdown } from "../jira/kpi";
+import { buildKpiFromIssues } from "../jira/kpi";
+import { getEfficiencyScoreBreakdown } from "../legacy/efficiencyIndex";
 import type { AuditReportData } from "../jira/types";
 import { calculateCapacityBreakdown, capacityLevelFromPercent } from "../workflows/capacityWorkload";
-import { buildWskinsKpiFromIssues } from "../workflows/wskinsKpi";
-import { calculateWskinsEfficiencyIndex } from "../workflows/wskinsEfficiency";
+import { buildWskinsKpiFromIssues } from "../legacy/wskinsKpi";
+import { calculateWskinsEfficiencyIndex } from "../legacy/wskinsEfficiency";
 import { MONTHLY_CAPACITY_HOURS } from "../workflows/capacityWorkload";
 import { buildTeamWorkloadDonutSegments, workloadDonutWeight } from "../workload/buildTeamWorkloadDonutSegments";
 import type { WorkloadRow } from "../performance";
@@ -51,7 +52,7 @@ function statusEvent(
     isBackflow,
     isHandoff: false,
     isReturnToTeam: false,
-    excludeFromEfficiencyBackflow: false,
+    excludeFromBackflow: false,
   };
 }
 
@@ -106,7 +107,8 @@ describe("Pass 13.6 Apps Script canonical parity matrix", () => {
       reviewSubmittedCount: metrio.reviewSubmittedCount,
       completedCount: metrio.completedCount,
       firstPassAcceptedCount: metrio.firstPassAcceptedCount,
-      backflowCount: metrio.backflowCount,
+      // legacy backflowCount named reworked cycles; V2 reports them as reworkedCycleCount
+      backflowCount: metrio.reworkedCycleCount,
     }).toEqual(legacyReference);
   });
 
@@ -126,7 +128,7 @@ describe("Pass 13.6 Apps Script canonical parity matrix", () => {
     rows.push({
       metric: "Canonical WSkins WskinsAudit.gs",
       canonical: "readable",
-      metrio: "src/domain/workflows/wskinsKpi.ts",
+      metrio: "src/domain/legacy/wskinsKpi.ts",
       result: "PASS",
       note: "docs/canonical-legacy/apps-script/WskinsAudit.gs",
     });

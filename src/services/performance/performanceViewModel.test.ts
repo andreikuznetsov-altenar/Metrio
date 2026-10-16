@@ -53,9 +53,9 @@ function bambooPerson(
     availability: { state: "available", label: "Available", isHoliday: false },
     workload: testWorkload({ level: "normal", activeCount: 2 }),
     performance: testKpi({
-      efficiencyIndex: 91,
       completedCount: 4,
-      backflowCount: 0,
+      reworkedCycleCount: 0,
+      backflowEventCount: 0,
       firstPassAcceptedCount: 4,
     }),
     issues: normalizedIssues,
@@ -104,7 +104,7 @@ function statusEvent(
     isBackflow: false,
     isHandoff: false,
     isReturnToTeam: false,
-    excludeFromEfficiencyBackflow: false,
+    excludeFromBackflow: false,
   };
 }
 
@@ -123,10 +123,10 @@ function completedCycleIssue(key: string, ownerCanonical: string): AuditIssue {
 function buildResult(
   persons: Person[],
   teamKpi = testKpi({
-    efficiencyIndex: 72,
     completedCount: 10,
     firstPassAcceptedCount: 8,
-    backflowCount: 2,
+    reworkedCycleCount: 2,
+    backflowEventCount: 2,
   }),
 ): PerformanceFetchResult {
   const teamSnapshot: TeamSnapshot = {
@@ -181,13 +181,13 @@ describe("buildPerformanceViewModels", () => {
   it("derives overview summary KPIs from teamKpi in AuditReportData", () => {
     const data = buildResult([bambooPerson("1114", "Real Person")]);
     const vm = buildPerformanceViewModels(data, "1114");
-    const efficiency = vm.teamOverview.summary.find((m) => m.label === "Efficiency");
+    const throughput = vm.teamOverview.summary.find((m) => m.label === "Throughput");
     const completed = vm.teamOverview.summary.find((m) => m.label === "Completed");
-    const backflows = vm.teamOverview.summary.find((m) => m.label === "Backflows");
-    expect(efficiency?.value).toBe("72%");
+    const backflows = vm.teamOverview.summary.find((m) => m.label === "Backflow events");
+    expect(throughput?.value).toBe("10");
     expect(completed?.value).toBe("10");
     expect(backflows?.value).toBe("2");
-    expect(efficiency?.value).not.toBe("84%");
+    expect(throughput?.value).not.toContain("%");
   });
 
   it("maps delivery risk from real Jira issue keys on persons", () => {

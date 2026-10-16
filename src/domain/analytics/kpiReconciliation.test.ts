@@ -18,7 +18,7 @@ function statusEvent(changedAt: string, fromValue: string, toValue: string, isBa
     isBackflow,
     isHandoff: false,
     isReturnToTeam: false,
-    excludeFromEfficiencyBackflow: false,
+    excludeFromBackflow: false,
   };
 }
 
@@ -82,8 +82,8 @@ describe("reconcileAnalyticsKpiEvidence", () => {
     expect(report.allMatch).toBe(true);
     expect(formatKpiReconciliationReport(report)).toContain("OVERALL: PASS");
     expect(report.results.find((row) => row.metric === "Completed")?.matches).toBe(true);
-    expect(report.results.find((row) => row.metric === "Backflows")?.semantic).toMatch(
-      /cycles with hasBackflow/i,
+    expect(report.results.find((row) => row.metric === "Backflow events")?.semantic).toMatch(
+      /backward workflow transitions/i,
     );
 
     const structured = reconcilePerformanceAnalytics(reportData, "team");

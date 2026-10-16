@@ -33,7 +33,7 @@ export interface TaskJourneyStatusSegment {
   canonicalFromStage?: string;
   canonicalToStage?: string;
   isBackflow: boolean;
-  excludeFromEfficiencyBackflow: boolean;
+  excludeFromBackflow: boolean;
   isCurrent: boolean;
   stageDurationMs: number | null;
   stageLabel: string;
@@ -62,7 +62,7 @@ export interface TaskJourneyProblem {
   currentStageAgeLabel: string;
   lastActivityAt: string | null;
   lastActivityLabel: string | null;
-  backflowCount: number;
+  backflowEventCount: number;
   targetReviewDays: number;
   isAttentionEligible: boolean;
 }
@@ -122,7 +122,7 @@ function buildStatusSegments(
         durationSincePreviousStatusMs: null,
         canonicalToStage: canonicalStageLabel(issue, currentStatus),
         isBackflow: false,
-        excludeFromEfficiencyBackflow: false,
+        excludeFromBackflow: false,
         isCurrent: true,
         stageDurationMs,
         stageLabel: currentStatus,
@@ -157,7 +157,7 @@ function buildStatusSegments(
       canonicalFromStage: canonicalStageLabel(issue, event.fromValue),
       canonicalToStage: canonicalStageLabel(issue, segmentStatus),
       isBackflow: event.isBackflow,
-      excludeFromEfficiencyBackflow: event.excludeFromEfficiencyBackflow,
+      excludeFromBackflow: event.excludeFromBackflow,
       isCurrent,
       stageDurationMs,
       stageLabel: segmentStatus,
@@ -177,7 +177,7 @@ function buildStatusSegments(
       durationSincePreviousStatusMs: null,
       canonicalToStage: canonicalStageLabel(issue, currentStatus),
       isBackflow: false,
-      excludeFromEfficiencyBackflow: false,
+      excludeFromBackflow: false,
       isCurrent: true,
       stageDurationMs,
       stageLabel: currentStatus,
@@ -215,7 +215,7 @@ function buildMergedTimeline(
           canonicalFromStage: canonicalStageLabel(issue, event.fromValue),
           canonicalToStage: canonicalStageLabel(issue, event.toValue),
           isBackflow: event.isBackflow,
-          excludeFromEfficiencyBackflow: event.excludeFromEfficiencyBackflow,
+          excludeFromBackflow: event.excludeFromBackflow,
           isCurrent: false,
           stageDurationMs: event.timeSincePreviousStatusMs,
           stageLabel: event.toValue?.trim() || '—',
@@ -273,8 +273,8 @@ function buildProblemBlock(
   if (params.targetReviewDays) {
     detailLines.push(`Target: ${params.targetReviewDays} days`);
   }
-  if (health.backflowCount > 0) {
-    detailLines.push(`Backflows: ${health.backflowCount}`);
+  if (health.backflowEventCount > 0) {
+    detailLines.push(`Backflows: ${health.backflowEventCount}`);
   }
   if (lastActivityLabel) {
     detailLines.push(`Last activity: ${lastActivityLabel}`);
@@ -297,7 +297,7 @@ function buildProblemBlock(
     currentStageAgeLabel,
     lastActivityAt,
     lastActivityLabel,
-    backflowCount: health.backflowCount,
+    backflowEventCount: health.backflowEventCount,
     targetReviewDays: params.targetReviewDays,
     isAttentionEligible: workflowStage.countsAsAttentionEligible,
   };

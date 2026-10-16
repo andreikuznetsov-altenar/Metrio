@@ -138,7 +138,7 @@ describe("PASS34 expandable hierarchy", () => {
       availability: { state: "available", label: "Available", isHoliday: false },
       workload: testWorkload({ level: "normal", capacityLoadPercent: 60 }),
       personalWorkload: null,
-      performance: withKpi ? testKpi({ completedCount: 10, firstPassAcceptedCount: 9, efficiencyIndex: 92 }) : null,
+      performance: withKpi ? testKpi({ completedCount: 10, firstPassAcceptedCount: 9}) : null,
       issues: [],
       ownedIssues: [],
     }) as Person;
@@ -219,7 +219,7 @@ describe("PASS35 hierarchy fallback", () => {
         jira: null, identity: { matchedBy: "email", warnings: [] },
         availability: { state: "available", label: "Available", isHoliday: false },
         workload: testWorkload({ level: "normal", capacityLoadPercent: 50 }), personalWorkload: null,
-        performance: testKpi({ completedCount: 5, firstPassAcceptedCount: 5, efficiencyIndex: 90 }), issues: [], ownedIssues: [],
+        performance: testKpi({ completedCount: 5, firstPassAcceptedCount: 5}), issues: [], ownedIssues: [],
       }) as Person;
     const rows = buildLeadershipBranchMemberRows({
       leaderId: "lead",

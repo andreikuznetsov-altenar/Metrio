@@ -185,7 +185,7 @@ function buildPersonalSection(
   }
 
   const metrics = employeeSnapshot?.metrics ?? workspace?.performanceKpis ?? [];
-  const pick = ["Efficiency", "First pass", "Completed"];
+  const pick = ["Throughput", "First pass", "Completed"];
   const performanceSnapshot = {
     metrics: pick
       .map((label) => metrics.find((m) => m.label === label))

@@ -3,7 +3,6 @@ import { createStatusMapProfile } from '../createStatusMapProfile';
 export const designReviewWorkflowProfile = createStatusMapProfile({
   id: 'design_review',
   label: 'Design Review',
-  efficiencyModel: 'ux',
   statusMap: {
     'To Do': 'backlog',
     Todo: 'backlog',

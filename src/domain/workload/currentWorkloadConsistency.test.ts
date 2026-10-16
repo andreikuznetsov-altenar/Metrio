@@ -41,7 +41,7 @@ function statusEvent(from: string, to: string, at: string): IssueEvent {
     isBackflow: false,
     isHandoff: false,
     isReturnToTeam: false,
-    excludeFromEfficiencyBackflow: false,
+    excludeFromBackflow: false,
   };
 }
 
@@ -291,7 +291,7 @@ describe('every surface resolves the same current workload for the same person',
         capacityIssues: issues,
         capacitySubjectCanonical: owner,
       }),
-      performance: testKpi({ efficiencyIndex: 90, completedCount: 0, backflowCount: 0, firstPassAcceptedCount: 0 }),
+      performance: testKpi({ completedCount: 0, reworkedCycleCount: 0, backflowEventCount: 0, firstPassAcceptedCount: 0 }),
       issues,
       ownedIssues,
     };

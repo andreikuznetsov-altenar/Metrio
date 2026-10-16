@@ -41,7 +41,7 @@ export function buildIssueEvents(
           isBackflow: false,
           isHandoff: false,
           isReturnToTeam: false,
-          excludeFromEfficiencyBackflow: false,
+          excludeFromBackflow: false,
         });
       }
 
@@ -67,7 +67,7 @@ export function buildIssueEvents(
           isBackflow: false,
           isHandoff: !!(fromCanonical && !toCanonical),
           isReturnToTeam: !!(!fromCanonical && toCanonical),
-          excludeFromEfficiencyBackflow: false,
+          excludeFromBackflow: false,
         });
       }
     });
@@ -93,7 +93,7 @@ export function buildIssueEvents(
       (normalizedFrom === 'review' || normalizedFrom.includes('in review')) &&
       (normalizedTo.includes('hold') || normalizedTo.includes('blocked'));
 
-    e.excludeFromEfficiencyBackflow = isReviewToHold;
+    e.excludeFromBackflow = isReviewToHold;
     e.isBackflow = isReverseTransition(e.fromValue, e.toValue);
   });
 

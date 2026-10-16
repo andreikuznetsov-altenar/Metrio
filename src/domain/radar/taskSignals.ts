@@ -72,15 +72,15 @@ export function classifyIssueAttention(
     return { severity: 'critical', reason: 'Blocked or on hold', health };
   }
 
-  if (health.backflowCount >= 2) {
+  if (health.backflowEventCount >= 2) {
     return {
       severity: 'warning',
-      reason: `Review → In Progress ×${health.backflowCount}`,
+      reason: `Review → In Progress ×${health.backflowEventCount}`,
       health,
     };
   }
 
-  if (health.backflowCount === 1) {
+  if (health.backflowEventCount === 1) {
     return { severity: 'warning', reason: 'Returned from Review', health };
   }
 

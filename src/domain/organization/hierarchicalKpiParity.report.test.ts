@@ -8,7 +8,7 @@ import { buildCurrentUserFromTeamDetection } from "../currentUser/fromTeamDetect
 import { resolveAuthorizedPeopleScope } from "./authorizedPeopleScope";
 import { rosterFromOrgResolution } from "./orgGraph";
 import { buildCanonicalKpiForPersonScope } from "../jira/scopedCanonicalKpi";
-import { buildKpiFromIssues, getEfficiencyScoreBreakdown } from "../jira/kpi";
+import { buildKpiFromIssues } from "../jira/kpi";
 import { collectUniqueTeamIssues } from "../jira/uniqueIssues";
 import type { AuditIssue, ReportParams } from "../jira/types";
 import type { Person } from "../people/types";
@@ -126,25 +126,23 @@ describe("PASS 15.2 hierarchical KPI real-hierarchy report", () => {
       });
       const issues = collectUniqueTeamIssues(branchPersons);
       const direct = buildKpiFromIssues(issues, {}, PARAMS);
-      const speed = getEfficiencyScoreBreakdown({
-        ...canonical,
-        targetReviewDays: PARAMS.targetReviewDays,
-      });
 
-      expect(branch.metrics.efficiencyIndex).toBe(canonical.efficiencyIndex);
-      expect(branch.metrics.efficiencyIndex).toBe(direct.efficiencyIndex);
       expect(branch.metrics.completedCount).toBe(canonical.completedCount);
-      expect(branch.metrics.backflowCount).toBe(canonical.backflowCount);
+      expect(canonical.completedCount).toBe(direct.completedCount);
+      expect(canonical.firstPassAcceptedCount).toBe(direct.firstPassAcceptedCount);
+      expect(branch.metrics.reworkedCycleCount).toBe(canonical.reworkedCycleCount);
+      expect(branch.metrics.backflowEventCount).toBe(canonical.backflowEventCount);
+      expect(canonical.backflowEventCount).toBe(direct.backflowEventCount);
 
       report.push({
         branch: branch.leaderName,
         people: branch.memberIds,
         projects: [...new Set(issues.map((i) => i.projectKey).filter(Boolean))],
-        Efficiency: canonical.efficiencyIndex,
         FirstPass: branch.metrics.firstPassPercent,
         Completed: canonical.completedCount,
-        Backflows: canonical.backflowCount,
-        speedScore: speed.speedScore,
+        ReworkedCycles: canonical.reworkedCycleCount,
+        BackflowEvents: canonical.backflowEventCount,
+        MedianExecutionMs: canonical.medianExecutionMs ?? null,
         branchTotalsMatchCanonical: true,
       });
     }
@@ -166,7 +164,9 @@ describe("PASS 15.2 hierarchical KPI real-hierarchy report", () => {
       {},
       PARAMS,
     );
-    expect(overall.efficiencyIndex).toBe(overallDirect.efficiencyIndex);
+    expect(overall.completedCount).toBe(overallDirect.completedCount);
+    expect(overall.reworkedCycleCount).toBe(overallDirect.reworkedCycleCount);
+    expect(overall.backflowEventCount).toBe(overallDirect.backflowEventCount);
 
     report.push({
       branch: "MoM overall",
@@ -178,13 +178,10 @@ describe("PASS 15.2 hierarchical KPI real-hierarchy report", () => {
             .filter(Boolean),
         ),
       ],
-      Efficiency: overall.efficiencyIndex,
       Completed: overall.completedCount,
-      Backflows: overall.backflowCount,
-      speedScore: getEfficiencyScoreBreakdown({
-        ...overall,
-        targetReviewDays: PARAMS.targetReviewDays,
-      }).speedScore,
+      ReworkedCycles: overall.reworkedCycleCount,
+      BackflowEvents: overall.backflowEventCount,
+      MedianExecutionMs: overall.medianExecutionMs ?? null,
     });
 
     // Surfaced for packaged/report consumers of test output.

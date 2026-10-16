@@ -3,7 +3,6 @@ import { createStatusMapProfile } from '../createStatusMapProfile';
 export const wskinsSubtaskWorkflowProfile = createStatusMapProfile({
   id: 'wskins_subtask',
   label: 'WSkins Sub-task',
-  efficiencyModel: 'wskins',
   statusMap: {
     'To Do': 'backlog',
     Todo: 'backlog',

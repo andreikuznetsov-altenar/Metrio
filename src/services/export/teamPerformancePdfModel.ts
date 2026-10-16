@@ -43,11 +43,11 @@ export function formatPdfReportRangeTitle(range: ReportRangeIso): string {
 
 function pickTeamKpis(summary: TeamPerformanceSnapshot['summary']) {
   const byLabel = new Map(summary.map((metric) => [metric.label, metric]));
-  const hero = byLabel.get('Efficiency');
-  const supportingLabels = ['First pass', 'Completed', 'Backflows'] as const;
+  const hero = byLabel.get('Throughput');
+  const supportingLabels = ['First pass', 'Completed', 'Backflow events'] as const;
   return {
     hero: {
-      label: 'Efficiency',
+      label: 'Throughput',
       value: hero?.value ?? '—',
       description: hero?.status ?? undefined,
       comparison: hero?.contextLabel,
@@ -86,14 +86,14 @@ export function buildTeamPerformancePdfLayout(input: {
   const deliveryRisk = buildDeliveryRiskItems(teamSnapshot, params);
   const atRiskByPerson = deliveryRiskCountByPersonId(deliveryRisk);
 
-  const avgCycleDays =
-    periodFlow.avgCycleMs !== null
-      ? (periodFlow.avgCycleMs / (24 * 60 * 60 * 1000)).toFixed(1)
+  const medianCycleDays =
+    periodFlow.medianCycleMs !== null
+      ? (periodFlow.medianCycleMs / (24 * 60 * 60 * 1000)).toFixed(1)
       : '—';
 
   const digestSummary =
     `For ${formatPdfReportRangeTitle(reportRange)}, the team completed ${periodFlow.completedCount} items ` +
-    `with ${periodFlow.firstPassPercent}% first pass, ${avgCycleDays} days average cycle, and ${periodFlow.backflowCount} backflows.`;
+    `with ${periodFlow.firstPassPercent}% first pass, ${medianCycleDays} business days median cycle, and ${periodFlow.backflowEventCount} backflow events.`;
 
   const completedPoints = personTrendFieldPoints(kpiSnapshots, 'completedOnDate');
   const firstPassPoints = personTrendFieldPoints(kpiSnapshots, 'firstPassOnDate');
@@ -144,7 +144,7 @@ export function buildTeamPerformancePdfLayout(input: {
     rows: recentRows.length ? recentRows : [{ label: 'Changes', value: '—' }],
   };
 
-  const teamEfficiency = pickTeamKpis(teamOverview.summary);
+  const teamThroughput = pickTeamKpis(teamOverview.summary);
 
   const roster = teamSnapshot.persons.map((person) => ({
     personId: person.id,
@@ -154,7 +154,7 @@ export function buildTeamPerformancePdfLayout(input: {
   }));
 
   const contributors = filterIndividualContributorPersons(teamSnapshot.persons);
-  const individualEfficiency = contributors.map((person) => {
+  const individualThroughput = contributors.map((person) => {
     const kpis = buildCanonicalPersonPeriodKpis(person);
     return {
       personId: person.id,
@@ -229,8 +229,8 @@ export function buildTeamPerformancePdfLayout(input: {
     reportRange,
     reportRangeTitle: formatPdfReportRangeTitle(reportRange),
     roster,
-    teamEfficiency,
-    individualEfficiency,
+    teamThroughput,
+    individualThroughput,
     digestSummary,
     digestRecentChanges,
     teamTrends,

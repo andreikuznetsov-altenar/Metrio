@@ -84,10 +84,10 @@ export interface TeamOverviewViewProps {
 }
 
 const METRIC_HELP: Record<string, string> = {
-  Efficiency: performanceHelp.efficiency,
+  Throughput: performanceHelp.throughput,
   "First pass": performanceHelp.firstPass,
   Completed: performanceHelp.completed,
-  Backflows: performanceHelp.backflows,
+  "Backflow events": performanceHelp.backflows,
 };
 
 function severityBadgeVariant(
@@ -263,7 +263,7 @@ export function TeamOverviewView({
         /long review/i.test(row.riskReason),
       ).length,
       backflowSignals: Number(
-        snapshot.summary.find((m) => m.label === "Backflows")?.value ?? 0,
+        snapshot.summary.find((m) => m.label === "Backflow events")?.value ?? 0,
       ),
     }),
     [secondary.deliveryRisk, snapshot.summary],
@@ -329,7 +329,7 @@ export function TeamOverviewView({
         <div className="performance-metrics">
           {summaryMetrics.map((metric, metricIndex) => {
             const drilldownEnabled = Boolean(onOpenMetricDrilldown) &&
-              ["Efficiency", "First pass", "Completed", "Backflows"].includes(metric.label);
+              ["First pass", "Completed", "Backflow events"].includes(metric.label);
             const cardClass = drilldownEnabled
               ? "performance-metric-card performance-metric-card--interactive"
               : "performance-metric-card";

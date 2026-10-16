@@ -32,7 +32,7 @@ function agtc105(): AuditIssue {
         isBackflow: false,
         isHandoff: false,
         isReturnToTeam: false,
-        excludeFromEfficiencyBackflow: false,
+        excludeFromBackflow: false,
       },
     ],
     rangeEvents: [],

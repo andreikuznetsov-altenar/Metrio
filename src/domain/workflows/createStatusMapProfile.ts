@@ -4,7 +4,6 @@ import type {
   AssigneeEffortMode,
   CanonicalStage,
   ResolvedWorkflowStage,
-  WorkflowEfficiencyModel,
   WorkflowProfile,
   WorkflowTransitionRule,
 } from './types';
@@ -12,7 +11,6 @@ import type {
 export interface StatusMapProfileInput {
   id: string;
   label: string;
-  efficiencyModel: WorkflowEfficiencyModel;
   /** Raw Jira status name → canonical stage. */
   statusMap: Record<string, CanonicalStage>;
   /**
@@ -103,7 +101,6 @@ export function createStatusMapProfile(input: StatusMapProfileInput): WorkflowPr
   return {
     id: input.id,
     label: input.label,
-    efficiencyModel: input.efficiencyModel,
     statusToCanonical,
     stages,
     transitionRules: input.transitionRules ?? DEFAULT_TRANSITION_RULES,

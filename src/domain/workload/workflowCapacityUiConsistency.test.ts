@@ -50,9 +50,9 @@ function bambooPerson(id: string, displayName: string, issues: AuditIssue[] = []
     availability: { state: 'available', label: 'Available', isHoliday: false },
     workload,
     performance: testKpi({
-      efficiencyIndex: 91,
       completedCount: 0,
-      backflowCount: 0,
+      reworkedCycleCount: 0,
+      backflowEventCount: 0,
       firstPassAcceptedCount: 0,
     }),
     issues: normalizedIssues,

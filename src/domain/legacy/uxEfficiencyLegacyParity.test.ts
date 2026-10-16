@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { getEfficiencyScoreBreakdown } from '../jira/kpi';
+import { getEfficiencyScoreBreakdown } from './efficiencyIndex';
 
-/** Parity with legacy Code.gs calculateEfficiencyIndex_ weighting (35/35/30 − 20). */
+/** LEGACY / PARITY ONLY. Parity with legacy Code.gs calculateEfficiencyIndex_ weighting (35/35/30 − 20). */
 describe('ux legacy efficiency parity', () => {
   it('matches Code.gs composite for representative inputs', () => {
     const breakdown = getEfficiencyScoreBreakdown({

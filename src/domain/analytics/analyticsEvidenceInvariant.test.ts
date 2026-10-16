@@ -17,7 +17,7 @@ function statusEvent(changedAt: string, fromValue: string, toValue: string) {
     isBackflow: false,
     isHandoff: false,
     isReturnToTeam: false,
-    excludeFromEfficiencyBackflow: false,
+    excludeFromBackflow: false,
   };
 }
 
@@ -56,7 +56,7 @@ const params = {
 
 const reviewTarget = "team" as const;
 
-const metrics = ["completed", "first_pass", "backflows", "avg_cycle", "efficiency"] as const;
+const metrics = ["completed", "first_pass", "backflows", "avg_cycle"] as const;
 
 describe("analytics evidence invariants", () => {
   it("never contradicts stored aggregate KPI without task detail (person scope)", () => {

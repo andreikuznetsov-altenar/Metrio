@@ -32,7 +32,7 @@ function makeIssue(index: number): AuditIssue {
         isBackflow: index % 7 === 0,
         isHandoff: false,
         isReturnToTeam: false,
-        excludeFromEfficiencyBackflow: false,
+        excludeFromBackflow: false,
       },
     ],
   };

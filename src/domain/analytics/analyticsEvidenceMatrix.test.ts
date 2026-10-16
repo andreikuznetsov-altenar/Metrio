@@ -21,7 +21,7 @@ function statusEvent(
     isBackflow,
     isHandoff: false,
     isReturnToTeam: false,
-    excludeFromEfficiencyBackflow: false,
+    excludeFromBackflow: false,
   };
 }
 
@@ -113,7 +113,7 @@ describe("analytics evidence matrix — team", () => {
     const issues = [issueWithCompletion("UX-1", "2024-01-10T09:00:00.000Z", { backflow: true })];
     const kpi = buildKpiFromIssues(issues, {}, params);
     const cycles = assertInvariant("backflows", { issues, kpi });
-    expect(cycles.totalCountable).toBe(kpi.backflowCount);
+    expect(cycles.totalCountable).toBe(kpi.reworkedCycleCount);
     const events = assertInvariant("backflows", {
       issues,
       kpi,
@@ -128,14 +128,6 @@ describe("analytics evidence matrix — team", () => {
     const kpi = buildKpiFromIssues(issues, {}, params);
     const evidence = assertInvariant("avg_cycle", { issues, kpi });
     expect(evidence.issues).toHaveLength(kpi.completedCount);
-  });
-
-  it("efficiency uses scoped kpi components", () => {
-    const issues = [issueWithCompletion("UX-1", "2024-01-10T09:00:00.000Z")];
-    const kpi = buildKpiFromIssues(issues, {}, params);
-    const evidence = assertInvariant("efficiency", { issues, kpi });
-    expect(evidence.efficiencyComponents?.length).toBe(4);
-    expect(evidence.valueLabel).toMatch(/%$/);
   });
 
   it("aggregate-only when stored kpi > 0 without issue detail", () => {

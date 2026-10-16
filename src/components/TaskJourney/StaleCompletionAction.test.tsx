@@ -37,7 +37,7 @@ function staleIssue(status = "In Review", daysInStage = 45): AuditIssue {
         isBackflow: false,
         isHandoff: false,
         isReturnToTeam: false,
-        excludeFromEfficiencyBackflow: false,
+        excludeFromBackflow: false,
       },
     ],
     rangeEvents: [],

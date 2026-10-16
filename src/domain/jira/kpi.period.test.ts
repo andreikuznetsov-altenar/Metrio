@@ -13,7 +13,7 @@ function statusEvent(changedAt: string, fromValue: string, toValue: string) {
     isBackflow: false,
     isHandoff: false,
     isReturnToTeam: false,
-    excludeFromEfficiencyBackflow: false,
+    excludeFromBackflow: false,
   };
 }
 

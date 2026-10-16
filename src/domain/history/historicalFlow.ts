@@ -1,14 +1,10 @@
-import { classifyTaskHealth } from '../task-health/taskHealthEngine';
 import { collectUniqueTeamIssues } from '../jira/uniqueIssues';
 import type { AuditIssue, ReportParams } from '../jira/types';
 import type { Person } from '../people/types';
 import { getOperationalIssues } from '../people/ownedIssues';
 import { getLocalDateKey } from '../periods/dateRange';
-import {
-  getIssueCompletionAt,
-  getIssueFullCycleMs,
-  withFullIssueHistory,
-} from '../periods/issueCompletion';
+import { withFullIssueHistory } from '../periods/issueCompletion';
+import { extractCanonicalPerformanceCycles } from '../workflows/canonicalPerformance';
 import { isProfileBackflow } from '../workflows/profileCycles';
 import { resolveWorkflowProfile } from '../workflows/resolveWorkflowProfile';
 import type { DailyPersonSnapshot, DailyTeamSnapshot } from '../snapshots/types';
@@ -68,7 +64,7 @@ export function getBootstrapDateRange(
 export function indexPersonDailyFlow(
   issues: AuditIssue[],
   dateKeys: string[],
-  params: ReportParams,
+  _params: ReportParams,
 ): Map<string, DailyFlowFields> {
   const buckets = new Map<string, DailyFlowFields>();
   for (const key of dateKeys) {
@@ -96,20 +92,17 @@ export function indexPersonDailyFlow(
       }
     }
 
-    const completedAt = getIssueCompletionAt(fullIssue);
-    if (!completedAt) continue;
-
-    const completionKey = getLocalDateKey(new Date(completedAt));
-    const bucket = buckets.get(completionKey);
-    if (!bucket) continue;
-
-    bucket.completedOnDate += 1;
-    const health = classifyTaskHealth({ issue: fullIssue, params });
-    if (health.isFirstPass) bucket.firstPassOnDate += 1;
-    const cycleMs = getIssueFullCycleMs(fullIssue);
-    if (cycleMs !== null) {
-      bucket.cycleMsSumOnDate += cycleMs;
-      bucket.completedWithCycleOnDate += 1;
+    for (const cycle of extractCanonicalPerformanceCycles(fullIssue, profile)) {
+      if (!cycle.completedAt) continue;
+      const completionKey = getLocalDateKey(new Date(cycle.completedAt));
+      const bucket = buckets.get(completionKey);
+      if (!bucket) continue;
+      bucket.completedOnDate += 1;
+      if (cycle.isFirstPass) bucket.firstPassOnDate += 1;
+      if (cycle.cycleMs !== null) {
+        bucket.cycleMsSumOnDate += cycle.cycleMs;
+        bucket.completedWithCycleOnDate += 1;
+      }
     }
   }
 

@@ -101,7 +101,7 @@ export function aggregateLeadershipBranchMetrics(input: {
   descendantIds: string[];
   persons: Person[];
   deliveryRisk: DeliveryRiskItem[];
-  /** Required for canonical Efficiency (same params as Performance team KPI). */
+  /** Reporting period used by canonical cycle metrics. */
   params: ReportParams;
 }): LeadershipBranchMetrics {
   const personById = new Map(input.persons.map((p) => [p.id, p]));
@@ -163,8 +163,9 @@ export function aggregateLeadershipBranchMetrics(input: {
     attentionWatch,
     firstPassPercent,
     completedCount: kpi.completedCount,
-    backflowCount: kpi.backflowCount,
-    efficiencyIndex: kpi.efficiencyIndex,
+    backflowEventCount: kpi.backflowEventCount,
+    reworkedCycleCount: kpi.reworkedCycleCount,
+    throughputCount: kpi.throughputCount ?? kpi.completedCount,
     capacity,
     awayNow,
     awaySoon,

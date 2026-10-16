@@ -1,11 +1,11 @@
 export const performanceHelp = {
-  efficiency:
-    "Overall performance score based on completion, first pass, cycle time and backflows.",
+  throughput:
+    "Successful completion cycles in the selected reporting period. Raw count is not a health or performance score.",
   firstPass:
     "Share of completed work accepted without returning to an earlier workflow stage.",
   completed: "Work completed within the selected reporting period.",
   backflows:
-    "Completed work that returned to an earlier workflow stage.",
+    "Qualifying review or QA returns during the selected period. Multiple returns in one cycle are counted separately.",
   teamAttention:
     "People with workload, task-health or availability signals that may need attention.",
   teamTrends:

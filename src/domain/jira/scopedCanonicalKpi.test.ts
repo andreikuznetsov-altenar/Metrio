@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { buildCanonicalKpiForPersonScope } from "./scopedCanonicalKpi";
-import { buildKpiFromIssues, getEfficiencyScoreBreakdown } from "./kpi";
+import { buildKpiFromIssues } from "./kpi";
 import type { AuditIssue, ReportParams } from "./types";
 import type { Person } from "../people/types";
 import { testWorkload } from "../testFixtures";
@@ -75,7 +75,7 @@ function uxDoneFast(key: string): AuditIssue {
         isBackflow: false,
         isHandoff: false,
         isReturnToTeam: false,
-        excludeFromEfficiencyBackflow: false,
+        excludeFromBackflow: false,
       },
       {
         eventType: "Status",
@@ -87,7 +87,7 @@ function uxDoneFast(key: string): AuditIssue {
         isBackflow: false,
         isHandoff: false,
         isReturnToTeam: false,
-        excludeFromEfficiencyBackflow: false,
+        excludeFromBackflow: false,
       },
       {
         eventType: "Status",
@@ -99,7 +99,7 @@ function uxDoneFast(key: string): AuditIssue {
         isBackflow: false,
         isHandoff: false,
         isReturnToTeam: false,
-        excludeFromEfficiencyBackflow: false,
+        excludeFromBackflow: false,
       },
     ],
   });
@@ -126,7 +126,7 @@ function uxDoneSlow(key: string): AuditIssue {
 }
 
 describe("buildCanonicalKpiForPersonScope", () => {
-  it("A. same underlying team as regular scope vs leadership branch → same Efficiency", () => {
+  it("A. same underlying team as regular scope vs leadership branch → same canonical outcomes", () => {
     const alice = personWithIssues("alice", [withRange(uxHappyPath)]);
     const bob = personWithIssues("bob", [withRange({ ...uxHappyPath, issueKey: "UX-10" })]);
     const team = [alice, bob];
@@ -145,12 +145,14 @@ describe("buildCanonicalKpiForPersonScope", () => {
       PARAMS,
     );
 
-    expect(asTeam.efficiencyIndex).toBe(direct.efficiencyIndex);
-    expect(asBranch.efficiencyIndex).toBe(direct.efficiencyIndex);
-    expect(asBranch.completedCount).toBe(direct.completedCount);
+    expect(asTeam.firstPassAcceptedCount).toBe(direct.firstPassAcceptedCount);
+    for (const key of ["completedCount", "reworkedCycleCount", "backflowEventCount"] as const) {
+      expect(asTeam[key]).toBe(direct[key]);
+      expect(asBranch[key]).toBe(direct[key]);
+    }
   });
 
-  it("B. speed score materially affects branch Efficiency", () => {
+  it("B. faster work yields a lower canonical median execution time (no composite score)", () => {
     const fast = buildCanonicalKpiForPersonScope({
       persons: [personWithIssues("a", [withRange(uxDoneFast("UX-F1"))])],
       params: PARAMS,
@@ -159,19 +161,13 @@ describe("buildCanonicalKpiForPersonScope", () => {
       persons: [personWithIssues("a", [withRange(uxDoneSlow("UX-S1"))])],
       params: PARAMS,
     });
-    const fastBreakdown = getEfficiencyScoreBreakdown({
-      ...fast,
-      targetReviewDays: PARAMS.targetReviewDays,
-    });
-    const slowBreakdown = getEfficiencyScoreBreakdown({
-      ...slow,
-      targetReviewDays: PARAMS.targetReviewDays,
-    });
-    expect(fastBreakdown.speedScore).toBeGreaterThan(slowBreakdown.speedScore);
-    expect(fast.efficiencyIndex).toBeGreaterThan(slow.efficiencyIndex);
+    expect(fast.medianExecutionMs).not.toBeNull();
+    expect(slow.medianExecutionMs).not.toBeNull();
+    expect(fast.medianExecutionMs!).toBeLessThan(slow.medianExecutionMs!);
+    expect(fast).not.toHaveProperty("efficiencyIndex");
   });
 
-  it("C. same backflowCount but different completedCount → rate penalty", () => {
+  it("C. same reworked cycles but more completed cycles → lower rework rate", () => {
     const oneDone = buildCanonicalKpiForPersonScope({
       persons: [personWithIssues("a", [withRange(uxBackflowCycle)])],
       params: PARAMS,
@@ -185,17 +181,10 @@ describe("buildCanonicalKpiForPersonScope", () => {
       ],
       params: PARAMS,
     });
-    expect(oneDone.backflowCount).toBe(twoDone.backflowCount);
+    expect(oneDone.reworkedCycleCount).toBe(twoDone.reworkedCycleCount);
     expect(twoDone.completedCount).toBeGreaterThan(oneDone.completedCount);
-    const onePen = getEfficiencyScoreBreakdown({
-      ...oneDone,
-      targetReviewDays: PARAMS.targetReviewDays,
-    }).backflowPenalty;
-    const twoPen = getEfficiencyScoreBreakdown({
-      ...twoDone,
-      targetReviewDays: PARAMS.targetReviewDays,
-    }).backflowPenalty;
-    expect(onePen).toBeGreaterThan(twoPen);
+    expect(twoDone.reworkRatePercent!).toBeLessThan(oneDone.reworkRatePercent!);
+    expect(oneDone).not.toHaveProperty("backflowCount");
   });
 
   it("D. historical reassignment uses attributed issues (not ownedIssues only)", () => {
@@ -241,7 +230,7 @@ describe("buildCanonicalKpiForPersonScope", () => {
       params: PARAMS,
     });
     const direct = buildKpiFromIssues([ux, agtc], {}, PARAMS);
-    expect(kpi.efficiencyIndex).toBe(direct.efficiencyIndex);
+    expect(kpi.firstPassAcceptedCount).toBe(direct.firstPassAcceptedCount);
     expect(kpi.completedCount).toBe(direct.completedCount);
   });
 
@@ -272,7 +261,8 @@ describe("buildCanonicalKpiForPersonScope", () => {
     );
     expect(kpiA.completedCount).toBe(2);
     expect(kpiB.completedCount).toBeGreaterThan(0);
-    expect(overall.efficiencyIndex).toBe(directOverall.efficiencyIndex);
+    expect(overall.reworkedCycleCount).toBe(directOverall.reworkedCycleCount);
+    expect(overall.backflowEventCount).toBe(directOverall.backflowEventCount);
     expect(overall.completedCount).toBe(
       kpiA.completedCount + kpiB.completedCount,
     );

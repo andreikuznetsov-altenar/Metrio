@@ -88,7 +88,7 @@ export interface TimeOffEntry {
 
 export interface PersonPerformanceDetail {
   personId: string;
-  efficiency: string;
+  throughput: string;
   firstPass: string;
   completed: string;
   workload: string;
@@ -100,7 +100,7 @@ export interface PersonDetailSnapshot {
   personName?: string;
   availability: string;
   workload: string;
-  efficiency: string;
+  throughput: string;
   firstPass: string;
   completed: string;
   backflows: string;
@@ -236,7 +236,7 @@ export interface TeamPeopleRow {
   personId: string;
   personName: string;
   role: string;
-  efficiency: string;
+  throughput: string;
   workload: string;
   availability: string;
   /** @deprecated use attentionSeverityLabel + attentionIssueKey + attentionReason */

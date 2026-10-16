@@ -47,7 +47,7 @@ export const TREND_METRICS: Record<TrendMetricId, TrendMetricDescriptor> = {
     id: 'backflows',
     aggregation: 'sum',
     favorableDirection: 'down',
-    label: 'Backflows',
+    label: 'Backflow events',
   },
   firstPass: {
     id: 'firstPass',
@@ -59,7 +59,7 @@ export const TREND_METRICS: Record<TrendMetricId, TrendMetricDescriptor> = {
     id: 'avgCycle',
     aggregation: 'weighted_average',
     favorableDirection: 'down',
-    label: 'Avg cycle',
+    label: 'Cycle time',
   },
   problematic: {
     id: 'problematic',
@@ -437,8 +437,8 @@ export function compareWeightedAvgCycleTrend(
 export const TREND_METRIC_TOOLTIPS: Record<string, string> = {
   'First Pass':
     'Share of completed work that reached completion without a qualifying review backflow.',
-  'Avg cycle':
-    'Average end-to-end cycle duration for work completed in the selected period.',
-  Backflows: 'Qualifying backward status transitions during the period.',
+  'Cycle time':
+    'End-to-end cycle duration for work completed in the selected period.',
+  'Backflow events': 'Qualifying backward status transitions during the period.',
   Completed: 'Tasks completed during the period.',
 };

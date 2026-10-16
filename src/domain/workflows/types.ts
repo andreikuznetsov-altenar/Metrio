@@ -23,8 +23,6 @@ export type CanonicalStage =
  */
 export type AssigneeEffortMode = 'hands_on' | 'queued' | 'reserve' | 'external_wait' | 'none';
 
-export type WorkflowEfficiencyModel = 'ux' | 'wskins' | 'none';
-
 export interface ResolvedWorkflowStage {
   canonicalStage: CanonicalStage;
   statusName: string;
@@ -56,7 +54,6 @@ export interface WorkflowTransitionRule {
 export interface WorkflowProfile {
   id: string;
   label: string;
-  efficiencyModel: WorkflowEfficiencyModel;
   stages: Record<CanonicalStage, ResolvedWorkflowStage>;
   statusToCanonical: Record<string, CanonicalStage>;
   transitionRules: WorkflowTransitionRule[];
@@ -87,6 +84,7 @@ export interface ProfileContributorCycle {
   startedAt: string;
   completedAt: string | null;
   hasBackflow: boolean;
+  backflowEventCount?: number;
   isFirstPass: boolean;
   progressToReviewMs: number | null;
   reviewToDoneMs: number | null;
@@ -95,19 +93,13 @@ export interface ProfileContributorCycle {
   activeCapacityMs: number;
   /** Execution time overlapping the report window — used for monthly capacity load. */
   activeCapacityMsInPeriod: number;
+  /** Canonical owner of the largest hands-on segment, falling back to owner at completion/start. */
+  ownerCanonical?: string;
+  startedOwnerCanonical?: string;
+  executionMsByOwner?: Record<string, number>;
+  reviewMs?: number;
+  waitingMs?: number;
+  holdMs?: number;
+  reworkMs?: number;
 }
 
-export interface WorkflowKpiTotals {
-  startedCount: number;
-  reviewSubmittedCount: number;
-  completedCount: number;
-  firstPassAcceptedCount: number;
-  holdCount: number;
-  backflowCount: number;
-  avgProgressToReviewMs: number | null;
-  avgReviewToDoneMs: number | null;
-  avgProgressToHoldMs: number | null;
-  avgTodoToApprovedMs: number | null;
-  efficiencyIndex: number;
-  profileBreakdown: Record<string, { completedCount: number; efficiencyIndex: number }>;
-}

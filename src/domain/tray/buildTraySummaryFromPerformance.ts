@@ -1,6 +1,6 @@
 import type { DeliveryRiskRow, MetricCardData, TeamPerformanceSnapshot } from "../performance";
 import type { ScopeHealthSummary } from "../home/executiveDashboardModel";
-import { canonicalTeamEfficiencyIndexValue } from "../home/buildDashboardKpis";
+import { canonicalTeamThroughputValue } from "../home/buildDashboardKpis";
 import { buildScopeHealthSummary } from "../home/executiveDashboardModel";
 import type { HomeRoleVariant } from "../home/homeTypes";
 import { parseActiveJiraCount } from "../home/dashboardContextSummary";
@@ -17,7 +17,7 @@ export interface TrayPerformanceSummaryInput {
   homeRole: HomeRoleVariant;
   teamSnapshot: TeamPerformanceSnapshot | null;
   employeeActiveSummaryValue?: string;
-  /** Person-level metric cards (same source as IC Dashboard / Performance Efficiency). */
+  /** Person-level metric cards (same source as IC Dashboard / Performance Throughput). */
   employeeMetrics?: readonly MetricCardData[] | null;
   deliveryRisk: DeliveryRiskRow[];
   scopeHealthEvidence: Parameters<typeof buildScopeHealthSummary>[1];
@@ -46,11 +46,11 @@ export function scopeHealthForTray(input: TrayPerformanceSummaryInput): ScopeHea
   return buildScopeHealthSummary(input.homeRole, input.scopeHealthEvidence);
 }
 
-const NUMERIC_INDEX = /^\d+(?:\.\d+)?%$/;
+const NUMERIC_OUTCOME = /^\d+(?:\.\d+)?$/;
 
-/** Tray indexes are always numeric percentages; anything else renders as an em dash. */
+/** Tray throughput is a raw completion count; anything else renders as an em dash. */
 function numericIndexOrDash(value: string): string {
-  return NUMERIC_INDEX.test(value.trim()) ? value.trim() : "—";
+  return NUMERIC_OUTCOME.test(value.trim()) ? value.trim() : "—";
 }
 
 function trayIndexValue(input: TrayPerformanceSummaryInput): string {
@@ -58,7 +58,7 @@ function trayIndexValue(input: TrayPerformanceSummaryInput): string {
     trayRoleFromHome(input.homeRole) === "employee"
       ? (input.employeeMetrics ?? input.teamSnapshot?.summary ?? [])
       : (input.teamSnapshot?.summary ?? []);
-  return numericIndexOrDash(canonicalTeamEfficiencyIndexValue(summary));
+  return numericIndexOrDash(canonicalTeamThroughputValue(summary));
 }
 
 export function buildTraySummaryFromPerformance(

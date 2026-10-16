@@ -3,6 +3,7 @@ import type { TeamSnapshot } from '../people/types';
 import type { AuditReportData } from '../jira/types';
 import { getLocalDateKey } from '../periods/dateRange';
 import { countDailyFlowOnDate } from '../periods/issuePeriodMetrics';
+import { collectUniqueTeamIssues } from '../jira/uniqueIssues';
 import { getRetentionCutoffKey, pruneSnapshotsBeforeDate } from '../history/historicalFlow';
 import type {
   DailyPersonSnapshot,
@@ -81,17 +82,17 @@ function migrateV2ToV3(file: KpiSnapshotFile): KpiSnapshotFile {
 }
 
 /**
- * Pre-v4 snapshots contain derived workflow/workload values that cannot be
+ * Pre-v5 snapshots contain derived workflow/workload values that cannot be
  * recomputed safely without the raw Jira history, so they are invalidated.
  */
 export function migrateKpiSnapshotFile(
   raw: Partial<KpiSnapshotFile> & { schemaVersion?: number },
 ): KpiSnapshotFile {
   const version = raw.schemaVersion ?? 1;
-  // Pre-v4 files contain workload/current-state and flow values derived with
-  // legacy raw-status semantics. There is no raw Jira history in this file
-  // from which they can be repaired, so invalidate only this derived cache.
-  if (version < 4) {
+  // Pre-v5 flow values mix last-completion issue counting, mean durations and
+  // ambiguous "backflow" semantics. Raw Jira history is not stored here, so
+  // invalidate only this derived cache and let historical bootstrap rebuild it.
+  if (version < 5) {
     return { ...EMPTY_KPI_SNAPSHOT_FILE };
   }
   const personSnapshots = (raw.personSnapshots || []).map((snapshot) =>
@@ -164,25 +165,19 @@ export function recordDailySnapshots(
   const next = migrateKpiSnapshotFile(file);
   const params = reportData.params;
 
-  let teamFlow = {
-    completedOnDate: 0,
-    backflowsOnDate: 0,
-    firstPassOnDate: 0,
-    cycleMsSumOnDate: 0,
-    completedWithCycleOnDate: 0,
-  };
+  const teamFlow = countDailyFlowOnDate(
+    collectUniqueTeamIssues(snapshot.persons),
+    date,
+    params,
+  );
 
   for (const person of snapshot.persons) {
-    const dailyFlow = countDailyFlowOnDate(person.issues, date, params);
-    teamFlow = {
-      completedOnDate: teamFlow.completedOnDate + dailyFlow.completedOnDate,
-      backflowsOnDate: teamFlow.backflowsOnDate + dailyFlow.backflowsOnDate,
-      firstPassOnDate: teamFlow.firstPassOnDate + dailyFlow.firstPassOnDate,
-      cycleMsSumOnDate: teamFlow.cycleMsSumOnDate + dailyFlow.cycleMsSumOnDate,
-      completedWithCycleOnDate:
-        teamFlow.completedWithCycleOnDate + dailyFlow.completedWithCycleOnDate,
-    };
-
+    const dailyFlow = countDailyFlowOnDate(
+      person.issues,
+      date,
+      params,
+      person.jira?.canonicalKey,
+    );
     upsertPersonSnapshot(next, {
       date,
       personId: person.id,

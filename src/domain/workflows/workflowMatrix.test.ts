@@ -36,7 +36,7 @@ function statusEvent(from: string, to: string, at: string): IssueEvent {
     isBackflow: false,
     isHandoff: false,
     isReturnToTeam: false,
-    excludeFromEfficiencyBackflow: false,
+    excludeFromBackflow: false,
   };
 }
 

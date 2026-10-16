@@ -17,16 +17,13 @@ export function getEmployeePerformanceSnapshot(
 ): EmployeePerformanceSnapshot {
   const seed = hash(personId) + refreshToken;
   const rangeBias = dateRange === "7d" ? -1 : dateRange === "3m" ? 2 : 0;
-  const targetBias =
-    reviewTarget === "personal" ? 1 : reviewTarget === "quarter" ? -1 : 0;
+  void reviewTarget;
 
   const metrics: MetricCardData[] = [
     {
-      label: "Efficiency",
-      value: `${82 + (seed % 10) + targetBias}%`,
-      status: "Personal pace",
-      statusVariant: "accent",
-      tooltip: "Your throughput relative to your planned capacity.",
+      label: "Throughput",
+      value: `${9 + rangeBias + (seed % 4)}`,
+      tooltip: "Successful completion cycles in the selected range.",
     },
     {
       label: "First pass",
@@ -42,11 +39,11 @@ export function getEmployeePerformanceSnapshot(
       tooltip: "Items you completed in the selected range.",
     },
     {
-      label: "Backflows",
+      label: "Backflow events",
       value: `${1 + (seed % 2)}`,
       status: "Stable",
       statusVariant: "neutral",
-      tooltip: "Items returned to you for rework.",
+      tooltip: "Qualifying backward workflow transitions in the selected range.",
     },
   ];
 
@@ -100,11 +97,11 @@ export function getEmployeePerformanceSnapshot(
         sparkline: [64, 66, 67, 69, 70, 71, 73],
       },
       {
-        label: "Avg cycle",
+        label: "Cycle time",
         value: `${2 + (seed % 3)}.4d`,
       },
       {
-        label: "Backflows",
+        label: "Backflow events",
         value: `${1 + (seed % 2)}`,
         sparkline: [2, 2, 1, 2, 1, 1, 1],
       },

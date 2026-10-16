@@ -86,7 +86,7 @@ export interface ProjectCockpitModel {
     inReview: number;
     problematic: number;
     noActivity: number;
-    backflow: number;
+    backflowEvents: number;
   };
   deliverySignals: ProjectDeliverySignal[];
   kpis: MetricCardData[];

@@ -56,7 +56,7 @@ export function buildWeeklyManagerDigest(
     deliveryRisk: input.deliveryRisk,
     params,
     completedInWeek: weekFlow.completedCount,
-    backflowInWeek: weekFlow.backflowCount,
+    backflowInWeek: weekFlow.backflowEventCount,
     rules,
     now,
   });
@@ -65,11 +65,6 @@ export function buildWeeklyManagerDigest(
     currentMetrics,
   );
 
-  const avgCycleDays =
-    weekFlow.avgCycleMs !== null
-      ? (weekFlow.avgCycleMs / (24 * 60 * 60 * 1000)).toFixed(1)
-      : "—";
-
   const sections = [
     {
       id: "week",
@@ -77,8 +72,8 @@ export function buildWeeklyManagerDigest(
       lines: [
         `Completed: ${weekFlow.completedCount}`,
         `First pass: ${weekFlow.firstPassPercent}%`,
-        `Avg cycle: ${avgCycleDays} days`,
-        `Backflows: ${weekFlow.backflowCount}`,
+        `Median cycle: ${weekFlow.medianCycleMs == null ? "—" : (weekFlow.medianCycleMs / 86400000).toFixed(1)} days`,
+        `Backflow events: ${weekFlow.backflowEventCount}`,
       ],
     },
     {

@@ -27,7 +27,9 @@ export function buildPersonReportKeyIndex(persons: Person[]): Record<string, str
 
 export function firstPassPercent(person: Person): number {
   const perf = person.performance;
-  if (!perf || !perf.completedCount) return 0;
+  if (!perf) return 0;
+  if (perf.firstPassRatePercent != null) return perf.firstPassRatePercent;
+  if (!perf.completedCount) return 0;
   return Math.round((perf.firstPassAcceptedCount / perf.completedCount) * 10000) / 100;
 }
 
@@ -64,16 +66,16 @@ export function avgCycleSegments(
   const perf = person.performance;
   if (!perf) return [];
   const segments: { label: string; value: string }[] = [];
-  if (perf.avgProgressToReviewMs) {
+  if (perf.medianExecutionMs) {
     segments.push({
-      label: 'P → R',
-      value: formatDuration(perf.avgProgressToReviewMs),
+      label: 'Execution',
+      value: formatDuration(perf.medianExecutionMs),
     });
   }
-  if (perf.avgReviewToDoneMs) {
+  if (perf.medianCycleMs) {
     segments.push({
-      label: 'R → D',
-      value: formatDuration(perf.avgReviewToDoneMs),
+      label: 'Cycle',
+      value: formatDuration(perf.medianCycleMs),
     });
   }
   return segments;

@@ -14,7 +14,8 @@
  *
  * Do not import production `wskinsKpi.ts` here.
  */
-import type { AuditIssue, KpiData, ReportParams } from '../../jira/types';
+import type { AuditIssue, ReportParams } from '../../jira/types';
+import type { LegacyKpiData } from '../../legacy/legacyKpiTypes';
 import {
   legacyGetWorkingDurationMs_,
   legacyIsDateWithinRange_,
@@ -131,7 +132,7 @@ export function legacyCalculateWSkinsSubtaskKpiContribution_(
     const toStatus = normalizeStatusText_(e.toValue || '');
     const eventInRange = legacyIsDateWithinRange_(e.changedAt, params);
 
-    if (e.isBackflow && !e.excludeFromEfficiencyBackflow && eventInRange) {
+    if (e.isBackflow && !e.excludeFromBackflow && eventInRange) {
       backflowCount++;
     }
 
@@ -238,7 +239,7 @@ export function legacyCalculateWSkinsEfficiencyIndex_(data: {
 export function legacyBuildWSkinsKpiFromIssues_(
   issues: AuditIssue[],
   params: ReportParams,
-): KpiData {
+): LegacyKpiData {
   const allDurations: number[] = [];
   let startedCount = 0;
   let reviewSubmittedCount = 0;

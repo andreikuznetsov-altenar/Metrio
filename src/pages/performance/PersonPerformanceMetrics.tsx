@@ -43,8 +43,8 @@ export function PersonPerformanceMetrics({
 }
 
 export const PERSON_KPI_HELP: Record<string, string> = {
-  Efficiency: performanceHelp.efficiency,
+  Throughput: performanceHelp.throughput,
   "First pass": performanceHelp.firstPass,
   Completed: performanceHelp.completed,
-  Backflows: performanceHelp.backflows,
+  "Backflow events": performanceHelp.backflows,
 };

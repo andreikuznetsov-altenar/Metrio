@@ -33,7 +33,7 @@ export interface IssueEvent {
   isBackflow: boolean;
   isHandoff: boolean;
   isReturnToTeam: boolean;
-  excludeFromEfficiencyBackflow: boolean;
+  excludeFromBackflow: boolean;
 }
 
 export interface CycleSegment {
@@ -90,18 +90,57 @@ export interface AuditIssue {
 }
 
 export interface KpiData {
+  /** Canonical performance methodology. Persisted snapshots with another version are rebuilt. */
+  methodologyVersion?: 2;
+  /** Cycles entering contributor execution during the reporting window. */
   startedCount: number;
   reviewSubmittedCount: number;
+  /** Successful completion cycles ending during the reporting window. */
   completedCount: number;
   firstPassAcceptedCount: number;
+  /** Completed cycles that needed at least one qualifying backflow (complement of First Pass). */
+  reworkedCycleCount: number;
+  /** Qualifying backward transitions occurring during the reporting window. */
+  backflowEventCount: number;
   holdCount: number;
-  backflowCount: number;
+  firstPassRatePercent?: number | null;
+  reworkRatePercent?: number | null;
+  /** Raw successful work units completed in the selected reporting period. */
+  throughputCount?: number;
+  throughputPerWorkingDay?: number;
+  medianExecutionMs?: number | null;
+  meanExecutionMs?: number | null;
+  executionSampleCount?: number;
+  medianCycleMs?: number | null;
+  meanCycleMs?: number | null;
+  cycleSampleCount?: number;
+  medianReviewMs?: number | null;
+  meanReviewMs?: number | null;
+  reviewSampleCount?: number;
+  medianReworkMs?: number | null;
+  meanReworkMs?: number | null;
+  reworkDurationSampleCount?: number;
+  medianHoldMs?: number | null;
+  holdDurationSampleCount?: number;
+  medianWaitingMs?: number | null;
+  waitingDurationSampleCount?: number;
+  /** Profiles represented by completed cycles; durations remain inspectable by profile. */
+  profileBreakdown?: Record<string, {
+    label: string;
+    startedCount: number;
+    completedCount: number;
+    firstPassCount: number;
+    reworkedCycleCount: number;
+    backflowEventCount: number;
+    medianExecutionMs: number | null;
+    medianCycleMs: number | null;
+    sampleCount: number;
+  }>;
   avgProgressToReviewMs: number | null;
   avgReviewToDoneMs: number | null;
   avgProgressToHoldMs: number | null;
   avgTodoToApprovedMs: number | null;
   targetReviewDays: number;
-  efficiencyIndex: number;
 }
 
 export interface GroupedUserBlock {

@@ -19,8 +19,9 @@ export interface LeadershipBranchMetrics {
   attentionWatch: number;
   firstPassPercent: number;
   completedCount: number;
-  backflowCount: number;
-  efficiencyIndex: number;
+  backflowEventCount: number;
+  reworkedCycleCount: number;
+  throughputCount: number;
   capacity: BranchCapacitySummary;
   awayNow: number;
   awaySoon: number;

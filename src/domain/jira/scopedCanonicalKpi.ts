@@ -20,11 +20,11 @@ export type BuildCanonicalKpiForPersonScopeInput = {
 };
 
 /**
- * Canonical Efficiency for an arbitrary people scope.
+ * Canonical performance outcomes for an arbitrary people scope.
  *
  * Authority: `buildKpiFromIssues` → `buildWorkflowKpi` (completion / first-pass /
- * progress-to-review speed / backflow-rate). Does NOT average person-level
- * efficiencyIndex values or invent a second formula.
+ * execution / review time / rework). Sums primitive numerators and denominators;
+ * it never averages person-level rates or invents a second formula.
  */
 export function buildCanonicalKpiForPersonScope(
   input: BuildCanonicalKpiForPersonScopeInput,
@@ -39,5 +39,15 @@ export function buildCanonicalKpiForPersonScope(
   const issues =
     input.issues ?? collectUniqueTeamIssues(uniquePersons);
 
-  return buildKpiFromIssues(issues, {}, input.params);
+  const contributorCanonicals = new Set(
+    uniquePersons
+      .map((person) => person.jira?.canonicalKey)
+      .filter((key): key is string => Boolean(key)),
+  );
+  return buildKpiFromIssues(
+    issues,
+    {},
+    input.params,
+    contributorCanonicals.size > 0 ? { contributorCanonicals } : {},
+  );
 }

@@ -59,7 +59,7 @@ const snapshot: TeamSnapshot = {
               isBackflow: false,
               isHandoff: false,
               isReturnToTeam: false,
-              excludeFromEfficiencyBackflow: false,
+              excludeFromBackflow: false,
             },
           ],
         },
@@ -112,7 +112,7 @@ describe('weeklyDigest', () => {
                   isBackflow: true,
                   isHandoff: false,
                   isReturnToTeam: false,
-                  excludeFromEfficiencyBackflow: false,
+                  excludeFromBackflow: false,
                 },
               ],
             },
@@ -128,7 +128,7 @@ describe('weeklyDigest', () => {
       'Team',
       new Date('2026-03-04T12:00:00'),
     );
-    expect(digest).toContain('Backflows: 1');
+    expect(digest).toContain('Backflow events: 1');
     expect(digest).toContain('Completed: 0');
   });
 

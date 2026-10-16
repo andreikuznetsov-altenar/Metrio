@@ -40,10 +40,10 @@ describe("buildTraySummaryModel", () => {
     expect(model.trayTitle).toBe("3");
   });
 
-  it("uses role-specific index labels", () => {
-    expect(indexLabelForRole("employee")).toBe("Personal index");
-    expect(indexLabelForRole("manager")).toBe("Team index");
-    expect(indexLabelForRole("director")).toBe("Organization index");
+  it("uses the transparent Throughput label for every role", () => {
+    expect(indexLabelForRole("employee")).toBe("Throughput");
+    expect(indexLabelForRole("manager")).toBe("Throughput");
+    expect(indexLabelForRole("director")).toBe("Throughput");
   });
 });
 
@@ -90,7 +90,7 @@ describe("buildTraySummaryFromPerformance", () => {
       2,
     );
     expect(model.openTaskCount).toBe(5);
-    expect(model.indexLabel).toBe("Personal index");
+    expect(model.indexLabel).toBe("Throughput");
     expect(model.trayTitle).toBe("2");
   });
 
@@ -130,7 +130,7 @@ describe("buildTraySummaryFromPerformance", () => {
     );
     expect(model.openTaskCount).toBe(5);
     expect(model.problemTaskCount).toBe(1);
-    expect(model.indexLabel).toBe("Team index");
+    expect(model.indexLabel).toBe("Throughput");
   });
 });
 

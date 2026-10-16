@@ -1,8 +1,8 @@
 import type { AuditIssue, IssueEvent } from '../jira/types';
 import { getFullStatusEventsSorted } from './issueEvents';
 
-function isEfficiencyBackflowMarker(event: IssueEvent): boolean {
-  return event.isBackflow && !event.excludeFromEfficiencyBackflow;
+function isCountedBackflowMarker(event: IssueEvent): boolean {
+  return event.isBackflow && !event.excludeFromBackflow;
 }
 
 export interface TaskPathStage {
@@ -28,7 +28,7 @@ export function taskPathStages(issue: AuditIssue): TaskPathStage[] {
   for (const event of statusEvents) {
     const to = event.toValue?.trim();
     if (!to) continue;
-    stages.push({ status: to, isBackflow: isEfficiencyBackflowMarker(event) });
+    stages.push({ status: to, isBackflow: isCountedBackflowMarker(event) });
   }
   return stages;
 }

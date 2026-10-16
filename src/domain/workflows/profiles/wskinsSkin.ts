@@ -15,7 +15,6 @@ const downstreamWaitingOverride = {
 export const wskinsSkinWorkflowProfile = createStatusMapProfile({
   id: 'wskins_skin',
   label: 'WSkins Skin',
-  efficiencyModel: 'wskins',
   statusMap: {
     'Not started WS': 'backlog',
     'To Do': 'backlog',

@@ -85,15 +85,15 @@ function minimalTeamLayout(
     reportRange: { from: '2026-07-09', to: '2026-10-09' },
     reportRangeTitle: '9 Jul 2026 — 9 Oct 2026',
     roster: [{ personId: 'p1', name: 'Andrei Kuznetsov', jobTitle: 'Head of UX Design' }],
-    teamEfficiency: {
-      hero: { label: 'Efficiency', value: '91%', description: 'Healthy' },
+    teamThroughput: {
+      hero: { label: 'Throughput', value: '25' },
       supporting: [
         { label: 'First pass', value: '84%' },
         { label: 'Completed', value: '25' },
-        { label: 'Backflows', value: '4' },
+        { label: 'Backflow events', value: '4' },
       ],
     },
-    individualEfficiency: [],
+    individualThroughput: [],
     digestSummary: 'Selected period summary.',
     digestRecentChanges: { title: 'Recent changes', rows: [{ label: 'Completed', value: '-17' }] },
     teamTrends: [],

@@ -1,7 +1,6 @@
 import { format, parseISO } from 'date-fns';
 import { firstPassPercent, personActiveCount, personAtRiskCount, personProblematicCount, personRouteKey } from '../../domain/people/personDisplay';
 import { buildTeamDigestSections } from '../../domain/digests/weeklyDigest';
-import { getEfficiencyStatus } from '../../domain/jira/kpi';
 import type { AuditReportData } from '../../domain/jira/types';
 import { buildMyWeek } from '../../domain/personal/myWeek';
 import { buildWorkHistory } from '../../domain/personal/workHistory';
@@ -65,7 +64,7 @@ function buildTeamOverviewSections(
       : []),
   ]);
 
-  const efficiency = reportData.teamKpi.efficiencyIndex;
+  const throughput = reportData.teamKpi.throughputCount ?? reportData.teamKpi.completedCount;
   const firstPass = firstPassMetrics?.official.firstPassRatePercent ?? 0;
   const trendDays = inclusiveRangeDayCount(params.dateFrom, params.dateTo);
   const trendAnchor = new Date(`${params.dateTo}T12:00:00`);
@@ -107,10 +106,11 @@ function buildTeamOverviewSections(
       title: 'KPI overview',
       subtitle: `${snapshot.summary.available} available · ${snapshot.summary.onVacation} on vacation · ${snapshot.summary.highWorkload} high workload · ${snapshot.summary.problematic} problematic tasks`,
       keyValues: [
-        { label: 'Efficiency', value: `${efficiency} (${getEfficiencyStatus(efficiency)})` },
+        { label: 'Throughput', value: String(throughput) },
         { label: 'First pass rate', value: `${firstPass}%` },
         { label: 'Completed', value: String(reportData.teamKpi.completedCount) },
-        { label: 'Backflows', value: String(reportData.teamKpi.backflowCount) },
+        { label: 'Reworked cycles', value: String(reportData.teamKpi.reworkedCycleCount) },
+        { label: 'Backflow events', value: String(reportData.teamKpi.backflowEventCount) },
       ],
     },
     {
@@ -130,13 +130,13 @@ function buildTeamOverviewSections(
             : firstPassTrend.sufficiencyMessage || '—',
         },
         {
-          label: 'Avg cycle',
+          label: 'Cycle time',
           value: avgCycleTrend.sufficient
             ? `${avgCycleTrend.current.toFixed(1)} days (${avgCycleTrend.label})`
             : avgCycleTrend.sufficiencyMessage || '—',
         },
         {
-          label: 'Backflows',
+          label: 'Backflow events',
           value: backflowTrend.sufficient
             ? `${Math.round(backflowTrend.current)} (${backflowTrend.label})`
             : backflowTrend.sufficiencyMessage || '—',
@@ -254,11 +254,11 @@ export function buildPerformanceExportData(input: {
     sections = [
       {
         title: 'Team members',
-        rowHeaders: ['Person', 'Efficiency', 'First pass', 'Active', 'Problematic'],
+        rowHeaders: ['Person', 'Throughput', 'First pass', 'Active', 'Problematic'],
         rows: snapshot.persons.map((p) => ({
           cells: [
             p.bamboo.displayName,
-            String(p.performance?.efficiencyIndex ?? '—'),
+            String(p.performance?.throughputCount ?? p.performance?.completedCount ?? '—'),
             `${firstPassPercent(p)}%`,
             String(personActiveCount(p, reportData.params)),
             String(personProblematicCount(p, reportData.params)),
@@ -280,7 +280,7 @@ export function buildPerformanceExportData(input: {
     ];
   } else if (view === 'personal-my-week' && person) {
     const week = buildMyWeek(person, reportData.params, generatedAt);
-    const efficiency = person.performance?.efficiencyIndex ?? '—';
+    const throughput = person.performance?.throughputCount ?? person.performance?.completedCount ?? '—';
     const firstPass = firstPassPercent(person);
     sections = [
       {
@@ -290,7 +290,7 @@ export function buildPerformanceExportData(input: {
           { label: 'Currently active', value: String(week.summary.currentlyActive) },
           { label: 'At risk', value: String(week.summary.atRisk) },
           { label: 'In review', value: String(week.summary.inReview) },
-          { label: 'Backflows this week', value: String(week.summary.backflowsThisWeek) },
+          { label: 'Backflow events this week', value: String(week.summary.backflowsThisWeek) },
         ],
       },
       {
@@ -328,10 +328,11 @@ export function buildPerformanceExportData(input: {
       {
         title: 'KPI detail',
         keyValues: [
-          { label: 'Efficiency', value: String(efficiency) },
+          { label: 'Throughput', value: String(throughput) },
           { label: 'First pass', value: `${firstPass}%` },
           { label: 'Completed (range)', value: String(person.performance?.completedCount ?? 0) },
-          { label: 'Backflows (range)', value: String(person.performance?.backflowCount ?? 0) },
+          { label: 'Reworked cycles (range)', value: String(person.performance?.reworkedCycleCount ?? 0) },
+          { label: 'Backflow events (range)', value: String(person.performance?.backflowEventCount ?? 0) },
         ],
       },
     ];
@@ -381,13 +382,13 @@ export function buildPerformanceExportData(input: {
                   : '—',
               },
               {
-                label: 'Avg cycle',
+                label: 'Cycle time',
                 value: avgCycleTrend.sufficient
                   ? `${avgCycleTrend.current.toFixed(1)} days`
                   : '—',
               },
               {
-                label: 'Backflows',
+                label: 'Backflow events',
                 value: backflowTrend.sufficient
                   ? String(Math.round(backflowTrend.current))
                   : '—',

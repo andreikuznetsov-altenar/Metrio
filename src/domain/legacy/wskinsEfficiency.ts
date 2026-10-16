@@ -1,3 +1,7 @@
+/**
+ * LEGACY / PARITY ONLY. Port of WskinsAudit.gs `calculateWSkinsEfficiencyIndex_`.
+ * Not used by production metrics (Metrics Methodology V2 removed the universal score).
+ */
 export interface WskinsEfficiencyInput {
   startedCount: number;
   reviewSubmittedCount: number;

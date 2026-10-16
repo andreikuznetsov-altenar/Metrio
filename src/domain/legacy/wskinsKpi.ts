@@ -1,10 +1,14 @@
+/**
+ * LEGACY / PARITY ONLY. Port of WskinsAudit.gs KPI builders. Not used by production metrics.
+ */
 import { getWorkingDurationMs } from '../jira/dates';
 import { isDateWithinRange } from '../jira/dates';
-import type { AuditIssue, KpiData, ReportParams } from '../jira/types';
+import type { AuditIssue, ReportParams } from '../jira/types';
+import type { LegacyKpiData } from './legacyKpiTypes';
 import { calculateWskinsEfficiencyIndex } from './wskinsEfficiency';
-import { normalizeStatusKey } from './normalizeStatus';
-import { isProfileBackflow } from './profileCycles';
-import { resolveWorkflowProfile } from './resolveWorkflowProfile';
+import { normalizeStatusKey } from '../workflows/normalizeStatus';
+import { isProfileBackflow } from '../workflows/profileCycles';
+import { resolveWorkflowProfile } from '../workflows/resolveWorkflowProfile';
 
 function wskinsStatusMatches(statusValue: string, names: string[]): boolean {
   const normalized = normalizeStatusKey(statusValue);
@@ -174,7 +178,7 @@ function averageWskinsMs(items: number[]): number | null {
 export function buildWskinsKpiFromIssues(
   issues: AuditIssue[],
   params: ReportParams,
-): KpiData {
+): LegacyKpiData {
   const allDurations: number[] = [];
   let startedCount = 0;
   let reviewSubmittedCount = 0;

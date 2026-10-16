@@ -78,7 +78,7 @@ export function getPersonDetailSnapshot(personId: string): PersonDetailSnapshot 
     personId,
     availability,
     workload,
-    efficiency: `${78 + (seed % 15)}%`,
+    throughput: `${6 + (seed % 8)}`,
     firstPass: `${70 + (seed % 20)}%`,
     completed: `${12 + (seed % 8)}`,
     backflows: `${1 + (seed % 2)}`,

@@ -1,4 +1,3 @@
-import { getEfficiencyStatus } from "../jira/kpi";
 import type { ReportParams } from "../jira/types";
 import type { Person } from "../people/types";
 import type { DeliveryRiskItem } from "../radar/types";
@@ -80,7 +79,7 @@ export function buildLeadershipBranchMemberRows(input: {
         displayName: person.bamboo.displayName,
         jobTitle: person.bamboo.jobTitle,
         scopeLabel: `${ids.length} people`,
-        performanceLabel: `${getEfficiencyStatus(metrics.efficiencyIndex)} · ${metrics.firstPassPercent}% first pass`,
+        performanceLabel: `${metrics.throughputCount} completed · ${metrics.firstPassPercent}% first pass`,
         attentionLabel: attentionLabel(metrics.attentionCritical, metrics.attentionWatch),
         deliveryRiskCount: metrics.uniqueDeliveryRiskCount,
         capacityParts: capacityParts(metrics.capacity),
@@ -103,7 +102,7 @@ export function buildLeadershipBranchMemberRows(input: {
       scopeLabel: "Team member",
       performanceLabel:
         perf && firstPass !== null
-          ? `${getEfficiencyStatus(perf.efficiencyIndex)} · ${firstPass}% first pass`
+          ? `${perf.throughputCount ?? perf.completedCount} completed · ${firstPass}% first pass`
           : "—",
       attentionLabel: attentionLabel(critical, risks.length - critical),
       deliveryRiskCount: risks.length,

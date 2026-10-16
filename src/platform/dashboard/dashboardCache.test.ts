@@ -45,6 +45,13 @@ describe("dashboardCache", () => {
     ).toBeNull();
   });
 
+  it("invalidates v2 caches that still carry the legacy KPI shape (pre-V2 backflow counter and Efficiency score)", () => {
+    expect(DASHBOARD_CACHE_SCHEMA_VERSION).toBeGreaterThanOrEqual(3);
+    expect(
+      validateDashboardCache({ ...sampleFile(), schemaVersion: 2 }, lookup),
+    ).toBeNull();
+  });
+
   it("ignores account mismatch", () => {
     expect(
       validateDashboardCache(sampleFile({ selfPersonId: "other" }), lookup),

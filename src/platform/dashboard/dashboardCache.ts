@@ -2,8 +2,13 @@ import { invoke } from "@tauri-apps/api/core";
 import type { UserRole } from "../../domain/types";
 import type { PerformanceFetchResult } from "../../services/performance/performanceTypes";
 
-/** v2 invalidates snapshots derived before canonical execution/review semantics. */
-export const DASHBOARD_CACHE_SCHEMA_VERSION = 2;
+/**
+ * v2 invalidated snapshots derived before canonical execution/review semantics.
+ * v3 (Metrics V2): KpiData drops the pre-V2 ambiguous backflow counter and the Efficiency
+ * score in favour of `reworkedCycleCount` / `backflowEventCount`, and the issue-event flag is
+ * now `excludeFromBackflow`; older caches must be refetched.
+ */
+export const DASHBOARD_CACHE_SCHEMA_VERSION = 3;
 
 const VISUAL_DASHBOARD_CACHE_KEY = "metrio-visual-dashboard-cache";
 

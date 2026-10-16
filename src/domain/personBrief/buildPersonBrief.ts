@@ -122,9 +122,9 @@ export function buildPersonBrief(input: BuildPersonBriefInput): PersonBriefModel
       : undefined;
 
   const backflowKpi = workspace.performanceKpis.find(
-    (kpi) => kpi.label === "Backflows",
+    (kpi) => kpi.label === "Backflow events",
   );
-  const backflowCount = Number.parseInt(backflowKpi?.value ?? "0", 10) || 0;
+  const backflowEventCount = Number.parseInt(backflowKpi?.value ?? "0", 10) || 0;
 
   const feedbackLines = buildBriefFeedbackLines(input.surveyData);
 
@@ -148,7 +148,7 @@ export function buildPersonBrief(input: BuildPersonBriefInput): PersonBriefModel
       : undefined,
     newStarter,
     performanceKpis: workspace.performanceKpis.filter((kpi) =>
-      ["Completed", "First pass", "Backflows"].includes(kpi.label),
+      ["Completed", "First pass", "Backflow events"].includes(kpi.label),
     ),
     cycleTime: workspace.cycleTime,
     currentWork: {
@@ -160,7 +160,7 @@ export function buildPersonBrief(input: BuildPersonBriefInput): PersonBriefModel
     completedWork: extractCompletedWork(workspace),
     attention,
     backflows: {
-      count: backflowCount,
+      count: backflowEventCount,
       issueKeys: backflowIssueKeys(workspace),
     },
     feedbackLines,

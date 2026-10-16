@@ -17,7 +17,7 @@ const DAY = 86_400_000;
 const iso = (daysAgo: number) => new Date(NOW.getTime() - daysAgo * DAY).toISOString();
 
 function ev(from: string, to: string, changedAt: string): IssueEvent {
-  return { eventType: "Status", changedAt, changedBy: "U", fromValue: from, toValue: to, timeSincePreviousStatusMs: null, isBackflow: false, isHandoff: false, isReturnToTeam: false, excludeFromEfficiencyBackflow: false };
+  return { eventType: "Status", changedAt, changedBy: "U", fromValue: from, toValue: to, timeSincePreviousStatusMs: null, isBackflow: false, isHandoff: false, isReturnToTeam: false, excludeFromBackflow: false };
 }
 function issue(key: string, status: string, days: number): AuditIssue {
   return { issueKey: key, issueSummary: `Task ${key}`, issueCreated: iso(400), assigneeName: "A", projectKey: "UX", issueTypeName: "Task", contentType: "none", designImprovementType: "", epicKey: "", epicSummary: "", epicStatus: "", epicContentType: "", epicDesignImprovementType: "", events: [ev("In Progress", status, iso(days))], rangeEvents: [], currentStatus: status } as AuditIssue;

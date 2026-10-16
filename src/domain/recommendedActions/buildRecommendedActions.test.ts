@@ -17,7 +17,7 @@ const DAY = 86_400_000;
 const iso = (daysAgo: number) => new Date(NOW.getTime() - daysAgo * DAY).toISOString();
 
 function ev(from: string, to: string, changedAt: string): IssueEvent {
-  return { eventType: "Status", changedAt, changedBy: "U", fromValue: from, toValue: to, timeSincePreviousStatusMs: null, isBackflow: false, isHandoff: false, isReturnToTeam: false, excludeFromEfficiencyBackflow: false };
+  return { eventType: "Status", changedAt, changedBy: "U", fromValue: from, toValue: to, timeSincePreviousStatusMs: null, isBackflow: false, isHandoff: false, isReturnToTeam: false, excludeFromBackflow: false };
 }
 
 /** Issue currently in `status`, entered `days` ago. */

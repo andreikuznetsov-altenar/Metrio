@@ -6,14 +6,12 @@ export const analyticsDrilldownDescription: Record<AnalyticsDrilldownMetric, str
   first_pass: performanceHelp.firstPass,
   backflows: performanceHelp.backflows,
   avg_cycle:
-    "Average full cycle duration for work completed in the selected period (from team trend data).",
-  efficiency: performanceHelp.efficiency,
+    "Median elapsed business time from contributor-cycle start to successful completion.",
 };
 
 export const analyticsDrilldownTitle: Record<AnalyticsDrilldownMetric, string> = {
   completed: "Completed",
   first_pass: "First pass",
-  backflows: "Backflows",
-  avg_cycle: "Avg cycle",
-  efficiency: "Efficiency",
+  backflows: "Backflow events",
+  avg_cycle: "Median cycle time",
 };

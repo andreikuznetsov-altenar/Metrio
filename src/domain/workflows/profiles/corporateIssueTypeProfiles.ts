@@ -3,7 +3,6 @@ import { createStatusMapProfile } from '../createStatusMapProfile';
 export const agtcProviderWorkflowProfile = createStatusMapProfile({
   id: 'agtc_provider',
   label: 'AGTC Provider',
-  efficiencyModel: 'ux',
   statusMap: {
     Provider: 'backlog',
     'To Do': 'backlog',
@@ -18,7 +17,6 @@ export const agtcProviderWorkflowProfile = createStatusMapProfile({
 export const agpDevelopmentWorkflowProfile = createStatusMapProfile({
   id: 'agp_development',
   label: 'AGP Development',
-  efficiencyModel: 'ux',
   statusMap: {
     New: 'backlog',
     'Picked for Development': 'backlog',
@@ -36,7 +34,6 @@ export const agpDevelopmentWorkflowProfile = createStatusMapProfile({
 export const agpInternalWorkflowProfile = createStatusMapProfile({
   id: 'agp_internal',
   label: 'AGP Internal Discussion',
-  efficiencyModel: 'none',
   statusMap: {
     'Under discussion': 'backlog',
     'In Progress': 'active',
@@ -48,7 +45,6 @@ export const agpInternalWorkflowProfile = createStatusMapProfile({
 export const adfIncidentWorkflowProfile = createStatusMapProfile({
   id: 'adf_incident',
   label: 'ADF Incident',
-  efficiencyModel: 'ux',
   statusMap: {
     'To Do': 'backlog',
     'In Progress': 'active',
@@ -61,7 +57,6 @@ export const adfIncidentWorkflowProfile = createStatusMapProfile({
 export const prdPhasedWorkflowProfile = createStatusMapProfile({
   id: 'prd_phased',
   label: 'PRD Phased Delivery',
-  efficiencyModel: 'none',
   statusMap: {
     'Request/Idea': 'backlog',
     Open: 'backlog',
@@ -89,7 +84,6 @@ export const prdPhasedWorkflowProfile = createStatusMapProfile({
 export const prdDiscoveryWorkflowProfile = createStatusMapProfile({
   id: 'prd_discovery',
   label: 'PRD Discovery / Handover',
-  efficiencyModel: 'none',
   statusMap: {
     'Request/Idea': 'backlog',
     Postponed: 'backlog',
@@ -118,7 +112,6 @@ export const prdDiscoveryWorkflowProfile = createStatusMapProfile({
 export const prdTaskWorkflowProfile = createStatusMapProfile({
   id: 'prd_task',
   label: 'PRD Task',
-  efficiencyModel: 'none',
   statusMap: {
     Open: 'backlog',
     Analysis: 'active',
@@ -132,7 +125,6 @@ export const prdTaskWorkflowProfile = createStatusMapProfile({
 export const citDeliveryWorkflowProfile = createStatusMapProfile({
   id: 'cit_delivery',
   label: 'CIT Delivery',
-  efficiencyModel: 'none',
   statusMap: {
     Backlog: 'backlog',
     Suspended: 'hold',
@@ -149,7 +141,6 @@ export const citDeliveryWorkflowProfile = createStatusMapProfile({
 export const citPurchaseWorkflowProfile = createStatusMapProfile({
   id: 'cit_purchase',
   label: 'CIT Purchase Request',
-  efficiencyModel: 'none',
   statusMap: {
     Open: 'backlog',
     'In Progress': 'active',
@@ -165,7 +156,6 @@ export const citPurchaseWorkflowProfile = createStatusMapProfile({
 export const citSecurityPatchWorkflowProfile = createStatusMapProfile({
   id: 'cit_security_patch',
   label: 'CIT Security Patch',
-  efficiencyModel: 'none',
   statusMap: {
     Backlog: 'backlog',
     Postponed: 'backlog',

@@ -58,7 +58,7 @@ function doneIssue(key: string, completedAt: string): AuditIssue {
         isBackflow: false,
         isHandoff: false,
         isReturnToTeam: false,
-        excludeFromEfficiencyBackflow: false,
+        excludeFromBackflow: false,
       },
     ],
   };
@@ -134,7 +134,7 @@ describe('buildMyWeek', () => {
                 isBackflow: false,
                 isHandoff: false,
                 isReturnToTeam: false,
-                excludeFromEfficiencyBackflow: false,
+                excludeFromBackflow: false,
               },
               {
                 eventType: 'Status',
@@ -146,7 +146,7 @@ describe('buildMyWeek', () => {
                 isBackflow: true,
                 isHandoff: false,
                 isReturnToTeam: false,
-                excludeFromEfficiencyBackflow: false,
+                excludeFromBackflow: false,
               },
             ],
           },

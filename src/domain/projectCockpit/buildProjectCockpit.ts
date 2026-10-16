@@ -193,11 +193,11 @@ export function buildProjectCockpit(input: BuildProjectCockpitInput): ProjectCoc
   const kpis: MetricCardData[] = [
     { label: "Completed", value: String(kpi.completedCount) },
     { label: "First pass", value: `${firstPass}%` },
-    { label: "Backflows", value: String(kpi.backflowCount) },
+    { label: "Backflow events", value: String(kpi.backflowEventCount) },
     {
-      label: "Avg cycle",
-      value: kpi.avgProgressToReviewMs
-        ? formatDuration(kpi.avgProgressToReviewMs)
+      label: "Median cycle",
+      value: kpi.medianCycleMs
+        ? formatDuration(kpi.medianCycleMs)
         : "—",
     },
   ];
@@ -346,7 +346,7 @@ export function buildProjectCockpit(input: BuildProjectCockpitInput): ProjectCoc
       inReview,
       problematic,
       noActivity,
-      backflow: kpi.backflowCount,
+      backflowEvents: kpi.backflowEventCount,
     },
     deliverySignals: buildDeliverySignals(
       issues.filter((i) => activeIssueKeys.has(i.issueKey)),

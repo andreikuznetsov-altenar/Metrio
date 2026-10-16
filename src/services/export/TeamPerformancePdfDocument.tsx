@@ -66,7 +66,7 @@ function TeamReportHeader({ layout }: { layout: TeamPerformancePdfLayout }) {
 }
 
 function isContinuousTrend(label: string): boolean {
-  return label === 'First pass' || label === 'Avg cycle';
+  return label === 'First pass' || label === 'Cycle time';
 }
 
 function SmoothTrendChart({
@@ -123,7 +123,7 @@ function workloadTextStyle(label: string) {
 }
 
 export function TeamPerformancePdfDocument({ layout }: { layout: TeamPerformancePdfLayout }) {
-  const { hero, supporting } = layout.teamEfficiency;
+  const { hero, supporting } = layout.teamThroughput;
   const teamKpis = [hero, ...supporting];
 
   return (
@@ -147,7 +147,7 @@ export function TeamPerformancePdfDocument({ layout }: { layout: TeamPerformance
         </View>
 
         <View style={pdfStyles.sectionBlock} wrap={false}>
-          <Text style={pdfStyles.sectionHeading}>Team efficiency</Text>
+          <Text style={pdfStyles.sectionHeading}>Team delivery outcomes</Text>
           <View style={pdfStyles.teamKpiRow}>
             {teamKpis.map((kpi) => (
               <View key={kpi.label} style={pdfStyles.teamKpiCard} wrap={false}>
@@ -164,11 +164,11 @@ export function TeamPerformancePdfDocument({ layout }: { layout: TeamPerformance
           </View>
         </View>
 
-        {layout.individualEfficiency.length > 0 ? (
+        {layout.individualThroughput.length > 0 ? (
           <View style={pdfStyles.sectionBlock}>
-            <Text style={pdfStyles.sectionHeading}>Individual efficiency</Text>
+            <Text style={pdfStyles.sectionHeading}>Individual delivery outcomes</Text>
             <View style={pdfStyles.individualGrid}>
-              {layout.individualEfficiency.map((card) => (
+              {layout.individualThroughput.map((card) => (
                 <View key={card.personId} style={pdfStyles.individualCard} wrap={false}>
                   <View style={pdfStyles.individualCardHeader}>
                     <PersonAvatar name={card.name} avatarDataUrl={card.avatarDataUrl} />
@@ -177,9 +177,9 @@ export function TeamPerformancePdfDocument({ layout }: { layout: TeamPerformance
                       <Text style={pdfStyles.rosterRole}>{card.jobTitle}</Text>
                     </View>
                   </View>
-                  <View style={pdfStyles.individualEfficiencyRow}>
-                    <Text style={pdfStyles.individualEfficiencyValue}>{card.efficiency}</Text>
-                    <Text style={pdfStyles.individualEfficiencyCaption}>Efficiency</Text>
+                  <View style={pdfStyles.individualThroughputRow}>
+                    <Text style={pdfStyles.individualThroughputValue}>{card.throughput}</Text>
+                    <Text style={pdfStyles.individualThroughputCaption}>Throughput</Text>
                   </View>
                   <View style={pdfStyles.individualMetricsRow}>
                     <View style={pdfStyles.individualMetricRow}>
@@ -191,7 +191,7 @@ export function TeamPerformancePdfDocument({ layout }: { layout: TeamPerformance
                       <Text style={pdfStyles.individualMetricValue}>{card.completed}</Text>
                     </View>
                     <View style={pdfStyles.individualMetricRow}>
-                      <Text style={pdfStyles.individualMetricLabel}>Backflows</Text>
+                      <Text style={pdfStyles.individualMetricLabel}>Backflow events</Text>
                       <Text style={pdfStyles.individualMetricValue}>{card.backflows}</Text>
                     </View>
                   </View>

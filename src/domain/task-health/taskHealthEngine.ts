@@ -37,7 +37,7 @@ export interface TaskHealthInput {
 export interface TaskHealthResult {
   status: TaskHealthStatus;
   reasons: string[];
-  backflowCount: number;
+  backflowEventCount: number;
   isFirstPass: boolean | null;
   isCompleted: boolean;
   currentStageAgeMs: number | null;
@@ -98,7 +98,7 @@ export function classifyTaskHealth(input: TaskHealthInput): TaskHealthResult {
   const attentionEligible = workflowStage.countsAsAttentionEligible;
 
   const completedCycles = extractProfileContributorCycles(issue, workflowProfile, params);
-  const backflowCount = (issue.events || []).filter(
+  const backflowEventCount = (issue.events || []).filter(
     (e) =>
       e.eventType === 'Status' &&
       isProfileBackflow(workflowProfile, e.fromValue, e.toValue, e),
@@ -119,7 +119,7 @@ export function classifyTaskHealth(input: TaskHealthInput): TaskHealthResult {
             ? 'Unmapped workflow status — not classified'
             : 'Non-execution stage — not attention eligible',
         ],
-        backflowCount,
+        backflowEventCount,
         isFirstPass,
         isCompleted: false,
         currentStageAgeMs,
@@ -132,7 +132,7 @@ export function classifyTaskHealth(input: TaskHealthInput): TaskHealthResult {
       return {
         status: 'no_activity',
         reasons,
-        backflowCount,
+        backflowEventCount,
         isFirstPass,
         isCompleted: false,
         currentStageAgeMs,
@@ -145,7 +145,7 @@ export function classifyTaskHealth(input: TaskHealthInput): TaskHealthResult {
       return {
         status: 'problematic',
         reasons,
-        backflowCount,
+        backflowEventCount,
         isFirstPass,
         isCompleted: false,
         currentStageAgeMs,
@@ -153,12 +153,12 @@ export function classifyTaskHealth(input: TaskHealthInput): TaskHealthResult {
       };
     }
 
-    if (backflowCount > 0) {
+    if (backflowEventCount > 0) {
       reasons.push('Backflow detected');
       return {
         status: 'problematic',
         reasons,
-        backflowCount,
+        backflowEventCount,
         isFirstPass,
         isCompleted: false,
         currentStageAgeMs,
@@ -177,7 +177,7 @@ export function classifyTaskHealth(input: TaskHealthInput): TaskHealthResult {
           return {
             status: 'problematic',
             reasons,
-            backflowCount,
+            backflowEventCount,
             isFirstPass,
             isCompleted: false,
             currentStageAgeMs,
@@ -189,7 +189,7 @@ export function classifyTaskHealth(input: TaskHealthInput): TaskHealthResult {
           return {
             status: 'at_risk',
             reasons,
-            backflowCount,
+            backflowEventCount,
             isFirstPass,
             isCompleted: false,
             currentStageAgeMs,
@@ -202,7 +202,7 @@ export function classifyTaskHealth(input: TaskHealthInput): TaskHealthResult {
     return {
       status: 'stable',
       reasons: ['Progressing normally'],
-      backflowCount,
+      backflowEventCount,
       isFirstPass,
       isCompleted: false,
       currentStageAgeMs,
@@ -211,14 +211,14 @@ export function classifyTaskHealth(input: TaskHealthInput): TaskHealthResult {
   }
 
   const progressMs = lastCycle?.progressToReviewMs ?? null;
-  const hadIssues = backflowCount > 0 || (progressMs !== null && progressMs > targetMs);
+  const hadIssues = backflowEventCount > 0 || (progressMs !== null && progressMs > targetMs);
 
   if (hadIssues) {
     reasons.push('Completed with backflow or target exceeded');
     return {
       status: 'done_with_issues',
       reasons,
-      backflowCount,
+      backflowEventCount,
       isFirstPass,
       isCompleted: true,
       currentStageAgeMs,
@@ -231,7 +231,7 @@ export function classifyTaskHealth(input: TaskHealthInput): TaskHealthResult {
     return {
       status: 'successful',
       reasons,
-      backflowCount,
+      backflowEventCount,
       isFirstPass,
       isCompleted: true,
       currentStageAgeMs,
@@ -242,7 +242,7 @@ export function classifyTaskHealth(input: TaskHealthInput): TaskHealthResult {
   return {
     status: 'done_with_issues',
     reasons: ['Completed but not first pass'],
-    backflowCount,
+    backflowEventCount,
     isFirstPass,
     isCompleted: true,
     currentStageAgeMs,

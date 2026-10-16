@@ -88,7 +88,7 @@ function activeIssue(
             isBackflow: false,
             isHandoff: false,
             isReturnToTeam: false,
-            excludeFromEfficiencyBackflow: false,
+            excludeFromBackflow: false,
           },
         ]
       : [],
@@ -112,7 +112,7 @@ function longHistoryIssue(key: string, summary: string, ownerCanonical: string):
     isBackflow: false,
     isHandoff: false,
     isReturnToTeam: false,
-    excludeFromEfficiencyBackflow: false,
+    excludeFromBackflow: false,
   });
   const path = ["To Do", "Draft", "In Review", "Approved", "In Progress", "On Hold", "In Progress", "In Review"];
   const events = path.slice(1).flatMap((to, i) => {
@@ -212,10 +212,10 @@ function visualPerson(
     performance:
       options.performance ??
       testKpi({
-        efficiencyIndex: 82,
         completedCount: 6,
         firstPassAcceptedCount: 5,
-        backflowCount: 1,
+        reworkedCycleCount: 1,
+        backflowEventCount: 1,
         avgProgressToReviewMs: 2.5 * 24 * 60 * 60 * 1000,
       }),
     issues,
@@ -368,10 +368,10 @@ function buildTeamPersons(): Person[] {
       jobTitle: "Design Lead",
       department: "Design",
       performance: testKpi({
-        efficiencyIndex: 88,
         completedCount: 4,
         firstPassAcceptedCount: 4,
-        backflowCount: 0,
+        reworkedCycleCount: 0,
+        backflowEventCount: 0,
       }),
     }),
     visualPerson("person-alex", {
@@ -489,10 +489,10 @@ function buildKpiHistory(
     const dailyReport: AuditReportData = {
       ...reportData,
       teamKpi: testKpi({
-        efficiencyIndex: 64 + (sequence % 5),
         completedCount: Math.round(24 + factor * 3),
         firstPassAcceptedCount: Math.round(22 + factor * 2.5),
-        backflowCount: 1 + (sequence % 3),
+        reworkedCycleCount: 1 + (sequence % 3),
+        backflowEventCount: 1 + (sequence % 3),
         avgProgressToReviewMs: (3.2 + (sequence % 4) * 0.3) * 24 * 60 * 60 * 1000,
       }),
     };
@@ -592,10 +592,10 @@ export function buildVisualPerformanceFetchResult(
   };
 
   const teamKpi = testKpi({
-    efficiencyIndex: 67,
     completedCount: 30,
     firstPassAcceptedCount: 28,
-    backflowCount: 2,
+    reworkedCycleCount: 2,
+    backflowEventCount: 2,
     avgProgressToReviewMs: 3.8 * 24 * 60 * 60 * 1000,
   });
 

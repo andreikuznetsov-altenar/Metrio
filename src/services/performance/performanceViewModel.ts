@@ -1,6 +1,5 @@
 import { format, parseISO } from "date-fns";
 import type { BadgeVariant } from "../../components/Badge/Badge";
-import { getEfficiencyStatus } from "../../domain/jira/kpi";
 import { formatDuration } from "../../domain/jira/dates";
 import type { AuditReportData, ReportParams } from "../../domain/jira/types";
 import type { Person } from "../../domain/people/types";
@@ -89,13 +88,6 @@ import {
   type PerformanceDateRange,
 } from "../../domain/performance/performanceDateRange";
 import { appNow } from "../../platform/appClock";
-function efficiencyStatusVariant(score: number): BadgeVariant {
-  const status = getEfficiencyStatus(score);
-  if (status === "Excellent" || status === "Healthy") return "success";
-  if (status === "Watch") return "warning";
-  return "danger";
-}
-
 function sparklineValues(points: { value: number }[]): number[] {
   return sparklineValuesFromPoints(points);
 }
@@ -219,10 +211,7 @@ export function buildPerformanceViewModels(
   );
 
   const teamKpi = reportData.teamKpi;
-  const firstPassRate =
-    teamKpi.completedCount > 0
-      ? Math.round((teamKpi.firstPassAcceptedCount / teamKpi.completedCount) * 100)
-      : 0;
+  const firstPassRate = teamKpi.firstPassRatePercent ?? 0;
 
   const trendAnchor = displayRange
     ? new Date(`${displayRange.to}T12:00:00`)
@@ -263,10 +252,10 @@ export function buildPerformanceViewModels(
 
   const summary: MetricCardData[] = [
     {
-      label: "Efficiency",
-      value: `${teamKpi.efficiencyIndex}%`,
-      status: getEfficiencyStatus(teamKpi.efficiencyIndex),
-      statusVariant: efficiencyStatusVariant(teamKpi.efficiencyIndex),
+      label: "Throughput",
+      value: String(teamKpi.throughputCount ?? teamKpi.completedCount),
+      status: `${teamKpi.throughputPerWorkingDay ?? 0} per working day`,
+      statusVariant: "neutral",
     },
     {
       label: "First pass",
@@ -279,8 +268,8 @@ export function buildPerformanceViewModels(
       ...metricContextFromComparison(completedTrend, dateRangeKey, trendContextLabel),
     },
     {
-      label: "Backflows",
-      value: String(teamKpi.backflowCount),
+      label: "Backflow events",
+      value: String(teamKpi.backflowEventCount),
       ...metricContextFromComparison(backflowTrend, dateRangeKey, trendContextLabel),
     },
   ];
@@ -359,10 +348,10 @@ export function buildPerformanceViewModels(
       trendMetricKind: "percent",
       sufficiency: completedSufficiency,
     }),
-    buildTrendCardData("Avg cycle", avgCycleTrend, {
+    buildTrendCardData("Cycle time", avgCycleTrend, {
       sparkline: sparkAvgCycle,
       chartSeries: chartSeriesForTrend(
-          "Avg cycle",
+          "Cycle time",
           avgCycleChartPoints,
           displayRange,
           teamTrendIssues,
@@ -371,10 +360,10 @@ export function buildPerformanceViewModels(
       trendMetricKind: "duration",
       sufficiency: completedSufficiency,
     }),
-    buildTrendCardData("Backflows", backflowTrend, {
+    buildTrendCardData("Backflow events", backflowTrend, {
       sparkline: sparkBackflows,
       chartSeries: chartSeriesForTrend(
-          "Backflows",
+          "Backflow events",
           backflowChartPoints,
           displayRange,
           teamTrendIssues,
@@ -421,8 +410,8 @@ export function buildPerformanceViewModels(
   for (const person of teamSnapshot.persons) {
     personDetails[person.id] = {
       personId: person.id,
-      efficiency: person.performance
-        ? `${person.performance.efficiencyIndex}%`
+      throughput: person.performance
+        ? String(person.performance.throughputCount ?? person.performance.completedCount)
         : "—",
       firstPass: `${firstPassPercent(person)}%`,
       completed: person.performance
@@ -468,8 +457,8 @@ export function buildPerformanceViewModels(
       personId: person.id,
       personName: person.bamboo.displayName,
       role: person.bamboo.jobTitle || "—",
-      efficiency: person.performance
-        ? `${person.performance.efficiencyIndex}%`
+      throughput: person.performance
+        ? String(person.performance.throughputCount ?? person.performance.completedCount)
         : "—",
       workload: formatWorkloadLabel(person.workload?.level, {
         workload: currentWorkloadForPerson(person),
@@ -766,10 +755,10 @@ function buildPersonDetailSnapshot(
       workload: currentWorkloadForPerson(person),
       availability: person.availability,
     }),
-    efficiency: perf ? `${perf.efficiencyIndex}%` : "—",
+    throughput: perf ? String(perf.throughputCount ?? perf.completedCount) : "—",
     firstPass: `${firstPassPercent(person)}%`,
     completed: perf ? String(perf.completedCount) : "0",
-    backflows: perf ? String(perf.backflowCount) : "0",
+    backflows: perf ? String(perf.backflowEventCount) : "0",
     attention: activeIssues
       .map((issue) => {
         const item = classifyIssueAttention(issue, params, now, operationalRules);

@@ -41,7 +41,7 @@ const issue: AuditIssue = {
       isBackflow: false,
       isHandoff: false,
       isReturnToTeam: false,
-      excludeFromEfficiencyBackflow: false,
+      excludeFromBackflow: false,
     },
   ],
   rangeEvents: [],
@@ -117,7 +117,7 @@ describe('TaskJourneyDrawer', () => {
       isBackflow,
       isHandoff: false,
       isReturnToTeam: false,
-      excludeFromEfficiencyBackflow: false,
+      excludeFromBackflow: false,
     });
     const looping: AuditIssue = {
       ...issue,

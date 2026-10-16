@@ -45,7 +45,7 @@ function statusEvent(
     isBackflow,
     isHandoff: extra.isHandoff ?? false,
     isReturnToTeam: extra.isReturnToTeam ?? false,
-    excludeFromEfficiencyBackflow: extra.excludeFromEfficiencyBackflow ?? false,
+    excludeFromBackflow: extra.excludeFromBackflow ?? false,
   };
 }
 
@@ -60,7 +60,7 @@ function assigneeEvent(fromValue: string, toValue: string, changedAt: string): I
     isBackflow: false,
     isHandoff: true,
     isReturnToTeam: false,
-    excludeFromEfficiencyBackflow: false,
+    excludeFromBackflow: false,
   };
 }
 

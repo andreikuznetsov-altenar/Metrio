@@ -35,7 +35,7 @@ export function DashboardEmployeeWorkSummary({
 }: DashboardEmployeeWorkSummaryProps) {
   const trend =
     trends.find((item) => item.label === "Completed") ??
-    trends.find((item) => item.label === "Efficiency") ??
+    trends.find((item) => item.label === "Throughput") ??
     trends[0];
 
   return (
@@ -97,12 +97,12 @@ export function DashboardEmployeeWorkSummary({
                 <dd>{metricValue(metrics, "First pass")}</dd>
               </div>
               <div>
-                <dt>Backflows</dt>
-                <dd>{metricValue(metrics, "Backflows")}</dd>
+                <dt>Backflow events</dt>
+                <dd>{metricValue(metrics, "Backflow events")}</dd>
               </div>
               <div>
-                <dt>Avg cycle</dt>
-                <dd>{metricValue(metrics, "Avg cycle")}</dd>
+                <dt>Cycle time</dt>
+                <dd>{metricValue(metrics, "Cycle time")}</dd>
               </div>
             </dl>
           </article>

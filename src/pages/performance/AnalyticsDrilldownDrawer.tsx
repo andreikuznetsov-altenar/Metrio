@@ -8,7 +8,6 @@ import type { AnalyticsEvidence } from "../../domain/analytics/analyticsEvidence
 import {
   buildContextLine,
   completedCyclesCaption,
-  efficiencyBreakdownRows,
   formatCycleDurationShort,
   isBackflowsZeroState,
   medianCycleMs,
@@ -66,7 +65,7 @@ function OutcomeSummary({
             value: summaryLineValue(evidence, "Completed cycles"),
           },
         ]
-      : evidence.metric === "backflows" && evidence.kpi.backflowCount > 0
+      : evidence.metric === "backflows" && evidence.kpi.backflowEventCount > 0
         ? evidence.summaryLines
         : evidence.metric === "avg_cycle"
           ? evidence.summaryLines
@@ -153,11 +152,6 @@ export function AnalyticsDrilldownDrawer({
   const visibleIssues = filteredIssues.slice(0, visibleCount);
   const backflowsZero = evidence ? isBackflowsZeroState(evidence) : false;
 
-  const efficiencyPresentation = useMemo(
-    () => (evidence?.metric === "efficiency" ? efficiencyBreakdownRows(evidence) : null),
-    [evidence],
-  );
-
   const avgCycleMedian = useMemo(() => {
     if (!evidence || evidence.metric !== "avg_cycle") return null;
     const values = filteredIssues
@@ -181,7 +175,7 @@ export function AnalyticsDrilldownDrawer({
   const showOutcomeBlock =
     evidence &&
     (evidence.metric === "first_pass" ||
-      (evidence.metric === "backflows" && evidence.kpi.backflowCount > 0) ||
+      (evidence.metric === "backflows" && evidence.kpi.backflowEventCount > 0) ||
       evidence.metric === "avg_cycle");
 
   const evidenceListCaption = evidence
@@ -217,35 +211,6 @@ export function AnalyticsDrilldownDrawer({
               title="Task-level detail unavailable"
               copy={evidence.aggregateNote}
             />
-          ) : null}
-
-          {evidence.metric === "efficiency" && evidence.detailLevel === "task" && efficiencyPresentation ? (
-            <section className="analytics-drawer__card analytics-drawer__section">
-              <SectionHeading>How efficiency is calculated</SectionHeading>
-              <table className="performance-table analytics-drawer__efficiency-table">
-                <thead>
-                  <tr>
-                    <th scope="col">Component</th>
-                    <th scope="col" className="performance-table__num">Value</th>
-                    <th scope="col">Meaning</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {efficiencyPresentation.rows.map((row) => (
-                    <tr key={row.id}>
-                      <td>{row.label}</td>
-                      <td className="performance-table__num">{row.points}</td>
-                      <td>{row.detail ?? "—"}</td>
-                    </tr>
-                  ))}
-                  <tr className="analytics-drawer__efficiency-total-row">
-                    <td>Total score</td>
-                    <td className="performance-table__num">{efficiencyPresentation.total}</td>
-                    <td />
-                  </tr>
-                </tbody>
-              </table>
-            </section>
           ) : null}
 
           {showOutcomeBlock ? (
@@ -289,33 +254,8 @@ export function AnalyticsDrilldownDrawer({
             </div>
           ) : null}
 
-          {evidence.metric === "efficiency" &&
-          evidence.detailLevel === "task" &&
-          evidence.issues.length > 0 ? (
-            <>
-              <section className="analytics-drawer__section">
-                <SectionHeading>Supporting work</SectionHeading>
-                <p className="analytics-drawer__caption">
-                  {completedCyclesCaption(evidence.issues)}
-                </p>
-              </section>
-              <EvidenceList
-                issues={evidence.issues.slice(0, visibleCount)}
-                expandedKeys={expandedKeys}
-                setExpandedKeys={setExpandedKeys}
-                onOpenPerson={handleOpenPerson}
-                showOutcome
-                metric={evidence.metric}
-                totalCount={evidence.issues.length}
-                visibleCount={visibleCount}
-                onShowMore={() => setVisibleCount((count) => count + PAGE_SIZE)}
-              />
-            </>
-          ) : null}
-
           {!backflowsZero &&
           evidence.detailLevel === "task" &&
-          evidence.metric !== "efficiency" &&
           filteredIssues.length === 0 ? (
             <DrawerPanelPlaceholder
               className="analytics-drawer__empty"
@@ -343,7 +283,6 @@ export function AnalyticsDrilldownDrawer({
 
           {!backflowsZero &&
           evidence.detailLevel === "task" &&
-          evidence.metric !== "efficiency" &&
           filteredIssues.length > 0 ? (
             <>
               {listHeading ? <SectionHeading>{listHeading}</SectionHeading> : null}

@@ -1,6 +1,7 @@
 import { isDateWithinRange } from "../jira/dates";
 import type { AuditIssue, CompletedCycle, ReportParams } from "../jira/types";
-import { extractProfileContributorCycles, isProfileBackflow } from "../workflows/profileCycles";
+import { isProfileBackflow } from "../workflows/profileCycles";
+import { extractCanonicalPerformanceCycles } from "../workflows/canonicalPerformance";
 import { resolveWorkflowProfile } from "../workflows/resolveWorkflowProfile";
 
 export interface ReportingCycleRecord {
@@ -19,32 +20,32 @@ export function collectReportingPeriodCycles(
 
   for (const issue of issues || []) {
     const profile = resolveWorkflowProfile(issue);
-    const completedCycles = extractProfileContributorCycles(issue, profile)
+    const completedCycles = extractCanonicalPerformanceCycles(issue, profile)
       .filter((cycle) => cycle.completedAt && isDateWithinRange(cycle.completedAt, params))
       .map((cycle): CompletedCycle => ({
-        progressToReview: cycle.progressToReviewMs == null
+        progressToReview: cycle.executionMs <= 0
           ? null
           : {
               type: "progress_to_review",
-              ms: cycle.progressToReviewMs,
+              ms: cycle.executionMs,
               startedAt: cycle.startedAt,
               endedAt: cycle.completedAt!,
-              hasBackflow: cycle.hasBackflow,
+              hasBackflow: cycle.backflowEventCount > 0,
               cycleTodoStartedAt: cycle.startedAt,
               isCompleteCycle: true,
             },
         progressToHolds: [],
         reviewToDone: {
           type: "review_to_done",
-          ms: cycle.reviewToDoneMs,
+          ms: cycle.reviewMs || null,
           startedAt: cycle.startedAt,
           endedAt: cycle.completedAt!,
-          hasBackflow: cycle.hasBackflow,
+          hasBackflow: cycle.backflowEventCount > 0,
           cycleTodoStartedAt: cycle.startedAt,
-          fullCycleMs: cycle.fullCycleMs,
+          fullCycleMs: cycle.cycleMs,
           isCompleteCycle: true,
         },
-        hasBackflow: cycle.hasBackflow,
+        hasBackflow: cycle.backflowEventCount > 0,
         isFirstPass: cycle.isFirstPass,
       }));
 
@@ -125,5 +126,27 @@ export function collectBackflowEventsOnDate(
     }
   }
 
+  return rows;
+}
+
+export function collectBackflowEventsInRange(
+  issues: AuditIssue[],
+  params: Pick<ReportParams, 'dateFrom' | 'dateTo'>,
+): ReturnType<typeof collectBackflowEventsOnDate> {
+  const rows: ReturnType<typeof collectBackflowEventsOnDate> = [];
+  for (const issue of issues) {
+    const profile = resolveWorkflowProfile(issue);
+    const events = (issue.events || [])
+      .filter((event) =>
+        event.eventType === 'Status' &&
+        isDateWithinRange(event.changedAt, params) &&
+        isProfileBackflow(profile, event.fromValue, event.toValue, event),
+      )
+      .map((event) => ({
+        changedAt: event.changedAt,
+        transitionLabel: `${event.fromValue || ''} → ${event.toValue || ''}`.trim(),
+      }));
+    if (events.length) rows.push({ issueKey: issue.issueKey, issue, events });
+  }
   return rows;
 }

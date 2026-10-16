@@ -77,7 +77,7 @@ function TimelineItem({ entry }: { entry: TaskJourneyTimelineEntry }) {
           </>
         )}
       </div>
-      {entry.isBackflow && !entry.excludeFromEfficiencyBackflow ? (
+      {entry.isBackflow && !entry.excludeFromBackflow ? (
         <span className="task-journey-timeline__backflow">↩ Backflow</span>
       ) : null}
     </li>

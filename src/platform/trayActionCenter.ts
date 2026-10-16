@@ -34,7 +34,7 @@ export function emptyTraySummary(): TraySummaryModel {
     role: "employee",
     openTaskCount: 0,
     problemTaskCount: 0,
-    indexLabel: "Personal index",
+    indexLabel: "Throughput",
     indexValue: "—",
     indexAvailable: true,
     unreadNotificationCount: countUnreadNotificationEvents(),

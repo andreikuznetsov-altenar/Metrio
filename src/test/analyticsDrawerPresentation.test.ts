@@ -23,7 +23,7 @@ describe("isBackflowsZeroState", () => {
         users: [],
         projects: [],
       },
-      kpi: testKpi({ backflowCount: 0 }),
+      kpi: testKpi({ reworkedCycleCount: 0, backflowEventCount: 0 }),
     };
 
     expect(isBackflowsZeroState(evidence)).toBe(true);

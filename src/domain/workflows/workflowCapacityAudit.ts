@@ -20,7 +20,7 @@ import type { WorkloadRow } from '../performance';
 import { diagnoseWorkflowIssues } from './workflowDiagnostics';
 import { resolveWorkflowProfile } from './resolveWorkflowProfile';
 import { resolveWorkflowStage } from './resolveWorkflowStage';
-import { calculateWskinsIssueKpiContribution } from './wskinsKpi';
+import { calculateWskinsIssueKpiContribution } from '../legacy/wskinsKpi';
 
 function isInProgress(status: string): boolean {
   return /in progress/i.test(status || '');

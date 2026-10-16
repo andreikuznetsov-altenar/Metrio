@@ -22,7 +22,7 @@ function person(id: string, supervisorId?: string) {
     },
     availability: { state: "available" as const, label: "Available", isHoliday: false },
     workload: testWorkload({ level: "normal", activeCount: 2 }),
-    performance: testKpi({ efficiencyIndex: 70, completedCount: 5, firstPassAcceptedCount: 4, backflowCount: 0 }),
+    performance: testKpi({ completedCount: 5, firstPassAcceptedCount: 4, reworkedCycleCount: 0, backflowEventCount: 0 }),
     issues: [],
     ownedIssues: [],
   };

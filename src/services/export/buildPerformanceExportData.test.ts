@@ -33,9 +33,9 @@ const reportData: AuditReportData = {
   totalTransitions: 0,
   teamSummaryColumns: [],
   teamKpi: testKpi({
-    efficiencyIndex: 80,
     completedCount: 12,
-    backflowCount: 1,
+    reworkedCycleCount: 1,
+    backflowEventCount: 1,
     startedCount: 15,
     firstPassAcceptedCount: 10,
   }),

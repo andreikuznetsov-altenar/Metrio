@@ -91,7 +91,7 @@ export function runDigestCycle(input: RunDigestCycleInput): RunDigestCycleOutput
     deliveryRisk,
     params,
     completedInWeek: weekFlow.completedCount,
-    backflowInWeek: weekFlow.backflowCount,
+    backflowInWeek: weekFlow.backflowEventCount,
     rules,
     now,
   });

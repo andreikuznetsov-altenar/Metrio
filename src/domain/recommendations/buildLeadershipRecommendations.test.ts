@@ -17,8 +17,8 @@ function branch(partial: Partial<LeadershipBranch> & { leaderId: string; leaderN
       attentionWatch: 0,
       firstPassPercent: 80,
       completedCount: 20,
-      backflowCount: 0,
-      efficiencyIndex: 70,
+      reworkedCycleCount: 0,
+      backflowEventCount: 0,
       capacity: {
         totalPeople: 5,
         measuredPeople: 3,

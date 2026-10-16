@@ -1,5 +1,4 @@
 import { formatDuration } from "../../domain/jira/dates";
-import { getEfficiencyScoreBreakdown } from "../../domain/jira/kpi";
 import type { AnalyticsEvidence, AnalyticsEvidenceIssue } from "../../domain/analytics/analyticsEvidenceTypes";
 
 /** Strip Jira-style `Name <email>` for display rows. */
@@ -44,64 +43,6 @@ export function formatCycleDurationShort(ms: number | null | undefined): string 
   return formatted || null;
 }
 
-export interface EfficiencyRowPresentation {
-  id: string;
-  label: string;
-  points: string;
-  detail: string;
-  isPenalty?: boolean;
-}
-
-export function efficiencyBreakdownRows(
-  evidence: AnalyticsEvidence,
-): { rows: EfficiencyRowPresentation[]; total: string } {
-  const kpi = evidence.kpi;
-  const breakdown = getEfficiencyScoreBreakdown({
-    startedCount: kpi.startedCount,
-    completedCount: kpi.completedCount,
-    firstPassAcceptedCount: kpi.firstPassAcceptedCount,
-    backflowCount: kpi.backflowCount,
-    avgProgressToReviewMs: kpi.avgProgressToReviewMs,
-    targetReviewDays: kpi.targetReviewDays,
-  });
-
-  const cycleDetail =
-    breakdown.progressToReviewHours != null
-      ? `${breakdown.progressToReviewHours.toFixed(1)}h avg · ${breakdown.targetReviewHours}h target`
-      : "Progress to review data unavailable";
-
-  return {
-    rows: [
-      {
-        id: "completion",
-        label: "Completion",
-        points: `${breakdown.completionScore} / 35`,
-        detail: `${kpi.completedCount} of ${kpi.startedCount} eligible cycles completed`,
-      },
-      {
-        id: "first_pass",
-        label: "First pass",
-        points: `${breakdown.firstPassScore} / 35`,
-        detail: `${kpi.firstPassAcceptedCount} of ${kpi.completedCount} completed without rework`,
-      },
-      {
-        id: "speed",
-        label: "Cycle time",
-        points: `${breakdown.speedScore} / 30`,
-        detail: cycleDetail,
-      },
-      {
-        id: "backflow",
-        label: "Backflow penalty",
-        points: breakdown.backflowPenalty > 0 ? `−${breakdown.backflowPenalty}` : "0",
-        detail: `${kpi.backflowCount} qualifying backflow${kpi.backflowCount === 1 ? "" : "s"}`,
-        isPenalty: true,
-      },
-    ],
-    total: `${breakdown.total} / 100`,
-  };
-}
-
 export function summaryLineValue(
   evidence: AnalyticsEvidence,
   label: string,
@@ -113,7 +54,7 @@ export function isBackflowsZeroState(evidence: AnalyticsEvidence): boolean {
   return (
     evidence.metric === "backflows" &&
     evidence.detailLevel === "task" &&
-    evidence.kpi.backflowCount === 0 &&
+    evidence.kpi.backflowEventCount === 0 &&
     evidence.issues.length === 0
   );
 }
@@ -127,6 +68,5 @@ export function shouldShowEvidenceListCaption(
   if (backflowsZero) return false;
   if (evidence.detailLevel !== "task") return false;
   if (filteredIssueCount === 0) return false;
-  if (evidence.metric === "efficiency") return false;
   return true;
 }

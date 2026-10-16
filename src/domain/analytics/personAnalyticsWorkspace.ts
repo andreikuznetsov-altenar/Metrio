@@ -1,6 +1,6 @@
 import { format, parseISO } from "date-fns";
 import type { BadgeVariant } from "../../components/Badge/Badge";
-import { buildKpiFromIssues, getEfficiencyStatus } from "../jira/kpi";
+import { buildKpiFromIssues } from "../jira/kpi";
 import { formatDuration } from "../jira/dates";
 import type { AuditIssue, ReportParams } from "../jira/types";
 import type { Person } from "../people/types";
@@ -81,7 +81,7 @@ export interface PersonAnalyticsWorkspace {
   availability: string;
   workload: string;
   contextLine: string;
-  /** Core performance outcome KPIs (Efficiency, First pass, Completed, Backflows). */
+  /** Transparent performance outcomes; no cross-workflow composite score. */
   performanceKpis: MetricCardData[];
   /** Segment cycle-time presentation (not a headline KPI). */
   cycleTime: { label: string; value: string }[];
@@ -116,13 +116,6 @@ export interface BuildPersonAnalyticsWorkspaceInput {
   timeOffEntries: TimeOffEntry[];
   teamEmployeeIds: Set<string>;
   operationalRules?: OperationalRules;
-}
-
-function efficiencyStatusVariant(score: number): BadgeVariant {
-  const status = getEfficiencyStatus(score);
-  if (status === "Excellent" || status === "Healthy") return "success";
-  if (status === "Watch") return "warning";
-  return "danger";
 }
 
 function severityToBadge(severity: import("../radar/types").RadarSeverity): BadgeVariant {
@@ -227,10 +220,10 @@ function buildPersonTrendCards(
     buildTrendCardData("First pass", firstPassTrend, {
       trendMetricKind: "percent",
     }),
-    buildTrendCardData("Avg cycle", avgCycleTrend, {
+    buildTrendCardData("Cycle time", avgCycleTrend, {
       trendMetricKind: "duration",
     }),
-    buildTrendCardData("Backflows", backflowTrend, {
+    buildTrendCardData("Backflow events", backflowTrend, {
       sparkline: sparkBackflows,
       trendMetricKind: "count",
     }),
@@ -331,7 +324,9 @@ export function buildPersonAnalyticsWorkspace(
 
   const perf =
     person.issues.length > 0
-      ? buildKpiFromIssues(person.issues, {}, params)
+      ? buildKpiFromIssues(person.issues, {}, params, {
+          contributorCanonical: person.jira?.canonicalKey,
+        })
       : person.performance;
   const now = appNow();
   const trendAnchor = new Date(`${displayRange?.to || params.dateTo}T12:00:00`);
@@ -360,10 +355,10 @@ export function buildPersonAnalyticsWorkspace(
 
   const summaryKpis: MetricCardData[] = [
     {
-      label: "Efficiency",
-      value: perf ? `${perf.efficiencyIndex}%` : "—",
-      status: perf ? getEfficiencyStatus(perf.efficiencyIndex) : undefined,
-      statusVariant: perf ? efficiencyStatusVariant(perf.efficiencyIndex) : undefined,
+      label: "Throughput",
+      value: perf ? String(perf.throughputCount ?? perf.completedCount) : "—",
+      status: perf ? `${perf.throughputPerWorkingDay ?? 0} per working day` : undefined,
+      statusVariant: "neutral",
     },
     {
       label: "First pass",
@@ -376,8 +371,8 @@ export function buildPersonAnalyticsWorkspace(
       ...metricContextFromComparison(completedTrend, dateRangeKey, trendContextLabel),
     },
     {
-      label: "Backflows",
-      value: perf ? String(perf.backflowCount) : "0",
+      label: "Backflow events",
+      value: perf ? String(perf.backflowEventCount) : "0",
       ...metricContextFromComparison(backflowTrend, dateRangeKey, trendContextLabel),
     },
   ];

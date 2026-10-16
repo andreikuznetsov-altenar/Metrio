@@ -54,10 +54,10 @@ export function filterIndividualContributorPersons(persons: Person[]): Person[] 
 
 export function buildCanonicalPersonPeriodKpis(person: Person) {
   return {
-    efficiency: person.performance ? `${person.performance.efficiencyIndex}%` : '—',
+    throughput: person.performance ? String(person.performance.throughputCount ?? person.performance.completedCount) : '—',
     firstPass: `${firstPassPercent(person)}%`,
     completed: person.performance ? String(person.performance.completedCount) : '0',
-    backflows: person.performance ? String(person.performance.backflowCount) : '0',
+    backflows: person.performance ? String(person.performance.backflowEventCount) : '0',
   };
 }
 

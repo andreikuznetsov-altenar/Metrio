@@ -6,7 +6,7 @@ describe("performanceFetchFixture", () => {
   it("builds view models with KPI context and sparklines", () => {
     const data = buildVisualPerformanceFetchResult("30d", "team", "team");
     const vm = buildPerformanceViewModels(data, "person-sam");
-    expect(vm.teamOverview.summary.find((m) => m.label === "Efficiency")?.status).toBeTruthy();
+    expect(vm.teamOverview.summary.find((m) => m.label === "Throughput")?.value).toBeTruthy();
     expect(
       vm.teamOverview.trends.filter((t) => (t.sparkline?.length ?? 0) >= 2).length,
     ).toBeGreaterThanOrEqual(2);

@@ -14,9 +14,9 @@ import type {
   CompletedCycle,
   CycleSegment,
   IssueEvent,
-  KpiData,
   ReportParams,
 } from '../../jira/types';
+import type { LegacyKpiData } from '../../legacy/legacyKpiTypes';
 
 /** Code.gs `normalizeTeamIdentity_` */
 function normalizeTeamIdentity_(value: string | null | undefined): string {
@@ -231,7 +231,7 @@ export function legacyGetCycleSegments_(
   events.forEach((e) => {
     if (e.eventType !== 'Status') return;
 
-    if (e.isBackflow && !e.excludeFromEfficiencyBackflow) {
+    if (e.isBackflow && !e.excludeFromBackflow) {
       cycleHasBackflow = true;
     }
 
@@ -431,7 +431,7 @@ export function legacyBuildKpiFromIssues_(
   issues: AuditIssue[],
   _transitionStats: Record<string, number>,
   params: ReportParams,
-): KpiData {
+): LegacyKpiData {
   const progressToReviewDurations: number[] = [];
   const reviewToDoneDurations: number[] = [];
   const progressToHoldDurations: number[] = [];

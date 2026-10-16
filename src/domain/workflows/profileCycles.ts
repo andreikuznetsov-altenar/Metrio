@@ -2,18 +2,7 @@ import { getWorkingDurationMs, getWorkingDurationMsWithinRange } from '../jira/d
 import type { AuditIssue, IssueEvent, ReportParams } from '../jira/types';
 import { canonicalStageForStatus, resolveWorkflowStage } from './resolveWorkflowStage';
 import type { CanonicalStage, ProfileContributorCycle, WorkflowProfile } from './types';
-
-const STAGE_RANK: Record<CanonicalStage, number> = {
-  unknown: 0,
-  backlog: 1,
-  active: 2,
-  review: 3,
-  qa: 4,
-  waiting: 4,
-  hold: 2,
-  done: 5,
-  cancelled: 5,
-};
+import { normalizeStatusKey } from './normalizeStatus';
 
 function getStatusEvents(issue: AuditIssue): IssueEvent[] {
   return (issue.events || [])
@@ -28,14 +17,18 @@ export function isProfileBackflow(
   toStatus: string,
   event: IssueEvent,
 ): boolean {
-  if (event.excludeFromEfficiencyBackflow) return false;
+  if (event.excludeFromBackflow) return false;
+  if (profile.assigneeEffort.byStatus[normalizeStatusKey(fromStatus)] === 'external_wait') {
+    return false;
+  }
   const from = canonicalStageForStatus(profile, fromStatus);
   const to = canonicalStageForStatus(profile, toStatus);
-  const fromRank = STAGE_RANK[from];
-  const toRank = STAGE_RANK[to];
-  if (!fromRank || !toRank) return false;
-  if (from === 'hold' || to === 'hold') return false;
-  return toRank < fromRank && to !== 'backlog';
+  // Rework is semantic, not every visually backward move. Administrative queues,
+  // holds, waits, reopenings and cancellations are deliberately excluded.
+  if (profile.id === 'wskins_skin' && from === 'hold' && to === 'active') return true;
+  if (profile.id === 'wskins_subtask' && from === 'waiting' && to === 'active') return true;
+  if (to !== 'active') return false;
+  return from === 'review' || from === 'qa';
 }
 
 function ruleMatches(

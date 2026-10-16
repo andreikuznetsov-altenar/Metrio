@@ -1,5 +1,4 @@
 import { format, parseISO } from "date-fns";
-import { getEfficiencyScoreBreakdown } from "../jira/kpi";
 import type { AuditIssue, KpiData, ReportParams } from "../jira/types";
 import {
   analyticsDrilldownDescription,
@@ -21,6 +20,7 @@ import {
 } from "./analyticsEvidenceTrust";
 import {
   backflowEventsInCycle,
+  collectBackflowEventsInRange,
   collectBackflowEventsOnDate,
   collectReportingPeriodCycles,
   cycleMatchesBucketDate,
@@ -94,7 +94,7 @@ function mapCycleRecord(
     cycleIndex,
     cycleLabel: cycleIndex > 1 ? `Cycle ${cycleIndex}` : undefined,
     outcome: cycle.hasBackflow ? "backflow" : outcome,
-    backflowCount: backflowEvents.length,
+    backflowEventCount: backflowEvents.length,
     backflowEvents,
   };
 }
@@ -119,7 +119,7 @@ function sortIssues(
     return copy;
   }
   if (metric === "backflows") {
-    copy.sort((a, b) => (b.backflowCount ?? 0) - (a.backflowCount ?? 0));
+    copy.sort((a, b) => (b.backflowEventCount ?? 0) - (a.backflowEventCount ?? 0));
     return copy;
   }
   copy.sort((a, b) => {
@@ -136,7 +136,6 @@ function valueLabelForMetric(metric: AnalyticsDrilldownMetric, kpi: KpiData, buc
     if (metric === "avg_cycle") return `${bucketValue.toFixed(1)}d`;
     return String(Math.round(bucketValue));
   }
-  if (metric === "efficiency") return `${kpi.efficiencyIndex}%`;
   if (metric === "first_pass") {
     const rate =
       kpi.completedCount > 0
@@ -145,11 +144,11 @@ function valueLabelForMetric(metric: AnalyticsDrilldownMetric, kpi: KpiData, buc
     return `${rate}%`;
   }
   if (metric === "avg_cycle") {
-    if (kpi.avgTodoToApprovedMs == null) return "—";
-    return formatDuration(kpi.avgTodoToApprovedMs) || "—";
+    if (kpi.medianCycleMs == null) return "—";
+    return formatDuration(kpi.medianCycleMs) || "—";
   }
   if (metric === "completed") return String(kpi.completedCount);
-  return String(kpi.backflowCount);
+  return String(kpi.backflowEventCount);
 }
 
 export function buildAnalyticsEvidence(input: BuildAnalyticsEvidenceInput): AnalyticsEvidence {
@@ -163,7 +162,6 @@ export function buildAnalyticsEvidence(input: BuildAnalyticsEvidenceInput): Anal
     targetLabel,
     comparisonLabel,
     bucketDate,
-    trendBackflowEvents = false,
     issuesAvailable,
     personReportKey,
     personKpi,
@@ -220,92 +218,10 @@ export function buildAnalyticsEvidence(input: BuildAnalyticsEvidenceInput): Anal
   const allRecords = collectReportingPeriodCycles(cycleIssues, params);
   const scopedRecords = filterRecordsByBucket(allRecords, bucketDate);
 
-  if (metric === "efficiency") {
-    const breakdown = getEfficiencyScoreBreakdown({
-      startedCount: kpi.startedCount,
-      completedCount: kpi.completedCount,
-      firstPassAcceptedCount: kpi.firstPassAcceptedCount,
-      backflowCount: kpi.backflowCount,
-      avgProgressToReviewMs: kpi.avgProgressToReviewMs,
-      targetReviewDays: kpi.targetReviewDays,
-    });
-
-    const supporting = sortIssues(
-      "completed",
-      scopedRecords.map((record) => mapCycleRecord(record, attributionIndex, reportKeyToPersonId)),
-    ).slice(0, 25);
-
-    return downgradeToAggregateIfNeeded(
-      {
-      metric,
-      title,
-      valueLabel: `${breakdown.total}%`,
-      rangeLabel: bucketDate ? formatShortDate(`${bucketDate}T12:00:00.000Z`) : rangeLabel,
-      targetLabel,
-      comparisonLabel,
-      description,
-      detailLevel: "task",
-      summaryLines: [
-        {
-          label: "Completion",
-          value: `${Math.round(breakdown.completionRate * 100)}% (${breakdown.completionScore}/35)`,
-        },
-        {
-          label: "First pass",
-          value: `${Math.round(breakdown.firstPassRate * 100)}% (${breakdown.firstPassScore}/35)`,
-        },
-        {
-          label: "Cycle time",
-          value:
-            breakdown.progressToReviewHours != null
-              ? `${breakdown.progressToReviewHours.toFixed(1)}h vs ${breakdown.targetReviewHours}h target (${breakdown.speedScore}/30)`
-              : `— (${breakdown.speedScore}/30)`,
-        },
-        {
-          label: "Backflow penalty",
-          value: `−${breakdown.backflowPenalty} (max 20)`,
-        },
-      ],
-      efficiencyComponents: [
-        {
-          id: "completion",
-          label: "Completion rate",
-          valueLabel: `${breakdown.completionScore} pts`,
-          detail: "Up to 35 points from completed vs started cycles.",
-        },
-        {
-          id: "first_pass",
-          label: "First pass rate",
-          valueLabel: `${breakdown.firstPassScore} pts`,
-          detail: "Up to 35 points from first-pass completions.",
-        },
-        {
-          id: "speed",
-          label: "Progress → review speed",
-          valueLabel: `${breakdown.speedScore} pts`,
-          detail: "Up to 30 points vs target review days.",
-        },
-        {
-          id: "backflow",
-          label: "Backflow penalty",
-          valueLabel: `−${breakdown.backflowPenalty} pts`,
-          detail: "Up to 20 points subtracted from backflow rate.",
-        },
-      ],
-      issues: supporting,
-      totalCountable: kpi.completedCount,
-      params,
-      kpi,
-      bucketDate,
-      ...personScope,
-    },
-      scopedRecords.length,
-    );
-  }
-
-  if (metric === "backflows" && (trendBackflowEvents || bucketDate)) {
-    const date = bucketDate || params.dateTo;
-    const eventRows = collectBackflowEventsOnDate(cycleIssues, date);
+  if (metric === "backflows") {
+    const eventRows = bucketDate
+      ? collectBackflowEventsOnDate(cycleIssues, bucketDate)
+      : collectBackflowEventsInRange(cycleIssues, params);
     const mapped: AnalyticsEvidenceIssue[] = eventRows.map((row) => {
       const attribution = attributionIndex[row.issueKey];
       const latest = row.events[row.events.length - 1];
@@ -320,13 +236,13 @@ export function buildAnalyticsEvidence(input: BuildAnalyticsEvidenceInput): Anal
         projectKey: projectKeyFromIssue(row.issue.issueKey),
         status: row.issue.currentStatus,
         completedAt: latest?.changedAt,
-        backflowCount: row.events.length,
+        backflowEventCount: row.events.length,
         backflowEvents: row.events,
         outcome: "backflow",
       };
     });
 
-    const totalEvents = mapped.reduce((sum, row) => sum + (row.backflowCount ?? 0), 0);
+    const totalEvents = mapped.reduce((sum, row) => sum + (row.backflowEventCount ?? 0), 0);
 
     return {
       metric,
@@ -343,33 +259,6 @@ export function buildAnalyticsEvidence(input: BuildAnalyticsEvidenceInput): Anal
       ],
       issues: sortIssues(metric, mapped),
       totalCountable: totalEvents,
-      params,
-      kpi,
-      bucketDate,
-      ...personScope,
-    };
-  }
-
-  if (metric === "backflows") {
-    const backflowRecords = scopedRecords.filter((record) => record.cycle.hasBackflow);
-    const mapped = backflowRecords.map((record) => mapCycleRecord(record, attributionIndex, reportKeyToPersonId));
-    const totalEvents = mapped.reduce((sum, row) => sum + (row.backflowCount ?? 0), 0);
-
-    return {
-      metric,
-      title,
-      valueLabel: String(kpi.backflowCount),
-      rangeLabel: bucketDate ? formatShortDate(`${bucketDate}T12:00:00.000Z`) : rangeLabel,
-      targetLabel,
-      comparisonLabel,
-      description,
-      detailLevel: "task",
-      summaryLines: [
-        { label: "Cycles with backflow", value: String(mapped.length) },
-        { label: "Backflow events", value: String(totalEvents) },
-      ],
-      issues: sortIssues(metric, mapped),
-      totalCountable: kpi.backflowCount,
       params,
       kpi,
       bucketDate,
@@ -416,17 +305,23 @@ export function buildAnalyticsEvidence(input: BuildAnalyticsEvidenceInput): Anal
     const mapped = scopedRecords
       .map((record) => mapCycleRecord(record, attributionIndex, reportKeyToPersonId))
       .filter((row) => row.cycleDurationMs != null);
-    const avgMs =
-      mapped.length > 0
-        ? mapped.reduce((sum, row) => sum + (row.cycleDurationMs ?? 0), 0) / mapped.length
-        : null;
+    const durations = mapped
+      .map((row) => row.cycleDurationMs)
+      .filter((value): value is number => value != null)
+      .sort((a, b) => a - b);
+    const midpoint = Math.floor(durations.length / 2);
+    const medianMs = durations.length === 0
+      ? null
+      : durations.length % 2
+        ? durations[midpoint]
+        : Math.round((durations[midpoint - 1] + durations[midpoint]) / 2);
 
     return downgradeToAggregateIfNeeded(
       {
         metric,
         title,
         valueLabel:
-          avgMs != null ? formatDuration(avgMs) || "—" : valueLabelForMetric(metric, kpi),
+          medianMs != null ? formatDuration(medianMs) || "—" : valueLabelForMetric(metric, kpi),
         rangeLabel: bucketDate ? formatShortDate(`${bucketDate}T12:00:00.000Z`) : rangeLabel,
         targetLabel,
         comparisonLabel,
@@ -435,8 +330,8 @@ export function buildAnalyticsEvidence(input: BuildAnalyticsEvidenceInput): Anal
         summaryLines: [
           { label: "Completed cycles", value: String(mapped.length) },
           {
-            label: "Average cycle",
-            value: avgMs != null ? formatDuration(avgMs) || "—" : "—",
+            label: "Median cycle",
+            value: medianMs != null ? formatDuration(medianMs) || "—" : "—",
           },
         ],
         issues: sortIssues(metric, mapped),

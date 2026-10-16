@@ -17,7 +17,7 @@ import type { PersonDrawerTab } from "../../app/performanceAnalyticsContext";
 
 const PEOPLE_COLUMNS = [
   { id: "person", type: "person" as const },
-  { id: "efficiency", type: "text" as const },
+  { id: "throughput", type: "text" as const },
   { id: "attention", type: "text" as const },
   {
     id: "availability",
@@ -48,8 +48,8 @@ export function TeamPeopleView({ rows, onOpenPerson }: TeamPeopleViewProps) {
       switch (columnId) {
         case "person":
           return row.personName || row.personId;
-        case "efficiency":
-          return row.efficiency;
+        case "throughput":
+          return row.throughput;
         case "attention":
           return row.attentionSeverityLabel;
         case "availability":
@@ -81,8 +81,8 @@ export function TeamPeopleView({ rows, onOpenPerson }: TeamPeopleViewProps) {
             <tr>
               <SortableTableHeader columnId="person" label="Person" sort={sort} onToggle={toggleSort} />
               <SortableTableHeader
-                columnId="efficiency"
-                label="Efficiency"
+                columnId="throughput"
+                label="Throughput"
                 sort={sort}
                 onToggle={toggleSort}
                 className="performance-table__num"
@@ -110,7 +110,7 @@ export function TeamPeopleView({ rows, onOpenPerson }: TeamPeopleViewProps) {
                     />
                   </button>
                 </td>
-                <td className="performance-table__num">{row.efficiency}</td>
+                <td className="performance-table__num">{row.throughput}</td>
                 <td>
                   {row.attentionSeverityLabel === "Stable" ? (
                     <Badge variant="success">Stable</Badge>

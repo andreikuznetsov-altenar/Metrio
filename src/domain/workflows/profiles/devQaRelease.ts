@@ -3,7 +3,6 @@ import { createStatusMapProfile } from '../createStatusMapProfile';
 export const devQaReleaseWorkflowProfile = createStatusMapProfile({
   id: 'dev_qa_release',
   label: 'Dev / QA / Release',
-  efficiencyModel: 'ux',
   statusMap: {
     Backlog: 'backlog',
     'To Do': 'backlog',

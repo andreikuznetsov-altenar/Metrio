@@ -33,7 +33,7 @@ function issueInReview(daysAgo: number): AuditIssue {
         isBackflow: false,
         isHandoff: false,
         isReturnToTeam: false,
-        excludeFromEfficiencyBackflow: false,
+        excludeFromBackflow: false,
       },
     ],
     rangeEvents: [],
@@ -60,8 +60,8 @@ describe("KPI invariance vs operational rules", () => {
     });
     const kpiAfter = buildKpiFromIssues(issues, {}, params);
     expect(kpiAfter.completedCount).toBe(kpiBefore.completedCount);
-    expect(kpiAfter.backflowCount).toBe(kpiBefore.backflowCount);
-    expect(kpiAfter.efficiencyIndex).toBe(kpiBefore.efficiencyIndex);
+    expect(kpiAfter.reworkedCycleCount).toBe(kpiBefore.reworkedCycleCount);
+    expect(kpiAfter.backflowEventCount).toBe(kpiBefore.backflowEventCount);
     const strictAttention = classifyIssueAttention(
       issues[0]!,
       params,

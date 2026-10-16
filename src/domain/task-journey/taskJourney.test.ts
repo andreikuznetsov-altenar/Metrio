@@ -32,7 +32,7 @@ function statusEvent(
     isBackflow: false,
     isHandoff: false,
     isReturnToTeam: false,
-    excludeFromEfficiencyBackflow: false,
+    excludeFromBackflow: false,
     ...overrides,
   };
 }
@@ -53,7 +53,7 @@ function assigneeEvent(
     isBackflow: false,
     isHandoff: false,
     isReturnToTeam: false,
-    excludeFromEfficiencyBackflow: false,
+    excludeFromBackflow: false,
     ...overrides,
   };
 }
@@ -235,7 +235,7 @@ describe('canonical attention reasons', () => {
     });
     const attention = classifyIssueAttention(issue, params, now);
     expect(attention?.reason).toBe('Backflow detected');
-    expect(attention?.health.backflowCount).toBeGreaterThanOrEqual(2);
+    expect(attention?.health.backflowEventCount).toBeGreaterThanOrEqual(2);
   });
 
   it('G — dependency blocker enriches journey reason', () => {

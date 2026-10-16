@@ -1,7 +1,6 @@
 import type { KpiData, ReportParams } from "../jira/types";
 
 export type AnalyticsDrilldownMetric =
-  | "efficiency"
   | "first_pass"
   | "completed"
   | "backflows"
@@ -32,20 +31,14 @@ export interface AnalyticsEvidenceIssue {
   cycleIndex?: number;
   cycleLabel?: string;
   outcome?: AnalyticsCycleOutcome;
-  backflowCount?: number;
+  /** Qualifying backward transitions (events) on this issue in the selected scope. */
+  backflowEventCount?: number;
   backflowEvents?: AnalyticsBackflowEvent[];
 }
 
 export interface AnalyticsEvidenceSummaryLine {
   label: string;
   value: string;
-}
-
-export interface AnalyticsEfficiencyComponent {
-  id: string;
-  label: string;
-  valueLabel: string;
-  detail?: string;
 }
 
 export interface AnalyticsEvidence {
@@ -59,7 +52,6 @@ export interface AnalyticsEvidence {
   detailLevel: AnalyticsEvidenceDetailLevel;
   aggregateNote?: string;
   summaryLines: AnalyticsEvidenceSummaryLine[];
-  efficiencyComponents?: AnalyticsEfficiencyComponent[];
   issues: AnalyticsEvidenceIssue[];
   totalCountable: number;
   params: ReportParams;

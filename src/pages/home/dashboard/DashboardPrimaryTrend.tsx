@@ -4,7 +4,7 @@ import { Select } from "../../../components/Select/Select";
 import { TrendMiniChart } from "../../performance/TrendMiniChart";
 import { TrendValue } from "../../performance/TrendValue";
 
-const DEFAULT_LABELS = ["Completed", "First pass", "Efficiency"] as const;
+const DEFAULT_LABELS = ["Completed", "First pass", "Throughput"] as const;
 
 export function DashboardPrimaryTrend({
   trends,

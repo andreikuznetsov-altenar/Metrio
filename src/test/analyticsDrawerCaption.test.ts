@@ -35,10 +35,4 @@ describe("shouldShowEvidenceListCaption", () => {
       shouldShowEvidenceListCaption(taskEvidence("first_pass"), 1, false),
     ).toBe(true);
   });
-
-  it("hides caption for efficiency supporting list handled separately", () => {
-    expect(
-      shouldShowEvidenceListCaption(taskEvidence("efficiency"), 1, false),
-    ).toBe(false);
-  });
 });

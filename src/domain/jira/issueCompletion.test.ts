@@ -24,7 +24,7 @@ function ev(from: string, to: string, changedAt: string): IssueEvent {
     isBackflow: false,
     isHandoff: false,
     isReturnToTeam: false,
-    excludeFromEfficiencyBackflow: false,
+    excludeFromBackflow: false,
   };
 }
 

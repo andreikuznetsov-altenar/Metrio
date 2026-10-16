@@ -9,12 +9,12 @@ import { metricLabelToDrilldownMetric } from "./analyticsDrilldownModel";
 import "../../components/KpiCard/kpi-card.css";
 
 const METRIC_HELP: Record<string, string> = {
-  Efficiency: performanceHelp.efficiency,
+  Throughput: performanceHelp.throughput,
   "First pass": performanceHelp.firstPass,
   Completed: performanceHelp.completed,
-  Backflows: performanceHelp.backflows,
-  "Avg cycle":
-    "Average segment durations for active cycles: Progress → Review (P → R) and Review → Done (R → D).",
+  "Backflow events": performanceHelp.backflows,
+  "Cycle time":
+    "Median elapsed business time from contributor-cycle start to successful completion.",
 };
 
 function metricValueBlock(metric: MetricCardData) {
@@ -37,7 +37,7 @@ function metricValueBlock(metric: MetricCardData) {
   return <div className="performance-metric-card__value">{metric.value}</div>;
 }
 
-const DRILLDOWN_LABELS = new Set(["Efficiency", "First pass", "Completed", "Backflows"]);
+const DRILLDOWN_LABELS = new Set(["First pass", "Completed", "Backflow events"]);
 
 export interface PersonAnalyticsMetricGridProps {
   metrics: MetricCardData[];

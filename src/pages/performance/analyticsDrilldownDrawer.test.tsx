@@ -12,7 +12,7 @@ const evidence: AnalyticsEvidence = {
   rangeLabel: "4 Sep – 4 Oct 2026",
   bucketDate: null,
   detailLevel: "task",
-  kpi: { backflowCount: 0, completedCount: 4, firstPassRate: 0, avgCycleMs: 0 },
+  kpi: { backflowEventCount: 0, completedCount: 4, firstPassRate: 0, avgCycleMs: 0 },
   issues: [],
   summaryLines: [],
   aggregateNote: "",

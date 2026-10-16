@@ -36,11 +36,11 @@ export interface AnalyticsDrilldownRequest {
 }
 
 export function metricLabelToDrilldownMetric(label: string): AnalyticsDrilldownMetric | null {
-  if (label === "Efficiency") return "efficiency";
+  if (label === "Throughput") return "completed";
   if (label === "First pass") return "first_pass";
   if (label === "Completed") return "completed";
-  if (label === "Backflows") return "backflows";
-  if (label === "Avg cycle") return "avg_cycle";
+  if (label === "Backflow events") return "backflows";
+  if (label === "Cycle time" || label === "Median cycle") return "avg_cycle";
   return null;
 }
 
@@ -94,7 +94,9 @@ export function useAnalyticsEvidence(
     const personReportKey = personScope?.personReportKey;
     const personDerivedKpi =
       personReportKey && scopedIssues.length > 0
-        ? buildKpiFromIssues(scopedIssues, {}, params)
+        ? buildKpiFromIssues(scopedIssues, {}, params, {
+            contributorCanonical: personReportKey,
+          })
         : null;
     const personKpi =
       personDerivedKpi ?? personScope?.personKpi ?? report.teamKpi;

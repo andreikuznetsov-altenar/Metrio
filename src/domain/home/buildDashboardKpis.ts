@@ -6,8 +6,6 @@ import {
   employeeCapacityKpi,
   teamCapacityKpiFromRows,
 } from "../workload/capacityPresentation";
-import { getEfficiencyStatus } from "../jira/kpi";
-import { performanceHelp } from "../performance/performanceHelp";
 import type { ScopeHealthSummary } from "./executiveDashboardModel";
 
 export interface DashboardKpiCard {
@@ -36,31 +34,6 @@ function scopeBadge(scopeHealth: ScopeHealthSummary): DashboardKpiCard["badge"] 
   return { label: "Critical", variant: "danger" };
 }
 
-/** Map canonical efficiency status labels to KPI badge variants. */
-export function efficiencyStatusBadge(
-  status: string | undefined,
-  statusVariant?: BadgeVariant,
-): DashboardKpiCard["badge"] | undefined {
-  if (!status) return undefined;
-  if (statusVariant) {
-    return { label: status, variant: statusVariant };
-  }
-  if (status === "Excellent" || status === "Healthy") {
-    return { label: status, variant: "success" };
-  }
-  if (status === "Watch") {
-    return { label: status, variant: "warning" };
-  }
-  return { label: status, variant: "danger" };
-}
-
-function parseEfficiencyPercent(value: string | undefined): number | null {
-  if (!value || value === "—") return null;
-  const match = value.trim().match(/^(\d+(?:\.\d+)?)\s*%?$/);
-  if (!match) return null;
-  return Number(match[1]);
-}
-
 function capacityKpiFromWorkload(workload: WorkloadRow[]): DashboardKpiCard {
   const summary = teamCapacityKpiFromRows(workload);
   return {
@@ -72,13 +45,13 @@ function capacityKpiFromWorkload(workload: WorkloadRow[]): DashboardKpiCard {
   };
 }
 
-/** Employee KPI strip — efficiency metrics plus workflow capacity load. */
+/** Employee KPI strip — transparent workflow outcomes plus current capacity load. */
 export function buildEmployeeDashboardKpis(input: {
   metrics: Pick<MetricCardData, "label" | "value">[];
   workload: WorkloadResult | null;
   availability?: PersonAvailability;
 }): DashboardKpiCard[] {
-  const pick = ["Efficiency", "First pass", "Completed"] as const;
+  const pick = ["Throughput", "First pass", "Completed"] as const;
   const cards: DashboardKpiCard[] = pick.map((label) => {
     const metric = input.metrics.find((m) => m.label === label);
     return {
@@ -105,48 +78,45 @@ export function buildEmployeeDashboardKpis(input: {
 }
 
 /**
- * Canonical team Efficiency card — Dashboard Team Health, Performance Efficiency, tray Team index.
+ * Compatibility-named selector for the canonical team Throughput card.
  */
-export function resolveCanonicalTeamEfficiencyCard(
+export function resolveCanonicalTeamThroughputCard(
   summary: readonly Pick<MetricCardData, "label" | "value" | "status" | "statusVariant">[],
-  fallbackEfficiencyValue?: string | null,
+  fallbackThroughputValue?: string | null,
 ): Pick<MetricCardData, "label" | "value" | "status" | "statusVariant"> | null {
-  const fromSummary = summary.find((metric) => metric.label === "Efficiency");
+  const fromSummary = summary.find((metric) => metric.label === "Throughput");
   if (fromSummary?.value) {
     return fromSummary;
   }
-  if (fallbackEfficiencyValue) {
-    return { label: "Efficiency", value: fallbackEfficiencyValue };
+  if (fallbackThroughputValue) {
+    return { label: "Throughput", value: fallbackThroughputValue };
   }
   return null;
 }
 
-/** Display value for tray Team index (same digits as Team Health / Performance Efficiency). */
-export function canonicalTeamEfficiencyIndexValue(
+/** Display value for the tray team-throughput summary. */
+export function canonicalTeamThroughputValue(
   summary: readonly Pick<MetricCardData, "label" | "value" | "status" | "statusVariant">[],
-  fallbackEfficiencyValue?: string | null,
+  fallbackThroughputValue?: string | null,
 ): string {
-  return resolveCanonicalTeamEfficiencyCard(summary, fallbackEfficiencyValue)?.value ?? "—";
+  return resolveCanonicalTeamThroughputCard(summary, fallbackThroughputValue)?.value ?? "—";
 }
 
 /**
  * Manager KPI strip.
- * TEAM HEALTH reuses the canonical team Efficiency metric (same source as Performance).
- * Delivery-risk counts stay on the Delivery risk card — never populate Team health.
+ * Throughput is an outcome count, not a health score or a measure of individual performance.
  */
 export function buildManagerDashboardKpis(input: {
-  /** Canonical team Efficiency card from team performance summary. */
-  teamEfficiency: Pick<MetricCardData, "value" | "status" | "statusVariant"> | null;
+  /** Canonical team Throughput card from team performance summary. */
+  teamThroughput: Pick<MetricCardData, "value" | "status" | "statusVariant"> | null;
   firstPassRate: string;
   deliveryRiskCount: number;
   teamWorkload: WorkloadRow[];
 }): DashboardKpiCard[] {
-  const efficiencyValue = input.teamEfficiency?.value ?? "—";
-  const score = parseEfficiencyPercent(efficiencyValue);
-  const status =
-    input.teamEfficiency?.status ??
-    (score != null ? getEfficiencyStatus(score) : undefined);
-  const badge = efficiencyStatusBadge(status, input.teamEfficiency?.statusVariant);
+  const throughputValue = input.teamThroughput?.value ?? "—";
+  const badge = input.teamThroughput?.status
+    ? { label: input.teamThroughput.status, variant: input.teamThroughput.statusVariant ?? "neutral" }
+    : undefined;
 
   // Packaged/runtime QA: localStorage.setItem("metrio-team-health-debug","1")
   if (typeof window !== "undefined" && window.localStorage?.getItem("metrio-team-health-debug") === "1") {
@@ -154,9 +124,9 @@ export function buildManagerDashboardKpis(input: {
       t: performance.now(),
       component: "buildManagerDashboardKpis",
       model: "ManagerExecutiveModel.kpis[team-health]",
-      value: efficiencyValue,
+      value: throughputValue,
       badge: badge?.label ?? null,
-      sourceField: "teamSnapshot.summary[Efficiency] | performanceSnapshot.metrics[Efficiency]",
+      sourceField: "teamSnapshot.summary[Throughput] | performanceSnapshot.metrics[Throughput]",
       deliveryRiskCountIgnored: input.deliveryRiskCount,
     };
     const bucket = (window as unknown as { __metrioTeamHealth?: unknown[] }).__metrioTeamHealth;
@@ -166,11 +136,11 @@ export function buildManagerDashboardKpis(input: {
 
   return [
     {
-      id: "team-health",
-      label: "Team health",
-      value: efficiencyValue,
+      id: "throughput",
+      label: "Throughput",
+      value: throughputValue,
       badge,
-      tooltip: performanceHelp.efficiency,
+      tooltip: "Successful completion cycles in the selected reporting period.",
     },
     {
       id: "first-pass",

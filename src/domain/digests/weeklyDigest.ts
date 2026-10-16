@@ -34,11 +34,6 @@ export function buildTeamWeeklyDigest(
   ).length;
 
   const weekFlow = computeTeamFlowMetrics(snapshot.persons, getCurrentWeekRange(now), params);
-  const avgCycleDays =
-    weekFlow.avgCycleMs !== null
-      ? (weekFlow.avgCycleMs / (24 * 60 * 60 * 1000)).toFixed(1)
-      : '—';
-
   const completedCountPoints = personTrendFieldPoints(kpiSnapshots, 'completedOnDate');
   const firstPassPoints = personTrendFieldPoints(kpiSnapshots, 'firstPassOnDate');
   const fpSufficiency = trendSufficiency(completedCountPoints, 28, now);
@@ -50,8 +45,8 @@ export function buildTeamWeeklyDigest(
     '',
     `Completed: ${weekFlow.completedCount}`,
     `First Pass: ${weekFlow.firstPassPercent}%`,
-    `Avg cycle: ${avgCycleDays} days`,
-    `Backflows: ${weekFlow.backflowCount}`,
+    `Median cycle: ${weekFlow.medianCycleMs == null ? '—' : (weekFlow.medianCycleMs / 86400000).toFixed(1)} days`,
+    `Backflow events: ${weekFlow.backflowEventCount}`,
     '',
     'Attention:',
     `- ${overloaded} people have High/Overloaded workload`,
@@ -133,11 +128,6 @@ export function buildTeamDigestSections(
   ).length;
 
   const weekFlow = computeTeamFlowMetrics(snapshot.persons, getCurrentWeekRange(now), params);
-  const avgCycleDays =
-    weekFlow.avgCycleMs !== null
-      ? (weekFlow.avgCycleMs / (24 * 60 * 60 * 1000)).toFixed(1)
-      : '—';
-
   const completedCountPoints = personTrendFieldPoints(kpiSnapshots, 'completedOnDate');
   const firstPassPoints = personTrendFieldPoints(kpiSnapshots, 'firstPassOnDate');
   const fpSufficiency = trendSufficiency(completedCountPoints, 28, now);
@@ -145,8 +135,8 @@ export function buildTeamDigestSections(
   const periodRows: DigestRow[] = [
     { label: 'Completed', value: String(weekFlow.completedCount) },
     { label: 'First Pass', value: `${weekFlow.firstPassPercent}%` },
-    { label: 'Avg cycle', value: `${avgCycleDays} days` },
-    { label: 'Backflows', value: String(weekFlow.backflowCount) },
+    { label: 'Median cycle', value: weekFlow.medianCycleMs == null ? '—' : `${(weekFlow.medianCycleMs / 86400000).toFixed(1)} days` },
+    { label: 'Backflow events', value: String(weekFlow.backflowEventCount) },
   ];
 
   const attentionRows: DigestRow[] = [

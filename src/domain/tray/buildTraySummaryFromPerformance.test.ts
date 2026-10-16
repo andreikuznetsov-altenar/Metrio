@@ -6,7 +6,7 @@ import {
 } from "./buildTraySummaryFromPerformance";
 
 function managerTrayInput(options: {
-  efficiency: string;
+  throughput: string;
   deliveryRiskCount: number;
   overloadedCount?: number;
   problemRows?: DeliveryRiskRow[];
@@ -39,10 +39,8 @@ function managerTrayInput(options: {
     teamSnapshot: {
       summary: [
         {
-          label: "Efficiency",
-          value: options.efficiency,
-          status: "Healthy",
-          statusVariant: "success" as const,
+          label: "Throughput",
+          value: options.throughput,
         },
       ],
       workload: workloadRows,
@@ -59,55 +57,55 @@ function managerTrayInput(options: {
   return input;
 }
 
-describe("PASS 15.5H tray Team index", () => {
-  it("A: uses Efficiency 91% even when scopeHealth line is delivery-risk prose", () => {
-    const input = managerTrayInput({ efficiency: "91%", deliveryRiskCount: 44 });
+describe("tray Throughput", () => {
+  it("uses Throughput even when scopeHealth line is delivery-risk prose", () => {
+    const input = managerTrayInput({ throughput: "31", deliveryRiskCount: 44 });
     const scopeHealth = scopeHealthForTray(input);
     expect(scopeHealth.line).toMatch(/44 delivery risks/i);
 
     const model = buildTraySummaryFromPerformance(input, 0);
-    expect(model.indexValue).toBe("91%");
-    expect(model.indexLabel).toBe("Team index");
+    expect(model.indexValue).toBe("31");
+    expect(model.indexLabel).toBe("Throughput");
   });
 
-  it("B: delivery risk count change does not change Team index when Efficiency is stable", () => {
-    const stable = managerTrayInput({ efficiency: "91%", deliveryRiskCount: 44 });
-    const fewerRisks = managerTrayInput({ efficiency: "91%", deliveryRiskCount: 12 });
+  it("delivery risk count change does not change Throughput", () => {
+    const stable = managerTrayInput({ throughput: "31", deliveryRiskCount: 44 });
+    const fewerRisks = managerTrayInput({ throughput: "31", deliveryRiskCount: 12 });
 
-    expect(buildTraySummaryFromPerformance(stable, 0).indexValue).toBe("91%");
-    expect(buildTraySummaryFromPerformance(fewerRisks, 0).indexValue).toBe("91%");
+    expect(buildTraySummaryFromPerformance(stable, 0).indexValue).toBe("31");
+    expect(buildTraySummaryFromPerformance(fewerRisks, 0).indexValue).toBe("31");
     expect(buildTraySummaryFromPerformance(fewerRisks, 0).problemTaskCount).toBe(12);
   });
 
-  it("C: Team index tracks Efficiency when it changes", () => {
-    const before = managerTrayInput({ efficiency: "91%", deliveryRiskCount: 44 });
-    const after = managerTrayInput({ efficiency: "87%", deliveryRiskCount: 44 });
+  it("tracks Throughput when it changes", () => {
+    const before = managerTrayInput({ throughput: "31", deliveryRiskCount: 44 });
+    const after = managerTrayInput({ throughput: "27", deliveryRiskCount: 44 });
 
-    expect(buildTraySummaryFromPerformance(before, 0).indexValue).toBe("91%");
-    expect(buildTraySummaryFromPerformance(after, 0).indexValue).toBe("87%");
+    expect(buildTraySummaryFromPerformance(before, 0).indexValue).toBe("31");
+    expect(buildTraySummaryFromPerformance(after, 0).indexValue).toBe("27");
   });
 
-  it("D/E: problem tasks and open tasks stay independent of Efficiency", () => {
+  it("problem tasks and open tasks stay independent of Throughput", () => {
     const input = managerTrayInput({
-      efficiency: "91%",
+      throughput: "31",
       deliveryRiskCount: 44,
       openActiveWork: 7,
     });
     const model = buildTraySummaryFromPerformance(input, 0);
     expect(model.problemTaskCount).toBe(44);
     expect(model.openTaskCount).toBe(7);
-    expect(model.indexValue).toBe("91%");
+    expect(model.indexValue).toBe("31");
   });
 
-  it("F: scopeHealth prose is never emitted as manager Team index", () => {
-    const input = managerTrayInput({ efficiency: "91%", deliveryRiskCount: 44 });
+  it("scopeHealth prose is never emitted as Throughput", () => {
+    const input = managerTrayInput({ throughput: "31", deliveryRiskCount: 44 });
     const scopeHealth = scopeHealthForTray(input);
     const model = buildTraySummaryFromPerformance(input, 0);
     expect(model.indexValue).not.toMatch(/delivery risk/i);
     expect(model.indexValue).not.toBe(scopeHealth.line.split("·")[0]?.trim());
   });
 
-  it("G: falls back to em dash when team summary Efficiency is unavailable", () => {
+  it("falls back to em dash when Throughput is unavailable", () => {
     const model = buildTraySummaryFromPerformance(
       {
         homeRole: "manager",
@@ -126,18 +124,16 @@ describe("PASS 15.5H tray Team index", () => {
   });
 });
 
-describe("PASS 22.1 tray index parity", () => {
-  it("uses numeric personal index for employee tray instead of scope prose", () => {
+describe("tray throughput parity", () => {
+  it("uses numeric throughput for employee tray instead of scope prose", () => {
     const model = buildTraySummaryFromPerformance(
       {
         homeRole: "employee",
         teamSnapshot: {
           summary: [
             {
-              label: "Efficiency",
-              value: "88%",
-              status: "Healthy",
-              statusVariant: "success",
+              label: "Throughput",
+              value: "8",
             },
           ],
           workload: [],
@@ -154,22 +150,20 @@ describe("PASS 22.1 tray index parity", () => {
       0,
     );
 
-    expect(model.indexLabel).toBe("Personal index");
-    expect(model.indexValue).toBe("88%");
+    expect(model.indexLabel).toBe("Throughput");
+    expect(model.indexValue).toBe("8");
     expect(model.indexValue).not.toMatch(/scope|healthy|risk|attention/i);
   });
 
-  it("uses the same numeric efficiency source for director tray", () => {
+  it("uses the same numeric throughput source for director tray", () => {
     const model = buildTraySummaryFromPerformance(
       {
         homeRole: "director",
         teamSnapshot: {
           summary: [
             {
-              label: "Efficiency",
-              value: "93%",
-              status: "Healthy",
-              statusVariant: "success",
+              label: "Throughput",
+              value: "93",
             },
           ],
           workload: [],
@@ -186,12 +180,12 @@ describe("PASS 22.1 tray index parity", () => {
       0,
     );
 
-    expect(model.indexValue).toBe("93%");
+    expect(model.indexValue).toBe("93");
     expect(model.indexValue).not.toMatch(/scope|healthy|signal|risk/i);
   });
 });
 
-describe("PASS 22.1 tray Personal index numeric", () => {
+describe("tray person Throughput", () => {
   const baseEvidence = {
     role: "employee" as const,
     focusCount: 0,
@@ -199,13 +193,13 @@ describe("PASS 22.1 tray Personal index numeric", () => {
     selfWorkload: "Light" as const,
   };
 
-  it("uses the person-level Efficiency metric (IC Dashboard source) for employee scope", () => {
+  it("uses the person-level Throughput metric for employee scope", () => {
     const model = buildTraySummaryFromPerformance(
       {
         homeRole: "employee",
         teamSnapshot: null,
         employeeMetrics: [
-          { label: "Efficiency", value: "82%", status: "Healthy", statusVariant: "success" },
+          { label: "Throughput", value: "12" },
         ],
         deliveryRisk: [],
         scopeHealthEvidence: baseEvidence,
@@ -213,9 +207,9 @@ describe("PASS 22.1 tray Personal index numeric", () => {
       0,
     );
 
-    expect(model.indexLabel).toBe("Personal index");
-    expect(model.indexValue).toBe("82%");
-    expect(model.indexValue).toMatch(/^\d+(?:\.\d+)?%$/);
+    expect(model.indexLabel).toBe("Throughput");
+    expect(model.indexValue).toBe("12");
+    expect(model.indexValue).toMatch(/^\d+(?:\.\d+)?$/);
   });
 
   it("never renders prose as an index value", () => {
@@ -224,7 +218,7 @@ describe("PASS 22.1 tray Personal index numeric", () => {
         homeRole: "employee",
         teamSnapshot: null,
         employeeMetrics: [
-          { label: "Efficiency", value: "Your scope looks healthy" },
+          { label: "Throughput", value: "Your scope looks healthy" },
         ],
         deliveryRisk: [],
         scopeHealthEvidence: baseEvidence,

@@ -4,11 +4,13 @@ import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import { buildKpiFromIssues } from '../jira/kpi';
 import { getCycleSegments, buildCompletedCyclesFromSegments } from '../jira/cycles';
-import type { AuditIssue, KpiData, ReportParams } from '../jira/types';
+import type { AuditIssue, ReportParams } from '../jira/types';
+import { toLegacyKpiView, type LegacyKpiData } from '../legacy/legacyKpiTypes';
+import type { KpiData } from '../jira/types';
 import { calculateWorkload } from '../workload/workloadEngine';
 import { resolveWorkflowStage } from '../workflows/resolveWorkflowStage';
 import { resolveWorkflowProfile } from '../workflows/resolveWorkflowProfile';
-import { buildWskinsKpiFromIssues } from '../workflows/wskinsKpi';
+import { buildWskinsKpiFromIssues } from '../legacy/wskinsKpi';
 import {
   legacyBuildCompletedCyclesFromSegments_,
   legacyBuildKpiFromIssues_,
@@ -37,7 +39,7 @@ export interface MetricParityRow {
   sourceMetrio: string;
 }
 
-const KPI_FIELDS: Array<keyof KpiData> = [
+const KPI_FIELDS: Array<keyof LegacyKpiData> = [
   'startedCount',
   'completedCount',
   'reviewSubmittedCount',
@@ -51,6 +53,9 @@ const KPI_FIELDS: Array<keyof KpiData> = [
 ];
 
 const rows: MetricParityRow[] = [];
+
+const METRICS_V2_INTENTIONAL =
+  'Metrics Methodology V2 intentionally replaces legacy cohort, backflow, duration, attribution, and uncalibrated Efficiency semantics; this row is historical documentation only.';
 
 function fmt(value: unknown): string {
   if (value === null || value === undefined) return 'null';
@@ -72,19 +77,19 @@ function addRow(row: MetricParityRow) {
 
 function compareKpi(
   fixture: ParityFixture,
-  legacy: KpiData,
-  metrio: KpiData,
+  legacy: LegacyKpiData,
+  metrio: KpiData | LegacyKpiData,
   options: {
     sourceLegacy: string;
     sourceMetrio: string;
-    intentional?: Partial<Record<keyof KpiData, string>>;
+    intentional?: Partial<Record<keyof LegacyKpiData, string>>;
   },
 ) {
   KPI_FIELDS.forEach((metric) => {
-    const left = legacy[metric];
-    const right = metrio[metric];
+    const left = toLegacyKpiView(legacy)[metric];
+    const right = toLegacyKpiView(metrio)[metric];
     const same = left === right;
-    const intentional = options.intentional?.[metric];
+    const intentional = options.intentional?.[metric] ?? METRICS_V2_INTENTIONAL;
     addRow({
       fixture: fixture.id,
       metric,
@@ -134,6 +139,8 @@ function writeParityReport() {
     '- `docs/canonical-legacy/apps-script/WskinsAudit.gs` (`buildWSkinsKpiFromIssues_`, main/subtask contributions, `calculateWSkinsEfficiencyIndex_`)',
     '',
     'Production Metrio is **not** used as the legacy reference.',
+    '',
+    'Metrics Methodology V2 no longer treats legacy KPI equality as a production requirement. KPI differences are recorded as intentional; cycle-engine port checks remain strict.',
     '',
     'UX Apps Script date-filters changelog via `rangeEvents`. Metrio product KPI uses full history and keeps cycles whose `completedAt` falls in the inclusive `dateFrom`/`dateTo` window. Fixtures feed the GS oracle range-truncated events so period semantics are comparable.',
     '',

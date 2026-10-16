@@ -358,6 +358,7 @@ export async function buildEnhancedJiraAuditReport(
       grouped[userKey].issues || [],
       grouped[userKey].transitionStats || {},
       params,
+      { contributorCanonical: userKey },
     );
   });
 

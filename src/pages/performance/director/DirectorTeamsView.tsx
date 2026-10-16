@@ -88,7 +88,7 @@ export function DirectorTeamsView({
             <dd>{selected.firstPassPercent}%</dd>
           </div>
           <div>
-            <dt>Avg cycle</dt>
+            <dt>Median cycle</dt>
             <dd>{selected.avgCycleLabel}</dd>
           </div>
           <div>
@@ -152,7 +152,7 @@ export function DirectorTeamsView({
               />
               <SortableTableHeader
                 columnId="avgCycle"
-                label="Avg cycle"
+                label="Median cycle"
                 sort={sort}
                 onToggle={toggleSort}
               />

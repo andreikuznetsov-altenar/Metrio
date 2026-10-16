@@ -87,7 +87,7 @@ describe('trend validation against unique-issue direct calculation', () => {
         isBackflow: false,
         isHandoff: false,
         isReturnToTeam: false,
-        excludeFromEfficiencyBackflow: false,
+        excludeFromBackflow: false,
       },
     ],
   });
@@ -106,7 +106,7 @@ describe('trend validation against unique-issue direct calculation', () => {
         isBackflow: true,
         isHandoff: false,
         isReturnToTeam: false,
-        excludeFromEfficiencyBackflow: false,
+        excludeFromBackflow: false,
       },
     ],
   });
@@ -152,7 +152,7 @@ describe('trend validation against unique-issue direct calculation', () => {
   it('matches backflows trend to direct unique-issue calculation', () => {
     const backflowPoints = teamTrendPoints(file, 'backflowsOnDate');
     const trend = compareTrendPeriods(backflowPoints, 'backflows', 28, now);
-    expect(trend.current).toBe(directCurrent.backflowCount);
+    expect(trend.current).toBe(directCurrent.backflowEventCount);
   });
 
   it('matches first pass trend to direct unique-issue calculation', () => {
@@ -173,7 +173,7 @@ describe('trend validation against unique-issue direct calculation', () => {
 
   it('previous period direct metrics are stable for reassigned fixture', () => {
     expect(directPrevious.completedCount).toBe(0);
-    expect(directPrevious.backflowCount).toBe(0);
+    expect(directPrevious.backflowEventCount).toBe(0);
   });
 });
 

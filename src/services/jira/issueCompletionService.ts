@@ -120,7 +120,7 @@ export function createFixtureIssueCompletionService(): IssueCompletionService {
             isBackflow: false,
             isHandoff: false,
             isReturnToTeam: false,
-            excludeFromEfficiencyBackflow: false,
+            excludeFromBackflow: false,
           },
         ],
       };

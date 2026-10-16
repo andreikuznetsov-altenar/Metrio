@@ -3,7 +3,6 @@ import { createStatusMapProfile } from '../createStatusMapProfile';
 export const serviceWaitWorkflowProfile = createStatusMapProfile({
   id: 'service_wait',
   label: 'Service / Wait',
-  efficiencyModel: 'none',
   statusMap: {
     New: 'backlog',
     Backlog: 'backlog',

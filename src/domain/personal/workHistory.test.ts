@@ -55,7 +55,7 @@ const person: Person = {
           isBackflow: false,
           isHandoff: false,
           isReturnToTeam: false,
-          excludeFromEfficiencyBackflow: false,
+          excludeFromBackflow: false,
         },
         {
           eventType: 'Status',
@@ -67,7 +67,7 @@ const person: Person = {
           isBackflow: false,
           isHandoff: false,
           isReturnToTeam: false,
-          excludeFromEfficiencyBackflow: false,
+          excludeFromBackflow: false,
         },
         {
           eventType: 'Status',
@@ -79,7 +79,7 @@ const person: Person = {
           isBackflow: false,
           isHandoff: false,
           isReturnToTeam: false,
-          excludeFromEfficiencyBackflow: false,
+          excludeFromBackflow: false,
         },
       ],
     },

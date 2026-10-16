@@ -1,5 +1,4 @@
 import type { PerformanceReviewTarget } from "../performance";
-import { getEfficiencyScoreBreakdown } from "../jira/kpi";
 import type { AuditReportData } from "../jira/types";
 import { buildAnalyticsEvidence } from "./buildAnalyticsEvidence";
 import {
@@ -31,7 +30,8 @@ export interface KpiReconciliationSpotCheck {
   completedAt: string;
   outcome: string;
   cycleDurationMs: number | null;
-  backflowCount: number;
+  /** 1 when the sampled completed cycle needed at least one qualifying backflow. */
+  reworkedCycle: 0 | 1;
 }
 
 export interface KpiReconciliationReport {
@@ -65,8 +65,7 @@ export interface PerformanceAnalyticsReconciliation {
     cycleDiagnostics?: string;
   };
   backflows: {
-    dashboardCycles: number;
-    evidenceCycles: number;
+    dashboardEvents: number;
     evidenceEvents: number;
     matches: boolean;
     semantic: string;
@@ -76,16 +75,6 @@ export interface PerformanceAnalyticsReconciliation {
     evidenceMs: number | null;
     matches: boolean;
     cycleDiagnostics?: string;
-  };
-  efficiency: {
-    dashboardScore: number;
-    evidenceScore: number;
-    completionPoints: number;
-    firstPassPoints: number;
-    speedPoints: number;
-    backflowPenalty: number;
-    componentMatches: boolean;
-    matches: boolean;
   };
   allMatch: boolean;
   spotCheckSamples: KpiReconciliationSpotCheck[];
@@ -126,7 +115,6 @@ function buildEvidenceBundle(
       trendBackflowEvents: false,
     }),
     avgCycle: buildAnalyticsEvidence({ ...base, metric: "avg_cycle" }),
-    efficiency: buildAnalyticsEvidence({ ...base, metric: "efficiency" }),
   };
 }
 
@@ -138,12 +126,16 @@ function firstPassCounts(records: ReportingCycleRecord[]) {
   return { numerator, denominator: records.length };
 }
 
-function avgMsFromRecords(records: ReportingCycleRecord[]): number | null {
+function medianMsFromRecords(records: ReportingCycleRecord[]): number | null {
   const durations = records
     .map((record) => record.cycle.reviewToDone.fullCycleMs)
-    .filter((value): value is number => value != null && value >= 0);
+    .filter((value): value is number => value != null && value >= 0)
+    .sort((a, b) => a - b);
   if (!durations.length) return null;
-  return durations.reduce((sum, value) => sum + value, 0) / durations.length;
+  const midpoint = Math.floor(durations.length / 2);
+  return durations.length % 2
+    ? durations[midpoint]
+    : Math.round((durations[midpoint - 1] + durations[midpoint]) / 2);
 }
 
 
@@ -160,7 +152,7 @@ function spotCheckSamples(
         ? "backflow"
         : "rework",
     cycleDurationMs: record.cycle.reviewToDone.fullCycleMs ?? null,
-    backflowCount: record.cycle.hasBackflow ? 1 : 0,
+    reworkedCycle: record.cycle.hasBackflow ? 1 : 0,
   }));
 }
 
@@ -168,11 +160,6 @@ function cycleDiagnosticLines(records: ReportingCycleRecord[]): string {
   return records
     .map((record) => `${reportingCycleKey(record)} completedAt=${record.completedAt}`)
     .join("; ");
-}
-
-function parseEvidencePoints(valueLabel: string): number | null {
-  const match = valueLabel.match(/(\d+)/);
-  return match ? Number(match[1]) : null;
 }
 
 export function reconcilePerformanceAnalytics(
@@ -208,29 +195,26 @@ export function reconcilePerformanceAnalytics(
     dashboardFp.denominator === evidenceFpDen &&
     reworkSumMatches;
 
-  const evidenceBackflowCycles = Number(
-    bundle.backflows.summaryLines.find((line) => line.label === "Cycles with backflow")
-      ?.value ?? -1,
-  );
   const evidenceBackflowEvents = Number(
     bundle.backflows.summaryLines.find((line) => line.label === "Backflow events")?.value ?? -1,
   );
-  const backflowSemantic =
-    "KPI card counts cycles with hasBackflow in period (not raw backflow event count)";
+  const backflowSemantic = "Qualifying backward workflow transitions occurring in the reporting period";
   const backflowMatches =
-    kpi.backflowCount === records.filter((record) => record.cycle.hasBackflow).length &&
-    kpi.backflowCount === evidenceBackflowCycles &&
-    kpi.backflowCount === bundle.backflows.totalCountable;
+    (kpi.backflowEventCount) === evidenceBackflowEvents &&
+    (kpi.backflowEventCount) === bundle.backflows.totalCountable;
 
-  const dashboardAvgMs = kpi.avgTodoToApprovedMs;
+  const dashboardAvgMs = kpi.medianCycleMs ?? kpi.avgTodoToApprovedMs;
   const evidenceDurations = bundle.avgCycle.issues
     .map((row) => row.cycleDurationMs)
     .filter((value): value is number => value != null);
-  const evidenceAvgMs =
-    evidenceDurations.length > 0
-      ? evidenceDurations.reduce((sum, value) => sum + value, 0) / evidenceDurations.length
-      : null;
-  const recordAvgMs = avgMsFromRecords(records);
+  const sortedEvidenceDurations = evidenceDurations.sort((a, b) => a - b);
+  const evidenceMidpoint = Math.floor(sortedEvidenceDurations.length / 2);
+  const evidenceAvgMs = sortedEvidenceDurations.length === 0
+    ? null
+    : sortedEvidenceDurations.length % 2
+      ? sortedEvidenceDurations[evidenceMidpoint]
+      : Math.round((sortedEvidenceDurations[evidenceMidpoint - 1] + sortedEvidenceDurations[evidenceMidpoint]) / 2);
+  const recordAvgMs = medianMsFromRecords(records);
   const avgMatches =
     (dashboardAvgMs == null && evidenceAvgMs == null) ||
     (dashboardAvgMs != null &&
@@ -238,38 +222,6 @@ export function reconcilePerformanceAnalytics(
       recordAvgMs != null &&
       Math.abs(dashboardAvgMs - evidenceAvgMs) <= MS_TOLERANCE &&
       Math.abs(dashboardAvgMs - recordAvgMs) <= MS_TOLERANCE);
-
-  const breakdown = getEfficiencyScoreBreakdown({
-    startedCount: kpi.startedCount,
-    completedCount: kpi.completedCount,
-    firstPassAcceptedCount: kpi.firstPassAcceptedCount,
-    backflowCount: kpi.backflowCount,
-    avgProgressToReviewMs: kpi.avgProgressToReviewMs,
-    targetReviewDays: kpi.targetReviewDays,
-  });
-  const evidenceEfficiencyTotal = Number.parseInt(
-    bundle.efficiency.valueLabel.replace("%", ""),
-    10,
-  );
-  const evidenceById = new Map(
-    (bundle.efficiency.efficiencyComponents ?? []).map((component) => [
-      component.id,
-      component.valueLabel,
-    ]),
-  );
-  const completionPoints = parseEvidencePoints(evidenceById.get("completion") ?? "") ?? -1;
-  const firstPassPoints = parseEvidencePoints(evidenceById.get("first_pass") ?? "") ?? -1;
-  const speedPoints = parseEvidencePoints(evidenceById.get("speed") ?? "") ?? -1;
-  const backflowPenalty = parseEvidencePoints(evidenceById.get("backflow") ?? "") ?? -1;
-  const componentMatches =
-    completionPoints === breakdown.completionScore &&
-    firstPassPoints === breakdown.firstPassScore &&
-    speedPoints === breakdown.speedScore &&
-    backflowPenalty === breakdown.backflowPenalty;
-  const efficiencyMatches =
-    kpi.efficiencyIndex === breakdown.total &&
-    kpi.efficiencyIndex === evidenceEfficiencyTotal &&
-    componentMatches;
 
   const structured: PerformanceAnalyticsReconciliation = {
     range: { from: params.dateFrom, to: params.dateTo },
@@ -300,8 +252,7 @@ export function reconcilePerformanceAnalytics(
             .join("; "),
     },
     backflows: {
-      dashboardCycles: kpi.backflowCount,
-      evidenceCycles: evidenceBackflowCycles,
+      dashboardEvents: kpi.backflowEventCount,
       evidenceEvents: evidenceBackflowEvents,
       matches: backflowMatches,
       semantic: backflowSemantic,
@@ -319,22 +270,11 @@ export function reconcilePerformanceAnalytics(
             )
             .join("; "),
     },
-    efficiency: {
-      dashboardScore: kpi.efficiencyIndex,
-      evidenceScore: evidenceEfficiencyTotal,
-      completionPoints: breakdown.completionScore,
-      firstPassPoints: breakdown.firstPassScore,
-      speedPoints: breakdown.speedScore,
-      backflowPenalty: breakdown.backflowPenalty,
-      componentMatches,
-      matches: efficiencyMatches,
-    },
     allMatch:
       completedMatches &&
       fpMatches &&
       backflowMatches &&
-      avgMatches &&
-      efficiencyMatches,
+      avgMatches,
     spotCheckSamples: spotCheckSamples(records),
   };
 
@@ -375,15 +315,15 @@ export function reconcileAnalyticsKpiEvidence(
       details: structured.firstPass.cycleDiagnostics,
     },
     {
-      metric: "Backflows",
+      metric: "Backflow events",
       semantic: structured.backflows.semantic,
       matches: structured.backflows.matches,
-      dashboardValue: `${structured.backflows.dashboardCycles} cycles`,
-      evidenceValue: `${structured.backflows.evidenceCycles} cycles (${structured.backflows.evidenceEvents} events)`,
+      dashboardValue: `${structured.backflows.dashboardEvents} events`,
+      evidenceValue: `${structured.backflows.evidenceEvents} events`,
     },
     {
-      metric: "Avg cycle",
-      semantic: "Average full cycle ms (todo→done) over completed cycles in range",
+      metric: "Median cycle",
+      semantic: "Median business-window cycle duration over completed cycles in range",
       matches: structured.avgCycle.matches,
       dashboardValue:
         structured.avgCycle.dashboardMs == null
@@ -394,45 +334,6 @@ export function reconcileAnalyticsKpiEvidence(
           ? "—"
           : String(Math.round(structured.avgCycle.evidenceMs)),
       details: structured.avgCycle.cycleDiagnostics,
-    },
-    {
-      metric: "Efficiency",
-      semantic:
-        "Composite score + component points from getEfficiencyScoreBreakdown (35/35/30 − penalty)",
-      matches: structured.efficiency.matches,
-      dashboardValue: String(structured.efficiency.dashboardScore),
-      evidenceValue: String(structured.efficiency.evidenceScore),
-      details: structured.efficiency.componentMatches
-        ? undefined
-        : `components completion=${structured.efficiency.completionPoints} firstPass=${structured.efficiency.firstPassPoints} speed=${structured.efficiency.speedPoints} penalty=${structured.efficiency.backflowPenalty}`,
-    },
-    {
-      metric: "Efficiency · Completion pts",
-      semantic: "Efficiency score component",
-      matches: structured.efficiency.componentMatches,
-      dashboardValue: String(structured.efficiency.completionPoints),
-      evidenceValue: String(structured.efficiency.completionPoints),
-    },
-    {
-      metric: "Efficiency · First pass pts",
-      semantic: "Efficiency score component",
-      matches: structured.efficiency.componentMatches,
-      dashboardValue: String(structured.efficiency.firstPassPoints),
-      evidenceValue: String(structured.efficiency.firstPassPoints),
-    },
-    {
-      metric: "Efficiency · Cycle time pts",
-      semantic: "Efficiency score component",
-      matches: structured.efficiency.componentMatches,
-      dashboardValue: String(structured.efficiency.speedPoints),
-      evidenceValue: String(structured.efficiency.speedPoints),
-    },
-    {
-      metric: "Efficiency · Backflow penalty",
-      semantic: "Efficiency score component",
-      matches: structured.efficiency.componentMatches,
-      dashboardValue: String(structured.efficiency.backflowPenalty),
-      evidenceValue: String(structured.efficiency.backflowPenalty),
     },
   ];
 
@@ -472,21 +373,15 @@ export function formatPerformanceAnalyticsReconciliation(
     `evidence: ${reconciliation.firstPass.evidenceNumerator} / ${reconciliation.firstPass.evidenceDenominator}`,
     reconciliation.firstPass.matches ? "PASS" : "FAIL",
     "",
-    "Backflows",
-    `dashboard cycles: ${reconciliation.backflows.dashboardCycles}`,
-    `evidence cycles: ${reconciliation.backflows.evidenceCycles}`,
+    "Backflow events",
+    `dashboard events: ${reconciliation.backflows.dashboardEvents}`,
     `events: ${reconciliation.backflows.evidenceEvents}`,
     reconciliation.backflows.matches ? "PASS" : "FAIL",
     "",
-    "Avg cycle",
+    "Median cycle",
     `dashboard: ${msToHours(reconciliation.avgCycle.dashboardMs)}`,
     `evidence: ${msToHours(reconciliation.avgCycle.evidenceMs)}`,
     reconciliation.avgCycle.matches ? "PASS" : "FAIL",
-    "",
-    "Efficiency",
-    `dashboard: ${reconciliation.efficiency.dashboardScore}`,
-    `evidence: ${reconciliation.efficiency.evidenceScore}`,
-    `components: ${reconciliation.efficiency.componentMatches ? "PASS" : "FAIL"}`,
     "",
     "Overall:",
     reconciliation.allMatch ? "PASS" : "FAIL",
@@ -496,7 +391,7 @@ export function formatPerformanceAnalyticsReconciliation(
     lines.push("", "Spot check (manual Jira verification):");
     for (const sample of reconciliation.spotCheckSamples) {
       lines.push(
-        `- ${sample.issueKey} completed=${sample.completedAt} outcome=${sample.outcome} cycleMs=${sample.cycleDurationMs ?? "—"} backflows=${sample.backflowCount}`,
+        `- ${sample.issueKey} completed=${sample.completedAt} outcome=${sample.outcome} cycleMs=${sample.cycleDurationMs ?? "—"} reworkedCycle=${sample.reworkedCycle}`,
       );
     }
   }
@@ -532,7 +427,7 @@ export function formatKpiReconciliationReport(report: KpiReconciliationReport): 
     lines.push("Spot check (manual Jira verification):");
     for (const sample of report.spotCheckSamples) {
       lines.push(
-        `- ${sample.issueKey} completed=${sample.completedAt} outcome=${sample.outcome} cycleMs=${sample.cycleDurationMs ?? "—"} backflows=${sample.backflowCount}`,
+        `- ${sample.issueKey} completed=${sample.completedAt} outcome=${sample.outcome} cycleMs=${sample.cycleDurationMs ?? "—"} reworkedCycle=${sample.reworkedCycle}`,
       );
     }
     lines.push("");

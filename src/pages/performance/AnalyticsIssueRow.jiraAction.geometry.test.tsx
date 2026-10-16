@@ -13,7 +13,7 @@ const issue: AnalyticsEvidenceIssue = {
   personId: "p1",
   personName: "Andrei Kuznetsov",
   outcome: "backflow",
-  backflowCount: 1,
+  backflowEventCount: 1,
 };
 
 function centerOf(rect: DOMRect) {

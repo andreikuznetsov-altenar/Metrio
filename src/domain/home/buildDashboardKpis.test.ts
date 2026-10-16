@@ -4,16 +4,13 @@ import {
   buildEmployeeDashboardKpis,
 } from "./buildDashboardKpis";
 import { buildManagerExecutiveModel } from "./executiveDashboardModel";
-import { performanceHelp } from "../performance/performanceHelp";
 import { testWorkload } from "../testFixtures";
 
 describe("buildManagerDashboardKpis", () => {
-  it("maps TEAM HEALTH from canonical Efficiency, not deliveryRiskCount", () => {
+  it("shows canonical Throughput independently from deliveryRiskCount", () => {
     const cards = buildManagerDashboardKpis({
-      teamEfficiency: {
-        value: "91%",
-        status: "Healthy",
-        statusVariant: "success",
+      teamThroughput: {
+        value: "31",
       },
       firstPassRate: "88%",
       deliveryRiskCount: 44,
@@ -22,46 +19,43 @@ describe("buildManagerDashboardKpis", () => {
       ],
     });
     expect(cards.map((c) => c.label)).toEqual([
-      "Team health",
+      "Throughput",
       "First pass",
       "Delivery risk",
       "Capacity",
     ]);
 
-    const teamHealth = cards[0];
-    expect(teamHealth.id).toBe("team-health");
-    expect(teamHealth.value).toBe("91%");
-    expect(teamHealth.badge).toEqual({ label: "Healthy", variant: "success" });
-    expect(teamHealth.tooltip).toBe(performanceHelp.efficiency);
-    expect(teamHealth.value).not.toMatch(/delivery risk/i);
-    expect(teamHealth.tooltip).not.toMatch(/delivery risk/i);
+    const throughput = cards[0];
+    expect(throughput.id).toBe("throughput");
+    expect(throughput.value).toBe("31");
+    expect(throughput.badge).toBeUndefined();
+    expect(throughput.tooltip).toMatch(/completion cycles/i);
 
     const deliveryRisk = cards[2];
     expect(deliveryRisk.value).toBe("44");
     expect(cards[1].value).toBe("88%");
   });
 
-  it("derives efficiency badge from score when status is omitted", () => {
+  it("does not infer a health badge from throughput", () => {
     const cards = buildManagerDashboardKpis({
-      teamEfficiency: { value: "91%" },
+      teamThroughput: { value: "31" },
       firstPassRate: "84%",
       deliveryRiskCount: 0,
       teamWorkload: [],
     });
-    expect(cards[0].value).toBe("91%");
-    expect(cards[0].badge?.label).toBe("Healthy");
-    expect(cards[0].badge?.variant).toBe("success");
+    expect(cards[0].value).toBe("31");
+    expect(cards[0].badge).toBeUndefined();
   });
 
   it("keeps Delivery risk card on deliveryRiskCount while TEAM HEALTH ignores it", () => {
     const withRisks = buildManagerDashboardKpis({
-      teamEfficiency: { value: "91%", status: "Healthy", statusVariant: "success" },
+      teamThroughput: { value: "31" },
       firstPassRate: "84%",
       deliveryRiskCount: 44,
       teamWorkload: [],
     });
     const withoutRisks = buildManagerDashboardKpis({
-      teamEfficiency: { value: "91%", status: "Healthy", statusVariant: "success" },
+      teamThroughput: { value: "31" },
       firstPassRate: "84%",
       deliveryRiskCount: 0,
       teamWorkload: [],
@@ -77,7 +71,7 @@ describe("buildManagerExecutiveModel TEAM HEALTH wiring", () => {
   const base = {
     performanceSnapshot: {
       metrics: [
-        { label: "Efficiency", value: "70%" },
+        { label: "Throughput", value: "30" },
         { label: "First pass", value: "80%" },
       ],
     },
@@ -87,12 +81,12 @@ describe("buildManagerExecutiveModel TEAM HEALTH wiring", () => {
     trends: [] as never[],
   };
 
-  it("uses teamSnapshot Efficiency for TEAM HEALTH across period-like summary changes", () => {
+  it("uses teamSnapshot Throughput across period-like summary changes", () => {
     const threeMonths = buildManagerExecutiveModel({
       ...base,
       teamSnapshot: {
         summary: [
-          { label: "Efficiency", value: "91%", status: "Healthy", statusVariant: "success" },
+          { label: "Throughput", value: "31" },
           { label: "First pass", value: "84%" },
         ],
         workload: [],
@@ -103,7 +97,7 @@ describe("buildManagerExecutiveModel TEAM HEALTH wiring", () => {
       ...base,
       teamSnapshot: {
         summary: [
-          { label: "Efficiency", value: "86%", status: "Healthy", statusVariant: "success" },
+          { label: "Throughput", value: "12" },
           { label: "First pass", value: "90%" },
         ],
         workload: [],
@@ -111,45 +105,42 @@ describe("buildManagerExecutiveModel TEAM HEALTH wiring", () => {
       deliveryRiskCount: 44,
     });
 
-    const health3m = threeMonths.kpis.find((c) => c.id === "team-health")!;
-    const health7d = sevenDays.kpis.find((c) => c.id === "team-health")!;
-    expect(health3m.value).toBe("91%");
-    expect(health7d.value).toBe("86%");
+    const health3m = threeMonths.kpis.find((c) => c.id === "throughput")!;
+    const health7d = sevenDays.kpis.find((c) => c.id === "throughput")!;
+    expect(health3m.value).toBe("31");
+    expect(health7d.value).toBe("12");
     expect(health3m.value).not.toBe("44");
     expect(threeMonths.kpis.find((c) => c.id === "delivery-risk")?.value).toBe("44");
     expect(sevenDays.kpis.find((c) => c.id === "delivery-risk")?.value).toBe("44");
     // Scope banner may still mention delivery risks — KPI card must not.
     expect(threeMonths.scopeHealth.line).toMatch(/delivery risk/i);
     expect(health3m.value).not.toMatch(/delivery risk/i);
-    expect(health3m.tooltip).toBe(performanceHelp.efficiency);
+    expect(health3m.tooltip).toMatch(/completion cycles/i);
   });
 
-  it("E/F. Dashboard TEAM HEALTH tracks period Efficiency the same as Performance summary", () => {
+  it("Dashboard Throughput tracks the Performance summary", () => {
     const periods = [
-      { efficiency: "91%", status: "Healthy" as const, firstPass: "84%" },
-      { efficiency: "86%", status: "Healthy" as const, firstPass: "90%" },
-      { efficiency: "72%", status: "Watch" as const, firstPass: "70%" },
+      { throughput: "31", firstPass: "84%" },
+      { throughput: "12", firstPass: "90%" },
+      { throughput: "4", firstPass: "70%" },
     ];
     for (const period of periods) {
-      // Canonical Performance Efficiency card for the period/filters.
-      const performanceEfficiency = {
-        label: "Efficiency",
-        value: period.efficiency,
-        status: period.status,
-        statusVariant:
-          period.status === "Watch" ? ("warning" as const) : ("success" as const),
+      // Canonical Performance Throughput card for the period/filters.
+      const performanceThroughput = {
+        label: "Throughput",
+        value: period.throughput,
       };
       const model = buildManagerExecutiveModel({
         ...base,
         teamSnapshot: {
-          summary: [performanceEfficiency, { label: "First pass", value: period.firstPass }],
+          summary: [performanceThroughput, { label: "First pass", value: period.firstPass }],
           workload: [],
         },
         deliveryRiskCount: 44,
       });
-      const teamHealth = model.kpis.find((c) => c.id === "team-health")!;
-      expect(teamHealth.value).toBe(performanceEfficiency.value);
-      expect(teamHealth.badge?.label).toBe(performanceEfficiency.status);
+      const teamHealth = model.kpis.find((c) => c.id === "throughput")!;
+      expect(teamHealth.value).toBe(performanceThroughput.value);
+      expect(teamHealth.badge).toBeUndefined();
       expect(teamHealth.value).not.toMatch(/delivery risk/i);
       expect(model.scopeHealth.line).toMatch(/44 delivery risks/i);
     }
@@ -160,7 +151,7 @@ describe("buildEmployeeDashboardKpis", () => {
   it("includes capacity load with tooltip context", () => {
     const cards = buildEmployeeDashboardKpis({
       metrics: [
-        { label: "Efficiency", value: "82%" },
+        { label: "Throughput", value: "12" },
         { label: "First pass", value: "90%" },
         { label: "Completed", value: "12" },
       ],

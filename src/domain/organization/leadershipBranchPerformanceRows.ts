@@ -1,4 +1,3 @@
-import { getEfficiencyStatus } from "../jira/kpi";
 import type { LeadershipBranch } from "./leadershipBranchTypes";
 import type { OrganizationOverviewModel } from "./organizationTypes";
 import type { BranchCapacitySummary } from "./leadershipBranchTypes";
@@ -51,7 +50,6 @@ export function buildLeadershipBranchPerformanceRows(
   branches: LeadershipBranch[],
 ): LeadershipBranchPerformanceRow[] {
   return branches.map((branch) => {
-    const status = getEfficiencyStatus(branch.metrics.efficiencyIndex);
     const cap = branch.metrics.capacity;
     const parts = capacityParts(cap);
     const capacityLabel = parts.length
@@ -63,7 +61,7 @@ export function buildLeadershipBranchPerformanceRows(
       leaderName: branch.leaderName,
       leaderTitle: branch.leaderTitle,
       peopleCount: branch.totalPeopleCount,
-      performanceLabel: `${status} · ${branch.metrics.firstPassPercent}% first pass`,
+      performanceLabel: `${branch.metrics.throughputCount} completed · ${branch.metrics.firstPassPercent}% first pass`,
       attentionLabel: formatAttention(branch),
       deliveryRiskCount: branch.metrics.uniqueDeliveryRiskCount,
       capacityLabel,

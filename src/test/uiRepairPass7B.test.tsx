@@ -50,7 +50,7 @@ const secondary: TeamSecondarySnapshot = {
       personId: "p1",
       personName: "Alex",
       role: "Engineer",
-      efficiency: "90%",
+      throughput: "9",
       workload: "Heavy",
       availability: "Available",
       attentionState: "",

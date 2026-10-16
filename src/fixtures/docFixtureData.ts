@@ -215,7 +215,7 @@ function issue(
         isBackflow: i === path.length - 2 ? (options.backflow ?? false) : false,
         isHandoff: false,
         isReturnToTeam: false,
-        excludeFromEfficiencyBackflow: false,
+        excludeFromBackflow: false,
       }));
     })(),
     rangeEvents: [],
@@ -517,10 +517,10 @@ function peopleForRole(role: DocFixtureRole): Person[] {
         score: 48,
       }),
       testKpi({
-        efficiencyIndex: 78,
         completedCount: 3,
         firstPassAcceptedCount: 2,
-        backflowCount: 1,
+        reworkedCycleCount: 1,
+        backflowEventCount: 1,
         reviewSubmittedCount: 4,
       }),
     ),
@@ -536,10 +536,10 @@ function peopleForRole(role: DocFixtureRole): Person[] {
         score: 18,
       }),
       testKpi({
-        efficiencyIndex: 94,
         completedCount: 5,
         firstPassAcceptedCount: 5,
-        backflowCount: 0,
+        reworkedCycleCount: 0,
+        backflowEventCount: 0,
         reviewSubmittedCount: 3,
       }),
     ),
@@ -556,10 +556,10 @@ function peopleForRole(role: DocFixtureRole): Person[] {
         score: 82,
       }),
       testKpi({
-        efficiencyIndex: 86,
         completedCount: 4,
         firstPassAcceptedCount: 3,
-        backflowCount: 1,
+        reworkedCycleCount: 1,
+        backflowEventCount: 1,
       }),
     ),
     person(
@@ -571,7 +571,7 @@ function peopleForRole(role: DocFixtureRole): Person[] {
         capacityLoadPercent: 41,
         score: 41,
       }),
-      testKpi({ efficiencyIndex: 91, completedCount: 5, firstPassAcceptedCount: 5 }),
+      testKpi({ completedCount: 5, firstPassAcceptedCount: 5 }),
     ),
     person(
       "doc-andreas",
@@ -583,34 +583,34 @@ function peopleForRole(role: DocFixtureRole): Person[] {
         capacityLoadPercent: 35,
         score: 35,
       }),
-      testKpi({ efficiencyIndex: 93, completedCount: 4, firstPassAcceptedCount: 4 }),
+      testKpi({ completedCount: 4, firstPassAcceptedCount: 4 }),
     ),
     person(
       "doc-sofia",
       testWorkload({ level: "normal", activeCount: 1, activeWorkCount: 1, capacityLoadPercent: 52 }),
-      testKpi({ efficiencyIndex: 89, completedCount: 3, firstPassAcceptedCount: 2 }),
+      testKpi({ completedCount: 3, firstPassAcceptedCount: 2 }),
     ),
     person(
       "doc-giorgos",
       testWorkload({ level: "low", activeCount: 0, capacityLoadPercent: 12, score: 12 }),
-      testKpi({ efficiencyIndex: 100, completedCount: 2, firstPassAcceptedCount: 2 }),
+      testKpi({ completedCount: 2, firstPassAcceptedCount: 2 }),
     ),
     person(
       "doc-anna",
       testWorkload({ level: "normal", activeCount: 1, activeWorkCount: 1, capacityLoadPercent: 56 }),
-      testKpi({ efficiencyIndex: 88, completedCount: 1, firstPassAcceptedCount: 1 }),
+      testKpi({ completedCount: 1, firstPassAcceptedCount: 1 }),
       { state: "vacation_soon", label: "Vacation soon", startDate: "2026-10-14", endDate: "2026-10-18", isHoliday: false },
     ),
     person(
       "doc-mark",
       testWorkload({ level: "low", activeCount: 0, holdCount: 1, capacityLoadPercent: 0, score: 0 }),
-      testKpi({ efficiencyIndex: 82, completedCount: 1, firstPassAcceptedCount: 0, backflowCount: 1 }),
+      testKpi({ completedCount: 1, firstPassAcceptedCount: 0, reworkedCycleCount: 1, backflowEventCount: 1 }),
       { state: "on_vacation", label: "On vacation", startDate: "2026-10-08", endDate: "2026-10-12", isHoliday: false },
     ),
     person(
       "doc-nikolai",
       testWorkload({ level: "low", activeCount: 0, capacityLoadPercent: 8, score: 8 }),
-      testKpi({ efficiencyIndex: 96, completedCount: 0, firstPassAcceptedCount: 0 }),
+      testKpi({ completedCount: 0, firstPassAcceptedCount: 0 }),
     ),
   ];
   if (role === "ic") return all.filter((entry) => entry.id === "doc-maria");
@@ -654,10 +654,10 @@ function buildKpiHistory(teamSnapshot: TeamSnapshot, reportData: AuditReportData
     const dailyReport: AuditReportData = {
       ...reportData,
       teamKpi: testKpi({
-        efficiencyIndex: 86 + (sequence % 8),
         completedCount: 20 + (sequence % 9),
         firstPassAcceptedCount: 17 + (sequence % 8),
-        backflowCount: sequence % 4,
+        reworkedCycleCount: sequence % 4,
+        backflowEventCount: sequence % 4,
         avgProgressToReviewMs: (2.1 + (sequence % 4) * 0.25) * 24 * 60 * 60 * 1000,
       }),
     };
@@ -692,29 +692,29 @@ export function buildDocPerformanceFetchResult(
   const teamKpi =
     role === "director"
       ? testKpi({
-          efficiencyIndex: 91,
           completedCount: 76,
           firstPassAcceptedCount: 66,
-          backflowCount: 7,
+          reworkedCycleCount: 7,
+          backflowEventCount: 7,
           reviewSubmittedCount: 83,
           avgProgressToReviewMs: 2.4 * 24 * 60 * 60 * 1000,
           avgReviewToDoneMs: 1.1 * 24 * 60 * 60 * 1000,
         })
       : role === "manager"
         ? testKpi({
-            efficiencyIndex: 88,
             completedCount: 31,
             firstPassAcceptedCount: 26,
-            backflowCount: 4,
+            reworkedCycleCount: 4,
+            backflowEventCount: 4,
             reviewSubmittedCount: 35,
             avgProgressToReviewMs: 2.6 * 24 * 60 * 60 * 1000,
             avgReviewToDoneMs: 1.2 * 24 * 60 * 60 * 1000,
           })
         : testKpi({
-            efficiencyIndex: 91,
             completedCount: 28,
             firstPassAcceptedCount: 24,
-            backflowCount: 3,
+            reworkedCycleCount: 3,
+            backflowEventCount: 3,
             reviewSubmittedCount: 31,
             avgProgressToReviewMs: 2.4 * 24 * 60 * 60 * 1000,
             avgReviewToDoneMs: 1.1 * 24 * 60 * 60 * 1000,

@@ -52,7 +52,7 @@ describe('computeIssuesFlowMetrics', () => {
             isBackflow: true,
             isHandoff: false,
             isReturnToTeam: false,
-            excludeFromEfficiencyBackflow: false,
+            excludeFromBackflow: false,
           },
         ],
       }),
@@ -60,7 +60,7 @@ describe('computeIssuesFlowMetrics', () => {
 
     const metrics = computeIssuesFlowMetrics(issues, range, params);
     expect(metrics.completedCount).toBe(0);
-    expect(metrics.backflowCount).toBe(1);
+    expect(metrics.backflowEventCount).toBe(1);
   });
 
   it('counts backflow inside range when completion is outside range', () => {
@@ -80,7 +80,7 @@ describe('computeIssuesFlowMetrics', () => {
             isBackflow: true,
             isHandoff: false,
             isReturnToTeam: false,
-            excludeFromEfficiencyBackflow: false,
+            excludeFromBackflow: false,
           },
           {
             eventType: 'Status',
@@ -92,7 +92,7 @@ describe('computeIssuesFlowMetrics', () => {
             isBackflow: false,
             isHandoff: false,
             isReturnToTeam: false,
-            excludeFromEfficiencyBackflow: false,
+            excludeFromBackflow: false,
           },
         ],
       }),
@@ -100,7 +100,7 @@ describe('computeIssuesFlowMetrics', () => {
 
     const metrics = computeIssuesFlowMetrics(issues, range, params);
     expect(metrics.completedCount).toBe(0);
-    expect(metrics.backflowCount).toBe(1);
+    expect(metrics.backflowEventCount).toBe(1);
   });
 
   it('ignores backflow outside range when completion is inside range', () => {
@@ -120,7 +120,7 @@ describe('computeIssuesFlowMetrics', () => {
             isBackflow: true,
             isHandoff: false,
             isReturnToTeam: false,
-            excludeFromEfficiencyBackflow: false,
+            excludeFromBackflow: false,
           },
           {
             eventType: 'Status',
@@ -132,7 +132,7 @@ describe('computeIssuesFlowMetrics', () => {
             isBackflow: false,
             isHandoff: false,
             isReturnToTeam: false,
-            excludeFromEfficiencyBackflow: false,
+            excludeFromBackflow: false,
           },
         ],
       }),
@@ -140,7 +140,7 @@ describe('computeIssuesFlowMetrics', () => {
 
     const metrics = computeIssuesFlowMetrics(issues, range, params);
     expect(metrics.completedCount).toBe(1);
-    expect(metrics.backflowCount).toBe(0);
+    expect(metrics.backflowEventCount).toBe(0);
   });
 
   it('excludes active issues from First Pass denominator', () => {
@@ -165,7 +165,7 @@ describe('computeIssuesFlowMetrics', () => {
             isBackflow: false,
             isHandoff: false,
             isReturnToTeam: false,
-            excludeFromEfficiencyBackflow: false,
+            excludeFromBackflow: false,
           },
         ],
       }),
@@ -215,7 +215,7 @@ describe('computeTeamFlowMetrics', () => {
           isBackflow: false,
           isHandoff: false,
           isReturnToTeam: false,
-          excludeFromEfficiencyBackflow: false,
+          excludeFromBackflow: false,
         },
       ],
     });
@@ -240,12 +240,12 @@ describe('computeTeamFlowMetrics', () => {
           isBackflow: true,
           isHandoff: false,
           isReturnToTeam: false,
-          excludeFromEfficiencyBackflow: false,
+          excludeFromBackflow: false,
         },
       ],
     });
     const persons = [personWithIssue('1', 'Anna', shared), personWithIssue('2', 'Bob', shared)];
     const metrics = computeTeamFlowMetrics(persons, range, params);
-    expect(metrics.backflowCount).toBe(1);
+    expect(metrics.backflowEventCount).toBe(1);
   });
 });

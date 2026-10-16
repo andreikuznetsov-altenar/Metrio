@@ -206,12 +206,10 @@ describe("PASS 18 role-based UX", () => {
     const directorResult = buildDocPerformanceFetchResult("director", "30d", "team", "team");
 
     expect(manager.orgHierarchy?.directIndividualContributorIds).toEqual([]);
-    expect(managerResult.reportData.teamKpi.efficiencyIndex).toBe(88);
     expect(managerResult.reportData.teamKpi.completedCount).toBe(31);
-    expect(managerResult.reportData.teamKpi.backflowCount).toBe(4);
-    expect(directorResult.reportData.teamKpi.efficiencyIndex).toBe(91);
+    expect(managerResult.reportData.teamKpi.backflowEventCount).toBe(4);
     expect(directorResult.reportData.teamKpi.completedCount).toBe(76);
-    expect(directorResult.reportData.teamKpi.backflowCount).toBe(7);
+    expect(directorResult.reportData.teamKpi.backflowEventCount).toBe(7);
 
     const managerModel = buildOrganizationModel({
       snapshot: managerResult.teamSnapshot,
@@ -230,7 +228,7 @@ describe("PASS 18 role-based UX", () => {
       summaryKpi: managerResult.reportData.teamKpi,
     });
     expect(managerModel.summary.map((metric) => metric.value)).toEqual([
-      "88%",
+      "31",
       "84%",
       "31",
       "4",

@@ -3,7 +3,6 @@ import { createStatusMapProfile } from '../createStatusMapProfile';
 export const editorialWorkflowProfile = createStatusMapProfile({
   id: 'editorial',
   label: 'Editorial',
-  efficiencyModel: 'ux',
   statusMap: {
     Idea: 'backlog',
     Backlog: 'backlog',

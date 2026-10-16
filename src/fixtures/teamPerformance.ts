@@ -53,7 +53,7 @@ function buildPersonDetail(personId: string): PersonPerformanceDetail {
   const seed = hash(personId);
   return {
     personId,
-    efficiency: `${78 + (seed % 15)}%`,
+    throughput: `${6 + (seed % 8)}`,
     firstPass: `${70 + (seed % 20)}%`,
     completed: `${12 + (seed % 8)}`,
     workload: ["Light", "Balanced", "Heavy"][seed % 3],
@@ -94,11 +94,11 @@ function buildTrends(
       sparkline: [62, 65, 68, 66, 70, 71, 74],
     },
     {
-      label: "Avg cycle",
+      label: "Cycle time",
       value: `${3 + (base % 4)}.2d`,
     },
     {
-      label: "Backflows",
+      label: "Backflow events",
       value: `${2 + (base % 3)}`,
       sparkline: [4, 3, 4, 2, 3, 2, 1],
     },
@@ -112,9 +112,8 @@ export function getTeamPerformanceSnapshot(
   refreshToken: number,
 ): TeamPerformanceSnapshot {
   const modifier = refreshToken % 3;
-  const targetBias = reviewTarget === "sprint" ? 2 : reviewTarget === "org" ? -1 : 0;
+  void reviewTarget;
   const rangeBias = dateRange === "7d" ? -2 : dateRange === "3m" ? 3 : 0;
-  const efficiency = 84 + modifier + targetBias;
   const firstPass = 76 + modifier;
   const completed = directReportIds.length * 4 + rangeBias + modifier;
   const backflows = 2 + (modifier % 2);
@@ -127,11 +126,9 @@ export function getTeamPerformanceSnapshot(
     directReportIds: [...directReportIds],
     summary: [
       {
-        label: "Efficiency",
-        value: `${efficiency}%`,
-        status: targetBias >= 0 ? "On target" : "Below target",
-        statusVariant: targetBias >= 0 ? "success" : "warning",
-        tooltip: "Throughput relative to planned capacity for direct reports.",
+        label: "Throughput",
+        value: `${completed}`,
+        tooltip: "Successful completion cycles in the selected range.",
       },
       {
         label: "First pass",
@@ -147,11 +144,11 @@ export function getTeamPerformanceSnapshot(
         tooltip: "Items completed by your direct reports in the selected range.",
       },
       {
-        label: "Backflows",
+        label: "Backflow events",
         value: `${backflows}`,
         status: backflows > 2 ? "Elevated" : "Stable",
         statusVariant: backflows > 2 ? "warning" : "neutral",
-        tooltip: "Items returned for rework during the selected range.",
+        tooltip: "Qualifying backward workflow transitions in the selected range.",
       },
     ],
     attention: pickAttention(directReportIds),
@@ -189,7 +186,7 @@ function buildPeopleRows(
       personId,
       personName: person.name,
       role: roleLabel(person.role),
-      efficiency: detail.efficiency,
+      throughput: detail.throughput,
       workload: load?.workload ?? detail.workload,
       availability: load?.availability ?? "Available",
       attentionState: attentionItem

@@ -1,5 +1,6 @@
 /**
- * Real packaged dashboard-cache parity: scoped canonical KPI === teamKpi.
+ * Real packaged dashboard-cache check: scoped canonical KPI === direct unique-issue KPI.
+ * (The cached teamKpi predates Metrics V2, so it is no longer a comparison target.)
  * Enable with METRIO_HIER_KPI_QA=1 (reads com.altenar.metrio dashboard_cache).
  */
 import { describe, expect, it } from "vitest";
@@ -7,7 +8,7 @@ import { readFileSync, existsSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
 import { buildCanonicalKpiForPersonScope } from "../jira/scopedCanonicalKpi";
-import { getEfficiencyScoreBreakdown } from "../jira/kpi";
+import { buildKpiFromIssues } from "../jira/kpi";
 import { collectUniqueTeamIssues } from "../jira/uniqueIssues";
 import type { Person } from "../people/types";
 import type { ReportParams } from "../jira/types";
@@ -29,18 +30,13 @@ describe.skipIf(!runReal)("PASS 15.2 real dashboard-cache hierarchical KPI", () 
     };
     const persons = cache.fetchResult.teamSnapshot.persons;
     const params = cache.fetchResult.reportData.params;
-    const teamKpi = cache.fetchResult.reportData.teamKpi;
 
     const scoped = buildCanonicalKpiForPersonScope({ persons, params });
-    expect(scoped.efficiencyIndex).toBe(teamKpi.efficiencyIndex);
-    expect(scoped.completedCount).toBe(teamKpi.completedCount);
-    expect(scoped.backflowCount).toBe(teamKpi.backflowCount);
-    expect(scoped.firstPassAcceptedCount).toBe(teamKpi.firstPassAcceptedCount);
-
-    const speed = getEfficiencyScoreBreakdown({
-      ...scoped,
-      targetReviewDays: params.targetReviewDays,
-    });
+    const direct = buildKpiFromIssues(collectUniqueTeamIssues(persons), {}, params);
+    expect(scoped.completedCount).toBe(direct.completedCount);
+    expect(scoped.firstPassAcceptedCount).toBe(direct.firstPassAcceptedCount);
+    expect(scoped.reworkedCycleCount).toBe(direct.reworkedCycleCount);
+    expect(scoped.backflowEventCount).toBe(direct.backflowEventCount);
     const projects = [
       ...new Set(
         collectUniqueTeamIssues(persons)
@@ -59,15 +55,14 @@ describe.skipIf(!runReal)("PASS 15.2 real dashboard-cache hierarchical KPI", () 
             name: p.bamboo?.displayName,
           })),
           projects,
-          Efficiency: scoped.efficiencyIndex,
           FirstPass: Math.round(
             (scoped.firstPassAcceptedCount / Math.max(scoped.completedCount, 1)) *
               100,
           ),
           Completed: scoped.completedCount,
-          Backflows: scoped.backflowCount,
-          speedScore: speed.speedScore,
-          equalsTeamKpi: true,
+          ReworkedCycles: scoped.reworkedCycleCount,
+          BackflowEvents: scoped.backflowEventCount,
+          equalsDirectUniqueIssueKpi: true,
         },
         null,
         2,

@@ -25,7 +25,7 @@ export function getCycleSegments(issue: AuditIssue, _params?: ReportParams): Cyc
   events.forEach((e) => {
     if (e.eventType !== 'Status') return;
 
-    if (e.isBackflow && !e.excludeFromEfficiencyBackflow) {
+    if (e.isBackflow && !e.excludeFromBackflow) {
       cycleHasBackflow = true;
     }
 

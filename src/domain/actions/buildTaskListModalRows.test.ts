@@ -77,7 +77,7 @@ describe("buildTaskListModalRowsFromIssueKeys", () => {
           isBackflow: false,
           isHandoff: false,
           isReturnToTeam: false,
-          excludeFromEfficiencyBackflow: false,
+          excludeFromBackflow: false,
         },
         {
           eventType: "Status",
@@ -89,7 +89,7 @@ describe("buildTaskListModalRowsFromIssueKeys", () => {
           isBackflow: false,
           isHandoff: false,
           isReturnToTeam: false,
-          excludeFromEfficiencyBackflow: false,
+          excludeFromBackflow: false,
         },
       ],
       rangeEvents: [],

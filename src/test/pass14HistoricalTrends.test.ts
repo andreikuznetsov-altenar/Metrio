@@ -98,7 +98,7 @@ function statusEvent(fromValue: string, toValue: string, changedAt: string): Iss
     isBackflow: false,
     isHandoff: false,
     isReturnToTeam: false,
-    excludeFromEfficiencyBackflow: false,
+    excludeFromBackflow: false,
   };
 }
 

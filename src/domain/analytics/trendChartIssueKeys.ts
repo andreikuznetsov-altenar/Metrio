@@ -68,11 +68,11 @@ export function enrichTrendChartSeries(
   series: { date: string; value: number }[],
 ): TrendChartPoint[] {
   const keysByDate =
-    trendLabel === "Completed" || trendLabel === "Avg cycle"
+    trendLabel === "Completed" || trendLabel === "Cycle time"
       ? completedKeysByDate(issues, params, false)
       : trendLabel === "First pass"
         ? completedKeysByDate(issues, params, true)
-        : trendLabel === "Backflows"
+        : trendLabel === "Backflow events"
           ? backflowKeysByDate(issues)
           : null;
   if (!keysByDate) return series;

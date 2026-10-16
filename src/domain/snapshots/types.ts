@@ -1,4 +1,5 @@
-export const KPI_SNAPSHOT_SCHEMA_VERSION = 4;
+/** V5: canonical cycle methodology (event backflows, median-first durations, owner attribution). */
+export const KPI_SNAPSHOT_SCHEMA_VERSION = 5;
 
 export type SnapshotSource = 'live_daily' | 'historical_jira';
 

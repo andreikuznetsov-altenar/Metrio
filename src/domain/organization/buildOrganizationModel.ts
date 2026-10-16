@@ -1,5 +1,4 @@
 import { formatDuration } from "../jira/dates";
-import { getEfficiencyStatus } from "../jira/kpi";
 import type { Person } from "../people/types";
 import type { KpiData, ReportParams } from "../jira/types";
 import { buildCanonicalKpiForPersonScope } from "../jira/scopedCanonicalKpi";
@@ -98,15 +97,10 @@ function buildSummaryMetrics(
       : 0;
   return [
     {
-      label: "Efficiency",
-      value: `${kpi.efficiencyIndex}%`,
-      status: getEfficiencyStatus(kpi.efficiencyIndex),
-      statusVariant:
-        kpi.efficiencyIndex >= 75
-          ? "success"
-          : kpi.efficiencyIndex >= 55
-            ? "warning"
-            : "danger",
+      label: "Throughput",
+      value: String(kpi.throughputCount ?? kpi.completedCount),
+      status: `${kpi.throughputPerWorkingDay ?? 0} per working day`,
+      statusVariant: "neutral",
     },
     {
       label: "First pass",
@@ -117,8 +111,8 @@ function buildSummaryMetrics(
       value: String(kpi.completedCount),
     },
     {
-      label: "Backflows",
-      value: String(kpi.backflowCount),
+      label: "Backflow events",
+      value: String(kpi.backflowEventCount),
     },
   ];
 }
@@ -141,9 +135,9 @@ function buildTeamTrends(
       };
     }
     const backflowNote =
-      kpi.backflowCount >= 3 ? "Rework elevated" : "Delivery stable";
-    const cycleNote = kpi.avgProgressToReviewMs
-      ? `Avg cycle ${formatDuration(kpi.avgProgressToReviewMs)}`
+      (kpi.reworkedCycleCount) >= 3 ? "Rework elevated" : "Delivery stable";
+    const cycleNote = kpi.medianCycleMs
+      ? `Median cycle ${formatDuration(kpi.medianCycleMs)}`
       : "Cycle data limited";
     return {
       teamId: team.teamId,
