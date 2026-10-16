@@ -110,6 +110,7 @@ describe('capacity data sufficiency (WF8.1)', () => {
         atRisk: 0,
         workload: 'Light',
         capacityDataState: 'measured',
+        capacityLoadPercent: 40,
         availability: 'Available',
       },
       {
@@ -162,8 +163,9 @@ describe('capacity data sufficiency (WF8.1)', () => {
         personId: 'a',
         activeWork: 1,
         atRisk: 0,
-        workload: 'Heavy',
+        workload: 'Balanced',
         capacityDataState: 'measured',
+        capacityLoadPercent: 90,
         availability: 'Available',
       },
       {
