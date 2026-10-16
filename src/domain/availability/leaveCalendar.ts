@@ -1,4 +1,5 @@
 import { differenceInCalendarDays, format, parseISO, startOfDay } from "date-fns";
+import { reportingDay } from "../calendar/reportingDay";
 import type { PersonAvailability } from "../people/types";
 
 import { appNow } from "../../platform/appClock";
@@ -11,8 +12,7 @@ export function parseCalendarDate(iso?: string): Date | null {
 export function calendarDaysUntil(startDateIso: string, today = appNow()): number | null {
   const start = parseCalendarDate(startDateIso);
   if (!start) return null;
-  const day = startOfDay(today);
-  return differenceInCalendarDays(start, day);
+  return differenceInCalendarDays(start, reportingDay(today));
 }
 
 export function formatLeaveCountdown(startDateIso: string, today = appNow()): string {

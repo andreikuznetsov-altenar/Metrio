@@ -1,4 +1,5 @@
 import { addDays, format, isAfter, isBefore, isEqual, parseISO, startOfDay } from 'date-fns';
+import { reportingDay } from '../calendar/reportingDay';
 import type { PersonAvailability } from './types';
 import { formatBambooTimeOffType } from './timeOffTypeLabel';
 
@@ -33,10 +34,10 @@ function formatRange(start: Date, end: Date): string {
 
 export function classifyAvailability(
   entry: TimeOffEntry | null,
-  today: Date = startOfDay(appNow()),
+  today: Date = appNow(),
   soonWithinDays = 7,
 ): PersonAvailability {
-  const day = startOfDay(today);
+  const day = reportingDay(today);
 
   if (!entry) {
     return { state: 'available', label: 'Available', isHoliday: false };
@@ -109,8 +110,9 @@ export function classifyAvailability(
 export function pickRelevantTimeOff(
   entries: TimeOffEntry[],
   employeeId: string,
-  today: Date = startOfDay(appNow()),
+  today: Date = appNow(),
 ): TimeOffEntry | null {
+  const day = reportingDay(today);
   const mine = entries.filter((e) => String(e.employeeId || '') === String(employeeId));
   if (!mine.length) return null;
 
@@ -125,11 +127,11 @@ export function pickRelevantTimeOff(
 
   const active = sorted.find(
     (x) =>
-      (isBefore(x.start!, today) || isEqual(x.start!, today)) &&
-      (isAfter(x.end!, today) || isEqual(x.end!, today)),
+      (isBefore(x.start!, day) || isEqual(x.start!, day)) &&
+      (isAfter(x.end!, day) || isEqual(x.end!, day)),
   );
   if (active) return active.entry;
 
-  const upcoming = sorted.find((x) => !isBefore(x.end!, today));
+  const upcoming = sorted.find((x) => !isBefore(x.end!, day));
   return upcoming?.entry || null;
 }

@@ -1,4 +1,5 @@
-import { addDays, format } from 'date-fns';
+import { addCalendarDays } from '../../domain/calendar/workingCalendar';
+import { reportingDateKey } from '../../domain/calendar/reportingDay';
 import type { AuditReportData } from '../../domain/jira/types';
 import { classifyAvailability, pickRelevantTimeOff, type TimeOffEntry } from '../../domain/people/availability';
 import { resolveJiraIdentity, toPersonJiraIdentity } from '../../domain/people/identityResolver';
@@ -125,7 +126,7 @@ export function buildTeamSnapshot(
 }
 
 export function getWhosOutDateRange(): { start: string; end: string } {
-  const start = format(appNow(), 'yyyy-MM-dd');
-  const end = format(addDays(appNow(), 30), 'yyyy-MM-dd');
+  const start = reportingDateKey(appNow());
+  const end = addCalendarDays(start, 30);
   return { start, end };
 }

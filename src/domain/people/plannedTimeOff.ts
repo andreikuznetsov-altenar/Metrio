@@ -2,6 +2,7 @@ import { addDays, addMonths, format } from "date-fns";
 import type { TimeOffEntry } from "./availability";
 import { parseIsoDateOnly } from "../../components/DatePicker/datePickerValue";
 import { formatBambooTimeOffType } from "./timeOffTypeLabel";
+import { reportingDateKey, reportingDay } from "../calendar/reportingDay";
 
 import { appNow } from "../../platform/appClock";
 export interface PlannedTimeOffRow {
@@ -27,8 +28,8 @@ function dedupeKey(employeeId: string, start: string, end: string): string {
 export function getWhosOutHorizonRange(
   today: Date = appNow(),
 ): { start: string; end: string } {
-  const start = format(today, "yyyy-MM-dd");
-  const end = format(addMonths(today, 12), "yyyy-MM-dd");
+  const start = reportingDateKey(today);
+  const end = format(addMonths(reportingDay(today), 12), "yyyy-MM-dd");
   return { start, end };
 }
 
@@ -62,7 +63,7 @@ export function buildPlannedTimeOffRows(
   teamEmployeeIds: Set<string>,
   today: Date = appNow(),
 ): PlannedTimeOffRow[] {
-  const todayIso = format(today, "yyyy-MM-dd");
+  const todayIso = reportingDateKey(today);
   const seen = new Set<string>();
   const rows: PlannedTimeOffRow[] = [];
 
