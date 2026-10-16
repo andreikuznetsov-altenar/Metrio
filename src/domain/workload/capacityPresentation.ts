@@ -49,7 +49,9 @@ export function capacityPresentationLabel(
   if (isAway(availability)) {
     return CAPACITY_INSUFFICIENT_LABEL;
   }
-  return workloadDisplayLabel(workload?.level);
+  return workloadDisplayLabel(
+    capacityLevelFromPercent(workload?.capacityLoadPercent ?? 0),
+  );
 }
 
 export function isMeasuredCapacityLabel(label: CapacityPresentationLabel): label is WorkloadDisplayLabel {
@@ -91,8 +93,8 @@ export function employeeCapacityKpi(input: {
     };
   }
 
-  const label = workloadDisplayLabel(wl?.level);
   const percent = wl?.capacityLoadPercent ?? 0;
+  const label = workloadDisplayLabel(capacityLevelFromPercent(percent));
   return {
     capacityDataState: 'measured',
     value: `${Math.round(percent)}%`,
@@ -119,8 +121,12 @@ export interface TeamCapacityKpiSummary {
 export function teamCapacityKpiFromRows(workload: WorkloadRow[]): TeamCapacityKpiSummary {
   const measured = workload.filter((row) => row.capacityDataState !== 'insufficient_history');
   const insufficient = workload.length - measured.length;
-  const overloaded = measured.filter((row) => row.workload === 'Overloaded').length;
-  const heavy = measured.filter((row) => row.workload === 'Heavy').length;
+  const overloaded = measured.filter(
+    (row) => capacityLevelFromPercent(row.capacityLoadPercent ?? 0) === 'overloaded',
+  ).length;
+  const heavy = measured.filter(
+    (row) => capacityLevelFromPercent(row.capacityLoadPercent ?? 0) === 'high',
+  ).length;
   const hot = overloaded + heavy;
 
   if (measured.length === 0) {
