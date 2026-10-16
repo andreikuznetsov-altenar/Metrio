@@ -1,6 +1,6 @@
 import { differenceInCalendarDays, parseISO } from 'date-fns';
 import {
-  getWorkingDurationMs,
+  getBusinessDurationMs,
   isDateWithinRange,
   parseDateEndOfDay,
   parseDateStartOfDay,
@@ -280,7 +280,7 @@ function mergeIntervals(intervals: CapacityInterval[]): CapacityInterval[] {
 
 function businessDurationMs(intervals: CapacityInterval[]): number {
   return mergeIntervals(intervals).reduce((sum, interval) => {
-    const ms = getWorkingDurationMs(
+    const ms = getBusinessDurationMs(
       new Date(interval.startMs).toISOString(),
       new Date(interval.endMs).toISOString(),
     );
