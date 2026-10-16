@@ -2,13 +2,27 @@ import { Badge } from "../../../components/Badge/Badge";
 import { Button } from "../../../components/Button/Button";
 import { PersonAvatar } from "../../../components/PersonAvatar/PersonAvatar";
 import type { ManagerAvailabilityRow } from "../../../domain/availability/teamAvailabilityContext";
-import type { TeamPerformanceSnapshot } from "../../../domain/performance";
+import type { TeamPerformanceSnapshot, WorkloadRow } from "../../../domain/performance";
 import { workloadBadgeVariantFromLabel } from "../../../domain/performance/performanceStatusBadges";
+import {
+  CAPACITY_INSUFFICIENT_LABEL,
+  measuredCapacityLabelFromPercent,
+} from "../../../domain/workload/capacityPresentation";
 
-function countOverloaded(snapshot: TeamPerformanceSnapshot | null): number {
+function capacityLabel(row: WorkloadRow): string {
+  if (
+    row.capacityDataState === "insufficient_history" ||
+    row.capacityLoadPercent == null ||
+    !Number.isFinite(row.capacityLoadPercent)
+  ) {
+    return CAPACITY_INSUFFICIENT_LABEL;
+  }
+  return measuredCapacityLabelFromPercent(row.capacityLoadPercent);
+}
+
+function countOverloadedCapacity(snapshot: TeamPerformanceSnapshot | null): number {
   if (!snapshot) return 0;
-  return snapshot.workload.filter((row) => /high|overload/i.test(row.workload))
-    .length;
+  return snapshot.workload.filter((row) => capacityLabel(row) === "Overloaded").length;
 }
 
 export function DashboardTeamCapacityCard({
@@ -22,7 +36,7 @@ export function DashboardTeamCapacityCard({
   availabilityPreview: ManagerAvailabilityRow[];
   onOpenTeamOverview: () => void;
 }) {
-  const overloaded = countOverloaded(teamSnapshot);
+  const overloaded = countOverloadedCapacity(teamSnapshot);
   const available =
     teamSnapshot?.summary.find((m) => /available/i.test(m.label))?.value ??
     String(teamSnapshot?.directReportIds.length ?? "—");
@@ -47,13 +61,14 @@ export function DashboardTeamCapacityCard({
             const workload = teamSnapshot?.workload.find(
               (w) => w.personId === row.personId,
             );
+            const label = workload ? capacityLabel(workload) : null;
             return (
               <div key={row.personId} className="executive-team-capacity__row">
                 <PersonAvatar personId={row.personId} displayName={row.personName} size="sm" />
                 <span>{row.personName}</span>
-                {workload ? (
-                  <Badge variant={workloadBadgeVariantFromLabel(workload.workload)}>
-                    {workload.workload}
+                {label ? (
+                  <Badge variant={workloadBadgeVariantFromLabel(label)}>
+                    {label}
                   </Badge>
                 ) : null}
                 <span className="executive-queue-table__context">{row.rangeLabel}</span>

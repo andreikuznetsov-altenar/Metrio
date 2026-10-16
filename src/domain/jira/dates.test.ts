@@ -1,38 +1,79 @@
 import { describe, expect, it } from 'vitest';
-import { getWorkingDurationMs, getWorkingDurationMsWithinRange, formatDuration } from './dates';
+import {
+  formatDuration,
+  getBusinessDurationMs,
+  getWorkingDurationMs,
+  getWorkingDurationMsWithinRange,
+  WORKDAY_HOURS,
+} from './dates';
+
+const HOUR = 60 * 60 * 1000;
 
 describe('getWorkingDurationMs', () => {
-  it('excludes weekends between two weekdays', () => {
-    // Friday 10:00 to Monday 10:00 — only Fri 10-24 + Mon 0-10 working hours
+  it('preserves legacy elapsed-weekday semantics for cycle KPIs', () => {
     const ms = getWorkingDurationMs(
-      '2024-01-05T10:00:00.000Z',
-      '2024-01-08T10:00:00.000Z',
+      '2024-01-05T10:00:00',
+      '2024-01-08T10:00:00',
     );
     expect(ms).not.toBeNull();
-    expect(ms!).toBeGreaterThan(0);
-    // Should be less than full calendar 72h
-    expect(ms!).toBeLessThan(72 * 60 * 60 * 1000);
+    expect(ms!).toBeGreaterThan(23 * HOUR);
+    expect(ms!).toBeLessThanOrEqual(24 * HOUR);
   });
 
-  it('returns 0 when end before start', () => {
-    expect(getWorkingDurationMs('2024-01-10T12:00:00.000Z', '2024-01-10T10:00:00.000Z')).toBe(0);
+  it('returns 0 when end is before start', () => {
+    expect(
+      getWorkingDurationMs(
+        '2024-01-10T12:00:00',
+        '2024-01-10T10:00:00',
+      ),
+    ).toBe(0);
+  });
+});
+
+describe('getBusinessDurationMs', () => {
+  it('counts only the 09:00–17:00 weekday window', () => {
+    const ms = getBusinessDurationMs(
+      '2024-01-05T10:00:00',
+      '2024-01-08T10:00:00',
+    );
+    // Friday 10–17 = 7h, weekend = 0h, Monday 09–10 = 1h.
+    expect(ms).toBe(8 * HOUR);
+  });
+
+  it('does not count overnight time outside business hours', () => {
+    expect(
+      getBusinessDurationMs(
+        '2024-01-08T18:00:00',
+        '2024-01-09T08:00:00',
+      ),
+    ).toBe(0);
+  });
+
+  it('caps five full weekdays at forty business hours instead of 120 elapsed hours', () => {
+    const ms = getBusinessDurationMs(
+      '2024-01-08T09:00:00',
+      '2024-01-12T17:00:00',
+    );
+    expect(ms).toBe(5 * WORKDAY_HOURS * HOUR);
+    expect(ms).toBe(40 * HOUR);
   });
 });
 
 describe('getWorkingDurationMsWithinRange', () => {
-  it('clips pre-period execution out of the report window', () => {
+  it('clips pre-period execution out of the report window without changing legacy KPI semantics', () => {
     const full = getWorkingDurationMs(
-      '2023-01-02T09:00:00.000Z',
-      '2026-01-07T09:00:00.000Z',
+      '2023-01-02T09:00:00',
+      '2026-01-07T17:00:00',
     );
     const clipped = getWorkingDurationMsWithinRange(
-      '2023-01-02T09:00:00.000Z',
-      '2026-01-07T09:00:00.000Z',
+      '2023-01-02T09:00:00',
+      '2026-01-07T17:00:00',
       { dateFrom: '2026-01-01', dateTo: '2026-01-31' },
     );
+
     expect(full).toBeGreaterThan(clipped ?? 0);
     expect(clipped).toBeGreaterThan(0);
-    expect(clipped!).toBeLessThan(24 * 8 * 3600000);
+    expect(clipped!).toBeLessThan(24 * 8 * HOUR);
   });
 });
 

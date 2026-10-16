@@ -2,6 +2,8 @@ import type { HomeRoleVariant } from "./homeTypes";
 import type { HomeDeliverySummary } from "./homeTypes";
 import type { WorkloadRow } from "../performance";
 import type { WorkloadResult } from "../workload/workloadEngine";
+import { capacityLevelFromPercent } from "../workflows/capacityWorkload";
+import { workloadDisplayLabel } from "../workload/workloadDisplay";
 import {
   capacityPresentationLabel,
   CAPACITY_INSUFFICIENT_LABEL,
@@ -96,18 +98,28 @@ function metricValue(
   return metrics.find((m) => m.label === label)?.value;
 }
 
+function capacityLabelForRow(
+  row: WorkloadRow,
+): "Light" | "Balanced" | "Heavy" | "Overloaded" | typeof CAPACITY_INSUFFICIENT_LABEL {
+  if (
+    row.capacityDataState === "insufficient_history" ||
+    row.capacityLoadPercent == null ||
+    !Number.isFinite(row.capacityLoadPercent)
+  ) {
+    return CAPACITY_INSUFFICIENT_LABEL;
+  }
+  return workloadDisplayLabel(capacityLevelFromPercent(row.capacityLoadPercent));
+}
+
 function countCapacityHot(workload: WorkloadRow[]): number {
-  return workload.filter(
-    (row) =>
-      row.capacityDataState !== "insufficient_history" &&
-      (row.workload === "Heavy" || row.workload === "Overloaded"),
-  ).length;
+  return workload.filter((row) => {
+    const label = capacityLabelForRow(row);
+    return label === "Heavy" || label === "Overloaded";
+  }).length;
 }
 
 function countOverloaded(workload: WorkloadRow[]): number {
-  return workload.filter(
-    (row) => row.capacityDataState !== "insufficient_history" && row.workload === "Overloaded",
-  ).length;
+  return workload.filter((row) => capacityLabelForRow(row) === "Overloaded").length;
 }
 
 function teamsNeedAttentionLabel(count: number): string {
@@ -424,8 +436,7 @@ export function buildDirectorExecutiveModel(input: {
 
   const heavy = countCapacityHot(teamWorkload);
   const light = teamWorkload.filter(
-    (row) =>
-      row.capacityDataState !== "insufficient_history" && row.workload === "Light",
+    (row) => capacityLabelForRow(row) === "Light",
   ).length;
 
   return {
@@ -468,12 +479,6 @@ export function capacityDistribution(
   const labels = ["Light", "Balanced", "Heavy", "Overloaded", CAPACITY_INSUFFICIENT_LABEL] as const;
   return labels.map((label) => ({
     label,
-    count: workload.filter((row) => {
-      if (row.capacityDataState === "insufficient_history") {
-        return label === CAPACITY_INSUFFICIENT_LABEL;
-      }
-      if (label === CAPACITY_INSUFFICIENT_LABEL) return false;
-      return row.workload === label;
-    }).length,
+    count: workload.filter((row) => capacityLabelForRow(row) === label).length,
   }));
 }

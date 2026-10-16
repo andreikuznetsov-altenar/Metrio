@@ -32,15 +32,18 @@ export function buildTeamActions(input: BuildTeamActionsInput): ActionItem[] {
   if (rules.actions.showWorkload) {
     for (const row of snapshot.workload) {
       if (row.workload !== "Overloaded") continue;
+      const assigned = row.assignedWork ?? row.activeWork;
+      const activeLabel = `${row.activeWork} active ${row.activeWork === 1 ? "task" : "tasks"}`;
+      const assignedLabel = `${assigned} unfinished ${assigned === 1 ? "task" : "tasks"}`;
       items.push({
         id: `workload-${row.personId}`,
         kind: "workload",
         severity: "warning",
-        title: `${row.personName ?? "Team member"} has ${row.activeWork} active tasks`,
-        description: "Overloaded workload",
+        title: `${row.personName ?? "Team member"} has an overloaded workload`,
+        description: `${assignedLabel} · ${activeLabel}`,
         personId: row.personId,
         personName: row.personName,
-        count: row.activeWork,
+        count: assigned,
         target: { kind: "person", personId: row.personId, tab: "work" },
         source: "jira",
       });

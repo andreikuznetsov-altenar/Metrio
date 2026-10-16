@@ -3,36 +3,39 @@ import type { WorkloadRow } from "../performance";
 import { capacityLevelFromPercent } from "../workflows/capacityWorkload";
 import { measuredCapacityLabelFromPercent } from "./capacityPresentation";
 
-describe("Pass 13.6 data consistency — workload vs availability", () => {
-  it("Overloaded capacity with Available leave is valid (independent dimensions)", () => {
+describe("Pass 13.6 data consistency — workload vs capacity vs availability", () => {
+  it("current workload and historical capacity are independent dimensions", () => {
     const row: WorkloadRow = {
       personId: "p1",
       personName: "Alex",
-      activeWork: 6,
-      atRisk: 2,
-      workload: measuredCapacityLabelFromPercent(103.66),
+      activeWork: 2,
+      atRisk: 0,
+      // Current operational queue can be Balanced...
+      workload: "Balanced",
       availability: "Available",
       capacityDataState: "measured",
+      // ...while historical elapsed-business-time capacity is >100%.
       capacityLoadPercent: 103.66,
     };
 
+    expect(row.workload).toBe("Balanced");
     expect(capacityLevelFromPercent(row.capacityLoadPercent!)).toBe("overloaded");
-    expect(row.workload).toBe("Overloaded");
+    expect(measuredCapacityLabelFromPercent(row.capacityLoadPercent!)).toBe("Overloaded");
     expect(row.availability).toBe("Available");
-    expect(row.atRisk).toBeGreaterThan(0);
-    expect(row.activeWork).toBeGreaterThan(0);
   });
 
-  it("insufficient history uses separate label from measured overload", () => {
+  it("insufficient capacity history does not erase current workload state", () => {
     const row: WorkloadRow = {
       personId: "p2",
-      activeWork: 12,
-      atRisk: 0,
-      workload: "Not enough history",
+      activeWork: 6,
+      atRisk: 1,
+      workload: "Heavy",
       availability: "Available",
       capacityDataState: "insufficient_history",
     };
-    expect(row.workload).not.toBe("Overloaded");
+
+    expect(row.workload).toBe("Heavy");
+    expect(row.capacityDataState).toBe("insufficient_history");
     expect(row.availability).toBe("Available");
   });
 });

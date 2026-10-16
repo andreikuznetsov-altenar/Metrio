@@ -75,7 +75,10 @@ export function buildTeamSnapshot(
     const performance = reportData?.perUserKpi[canonicalKey] || null;
     const personalWorkload =
       params
-        ? calculateWorkload(ownedIssues, params, workloadThresholds, availability)
+        ? calculateWorkload(ownedIssues, params, workloadThresholds, availability, {
+            capacityIssues: issues,
+            capacitySubjectCanonical: canonicalKey,
+          })
         : null;
 
     return {

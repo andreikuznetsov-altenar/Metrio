@@ -1,4 +1,9 @@
 import { appNow } from "../../platform/appClock";
+
+export const WORKDAY_START_HOUR = 9;
+export const WORKDAY_END_HOUR = 17;
+export const WORKDAY_HOURS = WORKDAY_END_HOUR - WORKDAY_START_HOUR;
+
 export function parseDateStartOfDay(value: string | null | undefined): Date | null {
   if (!value) return null;
   const d = new Date(`${value}T00:00:00`);
@@ -30,7 +35,7 @@ export function endOfDay(date: Date): Date {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate(), 23, 59, 59, 999);
 }
 
-/** Port of legacy getWorkingDurationMs_ — excludes weekends */
+/** Port of legacy getWorkingDurationMs_ — excludes weekends, preserves legacy elapsed-time KPI semantics. */
 export function getWorkingDurationMs(
   fromValue: string | null | undefined,
   toValue: string | null | undefined,
@@ -55,6 +60,53 @@ export function getWorkingDurationMs(
     }
 
     cursor = new Date(dayEnd.getTime() + 1);
+  }
+
+  return total;
+}
+
+function atLocalHour(date: Date, hour: number): Date {
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate(), hour, 0, 0, 0);
+}
+
+function nextDayStart(date: Date): Date {
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate() + 1, 0, 0, 0, 0);
+}
+
+/**
+ * Elapsed business time for workload/capacity accounting.
+ *
+ * This deliberately differs from getWorkingDurationMs(): capacity must not turn
+ * five weekdays in a Jira status into 120 hours. Only Mon–Fri 09:00–17:00 local
+ * time counts. It is still elapsed business time, not a timesheet or proof of
+ * hands-on effort.
+ */
+export function getBusinessDurationMs(
+  fromValue: string | null | undefined,
+  toValue: string | null | undefined,
+): number | null {
+  const start = parseJiraDateSafe(fromValue);
+  const end = parseJiraDateSafe(toValue);
+
+  if (!start || !end) return null;
+  if (end <= start) return 0;
+
+  let total = 0;
+  let day = startOfDay(start);
+
+  while (day < end) {
+    if (!isWeekend(day)) {
+      const workStart = atLocalHour(day, WORKDAY_START_HOUR);
+      const workEnd = atLocalHour(day, WORKDAY_END_HOUR);
+      const segmentStart = new Date(Math.max(start.getTime(), workStart.getTime()));
+      const segmentEnd = new Date(Math.min(end.getTime(), workEnd.getTime()));
+
+      if (segmentEnd > segmentStart) {
+        total += segmentEnd.getTime() - segmentStart.getTime();
+      }
+    }
+
+    day = nextDayStart(day);
   }
 
   return total;

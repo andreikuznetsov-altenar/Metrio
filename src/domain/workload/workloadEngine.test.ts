@@ -31,16 +31,18 @@ function activeIssue(key: string, status = 'In Progress'): AuditIssue {
 }
 
 describe('calculateWorkload', () => {
-  it('uses normal capacity level when few active tasks have no completed cycles', () => {
+  it('uses the current queue for workload even when capacity history is insufficient', () => {
     const result = calculateWorkload([activeIssue('A-1')], params);
-    expect(result.level).toBe('normal');
+    expect(result.level).toBe('low');
+    expect(result.score).toBe(1);
     expect(result.capacityDataState).toBe('insufficient_history');
   });
 
-  it('does not treat zero completed cycles as low capacity load', () => {
+  it('can flag a current high workload even with zero completed capacity cycles', () => {
     const issues = Array.from({ length: 6 }, (_, i) => activeIssue(`A-${i}`));
     const result = calculateWorkload(issues, params);
-    expect(result.level).toBe('normal');
+    expect(result.level).toBe('high');
+    expect(result.score).toBe(6);
     expect(result.capacityDataState).toBe('insufficient_history');
     expect(result.capacityLoadPercent).toBe(0);
   });

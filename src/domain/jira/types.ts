@@ -26,6 +26,9 @@ export interface IssueEvent {
   changedBy: string;
   fromValue: string;
   toValue: string;
+  /** Canonical team identities for assignee events when resolvable. */
+  fromCanonical?: string;
+  toCanonical?: string;
   timeSincePreviousStatusMs: number | null;
   isBackflow: boolean;
   isHandoff: boolean;
