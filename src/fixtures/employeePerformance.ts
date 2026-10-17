@@ -133,6 +133,7 @@ export function getEmployeePerformanceSnapshot(
         },
       ],
       completedThisWeek: [],
+      completedCount: 0,
     },
     historyWeek: [],
     historyMonth: [

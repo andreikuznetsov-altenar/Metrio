@@ -143,6 +143,8 @@ export interface EmployeeCompletedRowView {
   completedOn?: string;
   cycle?: string;
   outcome?: string;
+  /** Completed cycles this week on this issue; shown only when it completed more than once. */
+  completions?: number;
 }
 
 export interface PersonalAttentionItem {
@@ -182,6 +184,8 @@ export interface EmployeeMyWeekSnapshot {
   inProgress: EmployeeWorkRowView[];
   inReview: EmployeeWorkRowView[];
   completedThisWeek: EmployeeCompletedRowView[];
+  /** Completed cycles this week (same number as the "Completed" card and the KPI definition). */
+  completedCount: number;
 }
 
 export interface WorkHistoryGroupView {

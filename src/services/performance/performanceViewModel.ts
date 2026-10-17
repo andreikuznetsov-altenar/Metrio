@@ -640,6 +640,7 @@ function employeeWorkRowView(
 function employeeCompletedRowView(
   issue: import("../../domain/jira/types").AuditIssue,
   params: AuditReportData["params"],
+  completions = 1,
 ): EmployeeCompletedRowView {
   const fullIssue = withFullIssueHistory(issue);
   const health = classifyTaskHealth({ issue: fullIssue, params });
@@ -657,6 +658,7 @@ function employeeCompletedRowView(
       : health.isCompleted
         ? "Rework"
         : undefined,
+    ...(completions > 1 ? { completions } : {}),
   };
 }
 
@@ -711,8 +713,9 @@ function buildEmployeeSnapshot(
       employeeWorkRowView(issue, historyParams, now),
     ),
     completedThisWeek: myWeek.completedThisWeek.map((issue) =>
-      employeeCompletedRowView(issue, historyParams),
+      employeeCompletedRowView(issue, historyParams, myWeek.completedCycleCounts[issue.issueKey] ?? 1),
     ),
+    completedCount: myWeek.summary.completedThisWeek,
   };
 
   return {

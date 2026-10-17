@@ -57,7 +57,7 @@ export function buildEmployeeDailyBrief(
     title: "Current work",
     lines: [
       `${active} in progress · ${inReview} in review`,
-      `${input.employeeSnapshot?.myWeek.completedThisWeek.length ?? 0} completed this week`,
+      `${input.employeeSnapshot?.myWeek.completedCount ?? 0} completed this week`,
     ],
   });
 

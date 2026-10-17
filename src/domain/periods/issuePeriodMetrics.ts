@@ -132,29 +132,44 @@ export function countBackflowsInRange(
 }
 
 /**
- * Issues with at least one completed cycle in `range`. With `contributorCanonical` the cycle must
- * belong to that person (canonical owner, same rule as the KPI and Work History); issue types the
- * KPI excludes never count. One entry per issue.
+ * Completed cycles in `range`, counted per issue (an issue can complete more than once). With
+ * `contributorCanonical` a cycle must belong to that person (canonical owner, same rule as the KPI
+ * and Work History); issue types the KPI excludes never count. The sum over the map is the KPI's
+ * completed-cycle count for the same scope and range.
  */
-export function listCompletedIssuesInRange(
+export function countCompletedCyclesByIssue(
   issues: AuditIssue[],
   range: DateRange,
   contributorCanonical?: string,
-): AuditIssue[] {
+): Map<string, number> {
   const options = { contributorCanonical };
+  const counts = new Map<string, number>();
   const unique = [...new Map(issues.map((issue) => [issue.issueKey, issue])).values()];
-  return unique.filter((issue) => {
-    if (!isWorkflowKpiEligible(issue)) return false;
+  for (const issue of unique) {
+    if (!isWorkflowKpiEligible(issue)) continue;
     const fullIssue = withFullIssueHistory(issue);
     const profile = resolveWorkflowProfile(fullIssue);
-    return extractCanonicalPerformanceCycles(fullIssue, profile).some(
+    const n = extractCanonicalPerformanceCycles(fullIssue, profile).filter(
       (cycle) =>
         cycle.completedAt &&
         isTimestampInRange(cycle.completedAt, range) &&
         attributedTo(cycle, contributorCanonical) &&
         ownerAllowed(cycle.ownerCanonical, options),
-    );
-  });
+    ).length;
+    if (n > 0) counts.set(issue.issueKey, n);
+  }
+  return counts;
+}
+
+/** Issues with at least one completed cycle in `range`, one entry per issue (see above). */
+export function listCompletedIssuesInRange(
+  issues: AuditIssue[],
+  range: DateRange,
+  contributorCanonical?: string,
+): AuditIssue[] {
+  const counts = countCompletedCyclesByIssue(issues, range, contributorCanonical);
+  const unique = [...new Map(issues.map((issue) => [issue.issueKey, issue])).values()];
+  return unique.filter((issue) => counts.has(issue.issueKey));
 }
 
 export function countDailyFlowOnDate(

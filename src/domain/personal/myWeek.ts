@@ -1,7 +1,7 @@
 import { getCurrentWeekRange } from '../periods/dateRange';
 import {
   countBackflowsInRange,
-  listCompletedIssuesInRange,
+  countCompletedCyclesByIssue,
 } from '../periods/issuePeriodMetrics';
 import { classifyTaskHealth } from '../task-health/taskHealthEngine';
 import type { AuditIssue, ReportParams } from '../jira/types';
@@ -23,6 +23,7 @@ export interface MyWeekAttentionTask {
 }
 
 export interface MyWeekSummary {
+  /** Completed CYCLES this week: the KPI's definition of completed work (an issue can count twice). */
   completedThisWeek: number;
   currentlyActive: number;
   atRisk: number;
@@ -35,7 +36,10 @@ export interface MyWeekGroups {
   needsAttention: MyWeekAttentionTask[];
   inProgress: AuditIssue[];
   inReview: AuditIssue[];
+  /** One entry per issue completed this week; see `completedCycleCounts` for repeat completions. */
   completedThisWeek: AuditIssue[];
+  /** Completed cycles this week per issue key (only issues listed in `completedThisWeek`). */
+  completedCycleCounts: Record<string, number>;
 }
 
 function currentStage(issue: AuditIssue) {
@@ -55,7 +59,10 @@ export function buildMyWeek(
   // "My week" is the person's own completed work and backflows: the same canonical owner
   // attribution and eligible issue population as the KPI and Work History.
   const canonical = person.jira?.canonicalKey;
-  const completedThisWeek = listCompletedIssuesInRange(person.issues, weekRange, canonical);
+  const cycleCounts = countCompletedCyclesByIssue(person.issues, weekRange, canonical);
+  const completedThisWeek = [...new Map(person.issues.map((issue) => [issue.issueKey, issue])).values()]
+    .filter((issue) => cycleCounts.has(issue.issueKey));
+  const completedCycles = [...cycleCounts.values()].reduce((sum, n) => sum + n, 0);
   const operationalIssues = getOperationalIssues(person);
   const activeIssues = getActiveIssues(person, params);
 
@@ -80,7 +87,7 @@ export function buildMyWeek(
 
   return {
     summary: {
-      completedThisWeek: completedThisWeek.length,
+      completedThisWeek: completedCycles,
       currentlyActive: activeIssues.length,
       atRisk: atRisk.length,
       inReview: inReview.length,
@@ -90,6 +97,7 @@ export function buildMyWeek(
     inProgress,
     inReview,
     completedThisWeek,
+    completedCycleCounts: Object.fromEntries(cycleCounts),
   };
 }
 

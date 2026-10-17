@@ -347,9 +347,12 @@ export function buildPerformanceExportData(input: {
         title: 'Completed this week',
         emptyText: 'None',
         rowHeaders: ['Task', 'Summary', 'Status'],
-        rows: week.completedThisWeek.map((issue) => ({
-          cells: [issue.issueKey, issue.issueSummary, issue.currentStatus || '—'],
-        })),
+        rows: week.completedThisWeek.map((issue) => {
+          // The count above is completed cycles; an issue completed more than once says so.
+          const completions = week.completedCycleCounts[issue.issueKey] ?? 1;
+          const summary = completions > 1 ? `${issue.issueSummary} (${completions} completions)` : issue.issueSummary;
+          return { cells: [issue.issueKey, summary, issue.currentStatus || '—'] };
+        }),
       },
       {
         title: 'KPI detail',

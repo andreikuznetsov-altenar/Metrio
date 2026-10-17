@@ -33,7 +33,11 @@ function WorkRowList({ items }: { items: EmployeeWorkRowView[] }) {
 }
 
 function CompletedRow({ item }: { item: EmployeeCompletedRowView }) {
-  const metaParts = [item.completedOn, item.cycle ? `${item.cycle} cycle` : null].filter(
+  const metaParts = [
+    item.completedOn,
+    item.cycle ? `${item.cycle} cycle` : null,
+    item.completions && item.completions > 1 ? `${item.completions} completions` : null,
+  ].filter(
     Boolean,
   ) as string[];
 
