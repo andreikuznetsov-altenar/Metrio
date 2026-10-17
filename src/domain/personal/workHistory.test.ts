@@ -5,7 +5,7 @@ import type { ReportParams } from '../jira/types';
 import { testWorkload } from '../testFixtures';
 
 const params: ReportParams = {
-  dateFrom: '2026-01-01',
+  dateFrom: '2025-12-01',
   dateTo: '2026-03-01',
   targetReviewDays: 3,
   users: [],

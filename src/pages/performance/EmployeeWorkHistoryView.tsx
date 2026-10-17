@@ -120,6 +120,7 @@ export function EmployeeWorkHistoryView({
                         issue={workHistoryEntryToEvidenceIssue(
                           {
                             issueKey: row.key,
+                            cycleKey: `${row.key}|${row.completedAtIso ?? ""}`,
                             summary: row.title,
                             project: row.project,
                             completedAt: row.completedAtIso ?? "",

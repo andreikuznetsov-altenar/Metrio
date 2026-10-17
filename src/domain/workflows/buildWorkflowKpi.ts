@@ -81,6 +81,21 @@ function ownerAllowed(owner: string | undefined, options: BuildWorkflowKpiOption
   return true;
 }
 
+/**
+ * The single rule for which completed cycles belong to a contributor/scope in a period. Person
+ * KPIs and the person Work History evidence list both use it, so a cycle is counted (and listed)
+ * under its canonical owner only, and the two always reconcile.
+ */
+export function isAttributedCompletedCycle(
+  cycle: CanonicalPerformanceCycle,
+  params: ReportParams,
+  options: BuildWorkflowKpiOptions = {},
+): boolean {
+  return cycleCompletedInPeriod(cycle, params) &&
+    attributedTo(cycle, options.contributorCanonical) &&
+    ownerAllowed(cycle.ownerCanonical, options);
+}
+
 export function buildWorkflowKpi(
   issues: AuditIssue[],
   params: ReportParams,
@@ -123,9 +138,7 @@ export function buildWorkflowKpi(
         startedCount += 1;
         profileRow.starts += 1;
       }
-      if (!cycleCompletedInPeriod(cycle, params) ||
-          !attributedTo(cycle, options.contributorCanonical) ||
-          !ownerAllowed(cycle.ownerCanonical, options)) continue;
+      if (!isAttributedCompletedCycle(cycle, params, options)) continue;
       completedCycles.push(cycle);
       profileRow.cycles.push(cycle);
       if (cycle.reviewSubmitted) reviewSubmittedCount += 1;

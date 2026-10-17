@@ -4,8 +4,10 @@ import {
   getMonthPeriodKey,
   getQuarterPeriodKey,
 } from '../periods/dateRange';
-import { getIssueCompletionAt, getIssueFullCycleMs, withFullIssueHistory } from '../periods/issueCompletion';
-import { classifyTaskHealth } from '../task-health/taskHealthEngine';
+import { extractCanonicalPerformanceCycles } from '../workflows/canonicalPerformance';
+import { isAttributedCompletedCycle } from '../workflows/buildWorkflowKpi';
+import { isWorkflowKpiEligible } from '../workflows/eligibility';
+import { resolveWorkflowProfile } from '../workflows/resolveWorkflowProfile';
 import type { AuditIssue, ReportParams } from '../jira/types';
 import type { Person } from '../people/types';
 
@@ -14,6 +16,8 @@ export type WorkHistoryPeriod = 'week' | 'month' | 'quarter';
 export interface WorkHistoryEntry {
   completedAt: string;
   issueKey: string;
+  /** One completed cycle: `<issueKey>|<completedAt>`. An issue can complete more than once. */
+  cycleKey: string;
   summary: string;
   project: string;
   cycleMs: number | null;
@@ -41,37 +45,42 @@ function periodKey(dateIso: string, period: WorkHistoryPeriod): string {
   return getQuarterPeriodKey(dateIso);
 }
 
+/**
+ * Completed work for one person, built from the SAME canonical completed cycles as the person's KPI
+ * (`buildWorkflowKpi` with `contributorCanonical`): a cycle is listed under its canonical owner only,
+ * grouped by its completion date, and the list therefore reconciles with the KPI for the same
+ * `params`. A task the person merely touched or currently holds, but whose cycle belongs to someone
+ * else, is not listed.
+ */
 export function buildWorkHistory(
   person: Person,
   params: ReportParams,
   period: WorkHistoryPeriod,
   projectFilter?: string,
 ): WorkHistoryGroup[] {
-  const completed = person.issues
-    .map((issue) => {
-      const fullIssue = withFullIssueHistory(issue);
-      const health = classifyTaskHealth({ issue: fullIssue, params });
-      if (!health.isCompleted) return null;
+  const options = { contributorCanonical: person.jira?.canonicalKey };
+  const uniqueIssues = [...new Map((person.issues || []).map((issue) => [issue.issueKey, issue])).values()]
+    .filter(isWorkflowKpiEligible);
 
-      const completedAt = getIssueCompletionAt(fullIssue);
-      if (!completedAt) return null;
-
-      const project = projectFromIssue(issue);
-      if (projectFilter && project !== projectFilter) return null;
-
-      const entry: WorkHistoryEntry = {
-        completedAt,
+  const completed: WorkHistoryEntry[] = [];
+  for (const issue of uniqueIssues) {
+    const project = projectFromIssue(issue);
+    if (projectFilter && project !== projectFilter) continue;
+    for (const cycle of extractCanonicalPerformanceCycles(issue, resolveWorkflowProfile(issue))) {
+      if (!cycle.completedAt || !isAttributedCompletedCycle(cycle, params, options)) continue;
+      completed.push({
+        completedAt: cycle.completedAt,
         issueKey: issue.issueKey,
+        cycleKey: `${issue.issueKey}|${cycle.completedAt}`,
         summary: issue.issueSummary,
         project,
-        cycleMs: getIssueFullCycleMs(fullIssue),
-        firstPass: health.isFirstPass,
+        cycleMs: cycle.cycleMs,
+        firstPass: cycle.backflowEventCount === 0,
         issue,
-      };
-      return entry;
-    })
-    .filter((entry): entry is WorkHistoryEntry => entry !== null)
-    .sort((a, b) => b.completedAt.localeCompare(a.completedAt));
+      });
+    }
+  }
+  completed.sort((a, b) => b.completedAt.localeCompare(a.completedAt));
 
   const groups = new Map<string, WorkHistoryEntry[]>();
   for (const entry of completed) {
