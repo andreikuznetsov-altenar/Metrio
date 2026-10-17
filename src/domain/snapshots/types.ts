@@ -7,6 +7,10 @@ import type { DailyFlowFields } from '../history/dailyFlowFields';
  *       Rework Rate and Cycle/Execution Time aggregate from primitives; sampled state counts
  *       (at-risk / problematic / overloaded) use Task Health V2 and strict "Overloaded".
  * Older derived snapshots are invalidated, never mixed into the new series.
+ *
+ * `+eligible-trends`: daily flow rows (historical bootstrap and live recording) now use the KPI's
+ * eligible issue population. Rows recorded before this stamp counted epics/providers in cycle
+ * samples and could reverse a Cycle Time trend, so they are rebuilt, not reused.
  */
 export const KPI_SNAPSHOT_SCHEMA_VERSION = 7;
 
@@ -15,7 +19,7 @@ export const KPI_SNAPSHOT_SCHEMA_VERSION = 7;
  * invalidated on load (see `migrateKpiSnapshotFile`) — derived rows from different methodologies
  * must never be compared inside one trend.
  */
-export const KPI_SNAPSHOT_METHODOLOGY = 'metrics-v2+capacity-v2+signals-v2';
+export const KPI_SNAPSHOT_METHODOLOGY = 'metrics-v2+capacity-v2+signals-v2+eligible-trends';
 
 export type SnapshotSource = 'live_daily' | 'historical_jira';
 

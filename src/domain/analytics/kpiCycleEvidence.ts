@@ -2,6 +2,7 @@ import { isDateWithinRange } from "../jira/dates";
 import type { AuditIssue, CompletedCycle, ReportParams } from "../jira/types";
 import { isProfileBackflow } from "../workflows/profileCycles";
 import { extractCanonicalPerformanceCycles } from "../workflows/canonicalPerformance";
+import { isWorkflowKpiEligible } from "../workflows/eligibility";
 import { resolveWorkflowProfile } from "../workflows/resolveWorkflowProfile";
 
 export interface ReportingCycleRecord {
@@ -19,6 +20,8 @@ export function collectReportingPeriodCycles(
   const records: ReportingCycleRecord[] = [];
 
   for (const issue of issues || []) {
+    // Drill-down evidence lists the KPI's own population.
+    if (!isWorkflowKpiEligible(issue)) continue;
     const profile = resolveWorkflowProfile(issue);
     const completedCycles = extractCanonicalPerformanceCycles(issue, profile)
       .filter((cycle) => cycle.completedAt && isDateWithinRange(cycle.completedAt, params))

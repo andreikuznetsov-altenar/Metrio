@@ -1,10 +1,10 @@
 import { collectUniqueTeamIssues } from '../jira/uniqueIssues';
 import type { AuditIssue, ReportParams } from '../jira/types';
 import type { Person } from '../people/types';
-import { getOperationalIssues } from '../people/ownedIssues';
 import { getLocalDateKey } from '../periods/dateRange';
 import { withFullIssueHistory } from '../periods/issueCompletion';
 import { assigneeAt, extractCanonicalPerformanceCycles } from '../workflows/canonicalPerformance';
+import { isWorkflowKpiEligible } from '../workflows/eligibility';
 import { isProfileBackflow } from '../workflows/profileCycles';
 import { resolveWorkflowProfile } from '../workflows/resolveWorkflowProfile';
 import type { DailyPersonSnapshot, DailyTeamSnapshot } from '../snapshots/types';
@@ -68,6 +68,8 @@ export function indexPersonDailyFlow(
   const maxTs = DEFAULT_WORKING_CALENDAR.endOfDate(dateKeys[dateKeys.length - 1])?.getTime() ?? Number.NEGATIVE_INFINITY;
 
   for (const issue of issues) {
+    // Same population as the KPI: ineligible issue types (epics, providers, ...) never enter a trend.
+    if (!isWorkflowKpiEligible(issue)) continue;
     const fullIssue = withFullIssueHistory(issue);
     const profile = resolveWorkflowProfile(fullIssue);
 
@@ -108,8 +110,11 @@ export function buildHistoricalPersonSnapshots(
   dateKeys: string[],
   params: ReportParams,
 ): DailyPersonSnapshot[] {
+  // The KPI's own population (`person.issues`, attributed by cycle owner), exactly as live daily
+  // recording uses. Current ownership (`ownedIssues`) would drop a person's completed cycle on an
+  // issue that was later reassigned, so the trend would disagree with the KPI.
   const buckets = indexPersonDailyFlow(
-    getOperationalIssues(person),
+    person.issues || [],
     dateKeys,
     params,
     person.jira?.canonicalKey,

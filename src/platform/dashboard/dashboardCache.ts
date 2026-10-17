@@ -13,8 +13,9 @@ import type { PerformanceFetchResult } from "../../services/performance/performa
  * v5 (Signals V2): cached Task Health, Delivery Risk severity, workload balance ordering and
  * KPI snapshots follow stage/profile attention targets, current-vs-historical rework and
  * Current-workload-only hierarchy; older cached derived values are not reused.
+ * v6: cached KPI snapshots / trend series use the KPI's eligible issue population.
  */
-export const DASHBOARD_CACHE_SCHEMA_VERSION = 5;
+export const DASHBOARD_CACHE_SCHEMA_VERSION = 6;
 
 const VISUAL_DASHBOARD_CACHE_KEY = "metrio-visual-dashboard-cache";
 

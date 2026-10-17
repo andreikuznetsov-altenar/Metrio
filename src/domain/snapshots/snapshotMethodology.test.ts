@@ -71,6 +71,14 @@ describe('KPI snapshot methodology stamp', () => {
     expect(migrateKpiSnapshotFile({ ...current, methodology: 'metrics-v1' }).teamSnapshots).toEqual([]);
   });
 
+  it('invalidates rows recorded before trends used the KPI eligible population', () => {
+    const before = 'metrics-v2+capacity-v2+signals-v2';
+    expect(KPI_SNAPSHOT_METHODOLOGY).not.toBe(before);
+    const loaded = migrateKpiSnapshotFile({ ...current, methodology: before });
+    expect(loaded.teamSnapshots).toEqual([]);
+    expect(loaded.personSnapshots).toEqual([]);
+  });
+
   it('keeps unknown state as null — it is never converted to a known zero', () => {
     const loaded = migrateKpiSnapshotFile({
       ...current,

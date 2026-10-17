@@ -7,6 +7,7 @@ import { getCurrentWeekRange, getLastNDaysRange, getLocalDayRangeFromKey } from 
 import { countBackflowEventsInRange, withFullIssueHistory } from './issueCompletion';
 import { isTimestampInRange } from './dateRange';
 import { assigneeAt, extractCanonicalPerformanceCycles } from '../workflows/canonicalPerformance';
+import { isWorkflowKpiEligible } from '../workflows/eligibility';
 import { resolveWorkflowProfile } from '../workflows/resolveWorkflowProfile';
 import { median } from '../workflows/buildWorkflowKpi';
 import { isProfileBackflow } from '../workflows/profileCycles';
@@ -34,6 +35,8 @@ export function computeIssuesFlowMetrics(
   const cycleTimes: number[] = [];
 
   for (const issue of issues) {
+    // Same population as the KPI: ineligible issue types never contribute to a period metric.
+    if (!isWorkflowKpiEligible(issue)) continue;
     const fullIssue = withFullIssueHistory(issue);
 
     const profile = resolveWorkflowProfile(fullIssue);
@@ -133,6 +136,8 @@ export function countDailyFlowOnDate(
   const bucket = emptyDailyFlow();
 
   for (const issue of issues) {
+    // Daily snapshots record the same metric population as the KPI.
+    if (!isWorkflowKpiEligible(issue)) continue;
     const fullIssue = withFullIssueHistory(issue);
     const profile = resolveWorkflowProfile(fullIssue);
     for (const cycle of extractCanonicalPerformanceCycles(fullIssue, profile)) {
