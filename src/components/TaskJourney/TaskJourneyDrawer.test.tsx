@@ -100,6 +100,11 @@ describe('TaskJourneyDrawer', () => {
     expect(screen.queryByText(/Current status:/i)).not.toBeInTheDocument();
     expect(screen.getByTestId('task-journey-stage-duration')).toBeInTheDocument();
     expect(screen.getByTestId('task-journey-diagnostic-block')).toBeInTheDocument();
+    // The target is a weekday stage-age target, and says so.
+    const block = screen.getByTestId('task-journey-diagnostic-block');
+    expect(within(block).getByText('Target')).toBeInTheDocument();
+    expect(within(block).getByText('18 weekdays')).toBeInTheDocument();
+    expect(block.textContent).not.toMatch(/\b18 days\b/);
 
     const ownerButtons = screen.getAllByRole('button', { name: 'Daria Chernova' });
     await user.click(ownerButtons[0]);

@@ -58,4 +58,13 @@ describe('pickRelevantTimeOff', () => {
     const picked = pickRelevantTimeOff(entries, '1', today);
     expect(picked?.start).toBe('2025-09-20');
   });
+
+  it('labels a one-day leave with a single date and keeps multi-day ranges', () => {
+    const label = (start: string, end: string) =>
+      classifyAvailability({ type: 'Vacation', start, end }, today).label;
+    expect(label('2025-09-24', '2025-09-24')).toContain('Sep 24');
+    expect(label('2025-09-24', '2025-09-24')).not.toMatch(/24–24/);
+    expect(label('2025-09-22', '2025-09-27')).toContain('Sep 22–27');
+    expect(label('2025-09-29', '2025-10-02')).toContain('Sep 29–Oct 2');
+  });
 });

@@ -42,6 +42,7 @@ export function vacationTrayLabelForPerson(person: Person): string | null {
 function formatShortRange(start: string, end: string): string {
   const s = parseISO(start.slice(0, 10));
   const e = parseISO(end.slice(0, 10));
+  if (s.getTime() === e.getTime()) return format(s, "d MMM");
   if (s.getMonth() === e.getMonth()) {
     return `${format(s, "d")}–${format(e, "d MMM")}`;
   }

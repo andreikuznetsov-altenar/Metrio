@@ -84,9 +84,12 @@ export function buildPlannedTimeOffRows(
     const sameMonth =
       startDate.getMonth() === endDate.getMonth() &&
       startDate.getFullYear() === endDate.getFullYear();
-    const rangeLabel = sameMonth
-      ? `${format(startDate, "d")}–${format(endDate, "d MMM yyyy")}`
-      : `${format(startDate, "d MMM yyyy")} – ${format(endDate, "d MMM yyyy")}`;
+    // A one-day leave is a single date, never "30–30 Oct 2026".
+    const rangeLabel = bounds.start === bounds.end
+      ? format(startDate, "d MMM yyyy")
+      : sameMonth
+        ? `${format(startDate, "d")}–${format(endDate, "d MMM yyyy")}`
+        : `${format(startDate, "d MMM yyyy")} – ${format(endDate, "d MMM yyyy")}`;
 
     const typeLabel = formatBambooTimeOffType(entry.type);
 

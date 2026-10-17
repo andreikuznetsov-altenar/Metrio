@@ -60,7 +60,7 @@ export function PdfReportDocument({ payload }: { payload: PerformanceExportPaylo
     { label: 'Time zone', value: `${metadata.timezone} (${metadata.timezoneOffset})` },
     metadata.teamScope ? { label: 'Team scope', value: metadata.teamScope } : null,
     metadata.projects ? { label: 'Projects', value: metadata.projects } : null,
-    { label: 'Target review days', value: String(metadata.targetReviewDays) },
+    { label: 'Target review weekdays', value: String(metadata.targetReviewDays) },
     metadata.personName ? { label: 'Person', value: metadata.personName } : null,
     metadata.workHistoryGrouping
       ? { label: 'Grouping', value: metadata.workHistoryGrouping }

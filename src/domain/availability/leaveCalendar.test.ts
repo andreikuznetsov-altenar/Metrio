@@ -32,4 +32,11 @@ describe("leaveCalendar", () => {
     expect(formatLeaveCountdown("2026-10-05", today)).toBe("starts in 3 days");
     expect(formatLeaveCountdown("2026-10-01", today)).toBe("starts today");
   });
+
+  it("formats a one-day leave as a single date and leaves multi-day ranges unchanged", () => {
+    expect(formatLeaveRangeLabel("2026-10-30", "2026-10-30")).toBe("30 Oct");
+    expect(formatLeaveRangeLabel("2026-10-30", "2026-10-30")).not.toContain("–");
+    expect(formatLeaveRangeLabel("2026-10-12", "2026-10-16")).toBe("12–16 Oct");
+    expect(formatLeaveRangeLabel("2026-10-30", "2026-11-02")).toBe("30 Oct–2 Nov");
+  });
 });

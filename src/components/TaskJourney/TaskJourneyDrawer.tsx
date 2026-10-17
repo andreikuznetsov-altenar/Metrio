@@ -238,7 +238,7 @@ export function TaskJourneyDrawer({
               <MetaRow label="Reason">{journey.problem.primaryReason}</MetaRow>
               <MetaRow label="Current stage">{currentStageLine}</MetaRow>
               {journey.problem.targetReviewDays ? (
-                <MetaRow label="Target">{`${journey.problem.targetReviewDays} days`}</MetaRow>
+                <MetaRow label="Target">{`${journey.problem.targetReviewDays} weekdays`}</MetaRow>
               ) : null}
               {journey.problem.lastActivityLabel ? (
                 <MetaRow label="Last activity">{journey.problem.lastActivityLabel}</MetaRow>

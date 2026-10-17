@@ -25,6 +25,7 @@ function parseDate(value?: string): Date | null {
 }
 
 function formatRange(start: Date, end: Date): string {
+  if (start.getTime() === end.getTime()) return format(start, 'MMM d');
   const sameMonth = start.getMonth() === end.getMonth();
   if (sameMonth) {
     return `${format(start, 'MMM d')}–${format(end, 'd')}`;

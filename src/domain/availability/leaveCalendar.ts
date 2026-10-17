@@ -27,6 +27,7 @@ export function formatLeaveRangeLabel(start?: string, end?: string): string | nu
   const s = start ? parseCalendarDate(start) : null;
   const e = end ? parseCalendarDate(end) : null;
   if (!s || !e) return null;
+  if (s.getTime() === e.getTime()) return format(s, "d MMM");
   if (s.getMonth() === e.getMonth() && s.getFullYear() === e.getFullYear()) {
     return `${format(s, "d")}–${format(e, "d MMM")}`;
   }
