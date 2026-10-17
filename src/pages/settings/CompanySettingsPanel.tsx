@@ -7,6 +7,7 @@ import { isMetrioCloudConfigured } from "../../services/metrioCloud/metrioCloudC
 import { Button } from "../../components/Button/Button";
 import { Switch } from "../../components/Switch/Switch";
 import { CompanyReadonlySummary } from "./CompanyReadonlySummary";
+import { formatWeekdayCount } from "../../domain/jira/dates";
 
 import { appNow } from "../../platform/appClock";
 type AdminTab = "general" | "resources" | "onboarding" | "feedback" | "defaults" | "features";
@@ -129,7 +130,7 @@ export function CompanySettingsPanel({ embedded = false }: { embedded?: boolean 
       {tab === "defaults" ? (
         <p>
           Review attention default:{" "}
-          {effective.operationalRules.taskAttention.reviewAttentionDays} days
+          {formatWeekdayCount(effective.operationalRules.taskAttention.reviewAttentionDays)}
           {isManagedField(effective, "taskAttention.reviewAttentionDays")
             ? " (managed)"
             : " (user-overridable)"}

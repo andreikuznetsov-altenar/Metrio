@@ -126,7 +126,7 @@ export function OperationalRulesSettingsPanel({
                   patchTask({ reviewAttentionDays: Number(e.target.value) })
                 }
               />
-              <span className="settings-number-field__suffix">days</span>
+              <span className="settings-number-field__suffix">weekdays</span>
             </div>
             <p className="settings-field__hint">
               Matches {reviewPreview} tasks in review now
@@ -168,7 +168,7 @@ export function OperationalRulesSettingsPanel({
                   patchTask({ longReviewHighlightDays: Number(e.target.value) })
                 }
               />
-              <span className="settings-number-field__suffix">days</span>
+              <span className="settings-number-field__suffix">weekdays</span>
             </div>
             <p className="settings-field__hint">Dashboard delivery summary threshold</p>
           </div>

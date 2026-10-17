@@ -78,7 +78,7 @@ describe("buildDashboardQueueRows", () => {
     );
     expect(aggregate).not.toBeNull();
     const [row] = buildDashboardQueueRows([aggregate!]);
-    expect(row.subject).toBe("30 tasks in Review for 7+ days");
+    expect(row.subject).toBe("30 tasks in Review for 7+ weekdays");
     expect(row.reasonTags).toEqual(["Long Review"]);
     expect(row.contextLines[0]).toBe("30 tasks");
     expect(row.contextLines.some((line) => line === "UX-1490")).toBe(false);
@@ -105,7 +105,7 @@ describe("buildDashboardQueueRows", () => {
       source: "jira",
     };
     const rows = buildDashboardQueueRows([workload, aggregate!]);
-    expect(rows[0]!.subject).toBe("12 tasks in Review for 7+ days");
+    expect(rows[0]!.subject).toBe("12 tasks in Review for 7+ weekdays");
     expect(rows[1]!.subject).toBe("Alex");
   });
 

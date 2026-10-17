@@ -24,7 +24,7 @@ const SEVERITY_RANK: Record<ActionSeverity, number> = {
   info: 2,
 };
 
-/** Aggregated task-driven queue rows (e.g. "12 tasks in Review for 7+ days"). */
+/** Aggregated task-driven queue rows (e.g. "12 tasks in Review for 7+ weekdays"). */
 export function isGroupedTeamActionItem(item: ActionItem): boolean {
   return item.kind === "review_bottleneck" && (item.count ?? 0) > 1;
 }
