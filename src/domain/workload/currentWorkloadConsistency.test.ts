@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { buildPerformanceViewModels } from '../../services/performance/performanceViewModel';
 import type { PerformanceFetchResult } from '../../services/performance/performanceTypes';
 import { buildDashboardQueueRows } from '../actions/buildDashboardQueueRows';
@@ -17,8 +17,17 @@ import {
 } from './capacityPresentation';
 import { buildTeamWorkloadDonutSegments } from './buildTeamWorkloadDonutSegments';
 import { calculateWorkload } from './workloadEngine';
+import { appNow, setAppClock, setAppClockFixed } from '../../platform/appClock';
 
-const NOW = new Date();
+/**
+ * One explicit instant for the whole file: Wednesday 14 Oct 2026, 10:00Z. Stage ages in these
+ * fixtures are written as "N days ago" and the engine measures them in business time, so the
+ * expected hours only hold on a mid-week day whose recent days are all weekdays. Using the real
+ * clock made the expectations pass Tue-Fri and fail on weekends and Mondays.
+ */
+const NOW = new Date('2026-10-14T10:00:00.000Z');
+beforeAll(() => setAppClockFixed(NOW));
+afterAll(() => setAppClock(null));
 const DAY = 86_400_000;
 const ago = (days: number) => new Date(NOW.getTime() - days * DAY).toISOString();
 
@@ -348,5 +357,19 @@ describe('every surface resolves the same current workload for the same person',
       buildTeamWorkloadDonutSegments(rows, { personsById: new Map([[p.id, p]]) })[0]!.workloadLabel,
     ).toBe('Light');
     expect(buildTeamWorkloadDonutSegments(rows)[0]!.workloadLabel).toBe('Light');
+  });
+
+  it('is deterministic: the fixture clock is fixed and independent of when the suite runs', () => {
+    expect(NOW.toISOString()).toBe('2026-10-14T10:00:00.000Z');
+    expect(appNow().getTime()).toBe(NOW.getTime());
+    // All fixture dates derive from NOW: a mid-week day with no weekend in the last three days.
+    expect(NOW.getUTCDay()).toBe(3);
+    expect(ago(0)).toBe('2026-10-14T10:00:00.000Z');
+    expect(ago(3)).toBe('2026-10-11T10:00:00.000Z');
+    expect(params.dateTo).toBe('2026-10-14');
+    const first = calculateWorkload(representativeQueue(), params, undefined, undefined, { now: NOW });
+    const again = calculateWorkload(representativeQueue(), params, undefined, undefined, { now: new Date(NOW.getTime()) });
+    expect(again).toEqual(first);
+    expect(first.expectedEffortHours).toBe(17.2);
   });
 });
