@@ -544,3 +544,132 @@ describe("release workflow structure", () => {
     expect(buildCmd).toContain("--bundles app");
   });
 });
+
+describe("non-publishing RC build mode", () => {
+  const workflow = readFileSync(join(repoRoot, ".github/workflows/release-macos.yml"), "utf8");
+  const job = (name: string) => {
+    const start = workflow.indexOf(`\n  ${name}:\n`);
+    expect(start, `missing job ${name}`).toBeGreaterThan(-1);
+    const rest = workflow.slice(start + 1);
+    const next = rest.slice(1).search(/\n  [a-z]+:\n/);
+    return next < 0 ? rest : rest.slice(0, next + 1);
+  };
+
+  it("adds mode (default rc) and target_ref inputs without touching the push trigger", () => {
+    expect(workflow).toMatch(/mode:\n(?:.*\n)*?\s+options: \[rc, release\]\n\s+default: rc/);
+    expect(workflow).toMatch(/target_ref:\n(?:.*\n)*?\s+type: string\n\s+default: ""/);
+    expect(workflow).toMatch(/^  push:\n    branches: \[main\]\n    paths-ignore:/m);
+    expect(workflow).not.toMatch(/tags:/);
+  });
+
+  it("builds on should_build and publishes only on should_publish", () => {
+    expect(job("macos")).toContain("if: needs.prepare.outputs.should_build == 'true'");
+    expect(job("windows")).toContain("if: needs.prepare.outputs.should_build == 'true'");
+    expect(job("publish")).toContain("if: needs.prepare.outputs.should_publish == 'true'");
+    // rc: build, never publish; every other run follows the release plan exactly as before
+    expect(workflow).toContain('if [ "$RC" = "true" ]; then\n            echo "should_build=true"');
+    expect(workflow).toMatch(/RC" = "true" \]; then\n\s+echo "should_build=true" >> "\$GITHUB_OUTPUT"; echo "should_publish=false"/);
+    expect(workflow).toMatch(/elif \[ "\$PLANNED" = "true" \]; then\n\s+echo "should_build=true".*should_publish=true/);
+  });
+
+  it("every state-changing prepare step is gated on should_publish, never on rc builds", () => {
+    const bump = workflow.slice(workflow.indexOf("- name: Version bump + release commit"));
+    expect(bump.split("\n").slice(0, 3).join("\n")).toContain("if: steps.intent.outputs.should_publish == 'true'");
+    // the only places that push, tag or create a release live behind the publish gate
+    const pushIdx = workflow.indexOf("git push origin HEAD:refs/heads/main");
+    expect(pushIdx).toBeGreaterThan(workflow.indexOf("- name: Version bump + release commit"));
+    for (const needle of ["git tag -a", "gh release create", "gh release upload", "gh release edit"]) {
+      expect(workflow.indexOf(needle), needle).toBeGreaterThan(workflow.indexOf("\n  publish:\n"));
+    }
+    // plan-release is skipped for rc, so an rc run can never produce a version
+    expect(workflow).toMatch(/id: plan\n\s+if: steps\.rc\.outputs\.rc != 'true'/);
+  });
+
+  it("build jobs check out the resolved SHA and keep signing, notarization and the same package paths", () => {
+    expect(workflow).toContain("sha: ${{ steps.rc.outputs.sha || steps.commit.outputs.sha }}");
+    expect(workflow).toContain("version: ${{ steps.rc.outputs.version || steps.plan.outputs.version }}");
+    for (const name of ["macos", "windows"]) {
+      expect(job(name)).toContain("ref: ${{ needs.prepare.outputs.sha }}");
+    }
+    expect(job("macos")).toContain("bash scripts/ci/package-target.sh aarch64");
+    expect(job("macos")).toContain("bash scripts/ci/package-target.sh x86_64");
+    expect(job("macos")).toContain("secrets.APPLE_CERTIFICATE");
+    expect(job("macos")).toContain("secrets.APPLE_API_KEY_CONTENT");
+    expect(job("windows")).toContain("npm run tauri build -- --target x86_64-pc-windows-msvc --bundles nsis");
+    expect(workflow).toContain("Check required secrets are configured");
+    expect(job("macos")).toContain("name: release-assets-macos");
+    expect(job("windows")).toContain("name: release-assets-windows");
+  });
+});
+
+describe("scripts/ci/resolve-rc-target.sh", () => {
+  const resolver = join(repoRoot, "scripts/ci/resolve-rc-target.sh");
+
+  function repoWithCommit(version = "0.1.32", files = true) {
+    const dir = mkdtempSync(join(tmpdir(), "metrio-rc-"));
+    const git = (...a: string[]) => execFileSync("git", a, { cwd: dir, encoding: "utf8" }).trim();
+    git("init", "-q", "-b", "main");
+    git("config", "user.email", "t@example.com");
+    git("config", "user.name", "t");
+    writeFileSync(join(dir, "package.json"), JSON.stringify({ name: "x", version }));
+    if (files) {
+      for (const f of ["scripts/ci/package-target.sh", "scripts/release-targets.mjs", "scripts/verify-build-provenance.mjs"]) {
+        mkdirSync(dirname(join(dir, f)), { recursive: true });
+        writeFileSync(join(dir, f), "# fixture\n");
+      }
+    }
+    git("add", "-A");
+    git("commit", "-q", "-m", "Product change [skip release]");
+    const first = git("rev-parse", "HEAD");
+    git("commit", "-q", "--allow-empty", "-m", "Later commit");
+    return { dir, git, first, head: git("rev-parse", "HEAD") };
+  }
+
+  function run(dir: string, args: string[]) {
+    const out = join(dir, "..", `gh-out-${Math.random().toString(36).slice(2)}`);
+    writeFileSync(out, "");
+    const r = spawnSync("bash", [resolver, ...args], { cwd: dir, encoding: "utf8", env: { ...process.env, GITHUB_OUTPUT: out } });
+    return { status: r.status, text: r.stdout + r.stderr, outputs: Object.fromEntries(readFileSync(out, "utf8").split("\n").filter(Boolean).map((l) => l.split(/=(.*)/s).slice(0, 2))) };
+  }
+
+  it("resolves an abbreviated SHA to the exact full SHA, reads the version and checks it out detached", () => {
+    const { dir, git, first, head } = repoWithCommit();
+    expect(first).not.toBe(head);
+    const r = run(dir, ["rc", first.slice(0, 7)]);
+    expect(r.status).toBe(0);
+    expect(r.outputs).toEqual({ rc: "true", sha: first, version: "0.1.32" });
+    expect(r.text).toContain(`source commit ${first}`);
+    expect(git("rev-parse", "HEAD")).toBe(first);
+    expect(git("status", "--porcelain")).toBe("");
+  });
+
+  it("accepts a full SHA and a branch name, and never moves any ref", () => {
+    const { dir, git, first, head } = repoWithCommit("0.9.1");
+    expect(run(dir, ["rc", first]).outputs.sha).toBe(first);
+    const viaBranch = run(dir, ["rc", "main"]);
+    expect(viaBranch.outputs).toMatchObject({ sha: head, version: "0.9.1" });
+    expect(git("rev-parse", "main")).toBe(head);
+    expect(git("tag")).toBe("");
+  });
+
+  it("rejects a missing, malformed or unknown target and a SHA that does not match", () => {
+    const { dir, first } = repoWithCommit();
+    expect(run(dir, ["rc"]).status).not.toBe(0);
+    expect(run(dir, ["rc", ""]).text).toMatch(/requires target_ref/);
+    expect(run(dir, ["rc", "--upload-pack=x"]).status).not.toBe(0);
+    expect(run(dir, ["rc", "bad ref;rm"]).text).toMatch(/not a valid git ref/);
+    expect(run(dir, ["rc", "deadbee"]).text).toMatch(/does not resolve/);
+    expect(run(dir, ["rc", "0".repeat(40)]).status).not.toBe(0);
+    expect(run(dir, ["rc", first.slice(0, 7)]).status).toBe(0);
+  });
+
+  it("refuses a commit that cannot be built as a release and rejects target_ref outside rc mode", () => {
+    const { dir, first } = repoWithCommit("0.1.32", false);
+    expect(run(dir, ["rc", first]).text).toMatch(/is missing at/);
+    const { dir: dir2 } = repoWithCommit("not-a-version");
+    expect(run(dir2, ["rc", "main"]).text).toMatch(/is not X\.Y\.Z/);
+    expect(run(dir2, ["release", "main"]).text).toMatch(/only valid with mode=rc/);
+    expect(run(dir2, ["release"]).outputs).toEqual({ rc: "false" });
+    expect(run(dir2, ["bogus"]).status).not.toBe(0);
+  });
+});

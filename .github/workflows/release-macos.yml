@@ -5,7 +5,9 @@ name: Release macOS
 # GitHub Release all happen in this one workflow. The version is planned ONCE (job `prepare`); every
 # build job checks out that exact release commit and `publish` creates the one tag/release.
 # Triggers: push to main (planned, usually a no-op for docs/test/CI-only pushes) and manual
-# workflow_dispatch. There is deliberately NO `v*` tag trigger: the tag is created here, so a tag push can never
+# workflow_dispatch. Manual dispatch has two modes: `rc` (default) builds the same signed + notarized
+# artifacts from `target_ref` and uploads them ONLY as Actions artifacts: no version bump, no push to
+# main, no tag, no GitHub Release, no latest.json. `release` is the original manual release. There is deliberately NO `v*` tag trigger: the tag is created here, so a tag push can never
 # start a competing build. See docs/releasing.md.
 #
 # Required repository secrets (names only; values never appear in this file):
@@ -22,8 +24,17 @@ on:
       - "**/*.md"
   workflow_dispatch:
     inputs:
+      mode:
+        description: "rc = build-only candidate (Actions artifacts, publishes nothing); release = publish a release"
+        type: choice
+        options: [rc, release]
+        default: rc
+      target_ref:
+        description: "rc only: commit SHA (full or abbreviated), branch or tag to build exactly"
+        type: string
+        default: ""
       force:
-        description: "Release even if only documentation/tests/automation changed"
+        description: "release mode: release even if only documentation/tests/automation changed"
         type: boolean
         default: true
 
@@ -46,18 +57,32 @@ jobs:
     timeout-minutes: 60
     outputs:
       should_release: ${{ steps.plan.outputs.should_release }}
+      should_build: ${{ steps.intent.outputs.should_build }}
+      should_publish: ${{ steps.intent.outputs.should_publish }}
+      rc: ${{ steps.rc.outputs.rc }}
       reason: ${{ steps.plan.outputs.reason }}
-      version: ${{ steps.plan.outputs.version }}
+      version: ${{ steps.rc.outputs.version || steps.plan.outputs.version }}
       previous_tag: ${{ steps.plan.outputs.previous_tag }}
-      sha: ${{ steps.commit.outputs.sha }}
+      sha: ${{ steps.rc.outputs.sha || steps.commit.outputs.sha }}
     steps:
       - uses: actions/checkout@v4
         with:
           ref: ${{ github.event.repository.default_branch }}
           fetch-depth: 0
 
+      # Manual dispatch only: validate the inputs; in rc mode resolve target_ref to ONE full SHA, print it
+      # and check that exact commit out. Changes no public state (see scripts/ci/resolve-rc-target.sh).
+      - name: Validate dispatch inputs and resolve the RC source commit
+        id: rc
+        if: github.event_name == 'workflow_dispatch'
+        env:
+          MODE: ${{ inputs.mode }}
+          TARGET_REF: ${{ inputs.target_ref }}
+        run: bash scripts/ci/resolve-rc-target.sh "$MODE" "$TARGET_REF"
+
       - name: Plan release (version, should_release)
         id: plan
+        if: steps.rc.outputs.rc != 'true'
         env:
           GH_TOKEN: ${{ github.token }}
           FORCE: ${{ github.event_name == 'workflow_dispatch' && inputs.force }}
@@ -68,12 +93,30 @@ jobs:
           if [ "$FORCE" = "true" ]; then ARGS+=(--force); fi
           node scripts/plan-release.mjs --releases "$RUNNER_TEMP/releases.json" "${ARGS[@]}"
 
+      # Build/publish intent. rc: build=true, publish=false. Otherwise both follow the release plan.
+      - name: Resolve build intent
+        id: intent
+        env:
+          RC: ${{ steps.rc.outputs.rc }}
+          PLANNED: ${{ steps.plan.outputs.should_release }}
+          RC_SHA: ${{ steps.rc.outputs.sha }}
+          RC_VERSION: ${{ steps.rc.outputs.version }}
+        run: |
+          if [ "$RC" = "true" ]; then
+            echo "should_build=true" >> "$GITHUB_OUTPUT"; echo "should_publish=false" >> "$GITHUB_OUTPUT"
+            echo "RC build of $RC_SHA (version $RC_VERSION): build only, nothing is published."
+          elif [ "$PLANNED" = "true" ]; then
+            echo "should_build=true" >> "$GITHUB_OUTPUT"; echo "should_publish=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "should_build=false" >> "$GITHUB_OUTPUT"; echo "should_publish=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Nothing to release
-        if: steps.plan.outputs.should_release != 'true'
+        if: steps.intent.outputs.should_build != 'true'
         run: echo "No release created — ${{ steps.plan.outputs.reason }}"
 
       - name: Check required secrets are configured (names only)
-        if: steps.plan.outputs.should_release == 'true'
+        if: steps.intent.outputs.should_build == 'true'
         env:
           S1: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           S2: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
@@ -95,22 +138,22 @@ jobs:
           exit $missing
 
       - uses: actions/setup-node@v4
-        if: steps.plan.outputs.should_release == 'true'
+        if: steps.intent.outputs.should_build == 'true'
         with:
           node-version: "22"
           cache: npm
 
       - uses: dtolnay/rust-toolchain@stable
-        if: steps.plan.outputs.should_release == 'true'
+        if: steps.intent.outputs.should_build == 'true'
         with:
           targets: aarch64-apple-darwin,x86_64-apple-darwin
 
       - name: Install dependencies
-        if: steps.plan.outputs.should_release == 'true'
+        if: steps.intent.outputs.should_build == 'true'
         run: npm ci
 
       - name: Test gate
-        if: steps.plan.outputs.should_release == 'true'
+        if: steps.intent.outputs.should_build == 'true'
         run: |
           npx tsc --noEmit
           npm run verify:design-system
@@ -119,11 +162,11 @@ jobs:
           (cd src-tauri && cargo check && cargo test)
 
       - name: Restore known generated report, require a clean tree
-        if: steps.plan.outputs.should_release == 'true'
+        if: steps.intent.outputs.should_build == 'true'
         run: bash scripts/ci/restore-generated-report.sh
 
       - name: Version bump + release commit
-        if: steps.plan.outputs.should_release == 'true'
+        if: steps.intent.outputs.should_publish == 'true'
         id: commit
         env:
           VERSION: ${{ steps.plan.outputs.version }}
@@ -154,7 +197,7 @@ jobs:
   # ---------------------------------------------------------------- macOS (Apple Silicon + Intel)
   macos:
     needs: prepare
-    if: needs.prepare.outputs.should_release == 'true'
+    if: needs.prepare.outputs.should_build == 'true'
     runs-on: macos-14
     timeout-minutes: 120
     env:
@@ -246,7 +289,7 @@ jobs:
   # ---------------------------------------------------------------- Windows x64
   windows:
     needs: prepare
-    if: needs.prepare.outputs.should_release == 'true'
+    if: needs.prepare.outputs.should_build == 'true'
     runs-on: windows-latest
     timeout-minutes: 90
     defaults:
@@ -316,6 +359,8 @@ jobs:
   # ---------------------------------------------------------------- latest.json, tag, release
   publish:
     needs: [prepare, macos, windows]
+    # rc builds never publish: no tag, no GitHub Release, no latest.json.
+    if: needs.prepare.outputs.should_publish == 'true'
     runs-on: macos-14
     timeout-minutes: 60
     env:
