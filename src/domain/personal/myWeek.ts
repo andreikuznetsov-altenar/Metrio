@@ -52,7 +52,10 @@ export function buildMyWeek(
   rules: OperationalRules = DEFAULT_OPERATIONAL_RULES,
 ): MyWeekGroups {
   const weekRange = getCurrentWeekRange(now);
-  const completedThisWeek = listCompletedIssuesInRange(person.issues, weekRange);
+  // "My week" is the person's own completed work and backflows: the same canonical owner
+  // attribution and eligible issue population as the KPI and Work History.
+  const canonical = person.jira?.canonicalKey;
+  const completedThisWeek = listCompletedIssuesInRange(person.issues, weekRange, canonical);
   const operationalIssues = getOperationalIssues(person);
   const activeIssues = getActiveIssues(person, params);
 
@@ -81,7 +84,7 @@ export function buildMyWeek(
       currentlyActive: activeIssues.length,
       atRisk: atRisk.length,
       inReview: inReview.length,
-      backflowsThisWeek: countBackflowsInRange(person.issues, weekRange),
+      backflowsThisWeek: countBackflowsInRange(person.issues, weekRange, canonical),
     },
     needsAttention,
     inProgress,

@@ -67,14 +67,14 @@ function emptyKpi(targetReviewDays: number): KpiData {
   };
 }
 
-function attributedTo(cycle: CanonicalPerformanceCycle, canonical?: string): boolean {
+export function attributedTo(cycle: CanonicalPerformanceCycle, canonical?: string): boolean {
   // Older Jira snapshots do not always contain enough assignee history to
   // reconstruct an owner. In a person-scoped issue list, retain that cycle as
   // an explicitly unattributed fallback instead of silently dropping it.
   return !canonical || !cycle.ownerCanonical || cycle.ownerCanonical === canonical;
 }
 
-function ownerAllowed(owner: string | undefined, options: BuildWorkflowKpiOptions): boolean {
+export function ownerAllowed(owner: string | undefined, options: BuildWorkflowKpiOptions): boolean {
   if (!owner) return true;
   if (options.contributorCanonical) return owner === options.contributorCanonical;
   if (options.contributorCanonicals) return options.contributorCanonicals.has(owner);

@@ -33,7 +33,7 @@ export function withFullIssueHistory(issue: AuditIssue): AuditIssue {
   return { ...issue, rangeEvents: [] };
 }
 
-function getAllStatusEvents(issue: AuditIssue): IssueEvent[] {
+export function getAllStatusEvents(issue: AuditIssue): IssueEvent[] {
   return (issue.events || [])
     .filter((event) => event.eventType === 'Status')
     .slice()

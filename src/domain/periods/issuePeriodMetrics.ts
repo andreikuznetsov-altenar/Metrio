@@ -4,12 +4,12 @@ import type { AuditIssue, ReportParams } from '../jira/types';
 import type { Person } from '../people/types';
 import type { DateRange } from './dateRange';
 import { getCurrentWeekRange, getLastNDaysRange, getLocalDayRangeFromKey } from './dateRange';
-import { countBackflowEventsInRange, withFullIssueHistory } from './issueCompletion';
+import { getAllStatusEvents, withFullIssueHistory } from './issueCompletion';
 import { isTimestampInRange } from './dateRange';
 import { assigneeAt, extractCanonicalPerformanceCycles } from '../workflows/canonicalPerformance';
 import { isWorkflowKpiEligible } from '../workflows/eligibility';
 import { resolveWorkflowProfile } from '../workflows/resolveWorkflowProfile';
-import { median } from '../workflows/buildWorkflowKpi';
+import { attributedTo, median, ownerAllowed } from '../workflows/buildWorkflowKpi';
 import { isProfileBackflow } from '../workflows/profileCycles';
 
 import { appNow } from "../../platform/appClock";
@@ -106,22 +106,53 @@ export function getLastWeeksFlowMetrics(
   return computePersonFlowMetrics(person, getLastNDaysRange(weeks * 7, now), params);
 }
 
-export function countBackflowsInRange(issues: AuditIssue[], range: DateRange): number {
-  return issues.reduce(
-    (sum, issue) => sum + countBackflowEventsInRange(withFullIssueHistory(issue), range),
-    0,
-  );
+/**
+ * Backflow events in `range`. With `contributorCanonical` only events that happened while that
+ * person owned the issue count (same attribution as the KPI), and issue types the KPI excludes
+ * never count.
+ */
+export function countBackflowsInRange(
+  issues: AuditIssue[],
+  range: DateRange,
+  contributorCanonical?: string,
+): number {
+  const options = { contributorCanonical };
+  const unique = [...new Map(issues.map((issue) => [issue.issueKey, issue])).values()];
+  return unique.reduce((sum, issue) => {
+    if (!isWorkflowKpiEligible(issue)) return sum;
+    const fullIssue = withFullIssueHistory(issue);
+    const profile = resolveWorkflowProfile(fullIssue);
+    return sum + getAllStatusEvents(fullIssue).filter(
+      (event) =>
+        isProfileBackflow(profile, event.fromValue, event.toValue, event) &&
+        isTimestampInRange(event.changedAt, range) &&
+        ownerAllowed(assigneeAt(fullIssue, event.changedAt), options),
+    ).length;
+  }, 0);
 }
 
+/**
+ * Issues with at least one completed cycle in `range`. With `contributorCanonical` the cycle must
+ * belong to that person (canonical owner, same rule as the KPI and Work History); issue types the
+ * KPI excludes never count. One entry per issue.
+ */
 export function listCompletedIssuesInRange(
   issues: AuditIssue[],
   range: DateRange,
+  contributorCanonical?: string,
 ): AuditIssue[] {
-  return issues.filter((issue) => {
+  const options = { contributorCanonical };
+  const unique = [...new Map(issues.map((issue) => [issue.issueKey, issue])).values()];
+  return unique.filter((issue) => {
+    if (!isWorkflowKpiEligible(issue)) return false;
     const fullIssue = withFullIssueHistory(issue);
     const profile = resolveWorkflowProfile(fullIssue);
     return extractCanonicalPerformanceCycles(fullIssue, profile).some(
-      (cycle) => cycle.completedAt && isTimestampInRange(cycle.completedAt, range),
+      (cycle) =>
+        cycle.completedAt &&
+        isTimestampInRange(cycle.completedAt, range) &&
+        attributedTo(cycle, contributorCanonical) &&
+        ownerAllowed(cycle.ownerCanonical, options),
     );
   });
 }
