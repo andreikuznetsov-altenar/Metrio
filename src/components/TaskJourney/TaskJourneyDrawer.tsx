@@ -237,8 +237,8 @@ export function TaskJourneyDrawer({
             <MetaList testId="task-journey-diagnostic-block">
               <MetaRow label="Reason">{journey.problem.primaryReason}</MetaRow>
               <MetaRow label="Current stage">{currentStageLine}</MetaRow>
-              {journey.problem.targetReviewDays ? (
-                <MetaRow label="Target">{`${journey.problem.targetReviewDays} weekdays`}</MetaRow>
+              {journey.problem.stageTargetDays ? (
+                <MetaRow label="Target">{`${journey.problem.stageTargetDays} weekdays`}</MetaRow>
               ) : null}
               {journey.problem.lastActivityLabel ? (
                 <MetaRow label="Last activity">{journey.problem.lastActivityLabel}</MetaRow>

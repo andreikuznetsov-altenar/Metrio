@@ -111,6 +111,30 @@ describe('TaskJourneyDrawer', () => {
     expect(openPerson).toHaveBeenCalledWith('daria-id');
   });
 
+  it('shows no Target for an On Hold task and keeps the blocked-age information', () => {
+    const onHold: AuditIssue = {
+      ...issue,
+      currentStatus: 'On Hold',
+      events: [{ ...issue.events[0], fromValue: 'In Progress', toValue: 'On Hold' }],
+    };
+    render(
+      <TaskJourneyDrawer
+        open
+        issue={onHold}
+        params={{ dateFrom: '2026-07-01', dateTo: '2026-10-09', targetReviewDays: 18, users: [], projects: ['UX'] }}
+        rules={DEFAULT_OPERATIONAL_RULES}
+        persons={persons}
+        onClose={() => undefined}
+      />,
+    );
+    const block = screen.getByTestId('task-journey-diagnostic-block');
+    expect(within(block).queryByText('Target')).not.toBeInTheDocument();
+    expect(block.textContent).not.toMatch(/18 weekdays/);
+    expect(within(block).getByText('Current stage')).toBeInTheDocument();
+    expect(block.textContent).toMatch(/On Hold · \d+ weekdays/);
+    expect(block.textContent).toMatch(/Blocked or on hold for \d+ weekdays/);
+  });
+
   it('renders backflow stages as plain status tags (no arrow glyphs, repeats and order kept)', () => {
     const step = (from: string, to: string, day: number, isBackflow = false) => ({
       eventType: 'Status' as const,

@@ -63,7 +63,12 @@ export interface TaskJourneyProblem {
   lastActivityAt: string | null;
   lastActivityLabel: string | null;
   backflowEventCount: number;
-  targetReviewDays: number;
+  /**
+   * Weekday target of the CURRENT stage (Task Health stage target: Review uses the report's review
+   * target, Active/QA use their own). `null` when the stage has no duration target (On Hold,
+   * Waiting, Blocked, non-execution stages, completed): the blocked age is reported separately.
+   */
+  stageTargetDays: number | null;
   isAttentionEligible: boolean;
 }
 
@@ -269,8 +274,8 @@ function buildProblemBlock(
   if (workflowStage.countsAsAttentionEligible && currentStageAgeLabel !== '—') {
     detailLines.push(`Current stage: ${issue.currentStatus || '—'} · ${currentStageAgeLabel}`);
   }
-  if (params.targetReviewDays) {
-    detailLines.push(`Target: ${params.targetReviewDays} weekdays`);
+  if (health.stageTarget) {
+    detailLines.push(`Target: ${health.stageTarget.targetDays} weekdays`);
   }
   if (health.backflowEventCount > 0) {
     detailLines.push(`Backflows: ${health.backflowEventCount}`);
@@ -297,7 +302,7 @@ function buildProblemBlock(
     lastActivityAt,
     lastActivityLabel,
     backflowEventCount: health.backflowEventCount,
-    targetReviewDays: params.targetReviewDays,
+    stageTargetDays: health.stageTarget?.targetDays ?? null,
     isAttentionEligible: workflowStage.countsAsAttentionEligible,
   };
 }
